@@ -68,7 +68,7 @@ namespace tickMeter
             if(App.meterState.ConnectionsManagerFlag)
             {
                 int[] ProcessIds = Process.GetProcessesByName(ProcessName).Select(e => e.Id).ToArray();
-                List<UdpProcessRecord> gamePorts = App.connMngr.UdpActiveConnections;
+                List<UdpProcessRecord> gamePorts = ConnectionsManager.UdpActiveConnections;
                 foreach (UdpProcessRecord gamePort in gamePorts)
                 {
                     if (ProcessIds.Contains(gamePort.ProcessId))

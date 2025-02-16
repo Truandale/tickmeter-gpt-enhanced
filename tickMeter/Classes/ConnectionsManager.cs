@@ -14,6 +14,8 @@ namespace tickMeter
 {
     public class ConnectionsManager
     {
+        public static List<TcpProcessRecord> TcpActiveConnections { get; set; } = new List<TcpProcessRecord>();
+        public static List<UdpProcessRecord> UdpActiveConnections { get; set; } = new List<UdpProcessRecord>();
         //SOURCES
         // https://code.msdn.microsoft.com/windowsdesktop/C-Sample-to-list-all-the-4817b58f
         // https://www.codeproject.com/Articles/4298/Getting-active-TCP-UDP-connections-on-a-box
@@ -22,10 +24,7 @@ namespace tickMeter
         private const int AF_INET = 2;
         public const string dllFile = "iphlpapi.dll";
         public int timerInterval = 500;
-        public List<TcpProcessRecord> TcpActiveConnections = new List<TcpProcessRecord>();
-
-        public List<UdpProcessRecord> UdpActiveConnections = new List<UdpProcessRecord>();
-    
+        
         public Process[] ProcessInfoList;
 
         private System.Timers.Timer MngrTimer;

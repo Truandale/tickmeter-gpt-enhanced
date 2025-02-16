@@ -177,7 +177,7 @@ namespace tickMeter
                     try
                     {
                         UdpProcessRecord record;
-                        List<UdpProcessRecord> UdpConnections = connMngr.UdpActiveConnections;
+                        List<UdpProcessRecord> UdpConnections = ConnectionsManager.UdpActiveConnections;
                         if (UdpConnections.Count > 0)
                         {
                             record = UdpConnections.Find(
@@ -205,8 +205,8 @@ namespace tickMeter
                     try
                     {
                         TcpProcessRecord record;
-                        List<TcpProcessRecord> TcpConnections = connMngr.TcpActiveConnections;
-                        if(TcpConnections.Count > 0)
+                        List<TcpProcessRecord> TcpConnections = ConnectionsManager.TcpActiveConnections;
+                        if (TcpConnections.Count > 0)
                         {
                             record = TcpConnections.Find(
                                 procReq => (procReq.LocalPort == fromPort && procReq.RemotePort == toPort)
