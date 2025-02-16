@@ -18,7 +18,7 @@ namespace tickMeter
 {
     public class ConnectionsManager
     {
-        private static DateTime lastVpnCheck = DateTime.MinValue;
+        
 
         public static List<TcpProcessRecord> TcpActiveConnections { get; set; } = new List<TcpProcessRecord>();
         public static List<UdpProcessRecord> UdpActiveConnections { get; set; } = new List<UdpProcessRecord>();
@@ -184,14 +184,13 @@ namespace tickMeter
 
         public static void UpdateTcpActiveConnections()
         {
-            // Проверяем VPN только раз в 10 секунд
             if ((DateTime.Now - lastVpnCheck).TotalSeconds > 10)
             {
                 DetectVPNAndRealIP();
                 lastVpnCheck = DateTime.Now;
             }
 
-            // Очищаем список TCP соединений перед обновлением
+            // Очищаем список перед обновлением
             TcpActiveConnections.Clear();
 
             // Получаем соединения и добавляем их в список
@@ -253,24 +252,38 @@ namespace tickMeter
             return udpTableRecords != null ? udpTableRecords.Distinct()
                 .ToList<UdpProcessRecord>() : new List<UdpProcessRecord>();
         }
+
+
+        private static string lastRealIP = null;
+        private static DateTime lastVpnCheck = DateTime.MinValue;
         public static void DetectVPNAndRealIP()
         {
             try
             {
+                if ((DateTime.Now - lastVpnCheck).TotalSeconds < 10)
+                {
+                    return; // Проверяем VPN не чаще, чем раз в 10 секунд
+                }
+
+                lastVpnCheck = DateTime.Now;
+
                 NetworkInterface adapter = GetActiveNetworkAdapter();
                 if (adapter == null) return;
 
                 bool isVPN = IsVPNAdapter(adapter);
                 Console.WriteLine($"Адаптер: {adapter.Name}, VPN: {isVPN}");
 
+                if (!isVPN)
+                {
+                    Console.WriteLine("VPN не используется, пропускаем проверку маршрутов.");
+                    return;
+                }
+
                 string realIP = GetRealIPFromRoutes();
-                if (realIP != null)
+                if (realIP != null && realIP != lastRealIP)
                 {
                     Console.WriteLine($"Реальный внешний IP: {realIP}");
-                }
-                else
-                {
-                    Console.WriteLine("Не удалось определить реальный IP.");
+                    lastRealIP = realIP;
                 }
             }
             catch (Exception ex)
@@ -278,6 +291,7 @@ namespace tickMeter
                 Console.WriteLine($"Ошибка при определении VPN: {ex.Message}");
             }
         }
+
 
         public static NetworkInterface GetActiveNetworkAdapter()
         {
@@ -307,7 +321,7 @@ namespace tickMeter
                 ProcessStartInfo psi = new ProcessStartInfo
                 {
                     FileName = "cmd.exe",
-                    Arguments = "/c route PRINT",
+                    Arguments = "/c netsh interface ip show addresses",
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
@@ -318,19 +332,23 @@ namespace tickMeter
                     process.Start();
                     string output = process.StandardOutput.ReadToEnd();
 
-                    Regex regex = new Regex(@"\s*(0\.0\.0\.0)\s*(\S+)\s*(\S+)");
+                    Regex regex = new Regex(@"\s*IP Address:\s*(\S+)");
                     Match match = regex.Match(output);
 
                     if (match.Success)
                     {
-                        return match.Groups[2].Value; // Получаем реальный IP
+                        return match.Groups[1].Value; // Получаем реальный IP
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при получении маршрутов: {ex.Message}");
+            }
 
             return null;
         }
+
 
     }
 
