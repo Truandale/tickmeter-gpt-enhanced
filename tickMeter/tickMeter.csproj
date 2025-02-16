@@ -239,6 +239,8 @@
     <Compile Include="Classes\DbdStatsManager.cs" />
     <Compile Include="Classes\ProcessNetworkStats.cs" />
     <Compile Include="Classes\PubgStatsManager.cs" />
+    <Compile Include="Classes\TcpProcessRecord.cs" />
+    <Compile Include="Classes\UdpProcessRecord.cs" />
     <Compile Include="Classes\WebStatsManager.cs" />
     <Compile Include="Forms\GUI.cs">
       <SubType>Form</SubType>
