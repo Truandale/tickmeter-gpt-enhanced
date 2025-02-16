@@ -14,6 +14,7 @@ namespace tickMeter
         [STAThread]
         static void Main()
         {
+
             int curId = Process.GetCurrentProcess().Id;
             Process[] instances = Process.GetProcessesByName("tickmeter");
             foreach(Process proc in instances)
@@ -26,6 +27,7 @@ namespace tickMeter
             }
             AppDomain currentDomain = AppDomain.CurrentDomain;
             currentDomain.UnhandledException += new UnhandledExceptionEventHandler(MyHandler);
+            ConnectionsManager.DetectVPNAndRealIP();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new GUI());
