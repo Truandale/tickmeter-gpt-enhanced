@@ -161,6 +161,21 @@ namespace tickMeter
                 .ToList<TcpProcessRecord>() : new List<TcpProcessRecord>();
         }
 
+        public static void UpdateTcpActiveConnections()
+        {
+            // Очищаем старые данные
+            TcpActiveConnections.Clear();
+
+            // Используем уже существующий метод для получения соединений
+            var tcpConnections = new ConnectionsManager().GetAllTcpConnections();
+
+            // Заполняем список
+            foreach (var connection in tcpConnections)
+            {
+                TcpActiveConnections.Add(connection);
+            }
+        }
+
         public List<UdpProcessRecord> GetAllUdpConnections()
         {
             int bufferSize = 0;
