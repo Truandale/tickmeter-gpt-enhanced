@@ -35,11 +35,8 @@ namespace tickMeter.Forms
             this.network_connection_lbl = new System.Windows.Forms.Label();
             this.adapters_list = new System.Windows.Forms.ComboBox();
             this.colorDialog1 = new System.Windows.Forms.ColorDialog();
-            this.label8 = new System.Windows.Forms.Label();
             this.rememberAdapter = new System.Windows.Forms.CheckBox();
-            this.updateLbl = new System.Windows.Forms.Label();
             this.rtss_dialog = new System.Windows.Forms.OpenFileDialog();
-            this.donate_lbl = new System.Windows.Forms.Label();
             this.settings_data_send = new System.Windows.Forms.CheckBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.ColorChart = new System.Windows.Forms.Label();
@@ -66,6 +63,7 @@ namespace tickMeter.Forms
             this.run_minimized = new System.Windows.Forms.CheckBox();
             this.local_ip_lbl = new System.Windows.Forms.Label();
             this.local_ip_textbox = new System.Windows.Forms.TextBox();
+            this.captureAllAdaptersCheckbox = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.ping_interval)).BeginInit();
@@ -93,30 +91,12 @@ namespace tickMeter.Forms
             this.adapters_list.Name = "adapters_list";
             this.adapters_list.SelectedIndexChanged += new System.EventHandler(this.adapters_list_SelectedIndexChanged);
             // 
-            // label8
-            // 
-            resources.ApplyResources(this.label8, "label8");
-            this.label8.BackColor = System.Drawing.Color.Transparent;
-            this.label8.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.label8.ForeColor = System.Drawing.Color.Blue;
-            this.label8.Name = "label8";
-            this.label8.Click += new System.EventHandler(this.label8_Click);
-            // 
             // rememberAdapter
             // 
             resources.ApplyResources(this.rememberAdapter, "rememberAdapter");
             this.rememberAdapter.ForeColor = System.Drawing.Color.Black;
             this.rememberAdapter.Name = "rememberAdapter";
             this.rememberAdapter.UseVisualStyleBackColor = true;
-            // 
-            // updateLbl
-            // 
-            resources.ApplyResources(this.updateLbl, "updateLbl");
-            this.updateLbl.BackColor = System.Drawing.Color.Transparent;
-            this.updateLbl.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.updateLbl.ForeColor = System.Drawing.Color.Blue;
-            this.updateLbl.Name = "updateLbl";
-            this.updateLbl.Click += new System.EventHandler(this.updateLbl_Click);
             // 
             // rtss_dialog
             // 
@@ -125,15 +105,6 @@ namespace tickMeter.Forms
             resources.ApplyResources(this.rtss_dialog, "rtss_dialog");
             this.rtss_dialog.InitialDirectory = "C:\\";
             this.rtss_dialog.FileOk += new System.ComponentModel.CancelEventHandler(this.rtss_dialog_FileOk);
-            // 
-            // donate_lbl
-            // 
-            resources.ApplyResources(this.donate_lbl, "donate_lbl");
-            this.donate_lbl.BackColor = System.Drawing.Color.Transparent;
-            this.donate_lbl.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.donate_lbl.ForeColor = System.Drawing.Color.Blue;
-            this.donate_lbl.Name = "donate_lbl";
-            this.donate_lbl.Click += new System.EventHandler(this.donate_lbl_Click);
             // 
             // settings_data_send
             // 
@@ -371,10 +342,18 @@ namespace tickMeter.Forms
             this.local_ip_textbox.Name = "local_ip_textbox";
             this.local_ip_textbox.TextChanged += new System.EventHandler(this.local_ip_textbox_TextChanged);
             // 
+            // captureAllAdaptersCheckbox
+            // 
+            resources.ApplyResources(this.captureAllAdaptersCheckbox, "captureAllAdaptersCheckbox");
+            this.captureAllAdaptersCheckbox.ForeColor = System.Drawing.Color.Black;
+            this.captureAllAdaptersCheckbox.Name = "captureAllAdaptersCheckbox";
+            this.captureAllAdaptersCheckbox.UseVisualStyleBackColor = true;
+            // 
             // SettingsForm
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.captureAllAdaptersCheckbox);
             this.Controls.Add(this.local_ip_textbox);
             this.Controls.Add(this.local_ip_lbl);
             this.Controls.Add(this.run_minimized);
@@ -386,10 +365,7 @@ namespace tickMeter.Forms
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.settings_data_send);
-            this.Controls.Add(this.donate_lbl);
-            this.Controls.Add(this.updateLbl);
             this.Controls.Add(this.rememberAdapter);
-            this.Controls.Add(this.label8);
             this.Controls.Add(this.settings_log_checkbox);
             this.Controls.Add(this.network_connection_lbl);
             this.Controls.Add(this.adapters_list);
@@ -412,11 +388,8 @@ namespace tickMeter.Forms
         public System.Windows.Forms.ComboBox adapters_list;
         public System.Windows.Forms.CheckBox settings_log_checkbox;
         public System.Windows.Forms.Label network_connection_lbl;
-        public System.Windows.Forms.Label label8;
         public System.Windows.Forms.CheckBox rememberAdapter;
-        public System.Windows.Forms.Label updateLbl;
         private System.Windows.Forms.OpenFileDialog rtss_dialog;
-        public Label donate_lbl;
         public CheckBox settings_data_send;
         private GroupBox groupBox1;
         public Label ColorChart;

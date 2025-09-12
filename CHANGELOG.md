@@ -4,7 +4,13 @@ All notable changes to TickMeter project will be documented in this file.
 
 ## [Unreleased] - 2025-09-12
 
-### 🚀 Major New Feature: Multi-Adapter Packet Capture
+### �️ Critical Bug Fixes
+- **Fixed NullReferenceException**: Resolved critical crash in SettingsForm.InitCaptureAllAdaptersState()
+- **Improved Initialization**: Moved multi-adapter checkbox initialization to ApplyFromConfig() method
+- **Enhanced Safety**: Added null checks for UI components to prevent runtime exceptions
+- **Designer Cleanup**: Fixed duplicate field declarations and resource loading issues
+
+### �🚀 Major New Feature: Multi-Adapter Packet Capture
 - **Multi-Adapter Capture**: New option to capture packets from all network adapters simultaneously
 - **Smart Filtering**: Automatically excludes virtual adapters (loopback, Hyper-V, VMware, VirtualBox)
 - **Packet Deduplication**: Intelligent duplicate packet filtering to prevent double counting on network bridges

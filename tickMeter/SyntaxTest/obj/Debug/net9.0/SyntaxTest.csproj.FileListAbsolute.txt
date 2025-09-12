@@ -1,0 +1,5 @@
+C:\Users\Predator\Documents\tickmeter-master\tickmeter-master — gpt-fixed tcp ping\tickMeter\SyntaxTest\obj\Debug\net9.0\SyntaxTest.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Predator\Documents\tickmeter-master\tickmeter-master — gpt-fixed tcp ping\tickMeter\SyntaxTest\obj\Debug\net9.0\SyntaxTest.AssemblyInfoInputs.cache
+C:\Users\Predator\Documents\tickmeter-master\tickmeter-master — gpt-fixed tcp ping\tickMeter\SyntaxTest\obj\Debug\net9.0\SyntaxTest.AssemblyInfo.cs
+C:\Users\Predator\Documents\tickmeter-master\tickmeter-master — gpt-fixed tcp ping\tickMeter\SyntaxTest\obj\Debug\net9.0\SyntaxTest.csproj.CoreCompileInputs.cache
+C:\Users\Predator\Documents\tickmeter-master\tickmeter-master — gpt-fixed tcp ping\tickMeter\SyntaxTest\obj\Debug\net9.0\SyntaxTest.sourcelink.json

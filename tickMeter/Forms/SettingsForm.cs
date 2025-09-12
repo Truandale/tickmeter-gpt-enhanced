@@ -44,43 +44,30 @@ namespace tickMeter.Forms
         }
 
         /// <summary>
-        /// NEW: Инициализация чекбокса "Захватывать со всех адаптеров"
+        /// NEW: Инициализация состояния и событий чекбокса "Захватывать со всех адаптеров"
         /// </summary>
-        private void InitAllAdaptersCheckbox()
+        private void InitCaptureAllAdaptersState()
         {
-            captureAllAdaptersCheckbox = new CheckBox();
-            captureAllAdaptersCheckbox.AutoSize = true;
-            captureAllAdaptersCheckbox.Text = "Захватывать со всех адаптеров";
-            
-            // Позиционирование относительно network_connection_lbl
-            try
-            {
-                var p = network_connection_lbl.Location;
-                captureAllAdaptersCheckbox.Location = new Point(p.X, p.Y + network_connection_lbl.Height + 30);
-            } 
-            catch 
-            { 
-                // fallback positioning
-                captureAllAdaptersCheckbox.Location = new Point(10, 250);
-            }
-
+            // Проверяем, что чекбокс инициализирован
+            if (captureAllAdaptersCheckbox == null)
+                return;
+                
             // Загружаем значение из настроек
             bool enabled = App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
             captureAllAdaptersCheckbox.Checked = enabled;
             
             // При включении блокируем dropdown выбора адаптера
-            adapters_list.Enabled = !enabled;
+            if (adapters_list != null)
+                adapters_list.Enabled = !enabled;
 
             // Обработчик изменения состояния
             captureAllAdaptersCheckbox.CheckedChanged += (s, e) =>
             {
                 App.settingsManager.SetOption("capture_all_adapters", captureAllAdaptersCheckbox.Checked.ToString());
-                adapters_list.Enabled = !captureAllAdaptersCheckbox.Checked;
+                if (adapters_list != null)
+                    adapters_list.Enabled = !captureAllAdaptersCheckbox.Checked;
                 App.settingsManager.SaveConfig();
             };
-            
-            // Добавляем на форму
-            Controls.Add(captureAllAdaptersCheckbox);
         }
 
         public async void CheckNewVersion()
@@ -176,6 +163,10 @@ namespace tickMeter.Forms
             run_minimized.Checked = App.settingsManager.GetOption("run_minimized") == "True";
             ping_ports.Text = App.settingsManager.GetOption("ping_ports");
             ping_interval.Value = App.settingsManager.GetIntOption("ping_interval", 400);
+            
+            // NEW: инициализация состояния чекбокса после загрузки всех настроек
+            InitCaptureAllAdaptersState();
+            
             if (rememberAdapter.Checked)
             {
                 try
@@ -225,8 +216,8 @@ namespace tickMeter.Forms
                 ColorLabel.ForeColor;
             InitRtss();
             
-            // NEW: инициализация чекбокса после загрузки всех настроек
-            InitAllAdaptersCheckbox();
+            // NEW: инициализация состояния чекбокса после загрузки всех настроек
+            InitCaptureAllAdaptersState();
         }
 
         public void SaveToConfig()
