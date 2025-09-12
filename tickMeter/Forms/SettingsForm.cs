@@ -369,5 +369,8 @@ namespace tickMeter.Forms
         {
 
         }
+
+        // Сделайте ping_interval публичным свойством, чтобы к нему можно было обращаться из других классов
+        public NumericUpDown PingIntervalControl => ping_interval;
     }
 }

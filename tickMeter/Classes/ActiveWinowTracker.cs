@@ -54,7 +54,7 @@ namespace tickMeter.Classes
 
         public static void AnalyzePacket(Packet packet)
         {
-            if(App.meterState.isBuiltInProfileActive ||  App.meterState.isCustomProfileActive) { return; }
+            if (App.meterState.isBuiltInProfileActive || App.meterState.isCustomProfileActive) { return; }
             if (!IsEnabled()) return;
             IpV4Datagram ip;
             try
@@ -85,7 +85,7 @@ namespace tickMeter.Classes
                 try
                 {
                     UdpProcessRecord record;
-                    List<UdpProcessRecord> UdpConnections = ConnectionsManager.UdpActiveConnections;
+                    List<UdpProcessRecord> UdpConnections = App.connMngr.UdpActiveConnections;
                     if (UdpConnections.Count > 0)
                     {
                         record = UdpConnections.Find(procReq => procReq.LocalPort == fromPort || procReq.LocalPort == toPort);
@@ -98,31 +98,36 @@ namespace tickMeter.Classes
                 }
                 catch (Exception) { processName = @"n\a"; }
             }
-            else
+            else if (tcp != null) // Добавляем проверку на null для tcp
             {
-                if(tcp.IsAcknowledgment)
-                {
-                    id = tcp.AcknowledgmentNumber;
-                }
                 fromPort = tcp.SourcePort;
                 toPort = tcp.DestinationPort;
                 try
                 {
+                    if (tcp.IsAcknowledgment) // Проверяем, что tcp инициализирован
+                    {
+                        id = tcp.AcknowledgmentNumber;
+                    }
+                }
+                catch (Exception) { }
+
+                try
+                {
                     TcpProcessRecord record;
-                    List<TcpProcessRecord> TcpConnections = ConnectionsManager.TcpActiveConnections;
+                    List<TcpProcessRecord> TcpConnections = App.connMngr.TcpActiveConnections;
                     if (TcpConnections.Count > 0)
                     {
-                       record = TcpConnections.Find(procReq => 
-                       (procReq.LocalPort == fromPort && procReq.RemotePort == toPort)
-                       || (procReq.LocalPort == fromPort && procReq.RemotePort == toPort)
-                       );
+                        record = TcpConnections.Find(procReq =>
+                        (procReq.LocalPort == fromPort && procReq.RemotePort == toPort)
+                        || (procReq.LocalPort == fromPort && procReq.RemotePort == toPort)
+                        );
                         if (record != null)
                         {
                             processName = record.ProcessName;
                         }
                     }
                 }
-                catch (InvalidOperationException) {processName = @"n\a"; }
+                catch (InvalidOperationException) { processName = @"n\a"; }
             }
 
             if (processName == @"n\a")
@@ -130,12 +135,12 @@ namespace tickMeter.Classes
                 processName = ETW.resolveProcessname(fromIp, toIp, fromPort, toPort);
             }
             string activeProcess = AutoDetectMngr.GetActiveProcessName();
-            if(activeProcess != processName) { return; }
+            if (activeProcess != processName) { return; }
             uint remotePort = 0;
             uint localPort = 0;
             if (App.meterState.LocalIP == toIp.ToString())
             {
-                switch(protocol.ToLower())
+                switch (protocol.ToLower())
                 {
                     case "udp":
                         remotePort = udp.SourcePort;
@@ -146,8 +151,9 @@ namespace tickMeter.Classes
                         localPort = tcp.DestinationPort;
                         break;
                 }
-                trackTick(processName,  protocol.ToLower(), App.meterState.LocalIP, localPort, ip.Source.ToString(), remotePort, 1, 0, packetSize, packet.Timestamp, id);
-            } else
+                trackTick(processName, protocol.ToLower(), App.meterState.LocalIP, localPort, ip.Source.ToString(), remotePort, 1, 0, packetSize, packet.Timestamp, id);
+            }
+            else
             {
                 switch (protocol.ToLower())
                 {

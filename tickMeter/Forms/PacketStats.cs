@@ -87,21 +87,46 @@ namespace tickMeter
 
         }
 
+
         private void PcapWorkerDoWork(object sender, DoWorkEventArgs e)
         {
-            using (PacketCommunicator communicator = App.gui.selectedAdapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 1000))
+            // Проверяем, что selectedAdapter не равен null
+            if (App.gui.selectedAdapter == null)
             {
+                MessageBox.Show("Selected adapter is not set!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // Открываем выбранный адаптер
+            PacketCommunicator communicator = App.gui.selectedAdapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 1000);
+            if (communicator == null)
+            {
+                MessageBox.Show("Failed to open the selected adapter!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            using (communicator)
+            {
+                // Проверяем, что адаптер поддерживает Ethernet
                 if (communicator.DataLink.Kind != DataLinkKind.Ethernet)
                 {
-                    MessageBox.Show("This program works only on Ethernet networks!");
+                    MessageBox.Show("This program works only on Ethernet networks!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-               
-                communicator.ReceivePackets(0, PacketHandler);
+
+                // Начинаем получение пакетов
+                try
+                {
+                    communicator.ReceivePackets(0, PacketHandler);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"An error occurred while receiving packets: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
         }
 
-        
+
 
         private void PacketHandler(Packet packet)
         {
@@ -177,7 +202,7 @@ namespace tickMeter
                     try
                     {
                         UdpProcessRecord record;
-                        List<UdpProcessRecord> UdpConnections = ConnectionsManager.UdpActiveConnections;
+                        List<UdpProcessRecord> UdpConnections = connMngr.UdpActiveConnections;
                         if (UdpConnections.Count > 0)
                         {
                             record = UdpConnections.Find(
@@ -205,8 +230,8 @@ namespace tickMeter
                     try
                     {
                         TcpProcessRecord record;
-                        List<TcpProcessRecord> TcpConnections = ConnectionsManager.TcpActiveConnections;
-                        if (TcpConnections.Count > 0)
+                        List<TcpProcessRecord> TcpConnections = connMngr.TcpActiveConnections;
+                        if(TcpConnections.Count > 0)
                         {
                             record = TcpConnections.Find(
                                 procReq => (procReq.LocalPort == fromPort && procReq.RemotePort == toPort)

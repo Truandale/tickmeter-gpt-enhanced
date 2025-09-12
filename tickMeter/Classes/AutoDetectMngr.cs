@@ -81,7 +81,7 @@ namespace tickMeter.Classes
                 try
                 {
                     UdpProcessRecord record;
-                    List<UdpProcessRecord> UdpConnections = ConnectionsManager.UdpActiveConnections;
+                    List<UdpProcessRecord> UdpConnections = App.connMngr.UdpActiveConnections;
                     if (UdpConnections.Count > 0)
                     {
                         record = UdpConnections.First(procReq => procReq.LocalPort== fromPort || procReq.LocalPort == toPort);
@@ -103,7 +103,7 @@ namespace tickMeter.Classes
                 try
                 {
                     TcpProcessRecord record;
-                    List<TcpProcessRecord> TcpConnections = ConnectionsManager.TcpActiveConnections;
+                    List<TcpProcessRecord> TcpConnections = App.connMngr.TcpActiveConnections;
                     if (TcpConnections.Count > 0)
                     {
                        record = TcpConnections.First(procReq => 

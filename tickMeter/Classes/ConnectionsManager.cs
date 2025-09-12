@@ -9,19 +9,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using tickMeter.Classes;
-using System.Net.NetworkInformation;
-using System.Diagnostics;
-using System.Text.RegularExpressions;
-using System.Net;
 
 namespace tickMeter
 {
     public class ConnectionsManager
     {
-        
-
-        public static List<TcpProcessRecord> TcpActiveConnections { get; set; } = new List<TcpProcessRecord>();
-        public static List<UdpProcessRecord> UdpActiveConnections { get; set; } = new List<UdpProcessRecord>();
         //SOURCES
         // https://code.msdn.microsoft.com/windowsdesktop/C-Sample-to-list-all-the-4817b58f
         // https://www.codeproject.com/Articles/4298/Getting-active-TCP-UDP-connections-on-a-box
@@ -30,7 +22,10 @@ namespace tickMeter
         private const int AF_INET = 2;
         public const string dllFile = "iphlpapi.dll";
         public int timerInterval = 500;
+        public List<TcpProcessRecord> TcpActiveConnections = new List<TcpProcessRecord>();
 
+        public List<UdpProcessRecord> UdpActiveConnections = new List<UdpProcessRecord>();
+    
         public Process[] ProcessInfoList;
 
         private System.Timers.Timer MngrTimer;
@@ -50,41 +45,87 @@ namespace tickMeter
             }
         }
 
+        private readonly object _tcpLock = new object();
+        private readonly object _udpLock = new object();
+        private readonly object _processInfoLock = new object();
+
         private async void MngrTimerTick(Object source, System.Timers.ElapsedEventArgs e)
         {
-            if (App.meterState == null || !App.meterState.ConnectionsManagerFlag) return;
             await Task.Run(() =>
             {
-                ProcessInfoList = Process.GetProcesses();
-                TcpActiveConnections = GetAllTcpConnections();
-                UdpActiveConnections = GetAllUdpConnections();
-                Process[] proccArray;
-                for (var i = 0; i < TcpActiveConnections.Count; i++)
+                lock (_processInfoLock)
                 {
-                    proccArray = ProcessInfoList.Where(process => TcpActiveConnections[i].ProcessId == process.Id).ToArray();
-                    if (proccArray.Length > 0)
+                    ProcessInfoList = Process.GetProcesses();
+                }
+
+                lock (_tcpLock)
+                {
+                    TcpActiveConnections = GetAllTcpConnections();
+                }
+
+                lock (_udpLock)
+                {
+                    UdpActiveConnections = GetAllUdpConnections();
+                }
+
+                Process[] proccArray;
+
+                lock (_tcpLock)
+                {
+                    foreach (var record in TcpActiveConnections.ToList())
                     {
-                        TcpActiveConnections[i].ProcessName = proccArray.First().ProcessName;
-                    } else {
-                        ETW.ProcessNetworkData procData = ETW.processes.Where(processData => TcpActiveConnections[i].ProcessId == processData.Value.pId).First().Value;
-                        if (procData != null)
+                        lock (_processInfoLock)
                         {
-                            TcpActiveConnections[i].ProcessName = procData.pName;
+                            proccArray = ProcessInfoList.Where(process => record.ProcessId == process.Id).ToArray();
+                        }
+
+                        if (proccArray.Length > 0)
+                        {
+                            record.ProcessName = proccArray.First().ProcessName;
+                        }
+                        else
+                        {
+                            List<ETW.ProcessNetworkData> processList;
+                            lock (ETW.processes)
+                            {
+                                processList = ETW.processes.Values.ToList();
+                            }
+                            // Исправлено: убран .Value, т.к. processList - это List<ETW.ProcessNetworkData>
+                            ETW.ProcessNetworkData procData = processList.Where(processData => record.ProcessId == processData.pId).FirstOrDefault();
+                            if (procData != null)
+                            {
+                                record.ProcessName = procData.pName;
+                            }
                         }
                     }
                 }
 
-                for (var i = 0; i < UdpActiveConnections.Count; i++)
+                lock (_udpLock)
                 {
-                    proccArray = ProcessInfoList.Where(process => UdpActiveConnections[i].ProcessId == process.Id).ToArray();
-                    if (proccArray.Length > 0)
+                    foreach (var record in UdpActiveConnections.ToList())
                     {
-                        UdpActiveConnections[i].ProcessName = proccArray.First().ProcessName;
-                    } else {
-                        ETW.ProcessNetworkData procData = ETW.processes.Where(processData => UdpActiveConnections[i].ProcessId == processData.Value.pId).First().Value;
-                        if (procData != null)
+                        lock (_processInfoLock)
                         {
-                            UdpActiveConnections[i].ProcessName = procData.pName;
+                            proccArray = ProcessInfoList.Where(process => record.ProcessId == process.Id).ToArray();
+                        }
+
+                        if (proccArray.Length > 0)
+                        {
+                            record.ProcessName = proccArray.First().ProcessName;
+                        }
+                        else
+                        {
+                            List<ETW.ProcessNetworkData> processList;
+                            lock (ETW.processes)
+                            {
+                                processList = ETW.processes.Values.ToList();
+                            }
+                            // Исправлено: убран .Value, т.к. processList - это List<ETW.ProcessNetworkData>
+                            ETW.ProcessNetworkData procData = processList.Where(processData => record.ProcessId == processData.pId).FirstOrDefault();
+                            if (procData != null)
+                            {
+                                record.ProcessName = procData.pName;
+                            }
                         }
                     }
                 }
@@ -105,13 +146,13 @@ namespace tickMeter
         [DllImport(dllFile, CharSet = CharSet.Auto, SetLastError = true)]
         private static extern uint GetExtendedUdpTable(IntPtr pUdpTable, ref int pdwSize,
             bool bOrder, int ulAf, UdpTableClass tableClass, uint reserved = 0);
-
+        
 
         public List<TcpProcessRecord> GetAllTcpConnections()
         {
             int bufferSize = 0;
             List<TcpProcessRecord> tcpTableRecords = new List<TcpProcessRecord>();
-
+            
             uint result = GetExtendedTcpTable(IntPtr.Zero, ref bufferSize, true, AF_INET,
                 TcpTableClass.TCP_TABLE_OWNER_PID_ALL);
 
@@ -131,21 +172,21 @@ namespace tickMeter
                 IntPtr tableRowPtr = (IntPtr)((long)tcpTableRecordsPtr +
                                         Marshal.SizeOf(tcpRecordsTable.dwNumEntries));
 
-                for (int row = 0; row < tcpRecordsTable.dwNumEntries; row++)
+            for (int row = 0; row < tcpRecordsTable.dwNumEntries; row++)
                 {
                     MIB_TCPROW_OWNER_PID tcpRow = (MIB_TCPROW_OWNER_PID)Marshal.
                         PtrToStructure(tableRowPtr, typeof(MIB_TCPROW_OWNER_PID));
 
-                    tcpTableRecords.Add(new TcpProcessRecord(
-                                                new IPAddress(tcpRow.localAddr),
-                                                new IPAddress(tcpRow.remoteAddr),
-                                                BitConverter.ToUInt16(new byte[2] {
+                tcpTableRecords.Add(new TcpProcessRecord(
+                                            new IPAddress(tcpRow.localAddr),
+                                            new IPAddress(tcpRow.remoteAddr),
+                                            BitConverter.ToUInt16(new byte[2] {
                                             tcpRow.localPort[1],
                                             tcpRow.localPort[0] }, 0),
-                                                BitConverter.ToUInt16(new byte[2] {
+                                            BitConverter.ToUInt16(new byte[2] {
                                             tcpRow.remotePort[1],
                                             tcpRow.remotePort[0] }, 0),
-                                                tcpRow.owningPid, tcpRow.state));
+                                            tcpRow.owningPid, tcpRow.state));
                     tableRowPtr = (IntPtr)((long)tableRowPtr + Marshal.SizeOf(tcpRow));
                 }
             }
@@ -165,40 +206,6 @@ namespace tickMeter
             }
             return tcpTableRecords != null ? tcpTableRecords.Distinct()
                 .ToList<TcpProcessRecord>() : new List<TcpProcessRecord>();
-        }
-
-        public static void UpdateUdpActiveConnections()
-        {
-            // Очищаем старые данные
-            UdpActiveConnections.Clear();
-
-            // Используем уже существующий метод для получения соединений
-            var udpConnections = new ConnectionsManager().GetAllUdpConnections();
-
-            // Заполняем список
-            foreach (var connection in udpConnections)
-            {
-                UdpActiveConnections.Add(connection);
-            }
-        }
-
-        public static void UpdateTcpActiveConnections()
-        {
-            if ((DateTime.Now - lastVpnCheck).TotalSeconds > 10)
-            {
-                DetectVPNAndRealIP();
-                lastVpnCheck = DateTime.Now;
-            }
-
-            // Очищаем список перед обновлением
-            TcpActiveConnections.Clear();
-
-            // Получаем соединения и добавляем их в список
-            var connections = new ConnectionsManager().GetAllTcpConnections();
-            foreach (var connection in connections)
-            {
-                TcpActiveConnections.Add(connection);
-            }
         }
 
         public List<UdpProcessRecord> GetAllUdpConnections()
@@ -252,244 +259,137 @@ namespace tickMeter
             return udpTableRecords != null ? udpTableRecords.Distinct()
                 .ToList<UdpProcessRecord>() : new List<UdpProcessRecord>();
         }
+    }
 
-
-        private static string lastRealIP = null;
-        private static DateTime lastVpnCheck = DateTime.MinValue;
-        public static void DetectVPNAndRealIP()
+        public enum Protocol
         {
-            try
+            TCP,
+            UDP
+        }
+
+        public enum TcpTableClass
+        {
+            TCP_TABLE_BASIC_LISTENER,
+            TCP_TABLE_BASIC_CONNECTIONS,
+            TCP_TABLE_BASIC_ALL,
+            TCP_TABLE_OWNER_PID_LISTENER,
+            TCP_TABLE_OWNER_PID_CONNECTIONS,
+            TCP_TABLE_OWNER_PID_ALL,
+            TCP_TABLE_OWNER_MODULE_LISTENER,
+            TCP_TABLE_OWNER_MODULE_CONNECTIONS,
+            TCP_TABLE_OWNER_MODULE_ALL
+        }
+
+        public enum UdpTableClass
+        {
+            UDP_TABLE_BASIC,
+            UDP_TABLE_OWNER_PID,
+            UDP_TABLE_OWNER_MODULE
+        }
+
+        public enum MibTcpState
+        {
+            CLOSED = 1,
+            LISTENING = 2,
+            SYN_SENT = 3,
+            SYN_RCVD = 4,
+            ESTABLISHED = 5,
+            FIN_WAIT1 = 6,
+            FIN_WAIT2 = 7,
+            CLOSE_WAIT = 8,
+            CLOSING = 9,
+            LAST_ACK = 10,
+            TIME_WAIT = 11,
+            DELETE_TCB = 12,
+            NONE = 0
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MIB_TCPROW_OWNER_PID
+        {
+            public MibTcpState state;
+            public uint localAddr;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public byte[] localPort;
+            public uint remoteAddr;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public byte[] remotePort;
+            public int owningPid;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MIB_TCPTABLE_OWNER_PID
+        {
+            public uint dwNumEntries;
+            [MarshalAs(UnmanagedType.ByValArray, ArraySubType = UnmanagedType.Struct, SizeConst = 1)]
+            public MIB_TCPROW_OWNER_PID[] table;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public class TcpProcessRecord
+        {
+            [DisplayName("Local Address")]
+            public IPAddress LocalAddress { get; set; }
+            [DisplayName("Local Port")]
+            public ushort LocalPort { get; set; }
+            [DisplayName("Remote Address")]
+            public IPAddress RemoteAddress { get; set; }
+            [DisplayName("Remote Port")]
+            public ushort RemotePort { get; set; }
+            [DisplayName("State")]
+            public MibTcpState State { get; set; }
+            [DisplayName("Process ID")]
+            public int ProcessId { get; set; }
+            [DisplayName("Process Name")]
+            public string ProcessName { get; set; }
+
+            public TcpProcessRecord(IPAddress localIp, IPAddress remoteIp, ushort localPort,
+                ushort remotePort, int pId, MibTcpState state)
             {
-                if ((DateTime.Now - lastVpnCheck).TotalSeconds < 10)
-                {
-                    return; // Проверяем VPN не чаще, чем раз в 10 секунд
-                }
-
-                lastVpnCheck = DateTime.Now;
-
-                NetworkInterface adapter = GetActiveNetworkAdapter();
-                if (adapter == null) return;
-
-                bool isVPN = IsVPNAdapter(adapter);
-                Console.WriteLine($"Адаптер: {adapter.Name}, VPN: {isVPN}");
-
-                if (!isVPN)
-                {
-                    Console.WriteLine("VPN не используется, пропускаем проверку маршрутов.");
-                    return;
-                }
-
-                string realIP = GetRealIPFromRoutes();
-                if (realIP != null && realIP != lastRealIP)
-                {
-                    Console.WriteLine($"Реальный внешний IP: {realIP}");
-                    lastRealIP = realIP;
-                }
+                LocalAddress = localIp;
+                RemoteAddress = remoteIp;
+                LocalPort = localPort;
+                RemotePort = remotePort;
+                State = state;
+                ProcessId = pId;
             }
-            catch (Exception ex)
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MIB_UDPROW_OWNER_PID
+        {
+            public uint localAddr;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public byte[] localPort;
+            public int owningPid;
+        }
+
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MIB_UDPTABLE_OWNER_PID
+        {
+            public uint dwNumEntries;
+            [MarshalAs(UnmanagedType.ByValArray, ArraySubType = UnmanagedType.Struct, SizeConst = 1)]
+            public MIB_UDPROW_OWNER_PID[] table;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public class UdpProcessRecord
+        {
+            [DisplayName("Local Address")]
+            public IPAddress LocalAddress { get; set; }
+            [DisplayName("Local Port")]
+            public uint LocalPort { get; set; }
+            [DisplayName("Process ID")]
+            public int ProcessId { get; set; }
+            [DisplayName("Process Name")]
+            public string ProcessName { get; set; }
+
+            public UdpProcessRecord(IPAddress localAddress, uint localPort, int pId)
             {
-                Console.WriteLine($"Ошибка при определении VPN: {ex.Message}");
+                LocalAddress = localAddress;
+                LocalPort = localPort;
+                ProcessId = pId;
             }
         }
-
-
-        public static NetworkInterface GetActiveNetworkAdapter()
-        {
-            foreach (var adapter in NetworkInterface.GetAllNetworkInterfaces())
-            {
-                if (adapter.OperationalStatus == OperationalStatus.Up &&
-                    adapter.NetworkInterfaceType != NetworkInterfaceType.Loopback)
-                {
-                    return adapter;
-                }
-            }
-            return null;
-        }
-
-        public static bool IsVPNAdapter(NetworkInterface adapter)
-        {
-            string desc = adapter.Description.ToLower();
-            return desc.Contains("vpn") || desc.Contains("tun") || desc.Contains("tap") || desc.Contains("wireguard");
-        }
-
-
-
-        public static string GetRealIPFromRoutes()
-        {
-            try
-            {
-                ProcessStartInfo psi = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = "/c netsh interface ip show addresses",
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                using (Process process = new Process { StartInfo = psi })
-                {
-                    process.Start();
-                    string output = process.StandardOutput.ReadToEnd();
-
-                    Regex regex = new Regex(@"\s*IP Address:\s*(\S+)");
-                    Match match = regex.Match(output);
-
-                    if (match.Success)
-                    {
-                        return match.Groups[1].Value; // Получаем реальный IP
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка при получении маршрутов: {ex.Message}");
-            }
-
-            return null;
-        }
-
-
     }
-
-    public enum Protocol
-    {
-        TCP,
-        UDP
-    }
-
-    public enum TcpTableClass
-    {
-        TCP_TABLE_BASIC_LISTENER,
-        TCP_TABLE_BASIC_CONNECTIONS,
-        TCP_TABLE_BASIC_ALL,
-        TCP_TABLE_OWNER_PID_LISTENER,
-        TCP_TABLE_OWNER_PID_CONNECTIONS,
-        TCP_TABLE_OWNER_PID_ALL,
-        TCP_TABLE_OWNER_MODULE_LISTENER,
-        TCP_TABLE_OWNER_MODULE_CONNECTIONS,
-        TCP_TABLE_OWNER_MODULE_ALL
-    }
-
-    public enum UdpTableClass
-    {
-        UDP_TABLE_BASIC,
-        UDP_TABLE_OWNER_PID,
-        UDP_TABLE_OWNER_MODULE
-    }
-
-    public enum MibTcpState
-    {
-        CLOSED = 1,
-        LISTENING = 2,
-        SYN_SENT = 3,
-        SYN_RCVD = 4,
-        ESTABLISHED = 5,
-        FIN_WAIT1 = 6,
-        FIN_WAIT2 = 7,
-        CLOSE_WAIT = 8,
-        CLOSING = 9,
-        LAST_ACK = 10,
-        TIME_WAIT = 11,
-        DELETE_TCB = 12,
-        NONE = 0
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct MIB_TCPROW_OWNER_PID
-    {
-        public MibTcpState state;
-        public uint localAddr;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-        public byte[] localPort;
-        public uint remoteAddr;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-        public byte[] remotePort;
-        public int owningPid;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct MIB_TCPTABLE_OWNER_PID
-    {
-        public uint dwNumEntries;
-        [MarshalAs(UnmanagedType.ByValArray, ArraySubType = UnmanagedType.Struct, SizeConst = 1)]
-        public MIB_TCPROW_OWNER_PID[] table;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public class TcpProcessRecord
-    {
-        [DisplayName("Local Address")]
-        public IPAddress LocalAddress { get; set; }
-        [DisplayName("Local Port")]
-        public ushort LocalPort { get; set; }
-        [DisplayName("Remote Address")]
-        public IPAddress RemoteAddress { get; set; }
-        [DisplayName("Remote Port")]
-        public ushort RemotePort { get; set; }
-        [DisplayName("State")]
-        public MibTcpState State { get; set; }
-        [DisplayName("Process ID")]
-        public int ProcessId { get; set; }
-        [DisplayName("Process Name")]
-        public string ProcessName { get; set; }
-
-        public TcpProcessRecord(IPAddress localIp, IPAddress remoteIp, ushort localPort,
-            ushort remotePort, int pId, MibTcpState state)
-        {
-            LocalAddress = localIp;
-            RemoteAddress = remoteIp;
-            LocalPort = localPort;
-            RemotePort = remotePort;
-            State = state;
-            ProcessId = pId;
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct MIB_UDPROW_OWNER_PID
-    {
-        public uint localAddr;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-        public byte[] localPort;
-        public int owningPid;
-    }
-
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct MIB_UDPTABLE_OWNER_PID
-    {
-        public uint dwNumEntries;
-        [MarshalAs(UnmanagedType.ByValArray, ArraySubType = UnmanagedType.Struct, SizeConst = 1)]
-        public MIB_UDPROW_OWNER_PID[] table;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public class UdpProcessRecord
-    {
-        [DisplayName("Local Address")]
-        public IPAddress LocalAddress { get; set; }
-        [DisplayName("Local Port")]
-        public uint LocalPort { get; set; }
-        [DisplayName("Process ID")]
-        public int ProcessId { get; set; }
-        [DisplayName("Process Name")]
-        public string ProcessName { get; set; }
-
-        public UdpProcessRecord(IPAddress localAddress, uint localPort, int pId)
-        {
-            LocalAddress = localAddress;
-            LocalPort = localPort;
-            ProcessId = pId;
-        }
-        
-
-
-
-   
-
-        
-
-
-    }
-}

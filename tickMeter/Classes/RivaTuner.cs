@@ -22,7 +22,14 @@ namespace tickMeter.Classes
         public static string RivaOutput;
         public static uint chartOffset = 0;
 
-        public static string DrawChart(float[] graphData,int min = 0,int max = 0)
+        public static string DrawChart(
+            float[] graphData,
+            int min = 0,
+            int max = 0,
+            string label = "",
+            string value = "",
+            string valueColor = ""
+        )
         {
             if (!VerifyRiva()) return "";
             if (osd == null)
@@ -36,6 +43,15 @@ namespace tickMeter.Classes
                 graphData = tmp;
             }
             uint chartSize;
+            // Исправление: скорость движения графика зависит от того, как часто добавляются новые значения в graphData (pingBuffer)
+            // Если pingBuffer обновляется чаще (например, раз в 100 мс), но BuildRivaOutput вызывается редко (например, раз в 500 мс),
+            // то график будет двигаться медленно, потому что RTSS видит только новые точки при каждом вызове BuildRivaOutput.
+
+            // Чтобы график двигался с той же скоростью, что и новые значения пинга:
+            // 1. Убедитесь, что таймер, вызывающий BuildRivaOutput (обычно ticksLoop.Interval), тоже равен 100 мс.
+            // 2. Если нужно, уменьшите ticksLoop.Interval в GUI.cs:
+            //    ticksLoop.Interval = 100;
+
             if(max == 0)
             {
                 max = 60;
@@ -70,6 +86,11 @@ namespace tickMeter.Classes
                     }
                 }
                 string chartEntry = "<C4><S2>" + max + "<OBJ=" + chartOffset.ToString("X8") + "><C>";
+                if (!string.IsNullOrEmpty(value))
+                {
+                    // Только цветное значение без подписи
+                    chartEntry += $" {valueColor}{value}<C>";
+                }
                 chartOffset += chartSize;
                 return chartEntry;
             }
@@ -211,20 +232,38 @@ namespace tickMeter.Classes
 
         public static string FormatPing()
         {
+            // UDP > TCP > ICMP, всегда числовое значение
             string pingFont = "";
-            if (meterState.Server.Ping < 100)
+            string pingValue = "";
+            string geo = meterState.Server.Location;
+
+            if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
             {
                 pingFont = "<C3>";
+                // Показываем именно числовое значение UDP ping
+                pingValue = App.meterState.Server.UdpPing.ToString("0");
             }
-            else if (meterState.Server.Ping < 150)
+            else if (meterState.Server.Ping > 0 && meterState.Server.Ping < 10000)
+            {
+                if (meterState.Server.Ping < 100)
+                    pingFont = "<C3>";
+                else if (meterState.Server.Ping < 150)
+                    pingFont = "<C2>";
+                else
+                    pingFont = "<C1>";
+                pingValue = meterState.Server.Ping.ToString();
+            }
+            else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
             {
                 pingFont = "<C2>";
+                pingValue = App.meterState.IcmpPing.ToString();
             }
             else
             {
                 pingFont = "<C1>";
+                pingValue = "n/a";
             }
-            return "<S><C0>Ping: " + pingFont + meterState.Server.Ping.ToString() + "<S0>ms <S0><C>(" + meterState.Server.Location + ")" + Environment.NewLine;
+            return "<S><C0>Ping: " + pingFont + pingValue + "<S0>ms <S0><C>(" + geo + ")" + Environment.NewLine;
         }
 
         public static void BuildRivaOutput()
@@ -247,6 +286,7 @@ namespace tickMeter.Classes
                 output += FormatServer();
             }
 
+            // Используем FormatPing с UDP приоритетом
             if (App.settingsForm.settings_ping_checkbox.Checked)
             {
                 output += FormatPing();
@@ -265,30 +305,103 @@ namespace tickMeter.Classes
             }
             if (App.settingsForm.settings_chart_checkbox.Checked)
             {
+                // --- Tickrate chart value and color ---
+                float tickrateValue = App.meterState.OutputTickRate;
+                string tickrateColor = "<C3>";
+                if (tickrateValue < 30)
+                    tickrateColor = "<C1>";
+                else if (tickrateValue < 50)
+                    tickrateColor = "<C2>";
+                else
+                    tickrateColor = "<C3>";
+
                 output += "<S0><C4>Tickrate" + Environment.NewLine;
-                output += DrawChart(App.meterState.tickrateGraph.ToArray())+ "<A0><S0>"+App.meterState.OutputTickRate.ToString() + Environment.NewLine;
+                output += DrawChart(
+                    App.meterState.tickrateGraph.ToArray(),
+                    0,
+                    0,
+                    "Tickrate",
+                    tickrateValue > 0 ? tickrateValue.ToString("0") : "n/a",
+                    tickrateColor
+                ) + Environment.NewLine; // убрано дублирование <A0><S0>...
             }
             if (App.settingsForm.settings_ticktime_chart.Checked)
             {
+                // --- Ticktime chart label and color ---
+                float ticktimeValue = 0;
+                string ticktimeColor = "<C3>"; // зелёный
+                if (App.meterState.tickTimeBuffer.Count > 0)
+                {
+                    ticktimeValue = App.meterState.tickTimeBuffer.Last();
+                    if (ticktimeValue < 7.0f)
+                        ticktimeColor = "<C3>"; // зелёный
+                    else if (ticktimeValue < 13.0f)
+                        ticktimeColor = "<C2>"; // жёлтый
+                    else if (ticktimeValue <= 16.6f)
+                        ticktimeColor = "<C5>"; // оранжевый (или другой тег, если определён)
+                    else
+                        ticktimeColor = "<C1>"; // красный
+                }
                 output += Environment.NewLine + "<S0><C4>Ticktime" + Environment.NewLine;
-                output += DrawChart(App.meterState.tickTimeBuffer.ToArray(),0,100);
+                output += DrawChart(
+                    App.meterState.tickTimeBuffer.ToArray(),
+                    0,
+                    100,
+                    "Ticktime",
+                    ticktimeValue > 0 ? ticktimeValue.ToString("0.0") : "n/a",
+                    ticktimeColor
+                );
             }
             try
             {
                 if (App.settingsForm.settings_ping_chart.Checked && App.meterState.pingBuffer.Count() > 1)
                 {
+                    // --- Ping chart label and color ---
+                    string pingValue = "";
+                    string pingColor = "<C1>";
+                    // UDP > TCP > ICMP, всегда числовое значение
+                    if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
+                    {
+                        pingValue = App.meterState.Server.UdpPing.ToString("0");
+                        pingColor = "<C3>";
+                    }
+                    else if (meterState.Server.Ping > 0 && meterState.Server.Ping < 10000)
+                    {
+                        pingValue = meterState.Server.Ping.ToString();
+                        if (meterState.Server.Ping < 100)
+                            pingColor = "<C3>";
+                        else if (meterState.Server.Ping < 150)
+                            pingColor = "<C2>";
+                        else
+                            pingColor = "<C1>";
+                    }
+                    else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
+                    {
+                        pingValue = App.meterState.IcmpPing.ToString();
+                        pingColor = "<C2>";
+                    }
+                    else
+                    {
+                        pingValue = "n/a";
+                        pingColor = "<C1>";
+                    }
                     output += Environment.NewLine + "<S0><C4>Ping" + Environment.NewLine;
-                    output += DrawChart(App.meterState.pingBuffer.ToArray(), (int)App.meterState.pingBuffer.Min());
+                    output += DrawChart(
+                        App.meterState.pingBuffer.ToArray(),
+                        (int)App.meterState.pingBuffer.Min(),
+                        0,
+                        "Ping",
+                        pingValue,
+                        pingColor
+                    );
                 }
             } catch (InvalidOperationException) { }
             PrintData(output, true);
         }
-
-        public static void PrintData(string text,bool RunRivaFlag = false)
+        public static void PrintData(string text, bool RunRivaFlag = false)
         {
             if ((!IsRivaRunning() && !RunRivaFlag) || !VerifyRiva()) return;
-           
-            
+
             if (!IsRivaRunning() && RunRivaFlag)
             {
                 RunRiva();

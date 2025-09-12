@@ -93,7 +93,17 @@ namespace tickMeter.Forms
                 DebugLogger.log(e);
                 MessageBox.Show(e.Message);
             }
+            // Проверьте или установите интервал таймера для overlay (например, 500 мс)
+            ticksLoop.Interval = (int)App.settingsForm.PingIntervalControl.Value; // чтобы график overlay двигался синхронно с пингом
 
+            // Привязываем ticksLoop.Interval к ping_interval.Value (интервал пинга из настроек)
+            ticksLoop.Interval = (int)App.settingsForm.PingIntervalControl.Value;
+
+            // Подпишемся на изменение ping_interval, чтобы менять интервал графика на лету
+            App.settingsForm.PingIntervalControl.ValueChanged += (s, e) =>
+            {
+                ticksLoop.Interval = (int)App.settingsForm.PingIntervalControl.Value;
+            };
         }
 
         static void MyHandler(object sender, UnhandledExceptionEventArgs args)
@@ -215,6 +225,39 @@ namespace tickMeter.Forms
             GameProfileManager.CallBuitInProfiles(packet);
             GameProfileManager.CallCustomProfiles(packet);
             ActiveWindowTracker.AnalyzePacket(packet);
+
+            // --- Добавлено: обработка входящих UDP-пакетов для расчёта UDP ping ---
+            try
+            {
+                var udp = packet.Ethernet.IpV4?.Udp;
+                if (udp != null)
+                {
+                    // Получаем IP и порт назначения (куда пришёл пакет)
+                    var dstIp = packet.Ethernet.IpV4.Destination.ToString();
+                    var dstPort = udp.DestinationPort;
+
+                    // Получаем IP и порт источника (откуда пришёл пакет)
+                    var srcIp = packet.Ethernet.IpV4.Source.ToString();
+                    var srcPort = udp.SourcePort;
+
+                    // Проверяем, что пакет пришёл ОТ игрового сервера К НАМ (входящий)
+                    // Сравниваем с App.meterState.Server.Ip и PingPort/GamePort
+                    string serverIp = App.meterState.Server.Ip;
+                    int serverPort = App.meterState.Server.PingPort > 0 ? App.meterState.Server.PingPort : App.meterState.Server.GamePort;
+                    string localIp = App.meterState.LocalIP;
+
+                    // Если серверный IP совпадает с источником, а наш IP совпадает с получателем
+                    if (!string.IsNullOrEmpty(serverIp) && !string.IsNullOrEmpty(localIp)
+                        && srcIp == serverIp && dstIp == localIp
+                        && (serverPort == 0 || srcPort == serverPort))
+                    {
+                        // Вызовем обновление UDP ping
+                        App.meterState.Server.UpdateUdpPing(packet.Timestamp);
+                    }
+                }
+            }
+            catch { /* ignore errors in UDP ping logic */ }
+            // --- Конец добавления ---
         }
 
         bool RTSS_Failed = false;
@@ -280,7 +323,29 @@ namespace tickMeter.Forms
                         if (App.settingsForm.settings_ping_checkbox.Checked)
                         {
                         countryLbl.Invoke(new Action(() => countryLbl.Text = App.meterState.Server.Location));
-                        ping_val.Invoke(new Action(() => ping_val.Text = App.meterState.Server.Ping.ToString() + " ms"));
+                        ping_val.Invoke(new Action(() =>
+                        {
+                            var server = App.meterState.Server;
+                            string pingText;
+                            // UDP > TCP > ICMP, всегда только числовое значение, без геолокации
+                            if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
+                            {
+                                pingText = $"{server.UdpPing.ToString("0")} ms";
+                            }
+                            else if (server.Ping > 0 && server.Ping < 10000)
+                            {
+                                pingText = $"{server.Ping} ms";
+                            }
+                            else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
+                            {
+                                pingText = $"{App.meterState.IcmpPing} ms";
+                            }
+                            else
+                            {
+                                pingText = "n/a ms";
+                            }
+                            ping_val.Text = pingText;
+                        }));
                         }
                         //update time
                         if (App.settingsForm.settings_session_time_checkbox.Checked && App.meterState.Server.Ip != "")
@@ -545,6 +610,11 @@ namespace tickMeter.Forms
                  App.settingsForm.adapters_list.SelectedIndex = lastSelectedAdapterID;
                 StartTracking();
             }
+        }
+
+        private void ping_interval_ValueChanged(object sender, EventArgs e)
+        {
+            ticksLoop.Interval = (int)App.settingsForm.PingIntervalControl.Value;
         }
 
         public void UpdateStyle(bool rtssFlag)

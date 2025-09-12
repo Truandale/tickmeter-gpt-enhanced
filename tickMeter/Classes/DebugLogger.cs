@@ -10,11 +10,21 @@ namespace tickMeter.Classes
         }
 
         public static DebugLogger Instance { get; private set; } = new DebugLogger();
+        private static readonly object _logLock = new object();
+
         public static void log(String message)
         {
-            using (StreamWriter writer = File.AppendText("debug.log")) {
-                writer.WriteLineAsync(DateTime.Now.ToLongTimeString() + ": " + message);
+            try
+            {
+                lock (_logLock)
+                {
+                    using (StreamWriter sw = new StreamWriter("debug.log", true))
+                    {
+                        sw.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " " + message);
+                    }
+                }
             }
+            catch { }
         }
         public static async void log(String[] messages)
         {
