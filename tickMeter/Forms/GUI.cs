@@ -630,7 +630,7 @@ namespace tickMeter.Forms
             try
             {
                 GameProfileManager.PubgMngr.firstPacket = true;
-            } catch (TypeInitializationException e) {
+            } catch (TypeInitializationException) {
 
             }
             
