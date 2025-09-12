@@ -4,19 +4,36 @@ All notable changes to TickMeter project will be documented in this file.
 
 ## [Unreleased] - 2025-09-12
 
-### 🚀 Major Improvements
+### 🚀 Major New Feature: Multi-Adapter Packet Capture
+- **Multi-Adapter Capture**: New option to capture packets from all network adapters simultaneously
+- **Smart Filtering**: Automatically excludes virtual adapters (loopback, Hyper-V, VMware, VirtualBox)
+- **Packet Deduplication**: Intelligent duplicate packet filtering to prevent double counting on network bridges
+- **Seamless Integration**: No changes to existing packet processing pipeline or UI - works with all existing features
+
+### 🛠️ Technical Implementation
+- **Background Workers**: Each adapter runs in its own BackgroundWorker for optimal performance
+- **Hash-based Deduplication**: Fast 64-byte hash comparison with 3ms time window
+- **Automatic Adapter Detection**: Filters out non-physical network interfaces
+- **Settings Integration**: New `capture_all_adapters` setting in `settings.ini`
+
+### ✨ User Interface Enhancements
+- **New Checkbox**: "Захватывать со всех адаптеров" in Settings form
+- **Smart UI**: Automatically disables single adapter selection when multi-mode is enabled
+- **Instant Feedback**: Settings saved immediately on change
+
+### 🔧 Previous Major Improvements
 - **TCP Connection Monitoring**: Enhanced TCP connection tracking and management
 - **Performance Optimization**: Significantly improved ConnectionsManager performance (474 lines changed)
 - **UI/UX Enhancements**: Major improvements to GUI with new features and better user experience
 
-### ✨ New Features
+### ✨ Previous New Features
 - Added new GameServer class for better game server management
 - Enhanced ActiveWindowTracker with improved window detection
 - Improved RivaTuner integration with extended functionality
 - Added comprehensive state management improvements in TickMeterState
 - Enhanced packet statistics tracking and display
 
-### 🔧 Technical Improvements
+### 🔧 Previous Technical Improvements
 - **ConnectionsManager.cs**: Major refactoring for better performance and reliability
 - **TickMeterState.cs**: Extensive improvements with 646+ lines of enhancements
 - **RivaTuner.cs**: Added 137+ lines of new functionality
@@ -40,30 +57,39 @@ All notable changes to TickMeter project will be documented in this file.
   - Updated PacketDotNet to 1.4.8
   - Added PcapNgNet 0.7.0.0
 
-### 📊 Statistics
-- **Total files changed**: 14 files
-- **Lines added**: 948+
-- **Lines removed**: 508
-- **Net addition**: 440+ lines of improved code
+### 📊 Latest Statistics
+- **New files added**: 1 workspace file
+- **Modified files**: 3 core files (SettingsForm.cs, GUI.cs, CHANGELOG.md)
+- **New lines added**: 178+ lines of multi-adapter functionality
+- **Functionality**: Backward compatible - all existing features work unchanged
 
 ### 🔍 Component Changes
 | Component | Changes | Impact |
 |-----------|---------|--------|
+| Multi-Adapter Capture | NEW FEATURE | High |
+| SettingsForm | UI enhancements | Medium |
+| GUI | Multi-capture logic | High |
 | ConnectionsManager | Major refactoring | High |
 | TickMeterState | Extensive improvements | High |
 | RivaTuner | New functionality | Medium |
-| GUI | UI enhancements | Medium |
-| ActiveWindowTracker | Improved tracking | Medium |
 | Other components | Bug fixes & improvements | Low-Medium |
 
 ---
 
-## How to Use This Release
+## How to Use Multi-Adapter Capture
 
-1. **TCP Ping Functionality**: Enhanced TCP connection monitoring for better network analysis
-2. **Improved UI**: Better user experience with enhanced GUI components
-3. **Performance**: Faster and more reliable packet analysis
-4. **Game Integration**: Better support for game server monitoring
+1. **Enable Multi-Adapter Mode**: Check "Захватывать со всех адаптеров" in Settings
+2. **Automatic Detection**: Application will automatically detect and use all physical network adapters
+3. **Virtual Adapter Filtering**: Loopback, Hyper-V, VMware, and VirtualBox adapters are automatically excluded
+4. **Performance**: Optimized background processing ensures no performance impact
+5. **Compatibility**: All existing features (Live Packets View, RTSS, profiles) work normally
+
+## Use Cases
+
+- **Gaming**: Monitor both Wi-Fi and Ethernet connections simultaneously
+- **Development**: Capture traffic from multiple network interfaces during testing
+- **Network Analysis**: Comprehensive packet monitoring across all active adapters
+- **VPN Usage**: Monitor both VPN and direct connections (VPN adapters are filtered out automatically)
 
 ## Known Issues
 - Line ending warnings during git operations (automatically handled)
