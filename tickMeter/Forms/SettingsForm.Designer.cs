@@ -64,6 +64,9 @@ namespace tickMeter.Forms
             this.local_ip_lbl = new System.Windows.Forms.Label();
             this.local_ip_textbox = new System.Windows.Forms.TextBox();
             this.captureAllAdaptersCheckbox = new System.Windows.Forms.CheckBox();
+            this.label8 = new System.Windows.Forms.Label();
+            this.donate_lbl = new System.Windows.Forms.Label();
+            this.updateLbl = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.ping_interval)).BeginInit();
@@ -349,6 +352,33 @@ namespace tickMeter.Forms
             this.captureAllAdaptersCheckbox.Name = "captureAllAdaptersCheckbox";
             this.captureAllAdaptersCheckbox.UseVisualStyleBackColor = true;
             // 
+            // label8
+            // 
+            resources.ApplyResources(this.label8, "label8");
+            this.label8.BackColor = System.Drawing.Color.Transparent;
+            this.label8.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.label8.ForeColor = System.Drawing.Color.Blue;
+            this.label8.Name = "label8";
+            this.label8.Click += new System.EventHandler(this.label8_Click);
+            // 
+            // donate_lbl
+            // 
+            resources.ApplyResources(this.donate_lbl, "donate_lbl");
+            this.donate_lbl.BackColor = System.Drawing.Color.Transparent;
+            this.donate_lbl.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.donate_lbl.ForeColor = System.Drawing.Color.Blue;
+            this.donate_lbl.Name = "donate_lbl";
+            this.donate_lbl.Click += new System.EventHandler(this.donate_lbl_Click);
+            // 
+            // updateLbl
+            // 
+            resources.ApplyResources(this.updateLbl, "updateLbl");
+            this.updateLbl.BackColor = System.Drawing.Color.Transparent;
+            this.updateLbl.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.updateLbl.ForeColor = System.Drawing.Color.Blue;
+            this.updateLbl.Name = "updateLbl";
+            this.updateLbl.Click += new System.EventHandler(this.updateLbl_Click);
+            // 
             // SettingsForm
             // 
             resources.ApplyResources(this, "$this");
@@ -365,7 +395,10 @@ namespace tickMeter.Forms
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.settings_data_send);
+            this.Controls.Add(this.donate_lbl);
+            this.Controls.Add(this.updateLbl);
             this.Controls.Add(this.rememberAdapter);
+            this.Controls.Add(this.label8);
             this.Controls.Add(this.settings_log_checkbox);
             this.Controls.Add(this.network_connection_lbl);
             this.Controls.Add(this.adapters_list);
@@ -417,5 +450,8 @@ namespace tickMeter.Forms
         public TextBox local_ip_textbox;
         public ColorDialog colorDialog1;
         public CheckBox packet_drops_checkbox;
+        public Label label8;
+        public Label donate_lbl;
+        public Label updateLbl;
     }
 }

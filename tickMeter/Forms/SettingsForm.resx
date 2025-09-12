@@ -151,7 +151,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;settings_log_checkbox.ZOrder" xml:space="preserve">
-    <value>13</value>
+    <value>16</value>
   </data>
   <data name="network_connection_lbl.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -184,7 +184,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;network_connection_lbl.ZOrder" xml:space="preserve">
-    <value>14</value>
+    <value>17</value>
   </data>
   <data name="adapters_list.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>System</value>
@@ -217,7 +217,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;adapters_list.ZOrder" xml:space="preserve">
-    <value>15</value>
+    <value>18</value>
   </data>
   <metadata name="colorDialog1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
@@ -256,7 +256,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;rememberAdapter.ZOrder" xml:space="preserve">
-    <value>12</value>
+    <value>14</value>
   </data>
   <metadata name="rtss_dialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>138, 17</value>
@@ -1165,7 +1165,7 @@
     <value>True</value>
   </data>
   <data name="captureAllAdaptersCheckbox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>25, 438</value>
+    <value>25, 441</value>
   </data>
   <data name="captureAllAdaptersCheckbox.Size" type="System.Drawing.Size, System.Drawing">
     <value>235, 20</value>
@@ -1187,6 +1187,117 @@
   </data>
   <data name="&gt;&gt;captureAllAdaptersCheckbox.ZOrder" xml:space="preserve">
     <value>0</value>
+  </data>
+  <data name="label8.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="label8.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Verdana, 11pt, style=Underline</value>
+  </data>
+  <data name="label8.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="label8.Location" type="System.Drawing.Point, System.Drawing">
+    <value>641, 443</value>
+  </data>
+  <data name="label8.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>5, 0, 5, 0</value>
+  </data>
+  <data name="label8.Size" type="System.Drawing.Size, System.Drawing">
+    <value>178, 18</value>
+  </data>
+  <data name="label8.TabIndex" type="System.Int32, mscorlib">
+    <value>46</value>
+  </data>
+  <data name="label8.Text" xml:space="preserve">
+    <value>Беларуский Айтишник</value>
+  </data>
+  <data name="&gt;&gt;label8.Name" xml:space="preserve">
+    <value>label8</value>
+  </data>
+  <data name="&gt;&gt;label8.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label8.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;label8.ZOrder" xml:space="preserve">
+    <value>15</value>
+  </data>
+  <data name="donate_lbl.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="donate_lbl.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Verdana, 11pt, style=Underline</value>
+  </data>
+  <data name="donate_lbl.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="donate_lbl.Location" type="System.Drawing.Point, System.Drawing">
+    <value>752, 414</value>
+  </data>
+  <data name="donate_lbl.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>5, 0, 5, 0</value>
+  </data>
+  <data name="donate_lbl.Size" type="System.Drawing.Size, System.Drawing">
+    <value>95, 18</value>
+  </data>
+  <data name="donate_lbl.TabIndex" type="System.Int32, mscorlib">
+    <value>66</value>
+  </data>
+  <data name="donate_lbl.Text" xml:space="preserve">
+    <value>Задонатить</value>
+  </data>
+  <data name="&gt;&gt;donate_lbl.Name" xml:space="preserve">
+    <value>donate_lbl</value>
+  </data>
+  <data name="&gt;&gt;donate_lbl.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;donate_lbl.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;donate_lbl.ZOrder" xml:space="preserve">
+    <value>12</value>
+  </data>
+  <data name="updateLbl.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="updateLbl.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Verdana, 11pt, style=Underline</value>
+  </data>
+  <data name="updateLbl.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="updateLbl.Location" type="System.Drawing.Point, System.Drawing">
+    <value>635, 380</value>
+  </data>
+  <data name="updateLbl.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>5, 0, 5, 0</value>
+  </data>
+  <data name="updateLbl.Size" type="System.Drawing.Size, System.Drawing">
+    <value>183, 18</value>
+  </data>
+  <data name="updateLbl.TabIndex" type="System.Int32, mscorlib">
+    <value>60</value>
+  </data>
+  <data name="updateLbl.Text" xml:space="preserve">
+    <value>Доступно обновление </value>
+  </data>
+  <data name="updateLbl.Visible" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="&gt;&gt;updateLbl.Name" xml:space="preserve">
+    <value>updateLbl</value>
+  </data>
+  <data name="&gt;&gt;updateLbl.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;updateLbl.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;updateLbl.ZOrder" xml:space="preserve">
+    <value>13</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
