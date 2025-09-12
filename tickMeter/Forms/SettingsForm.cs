@@ -23,6 +23,10 @@ namespace tickMeter.Forms
 
         public string verInfo;
         TagCollection TagsInfo;
+
+        // NEW: чекбокс для захвата со всех адаптеров
+        private CheckBox captureAllAdaptersCheckbox;
+
         public SettingsForm()
         {
             InitializeComponent();
@@ -37,6 +41,46 @@ namespace tickMeter.Forms
         {
             [JsonProperty("values")]
             public List<TagInfo> Tags { get; set; }
+        }
+
+        /// <summary>
+        /// NEW: Инициализация чекбокса "Захватывать со всех адаптеров"
+        /// </summary>
+        private void InitAllAdaptersCheckbox()
+        {
+            captureAllAdaptersCheckbox = new CheckBox();
+            captureAllAdaptersCheckbox.AutoSize = true;
+            captureAllAdaptersCheckbox.Text = "Захватывать со всех адаптеров";
+            
+            // Позиционирование относительно network_connection_lbl
+            try
+            {
+                var p = network_connection_lbl.Location;
+                captureAllAdaptersCheckbox.Location = new Point(p.X, p.Y + network_connection_lbl.Height + 30);
+            } 
+            catch 
+            { 
+                // fallback positioning
+                captureAllAdaptersCheckbox.Location = new Point(10, 250);
+            }
+
+            // Загружаем значение из настроек
+            bool enabled = App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
+            captureAllAdaptersCheckbox.Checked = enabled;
+            
+            // При включении блокируем dropdown выбора адаптера
+            adapters_list.Enabled = !enabled;
+
+            // Обработчик изменения состояния
+            captureAllAdaptersCheckbox.CheckedChanged += (s, e) =>
+            {
+                App.settingsManager.SetOption("capture_all_adapters", captureAllAdaptersCheckbox.Checked.ToString());
+                adapters_list.Enabled = !captureAllAdaptersCheckbox.Checked;
+                App.settingsManager.SaveConfig();
+            };
+            
+            // Добавляем на форму
+            Controls.Add(captureAllAdaptersCheckbox);
         }
 
         public async void CheckNewVersion()
@@ -180,6 +224,9 @@ namespace tickMeter.Forms
                 App.gui.time_lbl.ForeColor =
                 ColorLabel.ForeColor;
             InitRtss();
+            
+            // NEW: инициализация чекбокса после загрузки всех настроек
+            InitAllAdaptersCheckbox();
         }
 
         public void SaveToConfig()
@@ -209,6 +256,9 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("run_minimized", run_minimized.Checked.ToString());
             App.settingsManager.SetOption("local_ip", local_ip_textbox.Text);
             App.settingsManager.SetOption("show_packet_drops", packet_drops_checkbox.Checked.ToString());
+            // NEW: сохранение настройки захвата со всех адаптеров
+            if (captureAllAdaptersCheckbox != null)
+                App.settingsManager.SetOption("capture_all_adapters", captureAllAdaptersCheckbox.Checked.ToString());
             App.settingsManager.SaveConfig();
         }
 

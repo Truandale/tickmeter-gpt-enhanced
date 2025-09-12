@@ -25,6 +25,15 @@ namespace tickMeter.Forms
         public Thread PcapThread;
 
         public BackgroundWorker pcapWorker;
+        
+        // NEW: поля для мульти-адаптерного захвата
+        private readonly List<PacketDevice> _allSelectedAdapters = new List<PacketDevice>();
+        private readonly List<BackgroundWorker> _pcapWorkers = new List<BackgroundWorker>();
+        // простая защита от дублей на бриджах/VPN
+        private readonly Dictionary<ulong, long> _dedup = new Dictionary<ulong, long>(capacity: 8192);
+        private readonly Stopwatch _dedupSw = Stopwatch.StartNew();
+        private readonly object _dedupLock = new object();
+        
         public Boolean allowClose = false;
         int restarts = 0;
         int restartLimit = 1;
@@ -217,11 +226,40 @@ namespace tickMeter.Forms
             base.WndProc(ref m);
         }
 
-      
+        /// <summary>
+        /// NEW: очень дешёвое дедуплирование пакетов в мульти-режиме,
+        /// чтобы не удвоить счётчики при бриджах/зеркалах.
+        /// Сигнатура = hash первых 64 байт + длина.
+        /// Окно ~3 мс.
+        /// </summary>
+        private bool IsDuplicate(Packet packet)
+        {
+            if (_allSelectedAdapters.Count == 0) return false; // single-NIC режим — без дедупа
+            var bytes = packet?.Buffer?.ToArray();
+            if (bytes == null) return false;
+            int len = Math.Min(64, bytes.Length);
+            ulong h = 1469598103934665603UL;
+            for (int i = 0; i < len; i++) h = (h ^ bytes[i]) * 1099511628211UL;
+            h ^= (ulong)bytes.Length;
+            long now = _dedupSw.ElapsedMilliseconds;
+            lock (_dedupLock)
+            {
+                if (_dedup.TryGetValue(h, out var ts) && now - ts < 3) return true;
+                _dedup[h] = now;
+                if (_dedup.Count > 20000)
+                {
+                    // лёгкая чистка
+                    foreach (var key in _dedup.Where(kv => now - kv.Value > 250).Select(kv => kv.Key).ToList())
+                        _dedup.Remove(key);
+                }
+            }
+            return false;
+        }
 
         private void PacketHandler(Packet packet)
         {
             if (!App.meterState.IsTracking) return;
+            if (IsDuplicate(packet)) return; // NEW: проверка дублей
             GameProfileManager.CallBuitInProfiles(packet);
             GameProfileManager.CallCustomProfiles(packet);
             ActiveWindowTracker.AnalyzePacket(packet);
@@ -454,35 +492,87 @@ namespace tickMeter.Forms
             InitMeterState();
             App.meterState.IsTracking = true;
             ticksLoop.Enabled = true;
-            List<LivePacketDevice> devices = App.GetAdapters();
-            int deviceId = App.settingsForm.adapters_list.SelectedIndex;
-            if (devices.Count > deviceId && deviceId > 0)
+            
+            var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
+            var devices = App.GetAdapters();
+            _allSelectedAdapters.Clear();
+
+            if (captureAll)
             {
-                selectedAdapter = App.GetAdapters()[deviceId];
-            } else
+                // собрать все «реальные» адаптеры (пропускаем 0-й элемент дропдауна и виртуальные/loopback)
+                IEnumerable<LivePacketDevice> src = devices;
+                if (src.Count() == App.settingsForm.adapters_list.Items.Count && App.settingsForm.adapters_list.Items.Count > 0)
+                {
+                    // список в UI обычно имеет заглушку на позиции 0
+                    src = src.Skip(1);
+                }
+                foreach (var d in src)
+                {
+                    var desc = (d.Description ?? "").ToLowerInvariant();
+                    if (desc.Contains("loopback") || desc.Contains("npcap loopback") ||
+                        desc.Contains("hyper-v") || desc.Contains("vmware") ||
+                        desc.Contains("virtualbox") || desc.Contains("vethernet"))
+                        continue;
+                    _allSelectedAdapters.Add(d);
+                }
+                if (_allSelectedAdapters.Count == 0)
+                {
+                    MessageBox.Show("Не найдено подходящих сетевых адаптеров");
+                    return;
+                }
+            }
+            else
             {
-                return;
+                int deviceId = App.settingsForm.adapters_list.SelectedIndex;
+                if (devices.Count > deviceId && deviceId > 0)
+                {
+                    selectedAdapter = devices[deviceId];
+                }
+                else
+                {
+                    return;
+                }
             }
             
             App.meterState.LocalIP = App.settingsForm.local_ip_textbox.Text;
-            lastSelectedAdapterID = deviceId;
+            lastSelectedAdapterID = App.settingsForm.adapters_list.SelectedIndex;
             try
             {
-                if (PcapThread == null)
+                if (captureAll)
                 {
-                    PcapThread = new Thread(InitPcapWorker);
-                    PcapThread.Start();
-                    PcapThread.Join();
-                    Debug.Print("Starting thread " + PcapThread.ManagedThreadId.ToString());
+                    // запустить по воркеру на каждый адаптер
+                    foreach (var dev in _allSelectedAdapters)
+                    {
+                        var worker = new BackgroundWorker();
+                        worker.DoWork += (s, e) =>
+                        {
+                            if (!App.meterState.IsTracking) return;
+                            using (var comm = dev.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 500))
+                            {
+                                if (comm.DataLink.Kind != DataLinkKind.Ethernet) return;
+                                comm.ReceivePackets(0, PacketHandler);
+                            }
+                        };
+                        worker.RunWorkerCompleted += PcapWorkerCompleted;
+                        _pcapWorkers.Add(worker);
+                        worker.RunWorkerAsync();
+                    }
+                }
+                else
+                {
+                    if (PcapThread == null)
+                    {
+                        PcapThread = new Thread(InitPcapWorker);
+                        PcapThread.Start();
+                        PcapThread.Join();
+                        Debug.Print("Starting thread " + PcapThread.ManagedThreadId.ToString());
+                    }
                 }
             }
             catch (Exception)
             {
                 MessageBox.Show("PCAP Thread init error");
             }
-            //InitPcapWorker();
-
-
         }
         private void PcapWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
@@ -545,6 +635,18 @@ namespace tickMeter.Forms
             }
             
             Debug.Print("StopTracking");
+            
+            // NEW: остановка мульти-захвата: флаг IsTracking и очистка воркеров
+            try
+            {
+                foreach (var w in _pcapWorkers)
+                {
+                    // ReceivePackets не прерываем — PacketHandler сам гасит обработку по флагу
+                }
+            } catch { }
+            _pcapWorkers.Clear();
+            _allSelectedAdapters.Clear();
+            
             tickrate_val.ForeColor = App.settingsForm.ColorBad.ForeColor;
             ping_val.ForeColor = App.settingsForm.ColorMid.ForeColor;
             try { graph.Image = graph.InitialImage; } catch(Exception) {  }
