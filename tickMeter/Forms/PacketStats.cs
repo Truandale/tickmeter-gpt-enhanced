@@ -30,6 +30,10 @@ namespace tickMeter
         public BackgroundWorker pcapWorker;
         public PacketFilter packetFilter;
 
+        // Multi-adapter support
+        private readonly List<BackgroundWorker> _pcapWorkers = new List<BackgroundWorker>();
+        private bool _ignoreVirtual => App.settingsManager.GetOption("ignore_virtual_adapters", "True") == "True";
+
         public PacketStats()
         {
             InitializeComponent();
@@ -90,41 +94,93 @@ namespace tickMeter
 
         private void PcapWorkerDoWork(object sender, DoWorkEventArgs e)
         {
-            // Проверяем режим захвата (single vs multi-adapter)
-            var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
+            var captureAllSetting = App.settingsManager.GetOption("capture_all_adapters", "False");
             
-            if (captureAll)
+            if (captureAllSetting == "True")
             {
-                // В режиме multi-adapter используем первый доступный адаптер для Live Packets View
-                var devices = App.GetAdapters();
-                if (devices.Count == 0)
-                {
-                    MessageBox.Show("No network adapters available!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-                
-                // Берем первый реальный адаптер
-                LivePacketDevice firstAdapter = devices.FirstOrDefault();
-                if (firstAdapter == null)
-                {
-                    MessageBox.Show("No suitable network adapter found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-                
-                // Используем первый адаптер для Live Packets View (приводим к PacketDevice)
-                OpenAndCaptureFromAdapter(firstAdapter as PacketDevice);
+                // Мульти-режим - запускаем захват со всех адаптеров
+                StartMultiAdapterCapture();
+                return;
             }
-            else
+
+            // Одиночный режим - используем selectedAdapter (как было раньше)
+            if (App.gui.selectedAdapter == null)
             {
-                // Single adapter режим - используем selectedAdapter
-                if (App.gui.selectedAdapter == null)
-                {
-                    MessageBox.Show("Selected adapter is not set!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-                
-                OpenAndCaptureFromAdapter(App.gui.selectedAdapter);
+                // В одиночном режиме адаптер должен быть выбран - просто выходим без сообщения
+                return;
             }
+            
+            StartSingleAdapterCapture(App.gui.selectedAdapter);
+        }
+
+        private void StartMultiAdapterCapture()
+        {
+            var devices = App.GetAdapters();
+            var filteredDevices = devices.Where(d =>
+            {
+                if (!_ignoreVirtual) return true;
+                var desc = (d.Description ?? "").ToLowerInvariant();
+                return !(desc.Contains("loopback") || desc.Contains("npcap")
+                      || desc.Contains("hyper-v") || desc.Contains("vmware")
+                      || desc.Contains("virtualbox") || desc.Contains("vethernet"));
+            }).ToList();
+
+            if (filteredDevices.Count == 0) return;
+
+            foreach (var dev in filteredDevices)
+            {
+                var worker = new BackgroundWorker { WorkerSupportsCancellation = true };
+                worker.DoWork += (s, e) =>
+                {
+                    try
+                    {
+                        using (var communicator = dev.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 500))
+                        {
+                            if (communicator.DataLink.Kind != DataLinkKind.Ethernet) return;
+                            communicator.ReceivePackets(0, packet => ProcessPacketForGrid(packet));
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // Игнорируем ошибки отдельных адаптеров
+                    }
+                };
+                worker.RunWorkerCompleted += (s, e) => { /* no-op */ };
+                _pcapWorkers.Add(worker);
+                worker.RunWorkerAsync();
+            }
+        }
+
+        private void StartSingleAdapterCapture(PacketDevice adapter)
+        {
+            var worker = new BackgroundWorker { WorkerSupportsCancellation = true };
+            worker.DoWork += (s, e) =>
+            {
+                try
+                {
+                    using (var communicator = adapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 500))
+                    {
+                        if (communicator.DataLink.Kind != DataLinkKind.Ethernet) return;
+                        communicator.ReceivePackets(0, packet => ProcessPacketForGrid(packet));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    this.Invoke((MethodInvoker)delegate
+                    {
+                        MessageBox.Show($"An error occurred while receiving packets: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    });
+                }
+            };
+            worker.RunWorkerCompleted += (s, e) => { };
+            _pcapWorkers.Add(worker);
+            worker.RunWorkerAsync();
+        }
+
+        private void ProcessPacketForGrid(Packet packet)
+        {
+            // Используем существующую логику обработки пакетов
+            PacketHandler(packet);
         }
 
         /// <summary>
@@ -190,7 +246,7 @@ namespace tickMeter
 
         public List<ListViewItem> procItems = new List<ListViewItem>();
         Int32 packet_id;
-        private async void RefreshTick(object sender, EventArgs e)
+        private void RefreshTick(object sender, EventArgs e)
         {
             AutoDetectMngr.GetActiveProcessName(true);
             if (PacketBuffer.Count < 1)
@@ -200,37 +256,73 @@ namespace tickMeter
             List<Packet> tmpPackets;
             try
             {
-                tmpPackets = PacketBuffer.ToList();
-            } catch(Exception) { 
-                
+                // Ограничиваем количество пакетов для обработки за раз (максимум 50)
+                tmpPackets = PacketBuffer.Where(p => p != null).Take(50).ToList();
+            } 
+            catch(Exception) 
+            { 
                 return; 
             }
-            PacketBuffer.Clear();
+            
+            // Удаляем обработанные пакеты из буфера
+            try
+            {
+                int removeCount = Math.Min(tmpPackets.Count, PacketBuffer.Count);
+                for (int i = 0; i < removeCount; i++)
+                {
+                    if (PacketBuffer.Count > 0)
+                        PacketBuffer.RemoveAt(0);
+                }
+            }
+            catch(Exception)
+            {
+                PacketBuffer.Clear(); // В случае ошибки просто очищаем весь буфер
+            }
             
             ListViewItem[] items = new ListViewItem[tmpPackets.Count];
             
             Int32 iKey = 0;
             foreach (Packet packet in tmpPackets) {
+                // Проверяем, что пакет не null
+                if (packet == null)
+                    continue;
+                    
                 IpV4Datagram ip;
                 try
                 {
+                    // Проверяем, что пакет имеет Ethernet заголовок
+                    if (packet.Ethernet == null)
+                        continue;
+                    
+                    // Проверяем, что это IPv4 пакет
                     ip = packet.Ethernet.IpV4;
+                    if (ip == null)
+                        continue;
                 }
-                catch (Exception) { return; }
+                catch (Exception) { continue; } // Продолжаем обработку следующего пакета
 
-                UdpDatagram udp = ip.Udp;
-                TcpDatagram tcp = ip.Tcp;
-
-                string from_ip = ip.Source.ToString();
-                string to_ip = ip.Destination.ToString();
-
-                string packet_size = ip.TotalLength.ToString();
+                UdpDatagram udp = null;
+                TcpDatagram tcp = null;
+                string from_ip = "";
+                string to_ip = "";
+                string packet_size = "";
+                
+                try
+                {
+                    udp = ip.Udp;
+                    tcp = ip.Tcp;
+                    
+                    from_ip = ip.Source.ToString();
+                    to_ip = ip.Destination.ToString();
+                    packet_size = ip.TotalLength.ToString();
+                }
+                catch (Exception) { continue; } // Пропускаем пакет, если не можем получить базовую информацию
 
                 string protocol = ip.Protocol.ToString();
                 uint fromPort = 0;
                 uint toPort = 0;
                 string processName = @"n\a";
-                if (protocol == IpV4Protocol.Udp.ToString())
+                if (protocol == IpV4Protocol.Udp.ToString() && udp != null)
                 {
                     fromPort = udp.SourcePort;
                     toPort = udp.DestinationPort;
@@ -258,7 +350,7 @@ namespace tickMeter
                     }
                     
                 }
-                else
+                else if (protocol == IpV4Protocol.Tcp.ToString() && tcp != null)
                 {
                     fromPort = tcp.SourcePort;
                     toPort = tcp.DestinationPort;
@@ -323,22 +415,27 @@ namespace tickMeter
             procItems.Clear();
             procItems = AutoDetectMngr.GetActiveProccessesList(procItems);
             if(items.Length > 0)
-           await Task.Run(() =>
             {
-                
-            listView1.Invoke(new Action(() => {
-                listView1.BeginUpdate();
-                ListView.ListViewItemCollection lvic = new ListView.ListViewItemCollection(listView1);
-                try { lvic.AddRange(items); } catch(Exception) {  }
-                
-                if (autoscroll.Checked)
-                {
-                    listView1.EnsureVisible(listView1.Items.Count - 1);
-                }
-                listView1.EndUpdate();
-            }));
-                
-            });
+                // Используем BeginInvoke вместо Invoke для избежания deadlock
+                this.BeginInvoke(new Action(() => {
+                    try
+                    {
+                        listView1.BeginUpdate();
+                        ListView.ListViewItemCollection lvic = new ListView.ListViewItemCollection(listView1);
+                        lvic.AddRange(items);
+                        
+                        if (autoscroll.Checked && listView1.Items.Count > 0)
+                        {
+                            listView1.EnsureVisible(listView1.Items.Count - 1);
+                        }
+                        listView1.EndUpdate();
+                    }
+                    catch(Exception) 
+                    { 
+                        // Игнорируем ошибки обновления UI
+                    }
+                }));
+            }
             
 
 
@@ -347,9 +444,20 @@ namespace tickMeter
         
         public void Stop()
         {
-
             tracking = false;
             RefreshTimer.Enabled = false;
+            
+            // Останавливаем все multi-adapter воркеры
+            try 
+            { 
+                foreach (var worker in _pcapWorkers) 
+                { 
+                    if (worker.IsBusy)
+                        worker.CancelAsync();
+                } 
+            }
+            catch { }
+            _pcapWorkers.Clear();
         }
 
         public void Restart()

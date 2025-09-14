@@ -4,7 +4,15 @@ All notable changes to TickMeter project will be documented in this file.
 
 ## [Unreleased] - 2025-09-14
 
-### 🐛 Performance & Stability Fixes
+### � Critical Live Packets View Fixes
+- **Threading Deadlock Fix**: Resolved ContextSwitchDeadlock in Live Packets View due to blocking UI thread
+- **NullReference Protection**: Added comprehensive null checks for packet processing to prevent crashes
+- **Multi-threading Optimization**: Replaced blocking Invoke calls with BeginInvoke for better responsiveness
+- **Packet Processing Limit**: Limited packets processed per refresh cycle (max 100) to prevent UI freezing
+- **Memory Management**: Improved packet buffer handling with null filtering
+- **Ethernet Packet Validation**: Added proper validation for Ethernet, UDP, and TCP packet structures
+
+### �🐛 Performance & Stability Fixes  
 - **Debug Logging Cleanup**: Removed excessive debug output from GetOption method that was causing performance issues
 - **Live Packets View Fix**: Fixed "Selected adapter is not set!" error when multi-adapter mode is enabled
 - **Adapter Logic Improvement**: Corrected adapter selection logic in PacketStats.cs for multi-adapter capture
@@ -18,7 +26,7 @@ All notable changes to TickMeter project will be documented in this file.
 - **STUN Integration**: External IP detection through STUN protocol operational
 - **UI Integration**: All 10 new universal checkboxes properly integrated
 - **Multi-Adapter Feature**: Successfully tested and confirmed working
-- **Live Packets View**: Now properly works with multi-adapter capture mode
+- **Live Packets View**: Now stable with proper multi-threading and null safety
 - **Ready for Production**: All features are stable and ready for use
 
 ## [Major Features] - 2025-09-12
