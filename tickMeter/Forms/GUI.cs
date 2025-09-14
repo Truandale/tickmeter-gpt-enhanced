@@ -791,6 +791,8 @@ namespace tickMeter.Forms
 
         private void SettingsButton_Click(object sender, EventArgs e)
         {
+            // Перед показом формы настроек - обновить UI из текущих настроек
+            App.settingsForm.ApplyFromConfig();
             App.settingsForm.Show();
         }
 

@@ -23,6 +23,10 @@ namespace tickMeter.Forms
 
         public string verInfo;
         TagCollection TagsInfo;
+        
+        // Флаг чтобы избежать дублирования write-through обработчиков
+        private bool universalHandlersInitialized = false;
+        private bool captureAllAdaptersHandlerInitialized = false;
 
         public SettingsForm()
         {
@@ -57,14 +61,17 @@ namespace tickMeter.Forms
             if (adapters_list != null)
                 adapters_list.Enabled = !enabled;
 
-            // Обработчик изменения состояния
-            captureAllAdaptersCheckbox.CheckedChanged += (s, e) =>
+            // Обработчик изменения состояния (только один раз)
+            if (!captureAllAdaptersHandlerInitialized)
             {
-                App.settingsManager.SetOption("capture_all_adapters", captureAllAdaptersCheckbox.Checked.ToString());
-                if (adapters_list != null)
-                    adapters_list.Enabled = !captureAllAdaptersCheckbox.Checked;
-                App.settingsManager.SaveConfig();
-            };
+                captureAllAdaptersHandlerInitialized = true;
+                captureAllAdaptersCheckbox.CheckedChanged += (s, e) =>
+                {
+                    App.settingsManager.SetOption("capture_all_adapters", captureAllAdaptersCheckbox.Checked.ToString());
+                    if (adapters_list != null)
+                        adapters_list.Enabled = !captureAllAdaptersCheckbox.Checked;
+                };
+            }
         }
 
         /// <summary>
@@ -149,6 +156,11 @@ namespace tickMeter.Forms
         /// </summary>
         private void InitUniversalCheckboxHandlers()
         {
+            // Избегаем дублирования обработчиков при повторных вызовах ApplyFromConfig()
+            if (universalHandlersInitialized)
+                return;
+                
+            universalHandlersInitialized = true;
             // Ping обработчики
             if (chkPingBindToInterface != null)
                 chkPingBindToInterface.CheckedChanged += (s, e) =>
@@ -432,12 +444,8 @@ namespace tickMeter.Forms
         /// </summary>
         private void btnSaveSettings_Click(object sender, EventArgs e)
         {
-            // Сначала сохраняем все обычные настройки в settingsManager
+            // SaveToConfig() уже вызывает SaveConfig() внутри себя
             SaveToConfig();
-            
-            // Универсальные настройки уже в памяти благодаря write-through
-            // Теперь записываем все на диск
-            App.settingsManager.SaveConfig();
             
             // Закрыть форму настроек
             this.Close();
