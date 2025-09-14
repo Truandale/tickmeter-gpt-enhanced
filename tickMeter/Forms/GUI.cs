@@ -108,17 +108,17 @@ namespace tickMeter.Forms
                 DebugLogger.log(e);
                 MessageBox.Show(e.Message);
             }
-            // Проверьте или установите интервал таймера для overlay (например, 500 мс)
-            ticksLoop.Interval = (int)App.settingsForm.PingIntervalControl.Value; // чтобы график overlay двигался синхронно с пингом
-
-            // Привязываем ticksLoop.Interval к ping_interval.Value (интервал пинга из настроек)
-            ticksLoop.Interval = (int)App.settingsForm.PingIntervalControl.Value;
-
-            // Подпишемся на изменение ping_interval, чтобы менять интервал графика на лету
-            App.settingsForm.PingIntervalControl.ValueChanged += (s, e) =>
+            
+            // Устанавливаем интервал обновления overlay из настроек ping (как было изначально)
+            var pingIntervalStr = App.settingsManager?.GetOption("ping_interval");
+            if (!string.IsNullOrEmpty(pingIntervalStr) && int.TryParse(pingIntervalStr, out int pingVal))
             {
-                ticksLoop.Interval = (int)App.settingsForm.PingIntervalControl.Value;
-            };
+                ticksLoop.Interval = pingVal;
+            }
+            else
+            {
+                ticksLoop.Interval = 1000; // по умолчанию 1 секунда
+            }
         }
 
         static void MyHandler(object sender, UnhandledExceptionEventArgs args)
@@ -752,7 +752,12 @@ namespace tickMeter.Forms
 
         private void ping_interval_ValueChanged(object sender, EventArgs e)
         {
-            ticksLoop.Interval = (int)App.settingsForm.PingIntervalControl.Value;
+            // Обновляем интервал overlay согласно настройкам ping interval
+            var control = sender as NumericUpDown;
+            if (control != null)
+            {
+                ticksLoop.Interval = (int)control.Value;
+            }
         }
 
         public void UpdateStyle(bool rtssFlag)
@@ -848,11 +853,11 @@ namespace tickMeter.Forms
         {
             if (App.meterState != null && e.Result.Success)
             {
-                // Обновляем ping в состоянии приложения
+                // Обновляем только текущее значение ping
                 App.meterState.Server.Ping = (int)e.Result.RoundTripTime;
                 
-                // Опционально: добавляем в буфер для графика
-                // Можно добавить специальный буфер для ping как для tickrate
+                // pingBuffer будет обновляться через CurrentTimestamp как раньше
+                // Не добавляем данные сюда, чтобы избежать слишком частых обновлений графика
             }
         }
     }

@@ -379,9 +379,8 @@ namespace tickMeter
                 set
                 {
                     _ping = value;
-                    // УДАЛЕНО: добавление в pingBuffer (теперь только через CurrentTimestamp)
-                    /*
-                    if (App.meterState != null)
+                    // Обновляем pingBuffer при изменении пинга
+                    if (App.meterState != null && value > 0)
                     {
                         App.meterState.pingBuffer.Add(_ping);
                         if (App.meterState.pingBuffer.Count > 512)
@@ -389,7 +388,6 @@ namespace tickMeter
                             App.meterState.pingBuffer.RemoveAt(0);
                         }
                     }
-                    */
                     if (AvgPing == 0 && _ping > 0) AvgPing = _ping;
                     else if (_ping > 0) AvgPing = (AvgPing + _ping) / 2;
                 }

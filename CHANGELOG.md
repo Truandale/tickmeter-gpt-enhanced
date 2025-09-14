@@ -1,4 +1,14 @@
-# Changelog
+# Ch## [Unreleased] - 2025-09-14
+
+### 📊 Overlay & Ping Graph Display Fixes
+- **Ping Graph Stability**: Fixed frozen ping graph issue by restoring proper pingBuffer updates
+- **Overlay Refresh Rate**: Corrected overlay update frequency to respect user-defined ping intervals
+- **Ping Data Flow**: Restored proper data flow from PingManager to overlay display
+- **Graph Performance**: Optimized ping graph rendering with appropriate update intervals
+- **Settings Synchronization**: Fixed overlay timer to properly sync with ping_interval settings
+- **Display Accuracy**: Ensured ping values and graph display are synchronized and accurate
+
+### 🔧 Critical Live Packets View Fixeselog
 
 All notable changes to TickMeter project will be documented in this file.
 
