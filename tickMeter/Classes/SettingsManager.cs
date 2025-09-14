@@ -65,6 +65,26 @@ namespace tickMeter
             
         }
 
+        // Дополнительные методы для универсальности
+        public bool GetBool(string optionName, bool defaultValue, string scope = "SETTINGS")
+        {
+            string value = GetOption(optionName, scope);
+            if (string.IsNullOrEmpty(value))
+                return defaultValue;
+            
+            return value.ToLower() == "true" || value == "1";
+        }
+        
+        public int GetInt(string optionName, int defaultValue, string scope = "SETTINGS")
+        {
+            return GetIntOption(optionName, scope, defaultValue);
+        }
+        
+        public string GetString(string optionName, string defaultValue, string scope = "SETTINGS")
+        {
+            return GetOption(optionName, defaultValue, scope);
+        }
+
         public void SaveConfig()
         {
             try { 

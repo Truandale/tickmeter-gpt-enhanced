@@ -70,6 +70,146 @@ namespace tickMeter.Forms
             };
         }
 
+        /// <summary>
+        /// NEW: Загрузка всех продвинутых флагов универсальности из настроек
+        /// </summary>
+        private void LoadAdvancedFlagsFromSettings()
+        {
+            // Основные флаги захвата
+            if (captureAllAdaptersCheckbox != null)
+                captureAllAdaptersCheckbox.Checked = GetBool("capture_all_adapters", false);
+
+            // Флаги пинга
+            if (chkPingBindToInterface != null)
+                chkPingBindToInterface.Checked = GetBool("ping_bind_to_interface", true);
+            if (chkPingTcpPrefer != null)
+                chkPingTcpPrefer.Checked = GetBool("ping_tcp_prefer", true);
+            if (chkPingFallbackIcmp != null)
+                chkPingFallbackIcmp.Checked = GetBool("ping_fallback_icmp", true);
+            if (chkPingTargetActiveOnly != null)
+                chkPingTargetActiveOnly.Checked = GetBool("ping_target_active_only", true);
+
+            // Флаги анализа и обработки
+            if (chkTickrateSmoothing != null)
+                chkTickrateSmoothing.Checked = GetBool("tickrate_smoothing", true);
+            if (chkDedupMultiNic != null)
+                chkDedupMultiNic.Checked = GetBool("dedup_multi_nic", true);
+            if (chkEnableIPv6 != null)
+                chkEnableIPv6.Checked = GetBool("enable_ipv6", true);
+            if (chkIgnoreVirtualAdapters != null)
+                chkIgnoreVirtualAdapters.Checked = GetBool("ignore_virtual_adapters", true);
+
+            // Флаги вывода
+            if (chkRtssOnlyActive != null)
+                chkRtssOnlyActive.Checked = GetBool("rtss_only_active", true);
+            if (chkStunEnable != null)
+                chkStunEnable.Checked = GetBool("stun_enable", true);
+
+            // Доп. UX: блокировка дропдауна адаптеров, если включён сбор «со всех»
+            if (adapters_list != null && captureAllAdaptersCheckbox != null)
+                adapters_list.Enabled = !captureAllAdaptersCheckbox.Checked;
+        }
+
+        /// <summary>
+        /// NEW: Сохранение всех продвинутых флагов универсальности в настройки
+        /// </summary>
+        private void SaveAdvancedFlagsToSettings()
+        {
+            // Основные флаги захвата
+            if (captureAllAdaptersCheckbox != null)
+                SetBool("capture_all_adapters", captureAllAdaptersCheckbox.Checked);
+
+            // Флаги пинга
+            if (chkPingBindToInterface != null)
+                SetBool("ping_bind_to_interface", chkPingBindToInterface.Checked);
+            if (chkPingTcpPrefer != null)
+                SetBool("ping_tcp_prefer", chkPingTcpPrefer.Checked);
+            if (chkPingFallbackIcmp != null)
+                SetBool("ping_fallback_icmp", chkPingFallbackIcmp.Checked);
+            if (chkPingTargetActiveOnly != null)
+                SetBool("ping_target_active_only", chkPingTargetActiveOnly.Checked);
+
+            // Флаги анализа и обработки
+            if (chkTickrateSmoothing != null)
+                SetBool("tickrate_smoothing", chkTickrateSmoothing.Checked);
+            if (chkDedupMultiNic != null)
+                SetBool("dedup_multi_nic", chkDedupMultiNic.Checked);
+            if (chkEnableIPv6 != null)
+                SetBool("enable_ipv6", chkEnableIPv6.Checked);
+            if (chkIgnoreVirtualAdapters != null)
+                SetBool("ignore_virtual_adapters", chkIgnoreVirtualAdapters.Checked);
+
+            // Флаги вывода
+            if (chkRtssOnlyActive != null)
+                SetBool("rtss_only_active", chkRtssOnlyActive.Checked);
+            if (chkStunEnable != null)
+                SetBool("stun_enable", chkStunEnable.Checked);
+        }
+
+        /// <summary>
+        /// NEW: Инициализация write-through обработчиков для всех универсальных чекбоксов
+        /// Каждое изменение чекбокса сразу записывает в App.settingsManager
+        /// </summary>
+        private void InitUniversalCheckboxHandlers()
+        {
+            // Ping обработчики
+            if (chkPingBindToInterface != null)
+                chkPingBindToInterface.CheckedChanged += (s, e) =>
+                    App.settingsManager.SetOption("ping_bind_to_interface", chkPingBindToInterface.Checked.ToString());
+
+            if (chkPingTcpPrefer != null)
+                chkPingTcpPrefer.CheckedChanged += (s, e) =>
+                    App.settingsManager.SetOption("ping_tcp_prefer", chkPingTcpPrefer.Checked.ToString());
+
+            if (chkPingFallbackIcmp != null)
+                chkPingFallbackIcmp.CheckedChanged += (s, e) =>
+                    App.settingsManager.SetOption("ping_fallback_icmp", chkPingFallbackIcmp.Checked.ToString());
+
+            if (chkPingTargetActiveOnly != null)
+                chkPingTargetActiveOnly.CheckedChanged += (s, e) =>
+                    App.settingsManager.SetOption("ping_target_active_only", chkPingTargetActiveOnly.Checked.ToString());
+
+            // Анализ и обработка обработчики
+            if (chkTickrateSmoothing != null)
+                chkTickrateSmoothing.CheckedChanged += (s, e) =>
+                    App.settingsManager.SetOption("tickrate_smoothing", chkTickrateSmoothing.Checked.ToString());
+
+            if (chkDedupMultiNic != null)
+                chkDedupMultiNic.CheckedChanged += (s, e) =>
+                    App.settingsManager.SetOption("dedup_multi_nic", chkDedupMultiNic.Checked.ToString());
+
+            if (chkEnableIPv6 != null)
+                chkEnableIPv6.CheckedChanged += (s, e) =>
+                    App.settingsManager.SetOption("enable_ipv6", chkEnableIPv6.Checked.ToString());
+
+            if (chkIgnoreVirtualAdapters != null)
+                chkIgnoreVirtualAdapters.CheckedChanged += (s, e) =>
+                    App.settingsManager.SetOption("ignore_virtual_adapters", chkIgnoreVirtualAdapters.Checked.ToString());
+
+            // Вывод обработчики
+            if (chkRtssOnlyActive != null)
+                chkRtssOnlyActive.CheckedChanged += (s, e) =>
+                    App.settingsManager.SetOption("rtss_only_active", chkRtssOnlyActive.Checked.ToString());
+
+            if (chkStunEnable != null)
+                chkStunEnable.CheckedChanged += (s, e) =>
+                    App.settingsManager.SetOption("stun_enable", chkStunEnable.Checked.ToString());
+
+            // Capture All Adapters - специальный обработчик с UI логикой (уже есть выше)
+        }
+
+        /// <summary>
+        /// Удобный враппер для чтения булевых настроек
+        /// </summary>
+        private bool GetBool(string key, bool defVal) =>
+            App.settingsManager.GetOption(key, defVal ? "True" : "False") == "True";
+
+        /// <summary>
+        /// Удобный враппер для записи булевых настроек
+        /// </summary>
+        private void SetBool(string key, bool val) =>
+            App.settingsManager.SetOption(key, val.ToString());
+
         public async void CheckNewVersion()
         {
             await Task.Run(() =>
@@ -155,7 +295,6 @@ namespace tickMeter.Forms
             settings_rtss_output.Checked = App.settingsManager.GetOption("rtss") == "True";
             settings_tickrate_show.Checked = App.settingsManager.GetOption("tickrate") == "True";
             settings_autodetect_checkbox.Checked = App.settingsManager.GetOption("autodetect") == "True";
-            rememberAdapter.Checked = App.settingsManager.GetOption("remember_adapter") == "True";
             settings_data_send.Checked = App.settingsManager.GetOption("data_send") == "True";
             settings_session_time_checkbox.Checked = App.settingsManager.GetOption("session_time") == "True";
             settings_ticktime_chart.Checked = App.settingsManager.GetOption("ticktime") == "True";
@@ -167,28 +306,32 @@ namespace tickMeter.Forms
             // NEW: инициализация состояния чекбокса после загрузки всех настроек
             InitCaptureAllAdaptersState();
             
-            if (rememberAdapter.Checked)
+            // NEW: загрузка всех продвинутых флагов универсальности
+            LoadAdvancedFlagsFromSettings();
+            
+            // NEW: инициализация write-through обработчиков для всех универсальных чекбоксов
+            InitUniversalCheckboxHandlers();
+            
+            // Загружаем последний выбранный адаптер если сохранен
+            try
             {
-                try
+                adapters_list.SelectedIndex = 0;
+                string adapterID = App.settingsManager.GetOption("last_selected_adapter");
+                if(!adapterID.IsNullOrEmpty())
                 {
-                    adapters_list.SelectedIndex = 0;
-                    string adapterID = App.settingsManager.GetOption("last_selected_adapter");
-                    if(!adapterID.IsNullOrEmpty())
+                    int i = 0;
+                    foreach(LivePacketDevice device in App.GetAdapters())
                     {
-                        int i = 0;
-                        foreach(LivePacketDevice device in App.GetAdapters())
+                        if(device.GetGuid().ToLower().Equals(adapterID))
                         {
-                            if(device.GetGuid().ToLower().Equals(adapterID))
-                            {
-                                adapters_list.SelectedIndex = i; break;
-                            }
-                            i++;
+                            adapters_list.SelectedIndex = i; break;
                         }
+                        i++;
                     }
                 }
-                catch (Exception) { }
-                
             }
+            catch (Exception) { }
+                
             string localIp = App.settingsManager.GetOption("local_ip");
             if(localIp != null && localIp != "")
             {
@@ -239,7 +382,6 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("rtss", settings_rtss_output.Checked.ToString());
             App.settingsManager.SetOption("autodetect", settings_autodetect_checkbox.Checked.ToString());
             App.settingsManager.SetOption("data_send", settings_data_send.Checked.ToString());
-            App.settingsManager.SetOption("remember_adapter", rememberAdapter.Checked.ToString());
             App.settingsManager.SetOption("session_time", settings_session_time_checkbox.Checked.ToString());
             int selectedAdapter = adapters_list.SelectedIndex;
             if(selectedAdapter < 0) selectedAdapter = 0;
@@ -250,6 +392,10 @@ namespace tickMeter.Forms
             // NEW: сохранение настройки захвата со всех адаптеров
             if (captureAllAdaptersCheckbox != null)
                 App.settingsManager.SetOption("capture_all_adapters", captureAllAdaptersCheckbox.Checked.ToString());
+                
+            // NEW: сохранение всех продвинутых флагов универсальности
+            SaveAdvancedFlagsToSettings();
+            
             App.settingsManager.SaveConfig();
         }
 
@@ -277,11 +423,23 @@ namespace tickMeter.Forms
             ColorChart.Text = eng.GetString(ColorChart.Name);
             settings_ticktime_chart.Text = eng.GetString(settings_ticktime_chart.Name);
             settings_tickrate_show.Text = eng.GetString(settings_tickrate_show.Name);
-            rememberAdapter.Text = eng.GetString(rememberAdapter.Name);
             updateLbl.Text = eng.GetString(updateLbl.Name);
            
             donate_lbl.Text = eng.GetString(donate_lbl.Name);
             settings_data_send.Text = eng.GetString(settings_data_send.Name);
+        }
+
+        /// <summary>
+        /// NEW: Обработчик кнопки "Сохранить"
+        /// Записывает все настройки на диск и закрывает форму
+        /// </summary>
+        private void btnSaveSettings_Click(object sender, EventArgs e)
+        {
+            // Сохранить все настройки на диск (универсальные уже в памяти благодаря write-through)
+            App.settingsManager.SaveConfig();
+            
+            // Закрыть форму настроек
+            this.Close();
         }
 
         private void LabelsColor_Click(object sender, EventArgs e)

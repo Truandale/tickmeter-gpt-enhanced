@@ -35,7 +35,7 @@ namespace tickMeter.Forms
             this.network_connection_lbl = new System.Windows.Forms.Label();
             this.adapters_list = new System.Windows.Forms.ComboBox();
             this.colorDialog1 = new System.Windows.Forms.ColorDialog();
-            this.rememberAdapter = new System.Windows.Forms.CheckBox();
+            this.btnSaveSettings = new System.Windows.Forms.Button();
             this.rtss_dialog = new System.Windows.Forms.OpenFileDialog();
             this.settings_data_send = new System.Windows.Forms.CheckBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
@@ -64,6 +64,16 @@ namespace tickMeter.Forms
             this.local_ip_lbl = new System.Windows.Forms.Label();
             this.local_ip_textbox = new System.Windows.Forms.TextBox();
             this.captureAllAdaptersCheckbox = new System.Windows.Forms.CheckBox();
+            this.chkPingBindToInterface = new System.Windows.Forms.CheckBox();
+            this.chkPingTcpPrefer = new System.Windows.Forms.CheckBox();
+            this.chkPingFallbackIcmp = new System.Windows.Forms.CheckBox();
+            this.chkPingTargetActiveOnly = new System.Windows.Forms.CheckBox();
+            this.chkTickrateSmoothing = new System.Windows.Forms.CheckBox();
+            this.chkDedupMultiNic = new System.Windows.Forms.CheckBox();
+            this.chkEnableIPv6 = new System.Windows.Forms.CheckBox();
+            this.chkIgnoreVirtualAdapters = new System.Windows.Forms.CheckBox();
+            this.chkRtssOnlyActive = new System.Windows.Forms.CheckBox();
+            this.chkStunEnable = new System.Windows.Forms.CheckBox();
             this.label8 = new System.Windows.Forms.Label();
             this.donate_lbl = new System.Windows.Forms.Label();
             this.updateLbl = new System.Windows.Forms.Label();
@@ -94,12 +104,16 @@ namespace tickMeter.Forms
             this.adapters_list.Name = "adapters_list";
             this.adapters_list.SelectedIndexChanged += new System.EventHandler(this.adapters_list_SelectedIndexChanged);
             // 
-            // rememberAdapter
+            // btnSaveSettings
             // 
-            resources.ApplyResources(this.rememberAdapter, "rememberAdapter");
-            this.rememberAdapter.ForeColor = System.Drawing.Color.Black;
-            this.rememberAdapter.Name = "rememberAdapter";
-            this.rememberAdapter.UseVisualStyleBackColor = true;
+            this.btnSaveSettings.ForeColor = System.Drawing.Color.Black;
+            this.btnSaveSettings.Location = new System.Drawing.Point(12, 600);
+            this.btnSaveSettings.Name = "btnSaveSettings";
+            this.btnSaveSettings.Size = new System.Drawing.Size(100, 30);
+            this.btnSaveSettings.TabIndex = 99;
+            this.btnSaveSettings.Text = "Сохранить";
+            this.btnSaveSettings.UseVisualStyleBackColor = true;
+            this.btnSaveSettings.Click += new System.EventHandler(this.btnSaveSettings_Click);
             // 
             // rtss_dialog
             // 
@@ -352,6 +366,76 @@ namespace tickMeter.Forms
             this.captureAllAdaptersCheckbox.Name = "captureAllAdaptersCheckbox";
             this.captureAllAdaptersCheckbox.UseVisualStyleBackColor = true;
             // 
+            // chkPingBindToInterface
+            // 
+            resources.ApplyResources(this.chkPingBindToInterface, "chkPingBindToInterface");
+            this.chkPingBindToInterface.ForeColor = System.Drawing.Color.Black;
+            this.chkPingBindToInterface.Name = "chkPingBindToInterface";
+            this.chkPingBindToInterface.UseVisualStyleBackColor = true;
+            // 
+            // chkPingTcpPrefer
+            // 
+            resources.ApplyResources(this.chkPingTcpPrefer, "chkPingTcpPrefer");
+            this.chkPingTcpPrefer.ForeColor = System.Drawing.Color.Black;
+            this.chkPingTcpPrefer.Name = "chkPingTcpPrefer";
+            this.chkPingTcpPrefer.UseVisualStyleBackColor = true;
+            // 
+            // chkPingFallbackIcmp
+            // 
+            resources.ApplyResources(this.chkPingFallbackIcmp, "chkPingFallbackIcmp");
+            this.chkPingFallbackIcmp.ForeColor = System.Drawing.Color.Black;
+            this.chkPingFallbackIcmp.Name = "chkPingFallbackIcmp";
+            this.chkPingFallbackIcmp.UseVisualStyleBackColor = true;
+            // 
+            // chkPingTargetActiveOnly
+            // 
+            resources.ApplyResources(this.chkPingTargetActiveOnly, "chkPingTargetActiveOnly");
+            this.chkPingTargetActiveOnly.ForeColor = System.Drawing.Color.Black;
+            this.chkPingTargetActiveOnly.Name = "chkPingTargetActiveOnly";
+            this.chkPingTargetActiveOnly.UseVisualStyleBackColor = true;
+            // 
+            // chkTickrateSmoothing
+            // 
+            resources.ApplyResources(this.chkTickrateSmoothing, "chkTickrateSmoothing");
+            this.chkTickrateSmoothing.ForeColor = System.Drawing.Color.Black;
+            this.chkTickrateSmoothing.Name = "chkTickrateSmoothing";
+            this.chkTickrateSmoothing.UseVisualStyleBackColor = true;
+            // 
+            // chkDedupMultiNic
+            // 
+            resources.ApplyResources(this.chkDedupMultiNic, "chkDedupMultiNic");
+            this.chkDedupMultiNic.ForeColor = System.Drawing.Color.Black;
+            this.chkDedupMultiNic.Name = "chkDedupMultiNic";
+            this.chkDedupMultiNic.UseVisualStyleBackColor = true;
+            // 
+            // chkEnableIPv6
+            // 
+            resources.ApplyResources(this.chkEnableIPv6, "chkEnableIPv6");
+            this.chkEnableIPv6.ForeColor = System.Drawing.Color.Black;
+            this.chkEnableIPv6.Name = "chkEnableIPv6";
+            this.chkEnableIPv6.UseVisualStyleBackColor = true;
+            // 
+            // chkIgnoreVirtualAdapters
+            // 
+            resources.ApplyResources(this.chkIgnoreVirtualAdapters, "chkIgnoreVirtualAdapters");
+            this.chkIgnoreVirtualAdapters.ForeColor = System.Drawing.Color.Black;
+            this.chkIgnoreVirtualAdapters.Name = "chkIgnoreVirtualAdapters";
+            this.chkIgnoreVirtualAdapters.UseVisualStyleBackColor = true;
+            // 
+            // chkRtssOnlyActive
+            // 
+            resources.ApplyResources(this.chkRtssOnlyActive, "chkRtssOnlyActive");
+            this.chkRtssOnlyActive.ForeColor = System.Drawing.Color.Black;
+            this.chkRtssOnlyActive.Name = "chkRtssOnlyActive";
+            this.chkRtssOnlyActive.UseVisualStyleBackColor = true;
+            // 
+            // chkStunEnable
+            // 
+            resources.ApplyResources(this.chkStunEnable, "chkStunEnable");
+            this.chkStunEnable.ForeColor = System.Drawing.Color.Black;
+            this.chkStunEnable.Name = "chkStunEnable";
+            this.chkStunEnable.UseVisualStyleBackColor = true;
+            // 
             // label8
             // 
             resources.ApplyResources(this.label8, "label8");
@@ -383,6 +467,16 @@ namespace tickMeter.Forms
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.chkPingBindToInterface);
+            this.Controls.Add(this.chkPingTcpPrefer);
+            this.Controls.Add(this.chkPingFallbackIcmp);
+            this.Controls.Add(this.chkPingTargetActiveOnly);
+            this.Controls.Add(this.chkTickrateSmoothing);
+            this.Controls.Add(this.chkDedupMultiNic);
+            this.Controls.Add(this.chkEnableIPv6);
+            this.Controls.Add(this.chkIgnoreVirtualAdapters);
+            this.Controls.Add(this.chkRtssOnlyActive);
+            this.Controls.Add(this.chkStunEnable);
             this.Controls.Add(this.captureAllAdaptersCheckbox);
             this.Controls.Add(this.local_ip_textbox);
             this.Controls.Add(this.local_ip_lbl);
@@ -397,7 +491,7 @@ namespace tickMeter.Forms
             this.Controls.Add(this.settings_data_send);
             this.Controls.Add(this.donate_lbl);
             this.Controls.Add(this.updateLbl);
-            this.Controls.Add(this.rememberAdapter);
+            this.Controls.Add(this.btnSaveSettings);
             this.Controls.Add(this.label8);
             this.Controls.Add(this.settings_log_checkbox);
             this.Controls.Add(this.network_connection_lbl);
@@ -421,7 +515,7 @@ namespace tickMeter.Forms
         public System.Windows.Forms.ComboBox adapters_list;
         public System.Windows.Forms.CheckBox settings_log_checkbox;
         public System.Windows.Forms.Label network_connection_lbl;
-        public System.Windows.Forms.CheckBox rememberAdapter;
+        public System.Windows.Forms.Button btnSaveSettings;
         private System.Windows.Forms.OpenFileDialog rtss_dialog;
         public CheckBox settings_data_send;
         private GroupBox groupBox1;
@@ -450,6 +544,17 @@ namespace tickMeter.Forms
         public TextBox local_ip_textbox;
         public ColorDialog colorDialog1;
         public CheckBox packet_drops_checkbox;
+        // NEW: Advanced universality checkboxes fields
+        public CheckBox chkPingBindToInterface;
+        public CheckBox chkPingTcpPrefer;
+        public CheckBox chkPingFallbackIcmp;
+        public CheckBox chkPingTargetActiveOnly;
+        public CheckBox chkTickrateSmoothing;
+        public CheckBox chkDedupMultiNic;
+        public CheckBox chkEnableIPv6;
+        public CheckBox chkIgnoreVirtualAdapters;
+        public CheckBox chkRtssOnlyActive;
+        public CheckBox chkStunEnable;
         public Label label8;
         public Label donate_lbl;
         public Label updateLbl;

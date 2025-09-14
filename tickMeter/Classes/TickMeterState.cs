@@ -134,7 +134,10 @@ namespace tickMeter
                 if (!IsTracking) return;
                 if (value.ToString() != timeStamp.ToString())
                 {
-                    OutputTickRate = TickRate;
+                    int rawTickRate = TickRate;
+                    // Применяем сглаживание, если включено
+                    OutputTickRate = TickrateSmoothingManager.SmoothTickrate(rawTickRate);
+                    
                     AvgTickrate = (AvgTickrate + OutputTickRate) / 2;
                     if (avgStableTickrate == 0)
                     {
@@ -287,6 +290,9 @@ namespace tickMeter
             private string CurrentIP = "";
             public int PingPort { get; set; } = 0;
             private int gamePort;
+            
+            // STUN внешний IP
+            public string ExternalIp { get; set; } = "";
 
             private const int PingLimitMilliseconds = 1000;
             private int _ping = 0;
@@ -442,6 +448,7 @@ namespace tickMeter
             internal void Reset()
             {
                 CurrentIP = "";
+                ExternalIp = "";
                 Location = "N/A";
                 PingPort = 0;
                 gamePort = 0;
@@ -520,6 +527,25 @@ namespace tickMeter
                 if (string.IsNullOrEmpty(Ip)) { Location = "N/A"; return; }
 
                 string ipToDetect = Ip;
+                
+                // Если включен STUN, попробуем определить внешний IP
+                if (StunManager.IsEnabled())
+                {
+                    try
+                    {
+                        var externalIp = await StunManager.GetExternalIpStringAsync();
+                        if (!string.IsNullOrEmpty(externalIp))
+                        {
+                            ExternalIp = externalIp;
+                            Debug.WriteLine($"STUN detected external IP: {externalIp}, current server IP: {ipToDetect}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"STUN detection failed: {ex.Message}");
+                    }
+                }
+                
                 await Task.Run(() =>
                 {
                     IpInfo ipInfo = new IpInfo();

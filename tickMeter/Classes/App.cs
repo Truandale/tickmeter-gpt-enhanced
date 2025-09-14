@@ -23,6 +23,7 @@ namespace tickMeter.Classes
         public static TickMeterState meterState;
         public static SettingsManager settingsManager;
         public static ConnectionsManager connMngr;
+        public static PingManager pingManager;
         static List<LivePacketDevice> AdaptersList;
 
         public static void Init()
@@ -35,6 +36,7 @@ namespace tickMeter.Classes
             profileEditForm = new ProfileEditForm();
             settingsManager = new SettingsManager();
             connMngr = new ConnectionsManager();
+            pingManager = new PingManager(settingsManager, connMngr);
 
             // Debug: вывод интервалов пинга для TCP и ICMP
             #if DEBUG

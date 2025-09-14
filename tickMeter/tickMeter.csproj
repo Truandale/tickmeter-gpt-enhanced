@@ -237,6 +237,7 @@
     <Compile Include="Classes\DebugLogger.cs" />
     <Compile Include="Classes\PacketFilter.cs" />
     <Compile Include="Classes\DbdStatsManager.cs" />
+    <Compile Include="Classes\PingManager.cs" />
     <Compile Include="Classes\ProcessNetworkStats.cs" />
     <Compile Include="Classes\PubgStatsManager.cs" />
     <Compile Include="Classes\WebStatsManager.cs" />
@@ -286,6 +287,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
     <Compile Include="Classes\RivaTuner.cs" />
+    <Compile Include="Classes\StunClient.cs" />
     <Compile Include="Forms\SettingsForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -294,6 +296,7 @@
     </Compile>
     <Compile Include="Classes\SettingsManager.cs" />
     <Compile Include="Classes\TickMeterState.cs" />
+    <Compile Include="Classes\TickrateSmoothing.cs" />
     <EmbeddedResource Include="Forms\GUI.resx">
       <DependentUpon>GUI.cs</DependentUpon>
     </EmbeddedResource>

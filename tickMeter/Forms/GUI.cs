@@ -82,6 +82,12 @@ namespace tickMeter.Forms
                 App.Init();
                 App.gui = this;
 
+                // Подписываемся на результаты ping
+                if (App.pingManager != null)
+                {
+                    App.pingManager.PingResultReceived += OnPingResultReceived;
+                }
+
                 for (int i = 0; i != App.GetAdapters().Count; ++i)
                 {
                     LivePacketDevice Adapter = App.GetAdapters()[i];
@@ -128,6 +134,9 @@ namespace tickMeter.Forms
             if (App.meterState != null) App.meterState.KillTimers();
             App.meterState = new TickMeterState();
             App.meterState.ConnectionsManagerFlag = true;
+            
+            // Инициализируем сглаживание tickrate
+            Classes.TickrateSmoothingManager.Initialize();
         }
 
         protected void ShowAll()
@@ -493,6 +502,12 @@ namespace tickMeter.Forms
             App.meterState.IsTracking = true;
             ticksLoop.Enabled = true;
             
+            // Запускаем ping manager
+            if (App.pingManager != null)
+            {
+                App.pingManager.StartPinging();
+            }
+            
             var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
             var devices = App.GetAdapters();
             _allSelectedAdapters.Clear();
@@ -603,6 +618,17 @@ namespace tickMeter.Forms
         private void PcapWorkerDoWork(object sender, DoWorkEventArgs e)
         {
             if (!App.meterState.IsTracking) return;
+            
+            // В мульти-режиме этот метод не должен вызываться
+            var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
+            if (captureAll) return;
+            
+            if (selectedAdapter == null)
+            {
+                MessageBox.Show("Selected adapter is not set!");
+                return;
+            }
+            
             using (PacketCommunicator communicator = selectedAdapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 500))
             {
                 if (communicator.DataLink.Kind != DataLinkKind.Ethernet)
@@ -627,6 +653,13 @@ namespace tickMeter.Forms
 
             ticksLoop.Enabled = false;
             if (App.meterState == null) return;
+            
+            // Останавливаем ping manager
+            if (App.pingManager != null)
+            {
+                App.pingManager.StopPinging();
+            }
+            
             try
             {
                 GameProfileManager.PubgMngr.firstPacket = true;
@@ -646,6 +679,9 @@ namespace tickMeter.Forms
             } catch { }
             _pcapWorkers.Clear();
             _allSelectedAdapters.Clear();
+            
+            // Сбрасываем сглаживание при остановке трекинга
+            Classes.TickrateSmoothingManager.Reset();
             
             tickrate_val.ForeColor = App.settingsForm.ColorBad.ForeColor;
             ping_val.ForeColor = App.settingsForm.ColorMid.ForeColor;
@@ -804,6 +840,18 @@ namespace tickMeter.Forms
         private void icon_menu_Opening(object sender, CancelEventArgs e)
         {
 
+        }
+        
+        private void OnPingResultReceived(object sender, Classes.PingResultEventArgs e)
+        {
+            if (App.meterState != null && e.Result.Success)
+            {
+                // Обновляем ping в состоянии приложения
+                App.meterState.Server.Ping = (int)e.Result.RoundTripTime;
+                
+                // Опционально: добавляем в буфер для графика
+                // Можно добавить специальный буфер для ping как для tickrate
+            }
         }
     }
 }
