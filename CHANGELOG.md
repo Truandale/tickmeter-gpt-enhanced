@@ -2,7 +2,14 @@
 
 All notable changes to TickMeter project will be documented in this file.
 
-## [Unreleased] - 2025-09-12
+## [Unreleased] - 2025-09-14
+
+### 🐛 Performance & Stability Fixes
+- **Debug Logging Cleanup**: Removed excessive debug output from GetOption method that was causing performance issues
+- **Live Packets View Fix**: Fixed "Selected adapter is not set!" error when multi-adapter mode is enabled
+- **Adapter Logic Improvement**: Corrected adapter selection logic in PacketStats.cs for multi-adapter capture
+- **Performance Optimization**: Eliminated debug overhead in frequently called configuration methods
+- **Code Cleanup**: Removed unused debug statements from PingManager.cs and App.cs
 
 ### ✅ Status: TESTED & WORKING
 - **Universal Features**: Successfully implemented and tested comprehensive universality enhancements
@@ -11,9 +18,12 @@ All notable changes to TickMeter project will be documented in this file.
 - **STUN Integration**: External IP detection through STUN protocol operational
 - **UI Integration**: All 10 new universal checkboxes properly integrated
 - **Multi-Adapter Feature**: Successfully tested and confirmed working
+- **Live Packets View**: Now properly works with multi-adapter capture mode
 - **Ready for Production**: All features are stable and ready for use
 
-### � Major New Universal Features Implementation
+## [Major Features] - 2025-09-12
+
+### 🚀 Major New Universal Features Implementation
 
 #### 🌐 Advanced Ping Management System
 - **TCP Ping**: Primary ping method using TcpClient with precise connection timing

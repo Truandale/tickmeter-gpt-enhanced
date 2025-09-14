@@ -38,22 +38,6 @@ namespace tickMeter.Classes
             connMngr = new ConnectionsManager();
             pingManager = new PingManager(settingsManager, connMngr);
 
-            // Debug: вывод интервалов пинга для TCP и ICMP
-            #if DEBUG
-            int tcpPingInterval = 0;
-            int icmpPingInterval = 0;
-            var tcpIntervalStr = settingsManager?.GetOption("ping_interval");
-            if (!string.IsNullOrEmpty(tcpIntervalStr) && int.TryParse(tcpIntervalStr, out int tcpVal))
-                tcpPingInterval = tcpVal;
-            // Если есть отдельная настройка для ICMP, используйте её, иначе используйте TCP
-            var icmpIntervalStr = settingsManager?.GetOption("icmp_ping_interval");
-            if (!string.IsNullOrEmpty(icmpIntervalStr) && int.TryParse(icmpIntervalStr, out int icmpVal))
-                icmpPingInterval = icmpVal;
-            else
-                icmpPingInterval = tcpPingInterval;
-            Debug.WriteLine($"[DEBUG] TCP ping interval: {tcpPingInterval} ms");
-            Debug.WriteLine($"[DEBUG] ICMP ping interval: {icmpPingInterval} ms");
-            #endif
         }
 
         public static List<LivePacketDevice> GetAdapters()

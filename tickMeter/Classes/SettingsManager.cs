@@ -40,10 +40,12 @@ namespace tickMeter
 
         public string GetOption(string optionName,string scope = "SETTINGS")
         {
-
-            if (data[scope] != null && data[scope][optionName] != null)
+            if (data[scope] != null)
             {
-                return data[scope][optionName];
+                if (data[scope][optionName] != null)
+                {
+                    return data[scope][optionName];
+                }
             }
             return "";
         }
@@ -90,6 +92,18 @@ namespace tickMeter
             try { 
                 parser.WriteFile("settings.ini", data);
             } catch(Exception) { MessageBox.Show("Не могу сохранить настройки. Не хватает прав на запись."); }
-}
+        }
+
+        public void ReloadConfig()
+        {
+            try 
+            {
+                data = parser.ReadFile("settings.ini");
+            } 
+            catch(Exception) 
+            { 
+                MessageBox.Show("Не могу загрузить настройки."); 
+            }
+        }
     }
 }

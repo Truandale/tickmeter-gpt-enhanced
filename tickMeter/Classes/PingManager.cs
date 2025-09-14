@@ -58,9 +58,9 @@ namespace tickMeter.Classes
             {
                 await PerformPingAsync();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Ping error: {ex.Message}");
+                // Ошибка ping - игнорируем
             }
         }
         
@@ -83,9 +83,9 @@ namespace tickMeter.Classes
                         PingResultReceived?.Invoke(this, new PingResultEventArgs(result));
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Ping to {target.Address}:{target.Port} failed: {ex.Message}");
+                    // Ошибка ping к конкретному target - игнорируем
                 }
             }
         }

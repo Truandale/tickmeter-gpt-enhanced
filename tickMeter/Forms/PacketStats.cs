@@ -97,14 +97,14 @@ namespace tickMeter
             {
                 // В режиме multi-adapter используем первый доступный адаптер для Live Packets View
                 var devices = App.GetAdapters();
-                if (devices.Count <= 1) // первый элемент обычно заглушка
+                if (devices.Count == 0)
                 {
                     MessageBox.Show("No network adapters available!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
                 
-                // Берем первый реальный адаптер (пропускаем заглушку на позиции 0)
-                LivePacketDevice firstAdapter = devices.Skip(1).FirstOrDefault();
+                // Берем первый реальный адаптер
+                LivePacketDevice firstAdapter = devices.FirstOrDefault();
                 if (firstAdapter == null)
                 {
                     MessageBox.Show("No suitable network adapter found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
