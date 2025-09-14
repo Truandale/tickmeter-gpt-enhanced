@@ -107,11 +107,8 @@ namespace tickMeter.Forms
             // btnSaveSettings
             // 
             this.btnSaveSettings.ForeColor = System.Drawing.Color.Black;
-            this.btnSaveSettings.Location = new System.Drawing.Point(12, 600);
+            resources.ApplyResources(this.btnSaveSettings, "btnSaveSettings");
             this.btnSaveSettings.Name = "btnSaveSettings";
-            this.btnSaveSettings.Size = new System.Drawing.Size(100, 30);
-            this.btnSaveSettings.TabIndex = 99;
-            this.btnSaveSettings.Text = "Сохранить";
             this.btnSaveSettings.UseVisualStyleBackColor = true;
             this.btnSaveSettings.Click += new System.EventHandler(this.btnSaveSettings_Click);
             // 
@@ -555,6 +552,7 @@ namespace tickMeter.Forms
         public CheckBox chkIgnoreVirtualAdapters;
         public CheckBox chkRtssOnlyActive;
         public CheckBox chkStunEnable;
+        public CheckBox captureAllAdaptersCheckbox;
         public Label label8;
         public Label donate_lbl;
         public Label updateLbl;

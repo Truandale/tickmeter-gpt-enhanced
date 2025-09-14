@@ -90,15 +90,50 @@ namespace tickMeter
 
         private void PcapWorkerDoWork(object sender, DoWorkEventArgs e)
         {
-            // Проверяем, что selectedAdapter не равен null
-            if (App.gui.selectedAdapter == null)
+            // Проверяем режим захвата (single vs multi-adapter)
+            var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
+            
+            if (captureAll)
             {
-                MessageBox.Show("Selected adapter is not set!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
+                // В режиме multi-adapter используем первый доступный адаптер для Live Packets View
+                var devices = App.GetAdapters();
+                if (devices.Count <= 1) // первый элемент обычно заглушка
+                {
+                    MessageBox.Show("No network adapters available!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                
+                // Берем первый реальный адаптер (пропускаем заглушку на позиции 0)
+                LivePacketDevice firstAdapter = devices.Skip(1).FirstOrDefault();
+                if (firstAdapter == null)
+                {
+                    MessageBox.Show("No suitable network adapter found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                
+                // Используем первый адаптер для Live Packets View (приводим к PacketDevice)
+                OpenAndCaptureFromAdapter(firstAdapter as PacketDevice);
             }
+            else
+            {
+                // Single adapter режим - используем selectedAdapter
+                if (App.gui.selectedAdapter == null)
+                {
+                    MessageBox.Show("Selected adapter is not set!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                
+                OpenAndCaptureFromAdapter(App.gui.selectedAdapter);
+            }
+        }
 
-            // Открываем выбранный адаптер
-            PacketCommunicator communicator = App.gui.selectedAdapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 1000);
+        /// <summary>
+        /// Открывает указанный адаптер и начинает захват пакетов
+        /// </summary>
+        private void OpenAndCaptureFromAdapter(PacketDevice adapter)
+        {
+            // Открываем адаптер
+            PacketCommunicator communicator = adapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 1000);
             if (communicator == null)
             {
                 MessageBox.Show("Failed to open the selected adapter!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -247,7 +282,7 @@ namespace tickMeter
                             }
                         }
                         
-                    } catch (Exception ex) { 
+                    } catch (Exception) { 
                         processName = @"n\a"; 
                     }
 

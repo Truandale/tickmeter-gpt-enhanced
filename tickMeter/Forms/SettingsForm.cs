@@ -24,9 +24,6 @@ namespace tickMeter.Forms
         public string verInfo;
         TagCollection TagsInfo;
 
-        // NEW: чекбокс для захвата со всех адаптеров
-        private CheckBox captureAllAdaptersCheckbox;
-
         public SettingsForm()
         {
             InitializeComponent();
@@ -435,7 +432,11 @@ namespace tickMeter.Forms
         /// </summary>
         private void btnSaveSettings_Click(object sender, EventArgs e)
         {
-            // Сохранить все настройки на диск (универсальные уже в памяти благодаря write-through)
+            // Сначала сохраняем все обычные настройки в settingsManager
+            SaveToConfig();
+            
+            // Универсальные настройки уже в памяти благодаря write-through
+            // Теперь записываем все на диск
             App.settingsManager.SaveConfig();
             
             // Закрыть форму настроек
