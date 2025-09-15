@@ -521,13 +521,20 @@ namespace tickMeter.Forms
                     // список в UI обычно имеет заглушку на позиции 0
                     src = src.Skip(1);
                 }
+                
+                // Проверяем настройку "ignore virtual adapters"
+                bool ignoreVirtual = App.settingsManager.GetOption("ignore_virtual_adapters", "True") == "True";
+                
                 foreach (var d in src)
                 {
                     var desc = (d.Description ?? "").ToLowerInvariant();
-                    if (desc.Contains("loopback") || desc.Contains("npcap loopback") ||
+                    
+                    // Фильтруем виртуальные адаптеры только если настройка включена
+                    if (ignoreVirtual && (desc.Contains("loopback") || desc.Contains("npcap loopback") ||
                         desc.Contains("hyper-v") || desc.Contains("vmware") ||
-                        desc.Contains("virtualbox") || desc.Contains("vethernet"))
+                        desc.Contains("virtualbox") || desc.Contains("vethernet")))
                         continue;
+                        
                     _allSelectedAdapters.Add(d);
                 }
                 if (_allSelectedAdapters.Count == 0)

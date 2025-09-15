@@ -34,6 +34,7 @@ namespace tickMeter
         private readonly List<BackgroundWorker> _pcapWorkers = new List<BackgroundWorker>();
         private bool CaptureAll => App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
         private bool _ignoreVirtual => App.settingsManager.GetOption("ignore_virtual_adapters", "True") == "True";
+        private int _activeWorkerCount = 0; // Счётчик активных воркеров
 
         public PacketStats()
         {
@@ -116,12 +117,35 @@ namespace tickMeter
 
                 foreach (var dev in real)
                 {
-                    var adapter = (PacketDevice)dev;
-                    var w = new BackgroundWorker { WorkerSupportsCancellation = true };
-                    w.DoWork += (s, args) => OpenAndCaptureFromAdapter(adapter);
-                    w.RunWorkerCompleted += (s, args) => { };
-                    _pcapWorkers.Add(w);
-                    w.RunWorkerAsync();
+                    try
+                    {
+                        var adapter = (PacketDevice)dev;
+                        var w = new BackgroundWorker { WorkerSupportsCancellation = true };
+                        w.DoWork += (s, args) => OpenAndCaptureFromAdapter(adapter);
+                        w.RunWorkerCompleted += (s, args) => 
+                        {
+                            // Уменьшаем счётчик активных воркеров
+                            Interlocked.Decrement(ref _activeWorkerCount);
+                            DebugLogger.log($"Worker for {adapter.Description} completed. Active workers: {_activeWorkerCount}");
+                            
+                            // Обработка завершения воркера (успешного или с ошибкой)
+                            if (args.Error != null)
+                            {
+                                DebugLogger.log($"Adapter {adapter.Description} capture failed: {args.Error.Message}");
+                            }
+                        };
+                        _pcapWorkers.Add(w);
+                        
+                        // Увеличиваем счётчик перед запуском
+                        Interlocked.Increment(ref _activeWorkerCount);
+                        w.RunWorkerAsync();
+                        DebugLogger.log($"Started capture worker for adapter: {adapter.Description}. Active workers: {_activeWorkerCount}");
+                    }
+                    catch (Exception ex)
+                    {
+                        DebugLogger.log($"Failed to start capture worker for adapter {dev.Description}: {ex.Message}");
+                        // Продолжаем с остальными адаптерами
+                    }
                 }
                 return;
             }
@@ -138,32 +162,45 @@ namespace tickMeter
         /// </summary>
         private void OpenAndCaptureFromAdapter(PacketDevice adapter)
         {
-            // Открываем адаптер
-            PacketCommunicator communicator = adapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 1000);
-            if (communicator == null)
+            try
             {
-                MessageBox.Show("Failed to open the selected adapter!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            using (communicator)
-            {
-                // Проверяем, что адаптер поддерживает Ethernet
-                if (communicator.DataLink.Kind != DataLinkKind.Ethernet)
+                // Открываем адаптер
+                PacketCommunicator communicator = adapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 1000);
+                if (communicator == null)
                 {
-                    MessageBox.Show("This program works only on Ethernet networks!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    DebugLogger.log($"Failed to open adapter: {adapter.Description}");
+                    if (!CaptureAll) // Показываем MessageBox только в single-mode
+                        MessageBox.Show("Failed to open the selected adapter!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                // Начинаем получение пакетов
-                try
+                using (communicator)
                 {
-                    communicator.ReceivePackets(0, PacketHandler);
+                    // Проверяем, что адаптер поддерживает Ethernet
+                    if (communicator.DataLink.Kind != DataLinkKind.Ethernet)
+                    {
+                        DebugLogger.log($"Adapter {adapter.Description} does not support Ethernet");
+                        if (!CaptureAll) // Показываем MessageBox только в single-mode
+                            MessageBox.Show("This program works only on Ethernet networks!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    // Начинаем получение пакетов
+                    try
+                    {
+                        communicator.ReceivePackets(0, PacketHandler);
+                    }
+                    catch (Exception ex)
+                    {
+                        DebugLogger.log($"Exception during packet capture on {adapter.Description}: {ex.Message}");
+                        throw; // Пробрасываем исключение для обработки в RunWorkerCompleted
+                    }
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"An error occurred while receiving packets: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"Critical error in OpenAndCaptureFromAdapter for {adapter.Description}: {ex.Message}");
+                throw; // Пробрасываем исключение для обработки в RunWorkerCompleted
             }
         }
 
@@ -394,20 +431,33 @@ namespace tickMeter
         
         public void Stop()
         {
+            DebugLogger.log($"Stopping packet capture. Active workers before stop: {_activeWorkerCount}, Workers in list: {_pcapWorkers.Count}");
+            
             tracking = false;
             RefreshTimer.Enabled = false;
             
             // Останавливаем все multi-adapter воркеры
             try 
             { 
+                int cancelledCount = 0;
                 foreach (var worker in _pcapWorkers) 
                 { 
                     if (worker.IsBusy)
+                    {
                         worker.CancelAsync();
+                        cancelledCount++;
+                    }
                 } 
+                DebugLogger.log($"Cancelled {cancelledCount} active workers");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"Exception while stopping workers: {ex.Message}");
+            }
+            
             _pcapWorkers.Clear();
+            _activeWorkerCount = 0; // Сбрасываем счётчик
+            DebugLogger.log($"Cleared worker list. Active workers after stop: {_activeWorkerCount}");
         }
 
         public void Restart()
@@ -439,10 +489,18 @@ namespace tickMeter
 
         private void PacketStats_FormClosing(object sender, FormClosingEventArgs e)
         {
+            DebugLogger.log($"Form closing. Active workers before close: {_activeWorkerCount}");
+            
             e.Cancel = true;
             Hide();
             if (tracking)
                 Stop();
+                
+            // Дополнительная проверка на утечки
+            if (_activeWorkerCount > 0)
+            {
+                DebugLogger.log($"WARNING: Potential worker leak detected! {_activeWorkerCount} workers still active after stop.");
+            }
         }
 
         private void filter_Click(object sender, EventArgs e)
