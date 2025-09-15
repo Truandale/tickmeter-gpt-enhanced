@@ -32,6 +32,7 @@ namespace tickMeter
 
         // Multi-adapter support
         private readonly List<BackgroundWorker> _pcapWorkers = new List<BackgroundWorker>();
+        private bool CaptureAll => App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
         private bool _ignoreVirtual => App.settingsManager.GetOption("ignore_virtual_adapters", "True") == "True";
 
         public PacketStats()
@@ -94,93 +95,42 @@ namespace tickMeter
 
         private void PcapWorkerDoWork(object sender, DoWorkEventArgs e)
         {
-            var captureAllSetting = App.settingsManager.GetOption("capture_all_adapters", "False");
-            
-            if (captureAllSetting == "True")
+            // MULTI: слушаем ВСЕ «реальные» адаптеры
+            if (CaptureAll)
             {
-                // Мульти-режим - запускаем захват со всех адаптеров
-                StartMultiAdapterCapture();
+                var all = App.GetAdapters();
+                var real = all
+                    .Skip(1) // 0-й элемент обычно заглушка в UI
+                    .Where(d =>
+                    {
+                        if (!_ignoreVirtual) return true;
+                        var desc = (d.Description ?? string.Empty).ToLowerInvariant();
+                        return !(desc.Contains("loopback") || desc.Contains("npcap")
+                              || desc.Contains("hyper-v") || desc.Contains("vmware")
+                              || desc.Contains("virtualbox") || desc.Contains("vethernet"));
+                    })
+                    .ToList();
+
+                if (real.Count == 0)
+                    return; // в мульти-режиме выходим тихо, без MessageBox
+
+                foreach (var dev in real)
+                {
+                    var adapter = (PacketDevice)dev;
+                    var w = new BackgroundWorker { WorkerSupportsCancellation = true };
+                    w.DoWork += (s, args) => OpenAndCaptureFromAdapter(adapter);
+                    w.RunWorkerCompleted += (s, args) => { };
+                    _pcapWorkers.Add(w);
+                    w.RunWorkerAsync();
+                }
                 return;
             }
 
-            // Одиночный режим - используем selectedAdapter (как было раньше)
+            // SINGLE: как было — требуем выбранный адаптер
             if (App.gui.selectedAdapter == null)
-            {
-                // В одиночном режиме адаптер должен быть выбран - просто выходим без сообщения
-                return;
-            }
-            
-            StartSingleAdapterCapture(App.gui.selectedAdapter);
-        }
+                return; // без MessageBox в мульти-режиме
 
-        private void StartMultiAdapterCapture()
-        {
-            var devices = App.GetAdapters();
-            var filteredDevices = devices.Where(d =>
-            {
-                if (!_ignoreVirtual) return true;
-                var desc = (d.Description ?? "").ToLowerInvariant();
-                return !(desc.Contains("loopback") || desc.Contains("npcap")
-                      || desc.Contains("hyper-v") || desc.Contains("vmware")
-                      || desc.Contains("virtualbox") || desc.Contains("vethernet"));
-            }).ToList();
-
-            if (filteredDevices.Count == 0) return;
-
-            foreach (var dev in filteredDevices)
-            {
-                var worker = new BackgroundWorker { WorkerSupportsCancellation = true };
-                worker.DoWork += (s, e) =>
-                {
-                    try
-                    {
-                        using (var communicator = dev.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 500))
-                        {
-                            if (communicator.DataLink.Kind != DataLinkKind.Ethernet) return;
-                            communicator.ReceivePackets(0, packet => ProcessPacketForGrid(packet));
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        // Игнорируем ошибки отдельных адаптеров
-                    }
-                };
-                worker.RunWorkerCompleted += (s, e) => { /* no-op */ };
-                _pcapWorkers.Add(worker);
-                worker.RunWorkerAsync();
-            }
-        }
-
-        private void StartSingleAdapterCapture(PacketDevice adapter)
-        {
-            var worker = new BackgroundWorker { WorkerSupportsCancellation = true };
-            worker.DoWork += (s, e) =>
-            {
-                try
-                {
-                    using (var communicator = adapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 500))
-                    {
-                        if (communicator.DataLink.Kind != DataLinkKind.Ethernet) return;
-                        communicator.ReceivePackets(0, packet => ProcessPacketForGrid(packet));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    this.Invoke((MethodInvoker)delegate
-                    {
-                        MessageBox.Show($"An error occurred while receiving packets: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    });
-                }
-            };
-            worker.RunWorkerCompleted += (s, e) => { };
-            _pcapWorkers.Add(worker);
-            worker.RunWorkerAsync();
-        }
-
-        private void ProcessPacketForGrid(Packet packet)
-        {
-            // Используем существующую логику обработки пакетов
-            PacketHandler(packet);
+            OpenAndCaptureFromAdapter(App.gui.selectedAdapter);
         }
 
         /// <summary>
