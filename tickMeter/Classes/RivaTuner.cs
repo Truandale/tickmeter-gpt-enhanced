@@ -21,6 +21,11 @@ namespace tickMeter.Classes
         static OSD osd;
         public static string RivaOutput;
         public static uint chartOffset = 0;
+        
+        // Статические переменные для спайк-индикаторов
+        public static bool PingSpike = false;
+        public static bool TickrateSpike = false;
+        public static bool TicktimeSpike = false;
 
         public static string DrawChart(
             float[] graphData,
@@ -174,6 +179,9 @@ namespace tickMeter.Classes
 
         public static string FormatTickrate()
         {
+            // Проверяем флаг оверлея для tickrate спайков
+            bool showTickrateSpike = App.settingsManager.GetOption("overlay_tickrate_spike_marker", "False") == "True";
+            
             string tickRateStr = "<S><C0>Tickrate: ";
             if (meterState.OutputTickRate < 30)
             {
@@ -187,6 +195,13 @@ namespace tickMeter.Classes
             {
                 tickRateStr += "<C3>" + meterState.OutputTickRate.ToString();
             }
+            
+            // Добавляем спайк-индикатор если включен и обнаружен спайк
+            if (showTickrateSpike && TickrateSpike)
+            {
+                tickRateStr += " <C1>(!)</C>";
+            }
+            
             string output = tickRateStr + Environment.NewLine;
             return output;
         }
@@ -263,7 +278,12 @@ namespace tickMeter.Classes
                 pingFont = "<C1>";
                 pingValue = "n/a";
             }
-            return "<S><C0>Ping: " + pingFont + pingValue + "<S0>ms <S0><C>(" + geo + ")" + Environment.NewLine;
+            
+            // Проверяем флаг оверлея для ping спайков и добавляем индикатор
+            bool showPingSpike = App.settingsManager.GetOption("overlay_ping_spike_marker", "True") == "True";
+            string spikeIndicator = (showPingSpike && PingSpike) ? " <C1>(!)</C>" : "";
+            
+            return "<S><C0>Ping: " + pingFont + pingValue + spikeIndicator + "<S0>ms <S0><C>(" + geo + ")" + Environment.NewLine;
         }
 
         public static void BuildRivaOutput()

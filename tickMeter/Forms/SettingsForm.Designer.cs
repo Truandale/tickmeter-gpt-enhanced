@@ -74,6 +74,11 @@ namespace tickMeter.Forms
             this.chkIgnoreVirtualAdapters = new System.Windows.Forms.CheckBox();
             this.chkRtssOnlyActive = new System.Windows.Forms.CheckBox();
             this.chkStunEnable = new System.Windows.Forms.CheckBox();
+            this.chkOverlayPingSpike = new System.Windows.Forms.CheckBox();
+            this.chkOverlayTickrateSpike = new System.Windows.Forms.CheckBox();
+            this.chkOverlayTicktimeSpike = new System.Windows.Forms.CheckBox();
+            this.chkUiPingSpike = new System.Windows.Forms.CheckBox();
+            this.chkUiTickrateSpike = new System.Windows.Forms.CheckBox();
             this.label8 = new System.Windows.Forms.Label();
             this.donate_lbl = new System.Windows.Forms.Label();
             this.updateLbl = new System.Windows.Forms.Label();
@@ -433,6 +438,45 @@ namespace tickMeter.Forms
             this.chkStunEnable.Name = "chkStunEnable";
             this.chkStunEnable.UseVisualStyleBackColor = true;
             // 
+            // chkOverlayPingSpike
+            // 
+            resources.ApplyResources(this.chkOverlayPingSpike, "chkOverlayPingSpike");
+            this.chkOverlayPingSpike.Checked = true;
+            this.chkOverlayPingSpike.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.chkOverlayPingSpike.ForeColor = System.Drawing.Color.Black;
+            this.chkOverlayPingSpike.Name = "chkOverlayPingSpike";
+            this.chkOverlayPingSpike.UseVisualStyleBackColor = true;
+            // 
+            // chkOverlayTickrateSpike
+            // 
+            resources.ApplyResources(this.chkOverlayTickrateSpike, "chkOverlayTickrateSpike");
+            this.chkOverlayTickrateSpike.ForeColor = System.Drawing.Color.Black;
+            this.chkOverlayTickrateSpike.Name = "chkOverlayTickrateSpike";
+            this.chkOverlayTickrateSpike.UseVisualStyleBackColor = true;
+            // 
+            // chkOverlayTicktimeSpike
+            // 
+            resources.ApplyResources(this.chkOverlayTicktimeSpike, "chkOverlayTicktimeSpike");
+            this.chkOverlayTicktimeSpike.ForeColor = System.Drawing.Color.Black;
+            this.chkOverlayTicktimeSpike.Name = "chkOverlayTicktimeSpike";
+            this.chkOverlayTicktimeSpike.UseVisualStyleBackColor = true;
+            // 
+            // chkUiPingSpike
+            // 
+            resources.ApplyResources(this.chkUiPingSpike, "chkUiPingSpike");
+            this.chkUiPingSpike.Checked = true;
+            this.chkUiPingSpike.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.chkUiPingSpike.ForeColor = System.Drawing.Color.Black;
+            this.chkUiPingSpike.Name = "chkUiPingSpike";
+            this.chkUiPingSpike.UseVisualStyleBackColor = true;
+            // 
+            // chkUiTickrateSpike
+            // 
+            resources.ApplyResources(this.chkUiTickrateSpike, "chkUiTickrateSpike");
+            this.chkUiTickrateSpike.ForeColor = System.Drawing.Color.Black;
+            this.chkUiTickrateSpike.Name = "chkUiTickrateSpike";
+            this.chkUiTickrateSpike.UseVisualStyleBackColor = true;
+            // 
             // label8
             // 
             resources.ApplyResources(this.label8, "label8");
@@ -474,6 +518,11 @@ namespace tickMeter.Forms
             this.Controls.Add(this.chkIgnoreVirtualAdapters);
             this.Controls.Add(this.chkRtssOnlyActive);
             this.Controls.Add(this.chkStunEnable);
+            this.Controls.Add(this.chkOverlayPingSpike);
+            this.Controls.Add(this.chkOverlayTickrateSpike);
+            this.Controls.Add(this.chkOverlayTicktimeSpike);
+            this.Controls.Add(this.chkUiPingSpike);
+            this.Controls.Add(this.chkUiTickrateSpike);
             this.Controls.Add(this.captureAllAdaptersCheckbox);
             this.Controls.Add(this.local_ip_textbox);
             this.Controls.Add(this.local_ip_lbl);
@@ -552,6 +601,13 @@ namespace tickMeter.Forms
         public CheckBox chkIgnoreVirtualAdapters;
         public CheckBox chkRtssOnlyActive;
         public CheckBox chkStunEnable;
+        
+        // Чекбоксы для спайк-маркеров
+        public CheckBox chkOverlayPingSpike;
+        public CheckBox chkOverlayTickrateSpike;
+        public CheckBox chkOverlayTicktimeSpike;
+        public CheckBox chkUiPingSpike;
+        public CheckBox chkUiTickrateSpike;
         public CheckBox captureAllAdaptersCheckbox;
         public Label label8;
         public Label donate_lbl;

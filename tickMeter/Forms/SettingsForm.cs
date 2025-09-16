@@ -141,6 +141,38 @@ namespace tickMeter.Forms
                 System.Diagnostics.Debug.WriteLine($"Загружен ignore_virtual_adapters = {value}, установлен чекбокс = {chkIgnoreVirtualAdapters.Checked}");
             }
 
+            // Флаги спайк-маркеров
+            if (chkOverlayPingSpike != null)
+            {
+                bool value = GetBool("overlay_ping_spike_marker", true);
+                chkOverlayPingSpike.Checked = value;
+                System.Diagnostics.Debug.WriteLine($"Загружен overlay_ping_spike_marker = {value}, установлен чекбокс = {chkOverlayPingSpike.Checked}");
+            }
+            if (chkOverlayTickrateSpike != null)
+            {
+                bool value = GetBool("overlay_tickrate_spike_marker", false);
+                chkOverlayTickrateSpike.Checked = value;
+                System.Diagnostics.Debug.WriteLine($"Загружен overlay_tickrate_spike_marker = {value}, установлен чекбокс = {chkOverlayTickrateSpike.Checked}");
+            }
+            if (chkOverlayTicktimeSpike != null)
+            {
+                bool value = GetBool("overlay_ticktime_spike_marker", false);
+                chkOverlayTicktimeSpike.Checked = value;
+                System.Diagnostics.Debug.WriteLine($"Загружен overlay_ticktime_spike_marker = {value}, установлен чекбокс = {chkOverlayTicktimeSpike.Checked}");
+            }
+            if (chkUiPingSpike != null)
+            {
+                bool value = GetBool("ui_ping_spike_marker", true);
+                chkUiPingSpike.Checked = value;
+                System.Diagnostics.Debug.WriteLine($"Загружен ui_ping_spike_marker = {value}, установлен чекбокс = {chkUiPingSpike.Checked}");
+            }
+            if (chkUiTickrateSpike != null)
+            {
+                bool value = GetBool("ui_tickrate_spike_marker", false);
+                chkUiTickrateSpike.Checked = value;
+                System.Diagnostics.Debug.WriteLine($"Загружен ui_tickrate_spike_marker = {value}, установлен чекбокс = {chkUiTickrateSpike.Checked}");
+            }
+
             // Флаги вывода
             if (chkRtssOnlyActive != null)
             {
@@ -218,6 +250,33 @@ namespace tickMeter.Forms
                 System.Diagnostics.Debug.WriteLine($"ignore_virtual_adapters = {chkIgnoreVirtualAdapters.Checked}");
             }
 
+            // Флаги спайк-маркеров
+            if (chkOverlayPingSpike != null)
+            {
+                SetBool("overlay_ping_spike_marker", chkOverlayPingSpike.Checked);
+                System.Diagnostics.Debug.WriteLine($"overlay_ping_spike_marker = {chkOverlayPingSpike.Checked}");
+            }
+            if (chkOverlayTickrateSpike != null)
+            {
+                SetBool("overlay_tickrate_spike_marker", chkOverlayTickrateSpike.Checked);
+                System.Diagnostics.Debug.WriteLine($"overlay_tickrate_spike_marker = {chkOverlayTickrateSpike.Checked}");
+            }
+            if (chkOverlayTicktimeSpike != null)
+            {
+                SetBool("overlay_ticktime_spike_marker", chkOverlayTicktimeSpike.Checked);
+                System.Diagnostics.Debug.WriteLine($"overlay_ticktime_spike_marker = {chkOverlayTicktimeSpike.Checked}");
+            }
+            if (chkUiPingSpike != null)
+            {
+                SetBool("ui_ping_spike_marker", chkUiPingSpike.Checked);
+                System.Diagnostics.Debug.WriteLine($"ui_ping_spike_marker = {chkUiPingSpike.Checked}");
+            }
+            if (chkUiTickrateSpike != null)
+            {
+                SetBool("ui_tickrate_spike_marker", chkUiTickrateSpike.Checked);
+                System.Diagnostics.Debug.WriteLine($"ui_tickrate_spike_marker = {chkUiTickrateSpike.Checked}");
+            }
+
             // Флаги вывода
             if (chkRtssOnlyActive != null)
             {
@@ -288,6 +347,27 @@ namespace tickMeter.Forms
             if (chkStunEnable != null)
                 chkStunEnable.CheckedChanged += (s, e) =>
                     App.settingsManager.SetOption("stun_enable", chkStunEnable.Checked.ToString());
+
+            // Спайк-маркеры обработчики
+            if (chkOverlayPingSpike != null)
+                chkOverlayPingSpike.CheckedChanged += (s, e) =>
+                    App.settingsManager.SetOption("overlay_ping_spike_marker", chkOverlayPingSpike.Checked.ToString());
+
+            if (chkOverlayTickrateSpike != null)
+                chkOverlayTickrateSpike.CheckedChanged += (s, e) =>
+                    App.settingsManager.SetOption("overlay_tickrate_spike_marker", chkOverlayTickrateSpike.Checked.ToString());
+
+            if (chkOverlayTicktimeSpike != null)
+                chkOverlayTicktimeSpike.CheckedChanged += (s, e) =>
+                    App.settingsManager.SetOption("overlay_ticktime_spike_marker", chkOverlayTicktimeSpike.Checked.ToString());
+
+            if (chkUiPingSpike != null)
+                chkUiPingSpike.CheckedChanged += (s, e) =>
+                    App.settingsManager.SetOption("ui_ping_spike_marker", chkUiPingSpike.Checked.ToString());
+
+            if (chkUiTickrateSpike != null)
+                chkUiTickrateSpike.CheckedChanged += (s, e) =>
+                    App.settingsManager.SetOption("ui_tickrate_spike_marker", chkUiTickrateSpike.Checked.ToString());
 
             // Capture All Adapters - специальный обработчик с UI логикой (уже есть выше)
         }

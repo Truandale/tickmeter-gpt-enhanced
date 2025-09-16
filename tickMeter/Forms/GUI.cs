@@ -53,6 +53,10 @@ namespace tickMeter.Forms
         private readonly Ema emaTickrate = new Ema();
         private readonly Ema emaPing = new Ema();
 
+        // Baseline для детекции спайков
+        private double _pingBaselineMs = 0;
+        private double _tickrateBaseline = 0;
+
         private const int WM_ACTIVATE = 0x0006;
         private const int WA_ACTIVE = 1;
         private const int WA_CLICKACTIVE = 2;
@@ -321,7 +325,7 @@ namespace tickMeter.Forms
                 updateMetherStateFromActiveWindow();
             }
             
-            // EMA сглаживание для отображения
+            // Детекция спайков и сглаживание
             double dt = Math.Max(0.001, ticksLoop.Interval / 1000.0);
             bool smooth = App.settingsManager.GetOption("tickrate_smoothing", "True") == "True";
             
@@ -329,24 +333,56 @@ namespace tickMeter.Forms
             double rawTickrate = App.meterState.OutputTickRate;
             double rawPingMs = GetEffectivePing();
             
-            // Значения для отображения
-            double dispTickrate = rawTickrate;
-            double dispPing = rawPingMs;
+            // Детекция спайков
             bool pingSpike = false;
+            bool tickrateSpike = false;
             
-            if (smooth && rawPingMs > 0)
+            if (rawPingMs > 0)
             {
-                // Получаем параметры tau из настроек
-                double tickrateTau = double.Parse(App.settingsManager.GetOption("smoothing.tickrate.tau", "0.8"));
-                
-                dispTickrate = emaTickrate.Update(rawTickrate, Alpha(tickrateTau, dt));
-                (dispPing, pingSpike) = SmoothPing(rawPingMs, dt);
+                // Ping spike detection
+                double pingBaseline = (_pingBaselineMs <= 0) ? rawPingMs : _pingBaselineMs;
+                pingSpike = Math.Abs(rawPingMs - pingBaseline) >= 25.0 ||
+                           (pingBaseline > 0 && Math.Abs(rawPingMs - pingBaseline) / pingBaseline >= 0.40);
+
+                // Лёгкая EMA-база для следующего шага
+                double pingAlpha = 1 - Math.Exp(-dt / 1.0); // τ≈1 c
+                double forPingEma = pingSpike ? pingBaseline : rawPingMs;
+                _pingBaselineMs = (_pingBaselineMs <= 0) ? forPingEma : pingAlpha * forPingEma + (1 - pingAlpha) * _pingBaselineMs;
             }
+            
+            if (rawTickrate > 0)
+            {
+                // Tickrate spike detection (падение)
+                double tickrateBaseline = (_tickrateBaseline <= 0) ? rawTickrate : _tickrateBaseline;
+                tickrateSpike = (tickrateBaseline > 0) && (rawTickrate < tickrateBaseline * 0.65); // падение более чем на 35%
+
+                // EMA для tickrate baseline
+                double tickrateAlpha = 1 - Math.Exp(-dt / 0.8); // τ≈0.8 c
+                double forTickrateEma = tickrateSpike ? tickrateBaseline : rawTickrate;
+                _tickrateBaseline = (_tickrateBaseline <= 0) ? forTickrateEma : tickrateAlpha * forTickrateEma + (1 - tickrateAlpha) * _tickrateBaseline;
+            }
+            
+            // Значения для отображения (используем baseline как сглаженное значение)
+            double dispTickrate = smooth ? _tickrateBaseline : rawTickrate;
+            double dispPing = (smooth && rawPingMs > 0) ? _pingBaselineMs : rawPingMs;
+            
+            // Читаем флаги спайк-маркеров
+            bool ovPingSpike = App.settingsManager.GetOption("overlay_ping_spike_marker", "True") == "True";
+            bool ovTickrSpike = App.settingsManager.GetOption("overlay_tickrate_spike_marker", "False") == "True";
+            bool uiPingSpike = App.settingsManager.GetOption("ui_ping_spike_marker", "True") == "True";
+            bool uiTickrSpike = App.settingsManager.GetOption("ui_tickrate_spike_marker", "False") == "True";
             
             if (App.settingsForm.settings_rtss_output.Checked)
             {
                 await Task.Run(() => {
-                    try { RivaTuner.BuildRivaOutput(); } catch (Exception ex) {
+                    try { 
+                        // Устанавливаем статические переменные для спайк-индикаторов в RivaTuner
+                        RivaTuner.PingSpike = ovPingSpike && pingSpike;
+                        RivaTuner.TickrateSpike = ovTickrSpike && tickrateSpike;
+                        RivaTuner.TicktimeSpike = false; // пока не используется
+                        
+                        RivaTuner.BuildRivaOutput(); 
+                    } catch (Exception ex) {
                         if(!RTSS_Failed)
                         {
                             DebugLogger.log(ex);
@@ -373,7 +409,12 @@ namespace tickMeter.Forms
             await Task.Run(
                     () => {
                         tickrate_val.Invoke(new Action(() => {
-                            tickrate_val.Text = Math.Round(dispTickrate, 1).ToString();
+                            // Добавляем спайк-маркер для UI если включен
+                            string tickrateText = Math.Round(dispTickrate, 1).ToString();
+                            if (uiTickrSpike && tickrateSpike)
+                                tickrateText += " (!)";
+                            
+                            tickrate_val.Text = tickrateText;
                             tickrate_val.ForeColor = TickRateColor;
                         }));
                         //update tickrate chart
@@ -421,7 +462,8 @@ namespace tickMeter.Forms
                             
                             if (dispPing > 0)
                             {
-                                string spikeIndicator = pingSpike ? "!" : "";
+                                // Добавляем спайк-маркер для UI если включен
+                                string spikeIndicator = (uiPingSpike && pingSpike) ? " (!)" : "";
                                 pingText = $"{Math.Round(dispPing, 0)}{spikeIndicator} ms";
                             }
                             else
