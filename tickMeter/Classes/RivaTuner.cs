@@ -336,8 +336,15 @@ namespace tickMeter.Classes
                     tickrateColor = "<C3>";
 
                 output += "<S0><C4>Tickrate" + Environment.NewLine;
+                
+                // Используем сглаженные данные для графика если включено
+                bool smoothCharts = App.settingsManager.GetOption("smooth_charts", "False") == "True";
+                float[] tickrateChartData = smoothCharts ? 
+                    App.meterState.tickrateGraphSmoothed.ToArray() : 
+                    App.meterState.tickrateGraph.ToArray();
+                
                 output += DrawChart(
-                    App.meterState.tickrateGraph.ToArray(),
+                    tickrateChartData,
                     0,
                     0,
                     "Tickrate",
@@ -406,9 +413,16 @@ namespace tickMeter.Classes
                         pingColor = "<C1>";
                     }
                     output += Environment.NewLine + "<S0><C4>Ping" + Environment.NewLine;
+                    
+                    // Используем сглаженные данные для графика если включено
+                    bool smoothCharts = App.settingsManager.GetOption("smooth_charts", "False") == "True";
+                    float[] pingChartData = smoothCharts ? 
+                        App.meterState.pingBufferSmoothed.ToArray() : 
+                        App.meterState.pingBuffer.ToArray();
+                    
                     output += DrawChart(
-                        App.meterState.pingBuffer.ToArray(),
-                        (int)App.meterState.pingBuffer.Min(),
+                        pingChartData,
+                        (int)pingChartData.Min(),
                         0,
                         "Ping",
                         pingValue,

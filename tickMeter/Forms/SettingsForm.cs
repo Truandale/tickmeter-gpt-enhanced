@@ -27,7 +27,7 @@ namespace tickMeter.Forms
         // Флаг чтобы избежать дублирования write-through обработчиков
         private bool universalHandlersInitialized = false;
         private bool captureAllAdaptersHandlerInitialized = false;
-
+        
         public SettingsForm()
         {
             InitializeComponent();
@@ -122,6 +122,12 @@ namespace tickMeter.Forms
                 chkTickrateSmoothing.Checked = value;
                 System.Diagnostics.Debug.WriteLine($"Загружен tickrate_smoothing = {value}, установлен чекбокс = {chkTickrateSmoothing.Checked}");
             }
+            if (checkBox1 != null)
+            {
+                bool value = GetBool("smooth_charts", false);
+                checkBox1.Checked = value;
+                System.Diagnostics.Debug.WriteLine($"Загружен smooth_charts = {value}, установлен чекбокс = {checkBox1.Checked}");
+            }
             if (chkDedupMultiNic != null)
             {
                 bool value = GetBool("dedup_multi_nic", true);
@@ -172,7 +178,7 @@ namespace tickMeter.Forms
                 chkUiTickrateSpike.Checked = value;
                 System.Diagnostics.Debug.WriteLine($"Загружен ui_tickrate_spike_marker = {value}, установлен чекбокс = {chkUiTickrateSpike.Checked}");
             }
-
+            
             // Флаги вывода
             if (chkRtssOnlyActive != null)
             {
@@ -234,6 +240,11 @@ namespace tickMeter.Forms
                 SetBool("tickrate_smoothing", chkTickrateSmoothing.Checked);
                 System.Diagnostics.Debug.WriteLine($"tickrate_smoothing = {chkTickrateSmoothing.Checked}");
             }
+            if (checkBox1 != null)
+            {
+                SetBool("smooth_charts", checkBox1.Checked);
+                System.Diagnostics.Debug.WriteLine($"smooth_charts = {checkBox1.Checked}");
+            }
             if (chkDedupMultiNic != null)
             {
                 SetBool("dedup_multi_nic", chkDedupMultiNic.Checked);
@@ -276,7 +287,7 @@ namespace tickMeter.Forms
                 SetBool("ui_tickrate_spike_marker", chkUiTickrateSpike.Checked);
                 System.Diagnostics.Debug.WriteLine($"ui_tickrate_spike_marker = {chkUiTickrateSpike.Checked}");
             }
-
+            
             // Флаги вывода
             if (chkRtssOnlyActive != null)
             {
@@ -326,6 +337,10 @@ namespace tickMeter.Forms
             if (chkTickrateSmoothing != null)
                 chkTickrateSmoothing.CheckedChanged += (s, e) =>
                     App.settingsManager.SetOption("tickrate_smoothing", chkTickrateSmoothing.Checked.ToString());
+
+            if (checkBox1 != null)
+                checkBox1.CheckedChanged += (s, e) =>
+                    App.settingsManager.SetOption("smooth_charts", checkBox1.Checked.ToString());
 
             if (chkDedupMultiNic != null)
                 chkDedupMultiNic.CheckedChanged += (s, e) =>
@@ -737,7 +752,12 @@ namespace tickMeter.Forms
 
         private void checkBox1_CheckedChanged(object sender, EventArgs e)
         {
-
+            // Сохраняем состояние чекбокса сглаживания графиков в настройки
+            if (checkBox1 != null)
+            {
+                App.settingsManager.SetOption("smooth_charts", checkBox1.Checked.ToString());
+                System.Diagnostics.Debug.WriteLine($"checkBox1 (smooth_charts) изменен на: {checkBox1.Checked}");
+            }
         }
 
         private void local_ip_textbox_TextChanged(object sender, EventArgs e)

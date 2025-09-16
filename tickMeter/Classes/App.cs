@@ -24,18 +24,24 @@ namespace tickMeter.Classes
         public static SettingsManager settingsManager;
         public static ConnectionsManager connMngr;
         public static PingManager pingManager;
+        
+        // EMA фильтры для сглаживания графиков
+        public static Ema emaChartTickrate;
+        public static Ema emaChartPing;
         static List<LivePacketDevice> AdaptersList;
 
         public static void Init()
         {
+            // Сначала инициализируем settingsManager, так как он нужен для SettingsForm
+            settingsManager = new SettingsManager();
+            connMngr = new ConnectionsManager();
+            
             tickrateStatisticsForm = new TickrateStatistics();
             packetFilterForm = new PacketFilterForm();
             settingsForm = new SettingsForm();
             packetStatsForm = new PacketStats();
             profilesForm = new ProfilesForm();
             profileEditForm = new ProfileEditForm();
-            settingsManager = new SettingsManager();
-            connMngr = new ConnectionsManager();
             pingManager = new PingManager(settingsManager, connMngr);
 
         }

@@ -41,6 +41,11 @@ namespace tickMeter
         public List<float> tickTimeBuffer = new List<float>();
         public List<float> pingBuffer = new List<float>();
         public List<float> tickrateGraph = new List<float>();
+        
+        // Сглаженные буферы для графиков
+        public List<int> TicksHistorySmoothed { get; set; }
+        public List<float> pingBufferSmoothed = new List<float>();
+        public List<float> tickrateGraphSmoothed = new List<float>();
 
         public int TickRate
         {
@@ -105,7 +110,15 @@ namespace tickMeter
                 tickTimeBuffer.Add(0);
                 tickrateGraph.Add(0);
                 pingBuffer.Add(30); // Начальное значение для графика пинга
+                
+                // Инициализация сглаженных буферов
+                tickrateGraphSmoothed.Add(0);
+                pingBufferSmoothed.Add(30);
             }
+            
+            // Инициализация TicksHistorySmoothed
+            TicksHistorySmoothed = new List<int>();
+            
             Server = new GameServer(); // Инициализация сервера до Reset
             Reset(); // Сброс всех счетчиков и состояния
             SetMeterTimer();
@@ -166,6 +179,20 @@ namespace tickMeter
                         tickrateGraph.RemoveAt(0);
                     }
                     tickrateGraph.Add(OutputTickRate);
+                    
+                    // Update smoothed tickrate buffer for charts
+                    if (App.settingsManager.GetOption("smooth_charts", "False") == "True")
+                    {
+                        double smoothingFactor = double.Parse(App.settingsManager.GetOption("tickrate_smoothing_factor", "0.1"));
+                        double smoothedTickrate = App.emaChartTickrate.Update(OutputTickRate, smoothingFactor);
+                        tickrateGraphSmoothed.Add((float)smoothedTickrate);
+                    }
+                    else
+                    {
+                        tickrateGraphSmoothed.Add(OutputTickRate);
+                    }
+                    if (tickrateGraphSmoothed.Count > 511)
+                        tickrateGraphSmoothed.RemoveAt(0);
                     TickRateLog += timeStamp.ToString() + ";" + OutputTickRate.ToString() + Environment.NewLine;
                     TickRate = 0;
 
@@ -183,6 +210,20 @@ namespace tickMeter
                     pingBuffer.Add(pingValue);
                     if (pingBuffer.Count > 512)
                         pingBuffer.RemoveAt(0);
+
+                    // Update smoothed ping buffer for charts
+                    if (App.settingsManager.GetOption("smooth_charts", "False") == "True")
+                    {
+                        double smoothingFactor = double.Parse(App.settingsManager.GetOption("ping_smoothing_factor", "0.1"));
+                        double smoothedPing = App.emaChartPing.Update(pingValue, smoothingFactor);
+                        pingBufferSmoothed.Add((float)smoothedPing);
+                    }
+                    else
+                    {
+                        pingBufferSmoothed.Add(pingValue);
+                    }
+                    if (pingBufferSmoothed.Count > 512)
+                        pingBufferSmoothed.RemoveAt(0);
                 }
                 timeStamp = value;
             }
@@ -232,15 +273,20 @@ namespace tickMeter
             SessionStart = DateTime.Now;
             Game = "";
             TicksHistory = new List<int>();
+            TicksHistorySmoothed = new List<int>();
 
             tickTimeBuffer.Clear();
             tickrateGraph.Clear();
             pingBuffer.Clear();
+            tickrateGraphSmoothed.Clear();
+            pingBufferSmoothed.Clear();
             for (int i = 0; i < 513; i++)
             {
                 tickTimeBuffer.Add(0);
                 tickrateGraph.Add(0);
                 pingBuffer.Add(30);
+                tickrateGraphSmoothed.Add(0);
+                pingBufferSmoothed.Add(30);
             }
 
             UploadTraffic = 0;

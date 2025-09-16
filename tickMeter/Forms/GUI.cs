@@ -52,6 +52,10 @@ namespace tickMeter.Forms
         // EMA сглаживание для overlay
         private readonly Ema emaTickrate = new Ema();
         private readonly Ema emaPing = new Ema();
+        
+        // EMA фильтры для графиков
+        private readonly Ema emaChartTickrate = new Ema();
+        private readonly Ema emaChartPing = new Ema();
 
         // Baseline для детекции спайков
         private double _pingBaselineMs = 0;
@@ -145,6 +149,10 @@ namespace tickMeter.Forms
             
             // Инициализируем сглаживание tickrate
             Classes.TickrateSmoothingManager.Initialize();
+            
+            // Инициализируем EMA фильтры для графиков
+            App.emaChartTickrate = new Ema();
+            App.emaChartPing = new Ema();
         }
 
         protected void ShowAll()
@@ -420,7 +428,30 @@ namespace tickMeter.Forms
                         //update tickrate chart
                         if (App.settingsForm.settings_chart_checkbox.Checked)
                         {
-                            graph.Invoke(new Action(() => graph.Image = UpdateGraph(App.meterState.TicksHistory)));
+                            // Проверяем настройку сглаживания графиков
+                            bool smoothCharts = App.settingsManager.GetOption("smooth_charts", "False") == "True";
+                            List<int> chartData;
+                            
+                            if (smoothCharts)
+                            {
+                                // Добавляем сглаженное значение в буфер
+                                double smoothedTickrate = emaChartTickrate.Update(rawTickrate, Alpha(0.8, dt));
+                                App.meterState.TicksHistorySmoothed.Add((int)Math.Round(smoothedTickrate));
+                                
+                                // Ограничиваем размер буфера
+                                if (App.meterState.TicksHistorySmoothed.Count > 511)
+                                {
+                                    App.meterState.TicksHistorySmoothed.RemoveAt(0);
+                                }
+                                
+                                chartData = App.meterState.TicksHistorySmoothed;
+                            }
+                            else
+                            {
+                                chartData = App.meterState.TicksHistory;
+                            }
+                            
+                            graph.Invoke(new Action(() => graph.Image = UpdateGraph(chartData)));
                         }
                         //update traffic
                         if (App.settingsForm.settings_traffic_checkbox.Checked)

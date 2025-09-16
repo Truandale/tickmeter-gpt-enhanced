@@ -82,6 +82,7 @@ namespace tickMeter.Forms
             this.label8 = new System.Windows.Forms.Label();
             this.donate_lbl = new System.Windows.Forms.Label();
             this.updateLbl = new System.Windows.Forms.Label();
+            this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.ping_interval)).BeginInit();
@@ -504,10 +505,18 @@ namespace tickMeter.Forms
             this.updateLbl.Name = "updateLbl";
             this.updateLbl.Click += new System.EventHandler(this.updateLbl_Click);
             // 
+            // checkBox1
+            // 
+            resources.ApplyResources(this.checkBox1, "checkBox1");
+            this.checkBox1.ForeColor = System.Drawing.Color.Black;
+            this.checkBox1.Name = "checkBox1";
+            this.checkBox1.UseVisualStyleBackColor = true;
+            // 
             // SettingsForm
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.checkBox1);
             this.Controls.Add(this.chkPingBindToInterface);
             this.Controls.Add(this.chkPingTcpPrefer);
             this.Controls.Add(this.chkPingFallbackIcmp);
@@ -612,5 +621,6 @@ namespace tickMeter.Forms
         public Label label8;
         public Label donate_lbl;
         public Label updateLbl;
+        public CheckBox checkBox1;
     }
 }
