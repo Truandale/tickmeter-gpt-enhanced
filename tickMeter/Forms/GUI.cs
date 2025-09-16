@@ -49,6 +49,10 @@ namespace tickMeter.Forms
         public DbdStatsManager DbdMngr;
         public string targetKey = "";
 
+        // EMA сглаживание для overlay
+        private readonly Ema emaTickrate = new Ema();
+        private readonly Ema emaPing = new Ema();
+
         private const int WM_ACTIVATE = 0x0006;
         private const int WA_ACTIVE = 1;
         private const int WA_CLICKACTIVE = 2;
@@ -316,6 +320,29 @@ namespace tickMeter.Forms
             {
                 updateMetherStateFromActiveWindow();
             }
+            
+            // EMA сглаживание для отображения
+            double dt = Math.Max(0.001, ticksLoop.Interval / 1000.0);
+            bool smooth = App.settingsManager.GetOption("tickrate_smoothing", "True") == "True";
+            
+            // Сырые значения (используются в логике)
+            double rawTickrate = App.meterState.OutputTickRate;
+            double rawPingMs = GetEffectivePing();
+            
+            // Значения для отображения
+            double dispTickrate = rawTickrate;
+            double dispPing = rawPingMs;
+            bool pingSpike = false;
+            
+            if (smooth && rawPingMs > 0)
+            {
+                // Получаем параметры tau из настроек
+                double tickrateTau = double.Parse(App.settingsManager.GetOption("smoothing.tickrate.tau", "0.8"));
+                
+                dispTickrate = emaTickrate.Update(rawTickrate, Alpha(tickrateTau, dt));
+                (dispPing, pingSpike) = SmoothPing(rawPingMs, dt);
+            }
+            
             if (App.settingsForm.settings_rtss_output.Checked)
             {
                 await Task.Run(() => {
@@ -334,11 +361,11 @@ namespace tickMeter.Forms
 
             //update tickrate
             Color TickRateColor = App.settingsForm.ColorGood.ForeColor;
-            if (App.meterState.OutputTickRate < 30)
+            if (rawTickrate < 30)
             {
                 TickRateColor = App.settingsForm.ColorBad.ForeColor;
             }
-            else if (App.meterState.OutputTickRate < 50)
+            else if (rawTickrate < 50)
             {
                 TickRateColor = App.settingsForm.ColorMid.ForeColor;
             }
@@ -346,7 +373,7 @@ namespace tickMeter.Forms
             await Task.Run(
                     () => {
                         tickrate_val.Invoke(new Action(() => {
-                            tickrate_val.Text = App.meterState.OutputTickRate.ToString();
+                            tickrate_val.Text = Math.Round(dispTickrate, 1).ToString();
                             tickrate_val.ForeColor = TickRateColor;
                         }));
                         //update tickrate chart
@@ -369,29 +396,41 @@ namespace tickMeter.Forms
                         //update PING
                         if (App.settingsForm.settings_ping_checkbox.Checked)
                         {
+                        // Получаем цвет для пинга на основе сырого значения
+                        Color pingColor = App.settingsForm.ColorMid.ForeColor; // По умолчанию
+                        if (rawPingMs > 0)
+                        {
+                            if (rawPingMs < 100)
+                            {
+                                pingColor = App.settingsForm.ColorGood.ForeColor;
+                            }
+                            else if (rawPingMs < 150)
+                            {
+                                pingColor = App.settingsForm.ColorMid.ForeColor;
+                            }
+                            else
+                            {
+                                pingColor = App.settingsForm.ColorBad.ForeColor;
+                            }
+                        }
+                        
                         countryLbl.Invoke(new Action(() => countryLbl.Text = App.meterState.Server.Location));
                         ping_val.Invoke(new Action(() =>
                         {
-                            var server = App.meterState.Server;
                             string pingText;
-                            // UDP > TCP > ICMP, всегда только числовое значение, без геолокации
-                            if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
+                            
+                            if (dispPing > 0)
                             {
-                                pingText = $"{server.UdpPing.ToString("0")} ms";
-                            }
-                            else if (server.Ping > 0 && server.Ping < 10000)
-                            {
-                                pingText = $"{server.Ping} ms";
-                            }
-                            else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
-                            {
-                                pingText = $"{App.meterState.IcmpPing} ms";
+                                string spikeIndicator = pingSpike ? "!" : "";
+                                pingText = $"{Math.Round(dispPing, 0)}{spikeIndicator} ms";
                             }
                             else
                             {
                                 pingText = "n/a ms";
                             }
+                            
                             ping_val.Text = pingText;
+                            ping_val.ForeColor = pingColor;
                         }));
                         }
                         //update time
@@ -521,13 +560,20 @@ namespace tickMeter.Forms
                     // список в UI обычно имеет заглушку на позиции 0
                     src = src.Skip(1);
                 }
+                
+                // Проверяем настройку "ignore virtual adapters"
+                bool ignoreVirtual = App.settingsManager.GetOption("ignore_virtual_adapters", "True") == "True";
+                
                 foreach (var d in src)
                 {
                     var desc = (d.Description ?? "").ToLowerInvariant();
-                    if (desc.Contains("loopback") || desc.Contains("npcap loopback") ||
+                    
+                    // Фильтруем виртуальные адаптеры только если настройка включена
+                    if (ignoreVirtual && (desc.Contains("loopback") || desc.Contains("npcap loopback") ||
                         desc.Contains("hyper-v") || desc.Contains("vmware") ||
-                        desc.Contains("virtualbox") || desc.Contains("vethernet"))
+                        desc.Contains("virtualbox") || desc.Contains("vethernet")))
                         continue;
+                        
                     _allSelectedAdapters.Add(d);
                 }
                 if (_allSelectedAdapters.Count == 0)
@@ -860,5 +906,78 @@ namespace tickMeter.Forms
                 // Не добавляем данные сюда, чтобы избежать слишком частых обновлений графика
             }
         }
+        
+        // EMA сглаживание - вычисление коэффициента альфа
+        private static double Alpha(double tauSec, double dtSec) => 1 - Math.Exp(-dtSec / tauSec);
+        
+        // Получает эффективное значение пинга из доступных источников
+        private double GetEffectivePing()
+        {
+            var server = App.meterState.Server;
+            
+            // UDP > TCP > ICMP приоритет
+            if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
+            {
+                return server.UdpPing;
+            }
+            else if (server.Ping > 0 && server.Ping < 10000)
+            {
+                return server.Ping;
+            }
+            else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
+            {
+                return App.meterState.IcmpPing;
+            }
+            
+            return -1; // нет валидного пинга
+        }
+        
+        // Сглаживание пинга с защитой от спайков
+        private (double val, bool spike) SmoothPing(double raw, double dtSec)
+        {
+            // Получаем параметры из настроек
+            double tau = double.Parse(App.settingsManager.GetOption("smoothing.ping.tau", "1.0"));
+            double spikeAbsMs = double.Parse(App.settingsManager.GetOption("smoothing.ping.spike_abs_ms", "25"));
+            double spikeRel = double.Parse(App.settingsManager.GetOption("smoothing.ping.spike_rel", "0.40"));
+            
+            double a = Alpha(tau, dtSec);
+            double baseLine = emaPing.ValueOr(raw);
+            bool spike = Math.Abs(raw - baseLine) >= spikeAbsMs || 
+                        (baseLine > 0 && Math.Abs(raw - baseLine) / baseLine >= spikeRel);
+            double forEma = spike ? baseLine : raw;
+            return (emaPing.Update(forEma, a), spike);
+        }
+    }
+
+    /// <summary>
+    /// Класс для экспоненциального сглаживания (EMA)
+    /// </summary>
+    public sealed class Ema
+    {
+        private double? v;
+        
+        /// <summary>
+        /// Обновляет фильтр новым значением
+        /// </summary>
+        /// <param name="x">Новое значение</param>
+        /// <param name="a">Коэффициент альфа (0-1)</param>
+        /// <returns>Сглаженное значение</returns>
+        public double Update(double x, double a) 
+        {
+            v = v is null ? x : a * x + (1 - a) * v.Value;
+            return v.Value;
+        }
+        
+        /// <summary>
+        /// Возвращает текущее значение или fallback если не инициализирован
+        /// </summary>
+        /// <param name="x">Значение по умолчанию</param>
+        /// <returns>Текущее или дефолтное значение</returns>
+        public double ValueOr(double x) => v ?? x;
+        
+        /// <summary>
+        /// Сбрасывает фильтр
+        /// </summary>
+        public void Reset() => v = null;
     }
 }
