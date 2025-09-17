@@ -27,6 +27,11 @@ namespace tickMeter.Classes
         public static bool TickrateSpike = false;
         public static bool TicktimeSpike = false;
 
+        // NEW: дисплейные (сглаженные) значения для оверлея.
+        // Если null — используем «сырые» значения из meterState.
+        public static double? DisplayPingMs = null;
+        public static double? DisplayTickrate = null;
+
         public static string DrawChart(
             float[] graphData,
             int min = 0,
@@ -182,18 +187,21 @@ namespace tickMeter.Classes
             // Проверяем флаг оверлея для tickrate спайков
             bool showTickrateSpike = App.settingsManager.GetOption("overlay_tickrate_spike_marker", "False") == "True";
             
+            // NEW: предпочитаем сглаженное значение, если GUI его передал
+            double val = DisplayTickrate ?? meterState.OutputTickRate;
+            
             string tickRateStr = "<S><C0>Tickrate: ";
-            if (meterState.OutputTickRate < 30)
+            if (val < 30)
             {
-                tickRateStr += "<C1>" + meterState.OutputTickRate.ToString();
+                tickRateStr += "<C1>" + val.ToString("0.0");
             }
-            else if (meterState.OutputTickRate < 50)
+            else if (val < 50)
             {
-                tickRateStr += "<C2>" + meterState.OutputTickRate.ToString();
+                tickRateStr += "<C2>" + val.ToString("0.0");
             }
             else
             {
-                tickRateStr += "<C3>" + meterState.OutputTickRate.ToString();
+                tickRateStr += "<C3>" + val.ToString("0.0");
             }
             
             // Добавляем спайк-индикатор если включен и обнаружен спайк
@@ -247,36 +255,53 @@ namespace tickMeter.Classes
 
         public static string FormatPing()
         {
-            // UDP > TCP > ICMP, всегда числовое значение
             string pingFont = "";
             string pingValue = "";
             string geo = meterState.Server.Location;
 
-            if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
+            // NEW: если GUI передал сглаженное значение, используем его
+            if (DisplayPingMs.HasValue)
             {
-                pingFont = "<C3>";
-                // Показываем именно числовое значение UDP ping
-                pingValue = App.meterState.Server.UdpPing.ToString("0");
-            }
-            else if (meterState.Server.Ping > 0 && meterState.Server.Ping < 10000)
-            {
-                if (meterState.Server.Ping < 100)
+                double ms = DisplayPingMs.Value;
+                
+                if (ms < 100)
                     pingFont = "<C3>";
-                else if (meterState.Server.Ping < 150)
+                else if (ms < 150)
                     pingFont = "<C2>";
                 else
                     pingFont = "<C1>";
-                pingValue = meterState.Server.Ping.ToString();
-            }
-            else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
-            {
-                pingFont = "<C2>";
-                pingValue = App.meterState.IcmpPing.ToString();
+                
+                pingValue = Math.Round(ms, 0).ToString();
             }
             else
             {
-                pingFont = "<C1>";
-                pingValue = "n/a";
+                // Fallback: оригинальная логика UDP > TCP > ICMP
+                if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
+                {
+                    pingFont = "<C3>";
+                    // Показываем именно числовое значение UDP ping
+                    pingValue = App.meterState.Server.UdpPing.ToString("0");
+                }
+                else if (meterState.Server.Ping > 0 && meterState.Server.Ping < 10000)
+                {
+                    if (meterState.Server.Ping < 100)
+                        pingFont = "<C3>";
+                    else if (meterState.Server.Ping < 150)
+                        pingFont = "<C2>";
+                    else
+                        pingFont = "<C1>";
+                    pingValue = meterState.Server.Ping.ToString();
+                }
+                else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
+                {
+                    pingFont = "<C2>";
+                    pingValue = App.meterState.IcmpPing.ToString();
+                }
+                else
+                {
+                    pingFont = "<C1>";
+                    pingValue = "n/a";
+                }
             }
             
             // Проверяем флаг оверлея для ping спайков и добавляем индикатор
@@ -430,6 +455,12 @@ namespace tickMeter.Classes
                     );
                 }
             } catch (InvalidOperationException) { }
+            
+            // NEW: после использования сбрасываем дисплейные значения,
+            // чтобы не было «залипания», если GUI по какой-то причине не обновит их на следующем тике
+            DisplayPingMs = null;
+            DisplayTickrate = null;
+            
             PrintData(output, true);
         }
         public static void PrintData(string text, bool RunRivaFlag = false)

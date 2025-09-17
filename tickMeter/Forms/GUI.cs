@@ -384,6 +384,11 @@ namespace tickMeter.Forms
             {
                 await Task.Run(() => {
                     try { 
+                        // NEW: Передаём сглаженные «display» значения в RivaTuner.
+                        // Если EMA выключена — disp* = raw*, всё равно корректно.
+                        RivaTuner.DisplayPingMs = dispPing;
+                        RivaTuner.DisplayTickrate = dispTickrate;
+                        
                         // Устанавливаем статические переменные для спайк-индикаторов в RivaTuner
                         RivaTuner.PingSpike = ovPingSpike && pingSpike;
                         RivaTuner.TickrateSpike = ovTickrSpike && tickrateSpike;
