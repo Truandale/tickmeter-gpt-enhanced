@@ -719,11 +719,23 @@ namespace tickMeter.Forms
         {
             if (!App.meterState.IsTracking) return;
             
-            // В мульти-режиме этот метод должен обрабатываться по-другому
+            // В мульти-режиме перезапускаем конкретный воркер
             var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
             if (captureAll) 
             {
-                // В мульти-режиме перезапуск воркеров обрабатывается отдельно
+                // Перезапускаем завершившийся воркер в мультирежиме
+                var worker = sender as BackgroundWorker;
+                if (worker != null && !worker.CancellationPending)
+                {
+                    try
+                    {
+                        worker.RunWorkerAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[MultiAdapter GUI] Error restarting worker: {ex.Message}");
+                    }
+                }
                 return;
             }
             
@@ -1027,9 +1039,9 @@ namespace tickMeter.Forms
         private (double val, bool spike) SmoothPing(double raw, double dtSec)
         {
             // Получаем параметры из настроек
-            double tau = double.Parse(App.settingsManager.GetOption("smoothing.ping.tau", "1.0", "SETTINGS"));
-            double spikeAbsMs = double.Parse(App.settingsManager.GetOption("smoothing.ping.spike_abs_ms", "25", "SETTINGS"));
-            double spikeRel = double.Parse(App.settingsManager.GetOption("smoothing.ping.spike_rel", "0.40", "SETTINGS"));
+            double tau = double.Parse(App.settingsManager.GetOption("smoothing.ping.tau", "1.0", "SETTINGS"), CultureInfo.InvariantCulture);
+            double spikeAbsMs = double.Parse(App.settingsManager.GetOption("smoothing.ping.spike_abs_ms", "25", "SETTINGS"), CultureInfo.InvariantCulture);
+            double spikeRel = double.Parse(App.settingsManager.GetOption("smoothing.ping.spike_rel", "0.40", "SETTINGS"), CultureInfo.InvariantCulture);
             
             double a = Alpha(tau, dtSec);
             double baseLine = emaPing.ValueOr(raw);

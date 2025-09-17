@@ -92,6 +92,26 @@ namespace tickMeter
 
         }
 
+        private void MultiAdapterWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (!App.meterState.IsTracking) return;
+            
+            // Перезапускаем завершившийся воркер
+            var worker = sender as BackgroundWorker;
+            if (worker != null && !worker.CancellationPending)
+            {
+                try
+                {
+                    worker.RunWorkerAsync();
+                }
+                catch (Exception ex)
+                {
+                    // В случае ошибки выводим в консоль отладки, но не останавливаем другие воркеры
+                    System.Diagnostics.Debug.WriteLine($"[MultiAdapter] Error restarting worker: {ex.Message}");
+                }
+            }
+        }
+
 
         private void PcapWorkerDoWork(object sender, DoWorkEventArgs e)
         {
@@ -119,7 +139,7 @@ namespace tickMeter
                     var adapter = (PacketDevice)dev;
                     var w = new BackgroundWorker { WorkerSupportsCancellation = true };
                     w.DoWork += (s, args) => OpenAndCaptureFromAdapter(adapter);
-                    w.RunWorkerCompleted += (s, args) => { };
+                    w.RunWorkerCompleted += MultiAdapterWorkerCompleted;
                     _pcapWorkers.Add(w);
                     w.RunWorkerAsync();
                 }
@@ -142,7 +162,11 @@ namespace tickMeter
             PacketCommunicator communicator = adapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 1000);
             if (communicator == null)
             {
-                MessageBox.Show("Failed to open the selected adapter!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // В режиме мультиадаптера просто пропускаем проблемные адаптеры
+                if (!CaptureAll)
+                {
+                    MessageBox.Show("Failed to open the selected adapter!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
                 return;
             }
 
@@ -151,7 +175,11 @@ namespace tickMeter
                 // Проверяем, что адаптер поддерживает Ethernet
                 if (communicator.DataLink.Kind != DataLinkKind.Ethernet)
                 {
-                    MessageBox.Show("This program works only on Ethernet networks!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    // В режиме мультиадаптера просто пропускаем неподдерживаемые адаптеры
+                    if (!CaptureAll)
+                    {
+                        MessageBox.Show("This program works only on Ethernet networks!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                     return;
                 }
 
@@ -162,7 +190,11 @@ namespace tickMeter
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"An error occurred while receiving packets: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    // В режиме мультиадаптера просто пропускаем проблемные адаптеры
+                    if (!CaptureAll)
+                    {
+                        MessageBox.Show($"An error occurred while receiving packets: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
             }
         }

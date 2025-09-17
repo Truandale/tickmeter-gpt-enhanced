@@ -16,34 +16,47 @@ namespace tickMeter.Classes
         public static void trackTick(string name, string protocol, string localIp, uint localPort, string remoteIp, uint remotePort, int tickIn, int tickOut, uint traffic, DateTime tickTime, uint id)
         {
             string hash = Hash(name, remoteIp, remotePort);
-            if (!connections.ContainsKey(hash)) { 
-                connections.Add(hash, new ProcessNetworkStats());
-                connections[hash].name = name;
-                connections[hash].localIp = localIp;
-                connections[hash].remoteIp = remoteIp;
-                connections[hash].localPort = localPort;
-                connections[hash].remotePort = remotePort;
-                connections[hash].downloaded = 0;
-                connections[hash].sent = 0;
-                connections[hash].ticksIn = 0;
-                connections[hash].ticksOut = 0;
-                connections[hash].startTrack = tickTime;
-                connections[hash].id = 0;
+            
+            // Thread-safe way to get or create connection
+            ProcessNetworkStats stats;
+            if (!connections.TryGetValue(hash, out stats)) 
+            { 
+                // Try to add new connection, but handle case where another thread already added it
+                stats = new ProcessNetworkStats();
+                stats.name = name;
+                stats.localIp = localIp;
+                stats.remoteIp = remoteIp;
+                stats.localPort = localPort;
+                stats.remotePort = remotePort;
+                stats.downloaded = 0;
+                stats.sent = 0;
+                stats.ticksIn = 0;
+                stats.ticksOut = 0;
+                stats.startTrack = tickTime;
+                stats.id = 0;
+                
+                // Use indexer instead of Add to avoid exception if key already exists
+                connections[hash] = stats;
+                
+                // Re-get the value in case another thread added it simultaneously
+                stats = connections[hash];
             }
-            connections[hash].protocol = protocol;
-            connections[hash].ticksIn  += tickIn;
-            connections[hash].ticksOut += tickOut;
+            
+            // Update the connection stats
+            stats.protocol = protocol;
+            stats.ticksIn  += tickIn;
+            stats.ticksOut += tickOut;
 
             if (tickIn > 0)
             {
-                connections[hash].updateTicktimeBuffer(tickTime.Ticks);
-                connections[hash].lastUpdate = tickTime;
-                connections[hash].downloaded += (int)traffic;
-                connections[hash].id = id;
+                stats.updateTicktimeBuffer(tickTime.Ticks);
+                stats.lastUpdate = tickTime;
+                stats.downloaded += (int)traffic;
+                stats.id = id;
             }
             if(tickOut > 0)
             {
-                connections[hash].sent += (int)traffic;
+                stats.sent += (int)traffic;
             }
         }
 
