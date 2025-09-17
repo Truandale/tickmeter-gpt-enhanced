@@ -335,7 +335,7 @@ namespace tickMeter.Forms
             
             // Детекция спайков и сглаживание
             double dt = Math.Max(0.001, ticksLoop.Interval / 1000.0);
-            bool smooth = App.settingsManager.GetOption("tickrate_smoothing", "True") == "True";
+            bool smooth = App.settingsManager.GetOption("tickrate_smoothing", "True", "SETTINGS") == "True";
             
             // Сырые значения (используются в логике)
             double rawTickrate = App.meterState.OutputTickRate;
@@ -375,10 +375,10 @@ namespace tickMeter.Forms
             double dispPing = (smooth && rawPingMs > 0) ? _pingBaselineMs : rawPingMs;
             
             // Читаем флаги спайк-маркеров
-            bool ovPingSpike = App.settingsManager.GetOption("overlay_ping_spike_marker", "True") == "True";
-            bool ovTickrSpike = App.settingsManager.GetOption("overlay_tickrate_spike_marker", "False") == "True";
-            bool uiPingSpike = App.settingsManager.GetOption("ui_ping_spike_marker", "True") == "True";
-            bool uiTickrSpike = App.settingsManager.GetOption("ui_tickrate_spike_marker", "False") == "True";
+            bool ovPingSpike = App.settingsManager.GetOption("overlay_ping_spike_marker", "True", "SETTINGS") == "True";
+            bool ovTickrSpike = App.settingsManager.GetOption("overlay_tickrate_spike_marker", "False", "SETTINGS") == "True";
+            bool uiPingSpike = App.settingsManager.GetOption("ui_ping_spike_marker", "True", "SETTINGS") == "True";
+            bool uiTickrSpike = App.settingsManager.GetOption("ui_tickrate_spike_marker", "False", "SETTINGS") == "True";
             
             if (App.settingsForm.settings_rtss_output.Checked)
             {
@@ -388,6 +388,8 @@ namespace tickMeter.Forms
                         // Если EMA выключена — disp* = raw*, всё равно корректно.
                         RivaTuner.DisplayPingMs = dispPing;
                         RivaTuner.DisplayTickrate = dispTickrate;
+                        
+                        Debug.WriteLine($"[GUI] Передача в RivaTuner: dispPing={dispPing:F1}, dispTickrate={dispTickrate:F1}");
                         
                         // Устанавливаем статические переменные для спайк-индикаторов в RivaTuner
                         RivaTuner.PingSpike = ovPingSpike && pingSpike;
@@ -434,7 +436,7 @@ namespace tickMeter.Forms
                         if (App.settingsForm.settings_chart_checkbox.Checked)
                         {
                             // Проверяем настройку сглаживания графиков
-                            bool smoothCharts = App.settingsManager.GetOption("smooth_charts", "False") == "True";
+                            bool smoothCharts = App.settingsManager.GetOption("smooth_charts", "False", "SETTINGS") == "True";
                             List<int> chartData;
                             
                             if (smoothCharts)
@@ -625,7 +627,7 @@ namespace tickMeter.Forms
                 App.pingManager.StartPinging();
             }
             
-            var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
+            var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
             var devices = App.GetAdapters();
             _allSelectedAdapters.Clear();
 
@@ -640,7 +642,7 @@ namespace tickMeter.Forms
                 }
                 
                 // Проверяем настройку "ignore virtual adapters"
-                bool ignoreVirtual = App.settingsManager.GetOption("ignore_virtual_adapters", "True") == "True";
+                bool ignoreVirtual = App.settingsManager.GetOption("ignore_virtual_adapters", "True", "SETTINGS") == "True";
                 
                 foreach (var d in src)
                 {
@@ -716,6 +718,15 @@ namespace tickMeter.Forms
         private void PcapWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             if (!App.meterState.IsTracking) return;
+            
+            // В мульти-режиме этот метод должен обрабатываться по-другому
+            var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
+            if (captureAll) 
+            {
+                // В мульти-режиме перезапуск воркеров обрабатывается отдельно
+                return;
+            }
+            
             if (App.meterState.TickRate == 0)
             {
                 restarts++;
@@ -732,8 +743,10 @@ namespace tickMeter.Forms
 
             try
             {
-                pcapWorker.RunWorkerAsync();
-
+                if (pcapWorker != null)
+                {
+                    pcapWorker.RunWorkerAsync();
+                }
             }
             catch (Exception) { }
 
@@ -744,7 +757,7 @@ namespace tickMeter.Forms
             if (!App.meterState.IsTracking) return;
             
             // В мульти-режиме этот метод не должен вызываться
-            var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
+            var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
             if (captureAll) return;
             
             if (selectedAdapter == null)
@@ -1014,9 +1027,9 @@ namespace tickMeter.Forms
         private (double val, bool spike) SmoothPing(double raw, double dtSec)
         {
             // Получаем параметры из настроек
-            double tau = double.Parse(App.settingsManager.GetOption("smoothing.ping.tau", "1.0"));
-            double spikeAbsMs = double.Parse(App.settingsManager.GetOption("smoothing.ping.spike_abs_ms", "25"));
-            double spikeRel = double.Parse(App.settingsManager.GetOption("smoothing.ping.spike_rel", "0.40"));
+            double tau = double.Parse(App.settingsManager.GetOption("smoothing.ping.tau", "1.0", "SETTINGS"));
+            double spikeAbsMs = double.Parse(App.settingsManager.GetOption("smoothing.ping.spike_abs_ms", "25", "SETTINGS"));
+            double spikeRel = double.Parse(App.settingsManager.GetOption("smoothing.ping.spike_rel", "0.40", "SETTINGS"));
             
             double a = Alpha(tau, dtSec);
             double baseLine = emaPing.ValueOr(raw);

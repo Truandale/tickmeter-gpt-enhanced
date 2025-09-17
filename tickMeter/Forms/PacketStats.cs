@@ -32,8 +32,8 @@ namespace tickMeter
 
         // Multi-adapter support
         private readonly List<BackgroundWorker> _pcapWorkers = new List<BackgroundWorker>();
-        private bool CaptureAll => App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
-        private bool _ignoreVirtual => App.settingsManager.GetOption("ignore_virtual_adapters", "True") == "True";
+        private bool CaptureAll => App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
+        private bool _ignoreVirtual => App.settingsManager.GetOption("ignore_virtual_adapters", "True", "SETTINGS") == "True";
 
         public PacketStats()
         {

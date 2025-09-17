@@ -38,13 +38,20 @@ namespace tickMeter.Classes
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool ChartSmoothingEnabled()
-            => App.settingsManager.GetOption("tickrate_smoothing","True") == "True";
+            => App.settingsManager.GetOption("smooth_charts","False", "SETTINGS") == "True";
 
         // alpha в пределах 0..1; 0.25 — мягкое сглаживание без заметной задержки
         private static float[] PrepareSeriesForChart(float[] src, double alpha = 0.25)
         {
-            if (!ChartSmoothingEnabled() || src == null || src.Length <= 2)
+            bool smoothingEnabled = ChartSmoothingEnabled();
+            Debug.WriteLine($"[RivaTuner.PrepareSeriesForChart] Chart smoothing enabled: {smoothingEnabled}, alpha: {alpha:F2}");
+            
+            if (!smoothingEnabled || src == null || src.Length <= 2)
+            {
+                Debug.WriteLine($"[RivaTuner.PrepareSeriesForChart] Returning original data (smoothing={smoothingEnabled}, src.Length={src?.Length ?? 0})");
                 return src;
+            }
+                
             if (_chartScratch == null || _chartScratch.Length < src.Length)
                 _chartScratch = new float[src.Length];
             // копия исходного ряда
@@ -219,7 +226,7 @@ namespace tickMeter.Classes
         public static string FormatTickrate()
         {
             // Проверяем флаг оверлея для tickrate спайков
-            bool showTickrateSpike = App.settingsManager.GetOption("overlay_tickrate_spike_marker", "False") == "True";
+            bool showTickrateSpike = App.settingsManager.GetOption("overlay_tickrate_spike_marker", "False", "SETTINGS") == "True";
             
             // NEW: предпочитаем сглаженное значение, если GUI его передал
             double val = DisplayTickrate ?? meterState.OutputTickRate;
@@ -339,7 +346,7 @@ namespace tickMeter.Classes
             }
             
             // Проверяем флаг оверлея для ping спайков и добавляем индикатор
-            bool showPingSpike = App.settingsManager.GetOption("overlay_ping_spike_marker", "True") == "True";
+            bool showPingSpike = App.settingsManager.GetOption("overlay_ping_spike_marker", "True", "SETTINGS") == "True";
             string spikeIndicator = (showPingSpike && PingSpike) ? " <C1>(!)</C>" : "";
             
             return "<S><C0>Ping: " + pingFont + pingValue + spikeIndicator + "<S0>ms <S0><C>(" + geo + ")" + Environment.NewLine;
@@ -397,7 +404,7 @@ namespace tickMeter.Classes
                 output += "<S0><C4>Tickrate" + Environment.NewLine;
                 
                 // Используем сглаженные данные для графика если включено
-                bool smoothCharts = App.settingsManager.GetOption("smooth_charts", "False") == "True";
+                bool smoothCharts = App.settingsManager.GetOption("smooth_charts", "False", "SETTINGS") == "True";
                 float[] tickrateChartData = smoothCharts ? 
                     App.meterState.tickrateGraphSmoothed.ToArray() : 
                     App.meterState.tickrateGraph.ToArray();
@@ -474,7 +481,7 @@ namespace tickMeter.Classes
                     output += Environment.NewLine + "<S0><C4>Ping" + Environment.NewLine;
                     
                     // Используем сглаженные данные для графика если включено
-                    bool smoothCharts = App.settingsManager.GetOption("smooth_charts", "False") == "True";
+                    bool smoothCharts = App.settingsManager.GetOption("smooth_charts", "False", "SETTINGS") == "True";
                     float[] pingChartData = smoothCharts ? 
                         App.meterState.pingBufferSmoothed.ToArray() : 
                         App.meterState.pingBuffer.ToArray();

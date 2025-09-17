@@ -424,7 +424,7 @@ namespace tickMeter.Forms
                     {
                         updateLbl.Text += TagsInfo.Tags[TagsInfo.Tags.Count - 1].Version;
                         updateLbl.Visible = true;
-                        if(App.settingsManager.GetOption("last_checked_version") != TagsInfo.Tags[TagsInfo.Tags.Count - 1].Version.ToString())
+                        if(App.settingsManager.GetOption("last_checked_version", "", "SETTINGS") != TagsInfo.Tags[TagsInfo.Tags.Count - 1].Version.ToString())
                         {
                             MessageBox.Show(updateLbl.Text, "Update", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             Process.Start("https://api.github.com/repos/igentuman/tickmeter/releases/latest");
@@ -445,9 +445,9 @@ namespace tickMeter.Forms
         public void InitRtss(bool last = false)
         {
 
-            if (File.Exists(App.settingsManager.GetOption("rtss_exe_path")))
+            if (File.Exists(App.settingsManager.GetOption("rtss_exe_path", "", "SETTINGS")))
             {
-                RivaTuner.rtss_exe = App.settingsManager.GetOption("rtss_exe_path");
+                RivaTuner.rtss_exe = App.settingsManager.GetOption("rtss_exe_path", "", "SETTINGS");
                 return;
             }
 
@@ -485,21 +485,21 @@ namespace tickMeter.Forms
             App.settingsManager.ReloadConfig();
             System.Diagnostics.Debug.WriteLine("ApplyFromConfig() - ReloadConfig() завершен");
             
-            settings_chart_checkbox.Checked = App.settingsManager.GetOption("chart") == "True";
-            settings_ip_checkbox.Checked = App.settingsManager.GetOption("ip") == "True";
-            settings_ping_checkbox.Checked = App.settingsManager.GetOption("ping") == "True";
+            settings_chart_checkbox.Checked = App.settingsManager.GetOption("chart", "False", "SETTINGS") == "True";
+            settings_ip_checkbox.Checked = App.settingsManager.GetOption("ip", "False", "SETTINGS") == "True";
+            settings_ping_checkbox.Checked = App.settingsManager.GetOption("ping", "False", "SETTINGS") == "True";
 
-            settings_traffic_checkbox.Checked = App.settingsManager.GetOption("traffic") == "True";
-            packet_drops_checkbox.Checked = App.settingsManager.GetOption("show_packet_drops") == "True";
-            settings_rtss_output.Checked = App.settingsManager.GetOption("rtss") == "True";
-            settings_tickrate_show.Checked = App.settingsManager.GetOption("tickrate") == "True";
-            settings_autodetect_checkbox.Checked = App.settingsManager.GetOption("autodetect") == "True";
-            settings_data_send.Checked = App.settingsManager.GetOption("data_send") == "True";
-            settings_session_time_checkbox.Checked = App.settingsManager.GetOption("session_time") == "True";
-            settings_ticktime_chart.Checked = App.settingsManager.GetOption("ticktime") == "True";
-            settings_ping_chart.Checked = App.settingsManager.GetOption("ping_chart") == "True";
-            run_minimized.Checked = App.settingsManager.GetOption("run_minimized") == "True";
-            ping_ports.Text = App.settingsManager.GetOption("ping_ports");
+            settings_traffic_checkbox.Checked = App.settingsManager.GetOption("traffic", "False", "SETTINGS") == "True";
+            packet_drops_checkbox.Checked = App.settingsManager.GetOption("show_packet_drops", "False", "SETTINGS") == "True";
+            settings_rtss_output.Checked = App.settingsManager.GetOption("rtss", "False", "SETTINGS") == "True";
+            settings_tickrate_show.Checked = App.settingsManager.GetOption("tickrate", "False", "SETTINGS") == "True";
+            settings_autodetect_checkbox.Checked = App.settingsManager.GetOption("autodetect", "False", "SETTINGS") == "True";
+            settings_data_send.Checked = App.settingsManager.GetOption("data_send", "False", "SETTINGS") == "True";
+            settings_session_time_checkbox.Checked = App.settingsManager.GetOption("session_time", "False", "SETTINGS") == "True";
+            settings_ticktime_chart.Checked = App.settingsManager.GetOption("ticktime", "False", "SETTINGS") == "True";
+            settings_ping_chart.Checked = App.settingsManager.GetOption("ping_chart", "False", "SETTINGS") == "True";
+            run_minimized.Checked = App.settingsManager.GetOption("run_minimized", "False", "SETTINGS") == "True";
+            ping_ports.Text = App.settingsManager.GetOption("ping_ports", "", "SETTINGS");
             ping_interval.Value = App.settingsManager.GetIntOption("ping_interval", 400);
             
             // NEW: инициализация состояния чекбокса после загрузки всех настроек
@@ -515,7 +515,7 @@ namespace tickMeter.Forms
             try
             {
                 adapters_list.SelectedIndex = 0;
-                string adapterID = App.settingsManager.GetOption("last_selected_adapter");
+                string adapterID = App.settingsManager.GetOption("last_selected_adapter", "", "SETTINGS");
                 if(!adapterID.IsNullOrEmpty())
                 {
                     int i = 0;
@@ -531,7 +531,7 @@ namespace tickMeter.Forms
             }
             catch (Exception) { }
                 
-            string localIp = App.settingsManager.GetOption("local_ip");
+            string localIp = App.settingsManager.GetOption("local_ip", "", "SETTINGS");
             if(localIp != null && localIp != "")
             {
                 local_ip_textbox.Text = localIp;

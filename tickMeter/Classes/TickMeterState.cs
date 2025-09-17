@@ -181,9 +181,9 @@ namespace tickMeter
                     tickrateGraph.Add(OutputTickRate);
                     
                     // Update smoothed tickrate buffer for charts
-                    if (App.settingsManager.GetOption("smooth_charts", "False") == "True")
+                    if (App.settingsManager.GetOption("smooth_charts", "False", "SETTINGS") == "True")
                     {
-                        double smoothingFactor = double.Parse(App.settingsManager.GetOption("tickrate_smoothing_factor", "0.1"));
+                        double smoothingFactor = double.Parse(App.settingsManager.GetOption("tickrate_smoothing_factor", "0.1", "SETTINGS"));
                         double smoothedTickrate = App.emaChartTickrate.Update(OutputTickRate, smoothingFactor);
                         tickrateGraphSmoothed.Add((float)smoothedTickrate);
                     }
@@ -212,9 +212,9 @@ namespace tickMeter
                         pingBuffer.RemoveAt(0);
 
                     // Update smoothed ping buffer for charts
-                    if (App.settingsManager.GetOption("smooth_charts", "False") == "True")
+                    if (App.settingsManager.GetOption("smooth_charts", "False", "SETTINGS") == "True")
                     {
-                        double smoothingFactor = double.Parse(App.settingsManager.GetOption("ping_smoothing_factor", "0.1"));
+                        double smoothingFactor = double.Parse(App.settingsManager.GetOption("ping_smoothing_factor", "0.1", "SETTINGS"));
                         double smoothedPing = App.emaChartPing.Update(pingValue, smoothingFactor);
                         pingBufferSmoothed.Add((float)smoothedPing);
                     }
