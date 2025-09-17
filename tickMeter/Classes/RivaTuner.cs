@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Runtime.CompilerServices;
 
 namespace tickMeter.Classes
 {
@@ -32,6 +33,35 @@ namespace tickMeter.Classes
         public static double? DisplayPingMs = null;
         public static double? DisplayTickrate = null;
 
+        // --- Chart EMA smoothing (локальная копия ряда, без аллокаций сверх нужного) ---
+        private static float[] _chartScratch;
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool ChartSmoothingEnabled()
+            => App.settingsManager.GetOption("tickrate_smoothing","True") == "True";
+
+        // alpha в пределах 0..1; 0.25 — мягкое сглаживание без заметной задержки
+        private static float[] PrepareSeriesForChart(float[] src, double alpha = 0.25)
+        {
+            if (!ChartSmoothingEnabled() || src == null || src.Length <= 2)
+                return src;
+            if (_chartScratch == null || _chartScratch.Length < src.Length)
+                _chartScratch = new float[src.Length];
+            // копия исходного ряда
+            Buffer.BlockCopy(src, 0, _chartScratch, 0, sizeof(float) * src.Length);
+
+            float a = (float)Math.Max(0.0, Math.Min(1.0, alpha));
+            float prev = _chartScratch[0];
+            for (int i = 1; i < src.Length; i++)
+            {
+                float v = _chartScratch[i];
+                float sm = a * v + (1 - a) * prev;
+                _chartScratch[i] = sm;
+                prev = sm;
+            }
+            return _chartScratch;
+        }
+
         public static string DrawChart(
             float[] graphData,
             int min = 0,
@@ -52,6 +82,10 @@ namespace tickMeter.Classes
                 graphData.CopyTo(tmp,0);
                 graphData = tmp;
             }
+            
+            // NEW: мягкое EMA-сглаживание ряда для отображения (не трогаем исходный буфер)
+            var series = PrepareSeriesForChart(graphData, 0.25);
+            
             uint chartSize;
             // Исправление: скорость движения графика зависит от того, как часто добавляются новые значения в graphData (pingBuffer)
             // Если pingBuffer обновляется чаще (например, раз в 100 мс), но BuildRivaOutput вызывается редко (например, раз в 500 мс),
@@ -65,19 +99,19 @@ namespace tickMeter.Classes
             if(max == 0)
             {
                 max = 60;
-                if (graphData.Max() > 62)
+                if (series.Max() > 62)
                 {
                     max = 90;
                 }
-                if (graphData.Max() > 92)
+                if (series.Max() > 92)
                 {
                     max = 120;
                 }
-                if (graphData.Max() > 132)
+                if (series.Max() > 132)
                 {
                     max = 180;
                 }
-                if (graphData.Max() > 192)
+                if (series.Max() > 192)
                 {
                     max = 250;
                 }
@@ -85,7 +119,7 @@ namespace tickMeter.Classes
             
             unsafe
             {
-                fixed (float* lpBuffer = graphData)
+                fixed (float* lpBuffer = series)
                 {
                     try
                     {
