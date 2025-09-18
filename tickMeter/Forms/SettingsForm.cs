@@ -193,28 +193,6 @@ namespace tickMeter.Forms
                 System.Diagnostics.Debug.WriteLine($"Загружен stun_enable = {value}, установлен чекбокс = {chkStunEnable.Checked}");
             }
 
-            // Новые настройки оптимизации (TODO: раскомментировать после добавления контролов в Designer)
-            /*
-            if (nudLiveMaxRows != null)
-            {
-                int value = GetInt("live.max_rows", 5000);
-                nudLiveMaxRows.Value = Math.Max(nudLiveMaxRows.Minimum, Math.Min(nudLiveMaxRows.Maximum, value));
-                System.Diagnostics.Debug.WriteLine($"Загружен live.max_rows = {value}");
-            }
-            if (nudOverlayFps != null)
-            {
-                int value = GetInt("overlay.fps", 15);
-                nudOverlayFps.Value = Math.Max(nudOverlayFps.Minimum, Math.Min(nudOverlayFps.Maximum, value));
-                System.Diagnostics.Debug.WriteLine($"Загружен overlay.fps = {value}");
-            }
-            if (txtBpfFilter != null)
-            {
-                string value = App.settingsManager.GetOption("capture_filter", "ip or ip6", "SETTINGS");
-                txtBpfFilter.Text = value;
-                System.Diagnostics.Debug.WriteLine($"Загружен capture_filter = {value}");
-            }
-            */
-
             // Доп. UX: блокировка дропдауна адаптеров, если включён сбор «со всех»
             if (adapters_list != null && captureAllAdaptersCheckbox != null)
                 adapters_list.Enabled = !captureAllAdaptersCheckbox.Checked;
@@ -321,26 +299,6 @@ namespace tickMeter.Forms
                 SetBool("stun_enable", chkStunEnable.Checked);
                 System.Diagnostics.Debug.WriteLine($"stun_enable = {chkStunEnable.Checked}");
             }
-            
-            // Новые настройки оптимизации (TODO: раскомментировать после добавления контролов в Designer)
-            /*
-            if (nudLiveMaxRows != null)
-            {
-                App.settingsManager.SetOption("live.max_rows", ((int)nudLiveMaxRows.Value).ToString(), "SETTINGS");
-                System.Diagnostics.Debug.WriteLine($"live.max_rows = {(int)nudLiveMaxRows.Value}");
-            }
-            if (nudOverlayFps != null)
-            {
-                App.settingsManager.SetOption("overlay.fps", ((int)nudOverlayFps.Value).ToString(), "SETTINGS");
-                System.Diagnostics.Debug.WriteLine($"overlay.fps = {(int)nudOverlayFps.Value}");
-            }
-            if (txtBpfFilter != null)
-            {
-                string value = string.IsNullOrWhiteSpace(txtBpfFilter.Text) ? "ip or ip6" : txtBpfFilter.Text.Trim();
-                App.settingsManager.SetOption("capture_filter", value, "SETTINGS");
-                System.Diagnostics.Debug.WriteLine($"capture_filter = {value}");
-            }
-            */
             else
             {
                 System.Diagnostics.Debug.WriteLine("ВНИМАНИЕ: Один или несколько чекбоксов == null!");
@@ -437,17 +395,6 @@ namespace tickMeter.Forms
             string rawValue = App.settingsManager.GetOption(key, defVal ? "True" : "False", "SETTINGS");
             bool result = rawValue == "True";
             System.Diagnostics.Debug.WriteLine($"GetBool({key}): raw='{rawValue}', result={result}, default={defVal}");
-            return result;
-        }
-
-        /// <summary>
-        /// Удобный враппер для чтения целочисленных настроек
-        /// </summary>
-        private int GetInt(string key, int defVal)
-        {
-            string rawValue = App.settingsManager.GetOption(key, defVal.ToString(), "SETTINGS");
-            if (!int.TryParse(rawValue, out int result)) result = defVal;
-            System.Diagnostics.Debug.WriteLine($"GetInt({key}): raw='{rawValue}', result={result}, default={defVal}");
             return result;
         }
 

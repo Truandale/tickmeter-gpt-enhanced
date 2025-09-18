@@ -34,10 +34,6 @@ namespace tickMeter.Forms
         private readonly Stopwatch _dedupSw = Stopwatch.StartNew();
         private readonly object _dedupLock = new object();
         
-        // Анти-реэнтерабельность и троттлинг для плавности
-        private int _tickLoopBusy = 0;
-        private readonly Stopwatch _rtssSw = Stopwatch.StartNew();
-        
         public Boolean allowClose = false;
         int restarts = 0;
         int restartLimit = 1;
@@ -331,22 +327,19 @@ namespace tickMeter.Forms
         
         private async void TicksLoop_Tick(object sender, EventArgs e)
         {
-            if (Interlocked.Exchange(ref _tickLoopBusy, 1) == 1) return;
-            try
+            AutoDetectMngr.GetActiveProcessName(true);
+            if(!App.meterState.isBuiltInProfileActive && !App.meterState.isCustomProfileActive)
             {
-                AutoDetectMngr.GetActiveProcessName(true);
-                if(!App.meterState.isBuiltInProfileActive && !App.meterState.isCustomProfileActive)
-                {
-                    updateMetherStateFromActiveWindow();
-                }
-                
-                // Детекция спайков и сглаживание
-                double dt = Math.Max(0.001, ticksLoop.Interval / 1000.0);
-                bool smooth = App.settingsManager.GetOption("tickrate_smoothing", "True", "SETTINGS") == "True";
-                
-                // Сырые значения (используются в логике)
-                double rawTickrate = App.meterState.OutputTickRate;
-                double rawPingMs = GetEffectivePing();
+                updateMetherStateFromActiveWindow();
+            }
+            
+            // Детекция спайков и сглаживание
+            double dt = Math.Max(0.001, ticksLoop.Interval / 1000.0);
+            bool smooth = App.settingsManager.GetOption("tickrate_smoothing", "True", "SETTINGS") == "True";
+            
+            // Сырые значения (используются в логике)
+            double rawTickrate = App.meterState.OutputTickRate;
+            double rawPingMs = GetEffectivePing();
             
             // Детекция спайков
             bool pingSpike = false;
@@ -403,14 +396,7 @@ namespace tickMeter.Forms
                         RivaTuner.TickrateSpike = ovTickrSpike && tickrateSpike;
                         RivaTuner.TicktimeSpike = false; // пока не используется
                         
-                        // RTSS не чаще ~15 FPS (66 мс) для предотвращения микродерганий
-                        int overlayFps = Math.Max(10, Math.Min(60, int.Parse(App.settingsManager.GetOption("overlay.fps", "15", "SETTINGS"))));
-                        int periodMs = (int)Math.Round(1000.0 / overlayFps);
-                        if (_rtssSw.ElapsedMilliseconds >= periodMs)
-                        {
-                            RivaTuner.BuildRivaOutput(); 
-                            _rtssSw.Restart();
-                        }
+                        RivaTuner.BuildRivaOutput(); 
                     } catch (Exception ex) {
                         if(!RTSS_Failed)
                         {
@@ -543,15 +529,6 @@ namespace tickMeter.Forms
             if (!App.meterState.IsTracking)
             {
                 StopTracking();
-            }
-            }
-            catch (Exception ex)
-            {
-                Debug.Print("TicksLoop_Tick error: " + ex.Message);
-            }
-            finally 
-            { 
-                Volatile.Write(ref _tickLoopBusy, 0); 
             }
         }
 
