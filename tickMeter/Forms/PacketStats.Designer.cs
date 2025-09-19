@@ -285,7 +285,7 @@ namespace tickMeter
             // 
             // avgStats
             // 
-            this.avgStats.Interval = 1000;
+            this.avgStats.Interval = 250;
             this.avgStats.Tick += new System.EventHandler(this.avgStats_Tick);
             // 
             // listView2

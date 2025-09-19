@@ -74,6 +74,9 @@ namespace tickMeter
             active_refresh.Enabled = true;
             avgStats.Enabled = true;
             tracking = true;
+            
+            // Сбрасываем счетчики при запуске
+            inPackets = outPackets = inTraffic = outTraffic = 0;
 
         }
 
@@ -250,15 +253,40 @@ namespace tickMeter
             if (!packetFilter.Validate()) return;
             PacketBuffer.Add(packet);
 
-            if (ip.Source.ToString() == App.meterState.LocalIP)
+            // Простая логика: подсчитываем все пакеты
+            // Исходящие: если source из приватной подсети (наша сеть)
+            string sourceIP = ip.Source.ToString();
+            string destIP = ip.Destination.ToString();
+            
+            bool sourceIsLocal = sourceIP.StartsWith("192.168.") || sourceIP.StartsWith("10.") || 
+                               sourceIP.StartsWith("172.16.") || sourceIP.StartsWith("172.17.") ||
+                               sourceIP.StartsWith("172.18.") || sourceIP.StartsWith("172.19.") ||
+                               sourceIP.StartsWith("172.2") || sourceIP.StartsWith("172.30.") ||
+                               sourceIP.StartsWith("127.") || sourceIP == "::1";
+                               
+            bool destIsLocal = destIP.StartsWith("192.168.") || destIP.StartsWith("10.") || 
+                             destIP.StartsWith("172.16.") || destIP.StartsWith("172.17.") ||
+                             destIP.StartsWith("172.18.") || destIP.StartsWith("172.19.") ||
+                             destIP.StartsWith("172.2") || destIP.StartsWith("172.30.") ||
+                             destIP.StartsWith("127.") || destIP == "::1";
+
+            if (sourceIsLocal && !destIsLocal)
             {
+                // Исходящий трафик: из локальной сети в интернет
                 outPackets++;
                 outTraffic += ip.TotalLength;
             }
-            if (ip.Destination.ToString() == App.meterState.LocalIP)
+            else if (!sourceIsLocal && destIsLocal)
             {
+                // Входящий трафик: из интернета в локальную сеть
                 inPackets++;
                 inTraffic += ip.TotalLength;
+            }
+            else
+            {
+                // Внутренний трафик или неопределенный - считаем как исходящий
+                outPackets++;
+                outTraffic += ip.TotalLength;
             }
         }
 
@@ -518,24 +546,18 @@ namespace tickMeter
             App.packetFilterForm.Show();
         }
 
-        private async void avgStats_Tick(object sender, EventArgs e)
+        private void avgStats_Tick(object sender, EventArgs e)
         {
-            await Task.Run(() =>
+            if (InvokeRequired)
             {
-                top_process_name.Invoke(new Action(() => {
-                    top_process_name.Text = AutoDetectMngr.GetActiveProcessName();
-                }));
-                label3.Invoke( new Action(() =>{
-                        label3.Text = "IN " + inPackets.ToString() + " | OUT " + outPackets.ToString();
-                }));
-                label4.Invoke(new Action(() => {
-                    label4.Text = "DL " + (inTraffic / 1024).ToString() + " | UP " + (outTraffic/ 1024).ToString();
-                }));
-                label5.Invoke(new Action(() => {
-                    label5.Text = "Local IP: " + App.meterState.LocalIP;
-                }));
-                inPackets = outPackets = inTraffic = outTraffic = 0;
-            });
+                BeginInvoke(new MethodInvoker(() => avgStats_Tick(sender, e)));
+                return;
+            }
+            
+            top_process_name.Text = AutoDetectMngr.GetActiveProcessName();
+            label3.Text = "IN " + inPackets.ToString() + " | OUT " + outPackets.ToString();
+            label4.Text = "DL " + (inTraffic / 1024).ToString() + " | UP " + (outTraffic / 1024).ToString();
+            label5.Text = "Local IP: " + App.meterState.LocalIP;
         }
 
         private async void active_refresh_Tick(object sender, EventArgs e)
