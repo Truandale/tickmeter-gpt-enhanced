@@ -10,7 +10,7 @@ using Microsoft.Diagnostics.Tracing.Session;
 
 namespace tickMeter.Classes
 {
-    public class ETW
+    public static class ETW
     {
         public class ProcessNetworkData
         {
