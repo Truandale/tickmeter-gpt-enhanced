@@ -984,10 +984,50 @@ namespace tickMeter.Forms
 
         private void GUI_FormClosed(object sender, FormClosedEventArgs e)
         {
+            // Принудительная остановка всех операций
+            try 
+            {
+                if (App.meterState != null)
+                    App.meterState.IsTracking = false;
+                    
+                // Очистка всех worker'ов
+                foreach (var worker in _pcapWorkers)
+                {
+                    try 
+                    {
+                        if (worker.IsBusy)
+                            worker.CancelAsync();
+                    }
+                    catch { }
+                }
+                
+                // Ждем недолго и принудительно очищаем
+                for (int i = 0; i < 10; i++)
+                {
+                    PumpMessages();
+                    System.Threading.Thread.Sleep(50);
+                }
+                
+                _pcapWorkers.Clear();
+                _allSelectedAdapters.Clear();
+            }
+            catch { }
+            
             // Принудительная очистка COM объектов и сборка мусора
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
+            try 
+            {
+                // Множественная сборка мусора для гарантированного освобождения COM объектов
+                for (int i = 0; i < 3; i++)
+                {
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                }
+                GC.Collect();
+                
+                // Освобождение всех COM объектов
+                Marshal.CleanupUnusedObjectsInCurrentContext();
+            }
+            catch { }
         }
 
         private void ServerLbl_Click(object sender, EventArgs e)

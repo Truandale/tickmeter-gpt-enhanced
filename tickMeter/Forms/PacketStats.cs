@@ -556,6 +556,19 @@ namespace tickMeter
             Hide();
             if (tracking)
                 Stop();
+                
+            // Дополнительная очистка COM объектов
+            try 
+            {
+                // Принудительная очистка
+                for (int i = 0; i < 2; i++)
+                {
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                }
+                Marshal.CleanupUnusedObjectsInCurrentContext();
+            }
+            catch { }
         }
 
         private void filter_Click(object sender, EventArgs e)

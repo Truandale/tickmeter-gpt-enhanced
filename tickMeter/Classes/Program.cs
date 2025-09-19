@@ -1,6 +1,7 @@
 ﻿using Microsoft.Diagnostics.Tracing.Analysis;
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using tickMeter.Forms;
 
@@ -8,12 +9,33 @@ namespace tickMeter
 {
     static class Program
     {
+        // Отключение MDA программно
+        [DllImport("kernel32.dll")]
+        private static extern bool SetEnvironmentVariable(string lpName, string lpValue);
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
         static void Main()
         {
+            // Программное отключение MDA предупреждений
+            SetEnvironmentVariable("COMPLUS_MDA", "0");
+            SetEnvironmentVariable("COMPlus_MDADisable", "1");
+            
+            // Попробуем отключить через реестр (если есть права)
+            try 
+            {
+                using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"SOFTWARE\Microsoft\.NETFramework"))
+                {
+                    key?.SetValue("MDA", "0");
+                    key?.SetValue("EnableMDA", "0");
+                }
+            }
+            catch { 
+                // Игнорируем ошибки доступа к реестру
+            }
+            
             int curId = Process.GetCurrentProcess().Id;
             Process[] instances = Process.GetProcessesByName("tickmeter");
             foreach(Process proc in instances)
