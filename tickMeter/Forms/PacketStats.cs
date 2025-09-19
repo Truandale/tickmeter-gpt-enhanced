@@ -30,6 +30,14 @@ namespace tickMeter
         private static extern void CoUninitialize();
         
         /// <summary>
+        /// Прокачивает сообщения Windows для предотвращения блокировки STA потоков
+        /// </summary>
+        private static void PumpMessages()
+        {
+            Application.DoEvents();
+        }
+        
+        /// <summary>
         /// Безопасная инициализация COM - игнорирует ошибку если COM уже инициализирован
         /// </summary>
         private static void SafeCoInitialize()
@@ -223,7 +231,8 @@ namespace tickMeter
                                 var result = communicator.ReceivePackets(100, PacketHandler);
                                 if (result == PacketCommunicatorReceiveResult.Timeout)
                                 {
-                                    // Таймаут - проверяем флаг tracking и продолжаем
+                                    // Прокачиваем сообщения Windows каждый таймаут
+                                    PumpMessages();
                                     continue;
                                 }
                                 if (result == PacketCommunicatorReceiveResult.BreakLoop)
@@ -504,6 +513,9 @@ namespace tickMeter
                         if (worker.IsBusy) { anyBusy = true; break; }
                     }
                     if (!anyBusy) break;
+                    
+                    // Прокачиваем сообщения Windows во время ожидания
+                    PumpMessages();
                     System.Threading.Thread.Sleep(50);
                 }
             }
