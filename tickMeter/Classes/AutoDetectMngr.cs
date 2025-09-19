@@ -120,10 +120,7 @@ namespace tickMeter.Classes
                 catch (Exception) {processName = @"n\a"; }
             }
 
-            if (processName == @"n\a")
-            {
-                processName = ETW.resolveProcessname(fromIp, toIp, fromPort, toPort);
-            }
+            // ETW removed: keep processName as-is if unresolved
 
 
             int i = -1;

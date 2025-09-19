@@ -228,7 +228,7 @@
     <Compile Include="Classes\ActiveWinowTracker.cs" />
     <Compile Include="Classes\AutoDetectMngr.cs" />
     <Compile Include="Classes\ConnectionsManager.cs" />
-    <Compile Include="Classes\ETW.cs" />
+  <!-- ETW removed -->
     <Compile Include="Classes\GameProfile.cs" />
     <Compile Include="Classes\GameProfileManager.cs" />
     <Compile Include="Classes\ListViewNF.cs">

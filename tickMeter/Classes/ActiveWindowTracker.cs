@@ -82,10 +82,7 @@ namespace tickMeter.Classes
                 catch (InvalidOperationException) { processName = @"n\a"; }
             }
 
-            if (processName == @"n\a")
-            {
-                processName = ETW.resolveProcessname(fromIp, toIp, fromPort, toPort);
-            }
+            // ETW removed: skip additional process resolution
 
             string activeProcess = AutoDetectMngr.GetActiveProcessName();
             if (activeProcess != processName) { return; }

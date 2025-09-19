@@ -83,20 +83,7 @@ namespace tickMeter
                         {
                             record.ProcessName = proccArray.First().ProcessName;
                         }
-                        else
-                        {
-                            List<ETW.ProcessNetworkData> processList;
-                            lock (ETW.processes)
-                            {
-                                processList = ETW.processes.Values.ToList();
-                            }
-                            // Исправлено: убран .Value, т.к. processList - это List<ETW.ProcessNetworkData>
-                            ETW.ProcessNetworkData procData = processList.Where(processData => record.ProcessId == processData.pId).FirstOrDefault();
-                            if (procData != null)
-                            {
-                                record.ProcessName = procData.pName;
-                            }
-                        }
+                        // ETW removed: no fallback to ETW.processes
                     }
                 }
 
@@ -113,20 +100,7 @@ namespace tickMeter
                         {
                             record.ProcessName = proccArray.First().ProcessName;
                         }
-                        else
-                        {
-                            List<ETW.ProcessNetworkData> processList;
-                            lock (ETW.processes)
-                            {
-                                processList = ETW.processes.Values.ToList();
-                            }
-                            // Исправлено: убран .Value, т.к. processList - это List<ETW.ProcessNetworkData>
-                            ETW.ProcessNetworkData procData = processList.Where(processData => record.ProcessId == processData.pId).FirstOrDefault();
-                            if (procData != null)
-                            {
-                                record.ProcessName = procData.pName;
-                            }
-                        }
+                        // ETW removed: no fallback to ETW.processes
                     }
                 }
             });

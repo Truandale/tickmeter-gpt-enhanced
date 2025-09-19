@@ -361,10 +361,7 @@ namespace tickMeter
                     }
 
                 }
-                if(processName == @"n\a")
-                {
-                    processName = ETW.resolveProcessname(from_ip, to_ip, fromPort, toPort);
-                }
+                // ETW removed: do not attempt resolve via ETW
                 
                 if (!packetFilter.ValidateProcess(processName)) continue;
 

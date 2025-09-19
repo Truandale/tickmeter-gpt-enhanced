@@ -940,7 +940,7 @@ namespace tickMeter.Forms
             {
                 Hide();
             }
-            ETW.init();
+            // ETW removed
         }
 
         private void SettingsButton_Click(object sender, EventArgs e)
