@@ -688,10 +688,22 @@ namespace tickMeter.Forms
                         worker.DoWork += (s, e) =>
                         {
                             if (!App.meterState.IsTracking) return;
-                            using (var comm = dev.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 500))
+                            using (var comm = dev.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 150))
                             {
                                 if (comm.DataLink.Kind != DataLinkKind.Ethernet) return;
-                                comm.ReceivePackets(0, PacketHandler);
+                                // Cooperative packet receiving with tracking flag check
+                                while (App.meterState.IsTracking)
+                                {
+                                    try
+                                    {
+                                        var result = comm.ReceivePackets(100, PacketHandler);
+                                        if (result == PacketCommunicatorReceiveResult.Timeout)
+                                            continue;
+                                        if (result == PacketCommunicatorReceiveResult.BreakLoop)
+                                            break;
+                                    }
+                                    catch { break; }
+                                }
                             }
                         };
                         worker.RunWorkerCompleted += PcapWorkerCompleted;
@@ -778,7 +790,7 @@ namespace tickMeter.Forms
                 return;
             }
             
-            using (PacketCommunicator communicator = selectedAdapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 500))
+            using (PacketCommunicator communicator = selectedAdapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 150))
             {
                 if (communicator.DataLink.Kind != DataLinkKind.Ethernet)
                 {
@@ -786,7 +798,19 @@ namespace tickMeter.Forms
                     return;
                 }
 
-                communicator.ReceivePackets(0, PacketHandler);
+                // Cooperative packet receiving with tracking flag check
+                while (App.meterState.IsTracking)
+                {
+                    try
+                    {
+                        var result = communicator.ReceivePackets(100, PacketHandler);
+                        if (result == PacketCommunicatorReceiveResult.Timeout)
+                            continue;
+                        if (result == PacketCommunicatorReceiveResult.BreakLoop)
+                            break;
+                    }
+                    catch { break; }
+                }
             }
         }
         public void InitPcapWorker()
@@ -821,9 +845,25 @@ namespace tickMeter.Forms
             // NEW: остановка мульти-захвата: флаг IsTracking и очистка воркеров
             try
             {
+                // Дайте время воркерам завершиться после изменения IsTracking
+                System.Threading.Thread.Sleep(200);
+                
                 foreach (var w in _pcapWorkers)
                 {
-                    // ReceivePackets не прерываем — PacketHandler сам гасит обработку по флагу
+                    if (w.IsBusy)
+                        w.CancelAsync();
+                }
+                
+                // Ждём завершения воркеров (кратко)
+                for (int i = 0; i < 20; i++)
+                {
+                    bool anyBusy = false;
+                    foreach (var w in _pcapWorkers)
+                    {
+                        if (w.IsBusy) { anyBusy = true; break; }
+                    }
+                    if (!anyBusy) break;
+                    System.Threading.Thread.Sleep(50);
                 }
             } catch { }
             _pcapWorkers.Clear();
