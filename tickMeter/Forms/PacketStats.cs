@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -17,6 +18,16 @@ namespace tickMeter
 {
     public partial class PacketStats : Form
     {
+        // COM initialization constants and imports
+        private const uint COINIT_APARTMENTTHREADED = 0x2;
+        private const uint COINIT_DISABLE_OLE1DDE = 0x4;
+        
+        [DllImport("ole32.dll")]
+        private static extern int CoInitializeEx(IntPtr pvReserved, uint dwCoInit);
+        
+        [DllImport("ole32.dll")]
+        private static extern void CoUninitialize();
+
         List<Packet> PacketBuffer;
         public int inPackets = 0;
         public int outPackets = 0;
@@ -158,66 +169,78 @@ namespace tickMeter
         /// </summary>
         private void OpenAndCaptureFromAdapter(PacketDevice adapter)
         {
-            // Открываем адаптер
-            PacketCommunicator communicator = adapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 150);
-            if (communicator == null)
+            // Инициализируем COM для текущего потока
+            System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(
+                CoInitializeEx(IntPtr.Zero, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE));
+            
+            try
             {
-                // В режиме мультиадаптера просто пропускаем проблемные адаптеры
-                if (!CaptureAll)
-                {
-                    MessageBox.Show("Failed to open the selected adapter!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-                return;
-            }
-
-            using (communicator)
-            {
-                // Проверяем, что адаптер поддерживает Ethernet
-                if (communicator.DataLink.Kind != DataLinkKind.Ethernet)
-                {
-                    // В режиме мультиадаптера просто пропускаем неподдерживаемые адаптеры
-                    if (!CaptureAll)
-                    {
-                        MessageBox.Show("This program works only on Ethernet networks!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                    return;
-                }
-
-                // Начинаем получение пакетов с проверкой на остановку
-                try
-                {
-                    while (tracking)
-                    {
-                        try
-                        {
-                            // Получаем пакеты порциями с коротким таймаутом
-                            var result = communicator.ReceivePackets(100, PacketHandler);
-                            if (result == PacketCommunicatorReceiveResult.Timeout)
-                            {
-                                // Таймаут - проверяем флаг tracking и продолжаем
-                                continue;
-                            }
-                            if (result == PacketCommunicatorReceiveResult.BreakLoop)
-                            {
-                                // Break вызван - выходим
-                                break;
-                            }
-                        }
-                        catch (Exception)
-                        {
-                            // Ошибка чтения - прерываем цикл
-                            break;
-                        }
-                    }
-                }
-                catch (Exception ex)
+                // Открываем адаптер
+                PacketCommunicator communicator = adapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 150);
+                if (communicator == null)
                 {
                     // В режиме мультиадаптера просто пропускаем проблемные адаптеры
                     if (!CaptureAll)
                     {
-                        MessageBox.Show($"An error occurred while receiving packets: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show("Failed to open the selected adapter!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    return;
+                }
+
+                using (communicator)
+                {
+                    // Проверяем, что адаптер поддерживает Ethernet
+                    if (communicator.DataLink.Kind != DataLinkKind.Ethernet)
+                    {
+                        // В режиме мультиадаптера просто пропускаем неподдерживаемые адаптеры
+                        if (!CaptureAll)
+                        {
+                            MessageBox.Show("This program works only on Ethernet networks!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                        return;
+                    }
+
+                    // Начинаем получение пакетов с проверкой на остановку
+                    try
+                    {
+                        while (tracking)
+                        {
+                            try
+                            {
+                                // Получаем пакеты порциями с коротким таймаутом
+                                var result = communicator.ReceivePackets(100, PacketHandler);
+                                if (result == PacketCommunicatorReceiveResult.Timeout)
+                                {
+                                    // Таймаут - проверяем флаг tracking и продолжаем
+                                    continue;
+                                }
+                                if (result == PacketCommunicatorReceiveResult.BreakLoop)
+                                {
+                                    // Break вызван - выходим
+                                    break;
+                                }
+                            }
+                            catch (Exception)
+                            {
+                                // Ошибка чтения - прерываем цикл
+                                break;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // В режиме мультиадаптера просто пропускаем проблемные адаптеры
+                        if (!CaptureAll)
+                        {
+                            MessageBox.Show($"An error occurred while receiving packets: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
                     }
                 }
+            }
+            finally
+            {
+                // Завершаем COM для текущего потока
+                CoUninitialize();
             }
         }
 

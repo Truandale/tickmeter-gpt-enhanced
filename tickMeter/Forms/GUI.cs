@@ -20,6 +20,15 @@ namespace tickMeter.Forms
 {
     public partial class GUI : Form
     {
+        // COM initialization constants and imports
+        private const uint COINIT_APARTMENTTHREADED = 0x2;
+        private const uint COINIT_DISABLE_OLE1DDE = 0x4;
+        
+        [DllImport("ole32.dll")]
+        private static extern int CoInitializeEx(IntPtr pvReserved, uint dwCoInit);
+        
+        [DllImport("ole32.dll")]
+        private static extern void CoUninitialize();
         
         public PacketDevice selectedAdapter;
         public Thread PcapThread;
@@ -688,22 +697,35 @@ namespace tickMeter.Forms
                         worker.DoWork += (s, e) =>
                         {
                             if (!App.meterState.IsTracking) return;
-                            using (var comm = dev.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 150))
+                            
+                            // Инициализируем COM для текущего потока
+                            System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(
+                                CoInitializeEx(IntPtr.Zero, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE));
+                            
+                            try
                             {
-                                if (comm.DataLink.Kind != DataLinkKind.Ethernet) return;
-                                // Cooperative packet receiving with tracking flag check
-                                while (App.meterState.IsTracking)
+                                using (var comm = dev.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 150))
                                 {
-                                    try
+                                    if (comm.DataLink.Kind != DataLinkKind.Ethernet) return;
+                                    // Cooperative packet receiving with tracking flag check
+                                    while (App.meterState.IsTracking)
                                     {
-                                        var result = comm.ReceivePackets(100, PacketHandler);
-                                        if (result == PacketCommunicatorReceiveResult.Timeout)
-                                            continue;
-                                        if (result == PacketCommunicatorReceiveResult.BreakLoop)
-                                            break;
+                                        try
+                                        {
+                                            var result = comm.ReceivePackets(100, PacketHandler);
+                                            if (result == PacketCommunicatorReceiveResult.Timeout)
+                                                continue;
+                                            if (result == PacketCommunicatorReceiveResult.BreakLoop)
+                                                break;
+                                        }
+                                        catch { break; }
                                     }
-                                    catch { break; }
                                 }
+                            }
+                            finally
+                            {
+                                // Завершаем COM для текущего потока
+                                CoUninitialize();
                             }
                         };
                         worker.RunWorkerCompleted += PcapWorkerCompleted;
@@ -790,27 +812,39 @@ namespace tickMeter.Forms
                 return;
             }
             
-            using (PacketCommunicator communicator = selectedAdapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 150))
+            // Инициализируем COM для текущего потока
+            System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(
+                CoInitializeEx(IntPtr.Zero, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE));
+            
+            try
             {
-                if (communicator.DataLink.Kind != DataLinkKind.Ethernet)
+                using (PacketCommunicator communicator = selectedAdapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 150))
                 {
-                    MessageBox.Show("This program works only on Ethernet networks!");
-                    return;
-                }
-
-                // Cooperative packet receiving with tracking flag check
-                while (App.meterState.IsTracking)
-                {
-                    try
+                    if (communicator.DataLink.Kind != DataLinkKind.Ethernet)
                     {
-                        var result = communicator.ReceivePackets(100, PacketHandler);
-                        if (result == PacketCommunicatorReceiveResult.Timeout)
-                            continue;
-                        if (result == PacketCommunicatorReceiveResult.BreakLoop)
-                            break;
+                        MessageBox.Show("This program works only on Ethernet networks!");
+                        return;
                     }
-                    catch { break; }
+
+                    // Cooperative packet receiving with tracking flag check
+                    while (App.meterState.IsTracking)
+                    {
+                        try
+                        {
+                            var result = communicator.ReceivePackets(100, PacketHandler);
+                            if (result == PacketCommunicatorReceiveResult.Timeout)
+                                continue;
+                            if (result == PacketCommunicatorReceiveResult.BreakLoop)
+                                break;
+                        }
+                        catch { break; }
+                    }
                 }
+            }
+            finally
+            {
+                // Завершаем COM для текущего потока
+                CoUninitialize();
             }
         }
         public void InitPcapWorker()
@@ -921,7 +955,10 @@ namespace tickMeter.Forms
 
         private void GUI_FormClosed(object sender, FormClosedEventArgs e)
         {
-
+            // Принудительная очистка COM объектов и сборка мусора
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
         }
 
         private void ServerLbl_Click(object sender, EventArgs e)
