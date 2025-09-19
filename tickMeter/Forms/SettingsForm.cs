@@ -543,6 +543,23 @@ namespace tickMeter.Forms
             this.Close();
         }
 
+        /// <summary>
+        /// Открывает форму дополнительных настроек
+        /// </summary>
+        private void btnAdvancedSettings_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var advancedForm = new tickMeter.Forms.AdvancedSettingsForm();
+                advancedForm.ShowDialog(this);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка открытия дополнительных настроек: {ex.Message}", 
+                              "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private void LabelsColor_Click(object sender, EventArgs e)
         {
             colorDialog1.ShowDialog();

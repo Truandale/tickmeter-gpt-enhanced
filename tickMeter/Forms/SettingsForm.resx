@@ -133,7 +133,7 @@
     <value>4, 4, 4, 4</value>
   </data>
   <data name="settings_log_checkbox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>273, 27</value>
+    <value>217, 22</value>
   </data>
   <data name="settings_log_checkbox.TabIndex" type="System.Int32, mscorlib">
     <value>45</value>
@@ -166,7 +166,7 @@
     <value>5, 0, 5, 0</value>
   </data>
   <data name="network_connection_lbl.Size" type="System.Drawing.Size, System.Drawing">
-    <value>249, 24</value>
+    <value>206, 19</value>
   </data>
   <data name="network_connection_lbl.TabIndex" type="System.Int32, mscorlib">
     <value>44</value>
@@ -193,7 +193,7 @@
     <value>Microsoft Sans Serif, 9pt</value>
   </data>
   <data name="adapters_list.ItemHeight" type="System.Int32, mscorlib">
-    <value>18</value>
+    <value>15</value>
   </data>
   <data name="adapters_list.Location" type="System.Drawing.Point, System.Drawing">
     <value>12, 766</value>
@@ -202,7 +202,7 @@
     <value>5, 5, 5, 5</value>
   </data>
   <data name="adapters_list.Size" type="System.Drawing.Size, System.Drawing">
-    <value>872, 26</value>
+    <value>872, 23</value>
   </data>
   <data name="adapters_list.TabIndex" type="System.Int32, mscorlib">
     <value>43</value>
@@ -271,7 +271,7 @@
     <value>4, 4, 4, 4</value>
   </data>
   <data name="settings_data_send.Size" type="System.Drawing.Size, System.Drawing">
-    <value>313, 27</value>
+    <value>246, 22</value>
   </data>
   <data name="settings_data_send.TabIndex" type="System.Int32, mscorlib">
     <value>67</value>
@@ -310,7 +310,7 @@
     <value>5, 0, 5, 0</value>
   </data>
   <data name="ColorChart.Size" type="System.Drawing.Size, System.Drawing">
-    <value>220, 29</value>
+    <value>176, 23</value>
   </data>
   <data name="ColorChart.TabIndex" type="System.Int32, mscorlib">
     <value>69</value>
@@ -346,7 +346,7 @@
     <value>5, 0, 5, 0</value>
   </data>
   <data name="ColorGood.Size" type="System.Drawing.Size, System.Drawing">
-    <value>346, 29</value>
+    <value>280, 23</value>
   </data>
   <data name="ColorGood.TabIndex" type="System.Int32, mscorlib">
     <value>68</value>
@@ -382,7 +382,7 @@
     <value>5, 0, 5, 0</value>
   </data>
   <data name="ColorMid.Size" type="System.Drawing.Size, System.Drawing">
-    <value>338, 29</value>
+    <value>273, 23</value>
   </data>
   <data name="ColorMid.TabIndex" type="System.Int32, mscorlib">
     <value>67</value>
@@ -418,7 +418,7 @@
     <value>5, 0, 5, 0</value>
   </data>
   <data name="ColorBad.Size" type="System.Drawing.Size, System.Drawing">
-    <value>321, 29</value>
+    <value>261, 23</value>
   </data>
   <data name="ColorBad.TabIndex" type="System.Int32, mscorlib">
     <value>66</value>
@@ -454,7 +454,7 @@
     <value>5, 0, 5, 0</value>
   </data>
   <data name="ColorLabel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>324, 29</value>
+    <value>259, 23</value>
   </data>
   <data name="ColorLabel.TabIndex" type="System.Int32, mscorlib">
     <value>65</value>
@@ -487,7 +487,7 @@
     <value>4, 4, 4, 4</value>
   </data>
   <data name="groupBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>420, 225</value>
+    <value>420, 227</value>
   </data>
   <data name="groupBox1.TabIndex" type="System.Int32, mscorlib">
     <value>68</value>
@@ -523,7 +523,7 @@
     <value>4, 4, 4, 4</value>
   </data>
   <data name="packet_drops_checkbox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>281, 27</value>
+    <value>227, 22</value>
   </data>
   <data name="packet_drops_checkbox.TabIndex" type="System.Int32, mscorlib">
     <value>75</value>
@@ -559,7 +559,7 @@
     <value>4, 4, 4, 4</value>
   </data>
   <data name="settings_ping_chart.Size" type="System.Drawing.Size, System.Drawing">
-    <value>154, 27</value>
+    <value>121, 22</value>
   </data>
   <data name="settings_ping_chart.TabIndex" type="System.Int32, mscorlib">
     <value>74</value>
@@ -595,7 +595,7 @@
     <value>4, 4, 4, 4</value>
   </data>
   <data name="settings_tickrate_show.Size" type="System.Drawing.Size, System.Drawing">
-    <value>210, 27</value>
+    <value>171, 22</value>
   </data>
   <data name="settings_tickrate_show.TabIndex" type="System.Int32, mscorlib">
     <value>73</value>
@@ -631,7 +631,7 @@
     <value>4, 4, 4, 4</value>
   </data>
   <data name="settings_ticktime_chart.Size" type="System.Drawing.Size, System.Drawing">
-    <value>243, 27</value>
+    <value>193, 22</value>
   </data>
   <data name="settings_ticktime_chart.TabIndex" type="System.Int32, mscorlib">
     <value>72</value>
@@ -667,7 +667,7 @@
     <value>4, 4, 4, 4</value>
   </data>
   <data name="settings_session_time_checkbox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>321, 27</value>
+    <value>256, 22</value>
   </data>
   <data name="settings_session_time_checkbox.TabIndex" type="System.Int32, mscorlib">
     <value>71</value>
@@ -703,7 +703,7 @@
     <value>4, 4, 4, 4</value>
   </data>
   <data name="settings_traffic_checkbox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>208, 27</value>
+    <value>170, 22</value>
   </data>
   <data name="settings_traffic_checkbox.TabIndex" type="System.Int32, mscorlib">
     <value>70</value>
@@ -739,7 +739,7 @@
     <value>4, 4, 4, 4</value>
   </data>
   <data name="settings_ping_checkbox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>262, 27</value>
+    <value>210, 22</value>
   </data>
   <data name="settings_ping_checkbox.TabIndex" type="System.Int32, mscorlib">
     <value>69</value>
@@ -775,7 +775,7 @@
     <value>4, 4, 4, 4</value>
   </data>
   <data name="settings_ip_checkbox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>161, 27</value>
+    <value>133, 22</value>
   </data>
   <data name="settings_ip_checkbox.TabIndex" type="System.Int32, mscorlib">
     <value>68</value>
@@ -811,7 +811,7 @@
     <value>4, 4, 4, 4</value>
   </data>
   <data name="settings_chart_checkbox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>183, 27</value>
+    <value>146, 22</value>
   </data>
   <data name="settings_chart_checkbox.TabIndex" type="System.Int32, mscorlib">
     <value>66</value>
@@ -847,7 +847,7 @@
     <value>4, 4, 4, 4</value>
   </data>
   <data name="settings_rtss_output.Size" type="System.Drawing.Size, System.Drawing">
-    <value>194, 27</value>
+    <value>154, 22</value>
   </data>
   <data name="settings_rtss_output.TabIndex" type="System.Int32, mscorlib">
     <value>67</value>
@@ -880,7 +880,7 @@
     <value>4, 4, 4, 4</value>
   </data>
   <data name="groupBox2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>393, 386</value>
+    <value>393, 352</value>
   </data>
   <data name="groupBox2.TabIndex" type="System.Int32, mscorlib">
     <value>69</value>
@@ -937,7 +937,7 @@
     <value>4, 0, 4, 0</value>
   </data>
   <data name="settings_ping_interval_lbl.Size" type="System.Drawing.Size, System.Drawing">
-    <value>152, 23</value>
+    <value>117, 18</value>
   </data>
   <data name="settings_ping_interval_lbl.TabIndex" type="System.Int32, mscorlib">
     <value>71</value>
@@ -973,7 +973,7 @@
     <value>4, 0, 4, 0</value>
   </data>
   <data name="settings_ping_ports_lbl.Size" type="System.Drawing.Size, System.Drawing">
-    <value>161, 23</value>
+    <value>124, 18</value>
   </data>
   <data name="settings_ping_ports_lbl.TabIndex" type="System.Int32, mscorlib">
     <value>72</value>
@@ -1033,7 +1033,7 @@
     <value>4, 4, 4, 4</value>
   </data>
   <data name="settings_autodetect_checkbox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>361, 27</value>
+    <value>290, 22</value>
   </data>
   <data name="settings_autodetect_checkbox.TabIndex" type="System.Int32, mscorlib">
     <value>74</value>
@@ -1069,7 +1069,7 @@
     <value>4, 4, 4, 4</value>
   </data>
   <data name="run_minimized.Size" type="System.Drawing.Size, System.Drawing">
-    <value>219, 27</value>
+    <value>177, 22</value>
   </data>
   <data name="run_minimized.TabIndex" type="System.Int32, mscorlib">
     <value>75</value>
@@ -1105,7 +1105,7 @@
     <value>4, 0, 4, 0</value>
   </data>
   <data name="local_ip_lbl.Size" type="System.Drawing.Size, System.Drawing">
-    <value>131, 23</value>
+    <value>102, 18</value>
   </data>
   <data name="local_ip_lbl.TabIndex" type="System.Int32, mscorlib">
     <value>76</value>
@@ -1156,7 +1156,7 @@
     <value>23, 424</value>
   </data>
   <data name="captureAllAdaptersCheckbox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>238, 20</value>
+    <value>235, 20</value>
   </data>
   <data name="captureAllAdaptersCheckbox.TabIndex" type="System.Int32, mscorlib">
     <value>30</value>
@@ -1183,7 +1183,7 @@
     <value>24, 480</value>
   </data>
   <data name="chkPingBindToInterface.Size" type="System.Drawing.Size, System.Drawing">
-    <value>318, 20</value>
+    <value>315, 20</value>
   </data>
   <data name="chkPingBindToInterface.TabIndex" type="System.Int32, mscorlib">
     <value>31</value>
@@ -1210,7 +1210,7 @@
     <value>24, 500</value>
   </data>
   <data name="chkPingTcpPrefer.Size" type="System.Drawing.Size, System.Drawing">
-    <value>323, 20</value>
+    <value>320, 20</value>
   </data>
   <data name="chkPingTcpPrefer.TabIndex" type="System.Int32, mscorlib">
     <value>32</value>
@@ -1237,7 +1237,7 @@
     <value>24, 520</value>
   </data>
   <data name="chkPingFallbackIcmp.Size" type="System.Drawing.Size, System.Drawing">
-    <value>298, 20</value>
+    <value>295, 20</value>
   </data>
   <data name="chkPingFallbackIcmp.TabIndex" type="System.Int32, mscorlib">
     <value>33</value>
@@ -1264,7 +1264,7 @@
     <value>24, 540</value>
   </data>
   <data name="chkPingTargetActiveOnly.Size" type="System.Drawing.Size, System.Drawing">
-    <value>317, 20</value>
+    <value>314, 20</value>
   </data>
   <data name="chkPingTargetActiveOnly.TabIndex" type="System.Int32, mscorlib">
     <value>34</value>
@@ -1291,7 +1291,7 @@
     <value>23, 690</value>
   </data>
   <data name="chkTickrateSmoothing.Size" type="System.Drawing.Size, System.Drawing">
-    <value>280, 20</value>
+    <value>277, 20</value>
   </data>
   <data name="chkTickrateSmoothing.TabIndex" type="System.Int32, mscorlib">
     <value>35</value>
@@ -1318,7 +1318,7 @@
     <value>23, 664</value>
   </data>
   <data name="chkDedupMultiNic.Size" type="System.Drawing.Size, System.Drawing">
-    <value>277, 20</value>
+    <value>274, 20</value>
   </data>
   <data name="chkDedupMultiNic.TabIndex" type="System.Int32, mscorlib">
     <value>36</value>
@@ -1345,7 +1345,7 @@
     <value>23, 638</value>
   </data>
   <data name="chkEnableIPv6.Size" type="System.Drawing.Size, System.Drawing">
-    <value>173, 20</value>
+    <value>170, 20</value>
   </data>
   <data name="chkEnableIPv6.TabIndex" type="System.Int32, mscorlib">
     <value>37</value>
@@ -1372,7 +1372,7 @@
     <value>23, 612</value>
   </data>
   <data name="chkIgnoreVirtualAdapters.Size" type="System.Drawing.Size, System.Drawing">
-    <value>280, 20</value>
+    <value>277, 20</value>
   </data>
   <data name="chkIgnoreVirtualAdapters.TabIndex" type="System.Int32, mscorlib">
     <value>38</value>
@@ -1399,7 +1399,7 @@
     <value>24, 560</value>
   </data>
   <data name="chkRtssOnlyActive.Size" type="System.Drawing.Size, System.Drawing">
-    <value>306, 20</value>
+    <value>303, 20</value>
   </data>
   <data name="chkRtssOnlyActive.TabIndex" type="System.Int32, mscorlib">
     <value>39</value>
@@ -1426,7 +1426,7 @@
     <value>23, 586</value>
   </data>
   <data name="chkStunEnable.Size" type="System.Drawing.Size, System.Drawing">
-    <value>324, 20</value>
+    <value>321, 20</value>
   </data>
   <data name="chkStunEnable.TabIndex" type="System.Int32, mscorlib">
     <value>40</value>
@@ -1462,7 +1462,7 @@
     <value>5, 0, 5, 0</value>
   </data>
   <data name="label8.Size" type="System.Drawing.Size, System.Drawing">
-    <value>230, 23</value>
+    <value>178, 18</value>
   </data>
   <data name="label8.TabIndex" type="System.Int32, mscorlib">
     <value>46</value>
@@ -1498,7 +1498,7 @@
     <value>5, 0, 5, 0</value>
   </data>
   <data name="donate_lbl.Size" type="System.Drawing.Size, System.Drawing">
-    <value>121, 23</value>
+    <value>95, 18</value>
   </data>
   <data name="donate_lbl.TabIndex" type="System.Int32, mscorlib">
     <value>66</value>
@@ -1534,7 +1534,7 @@
     <value>5, 0, 5, 0</value>
   </data>
   <data name="updateLbl.Size" type="System.Drawing.Size, System.Drawing">
-    <value>233, 23</value>
+    <value>183, 18</value>
   </data>
   <data name="updateLbl.TabIndex" type="System.Int32, mscorlib">
     <value>60</value>
