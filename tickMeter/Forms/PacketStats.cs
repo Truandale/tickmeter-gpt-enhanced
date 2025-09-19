@@ -159,7 +159,7 @@ namespace tickMeter
         private void OpenAndCaptureFromAdapter(PacketDevice adapter)
         {
             // Открываем адаптер
-            PacketCommunicator communicator = adapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 1000);
+            PacketCommunicator communicator = adapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 150);
             if (communicator == null)
             {
                 // В режиме мультиадаптера просто пропускаем проблемные адаптеры
@@ -183,10 +183,32 @@ namespace tickMeter
                     return;
                 }
 
-                // Начинаем получение пакетов
+                // Начинаем получение пакетов с проверкой на остановку
                 try
                 {
-                    communicator.ReceivePackets(0, PacketHandler);
+                    while (tracking)
+                    {
+                        try
+                        {
+                            // Получаем пакеты порциями с коротким таймаутом
+                            var result = communicator.ReceivePackets(100, PacketHandler);
+                            if (result == PacketCommunicatorReceiveResult.Timeout)
+                            {
+                                // Таймаут - проверяем флаг tracking и продолжаем
+                                continue;
+                            }
+                            if (result == PacketCommunicatorReceiveResult.BreakLoop)
+                            {
+                                // Break вызван - выходим
+                                break;
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            // Ошибка чтения - прерываем цикл
+                            break;
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -426,6 +448,9 @@ namespace tickMeter
             tracking = false;
             RefreshTimer.Enabled = false;
             
+            // Даём время воркерам завершиться корректно
+            System.Threading.Thread.Sleep(200);
+            
             // Останавливаем все multi-adapter воркеры
             try 
             { 
@@ -434,6 +459,18 @@ namespace tickMeter
                     if (worker.IsBusy)
                         worker.CancelAsync();
                 } 
+                
+                // Ждём завершения воркеров (кратко)
+                for (int i = 0; i < 20; i++)
+                {
+                    bool anyBusy = false;
+                    foreach (var worker in _pcapWorkers)
+                    {
+                        if (worker.IsBusy) { anyBusy = true; break; }
+                    }
+                    if (!anyBusy) break;
+                    System.Threading.Thread.Sleep(50);
+                }
             }
             catch { }
             _pcapWorkers.Clear();
