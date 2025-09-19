@@ -32,8 +32,8 @@ namespace tickMeter
 
         // Multi-adapter support
         private readonly List<BackgroundWorker> _pcapWorkers = new List<BackgroundWorker>();
-        private bool CaptureAll => App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
-        private bool _ignoreVirtual => App.settingsManager.GetOption("ignore_virtual_adapters", "True") == "True";
+        private bool CaptureAll => App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
+        private bool _ignoreVirtual => App.settingsManager.GetOption("ignore_virtual_adapters", "True", "SETTINGS") == "True";
 
         public PacketStats()
         {
@@ -92,6 +92,26 @@ namespace tickMeter
 
         }
 
+        private void MultiAdapterWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (!tracking) return;
+            
+            // Перезапускаем завершившийся воркер
+            var worker = sender as BackgroundWorker;
+            if (worker != null && !worker.CancellationPending)
+            {
+                try
+                {
+                    worker.RunWorkerAsync();
+                }
+                catch (Exception ex)
+                {
+                    // В случае ошибки выводим в консоль отладки, но не останавливаем другие воркеры
+                    System.Diagnostics.Debug.WriteLine($"[MultiAdapter] Error restarting worker: {ex.Message}");
+                }
+            }
+        }
+
 
         private void PcapWorkerDoWork(object sender, DoWorkEventArgs e)
         {
@@ -105,9 +125,11 @@ namespace tickMeter
                     {
                         if (!_ignoreVirtual) return true;
                         var desc = (d.Description ?? string.Empty).ToLowerInvariant();
+                        var name = (d.Name ?? string.Empty).ToLowerInvariant();
                         return !(desc.Contains("loopback") || desc.Contains("npcap")
                               || desc.Contains("hyper-v") || desc.Contains("vmware")
-                              || desc.Contains("virtualbox") || desc.Contains("vethernet"));
+                              || desc.Contains("virtualbox") || desc.Contains("vethernet")
+                              || name.Contains("loopback") || desc.Contains("microsoft loopback"));
                     })
                     .ToList();
 
@@ -119,7 +141,7 @@ namespace tickMeter
                     var adapter = (PacketDevice)dev;
                     var w = new BackgroundWorker { WorkerSupportsCancellation = true };
                     w.DoWork += (s, args) => OpenAndCaptureFromAdapter(adapter);
-                    w.RunWorkerCompleted += (s, args) => { };
+                    w.RunWorkerCompleted += MultiAdapterWorkerCompleted;
                     _pcapWorkers.Add(w);
                     w.RunWorkerAsync();
                 }
@@ -139,30 +161,76 @@ namespace tickMeter
         private void OpenAndCaptureFromAdapter(PacketDevice adapter)
         {
             // Открываем адаптер
-            PacketCommunicator communicator = adapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 1000);
+            PacketCommunicator communicator = adapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 150);
             if (communicator == null)
             {
-                MessageBox.Show("Failed to open the selected adapter!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // В режиме мультиадаптера просто пропускаем проблемные адаптеры
+                if (!CaptureAll)
+                {
+                    MessageBox.Show("Failed to open the selected adapter!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
                 return;
             }
 
             using (communicator)
             {
                 // Проверяем, что адаптер поддерживает Ethernet
-                if (communicator.DataLink.Kind != DataLinkKind.Ethernet)
+                try
                 {
-                    MessageBox.Show("This program works only on Ethernet networks!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    if (communicator.DataLink.Kind != DataLinkKind.Ethernet)
+                    {
+                        // В режиме мультиадаптера просто пропускаем неподдерживаемые адаптеры
+                        if (!CaptureAll)
+                        {
+                            MessageBox.Show("This program works only on Ethernet networks!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                        return;
+                    }
+                }
+                catch (NotSupportedException)
+                {
+                    // Неподдерживаемый тип адаптера (например, loopback) - пропускаем
+                    if (!CaptureAll)
+                    {
+                        MessageBox.Show("This adapter type is not supported!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                     return;
                 }
 
-                // Начинаем получение пакетов
+                // Начинаем получение пакетов с проверкой на остановку
                 try
                 {
-                    communicator.ReceivePackets(0, PacketHandler);
+                    while (tracking)
+                    {
+                        try
+                        {
+                            // Получаем пакеты порциями с коротким таймаутом
+                            var result = communicator.ReceivePackets(100, PacketHandler);
+                            if (result == PacketCommunicatorReceiveResult.Timeout)
+                            {
+                                // Таймаут - проверяем флаг tracking и продолжаем
+                                continue;
+                            }
+                            if (result == PacketCommunicatorReceiveResult.BreakLoop)
+                            {
+                                // Break вызван - выходим
+                                break;
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            // Ошибка чтения - прерываем цикл
+                            break;
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"An error occurred while receiving packets: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    // В режиме мультиадаптера просто пропускаем проблемные адаптеры
+                    if (!CaptureAll)
+                    {
+                        MessageBox.Show($"An error occurred while receiving packets: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
             }
         }
