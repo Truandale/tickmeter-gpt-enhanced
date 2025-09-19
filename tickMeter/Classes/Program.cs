@@ -35,6 +35,16 @@ namespace tickMeter
         static void MyHandler(object sender, UnhandledExceptionEventArgs args)
         {
             Exception e = (Exception)args.ExceptionObject;
+            
+            // Игнорируем DisconnectedContext и другие COM-связанные ошибки
+            if (e is System.Runtime.InteropServices.COMException comEx)
+            {
+                // Логируем COM ошибки, но не показываем пользователю
+                System.Diagnostics.Debug.WriteLine($"COM Exception ignored: {comEx.Message} (HRESULT: 0x{comEx.HResult:X})");
+                return;
+            }
+            
+            // Показываем только критичные ошибки
             MessageBox.Show(e.Message);
         }
     }

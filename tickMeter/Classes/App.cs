@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -13,6 +14,26 @@ namespace tickMeter.Classes
 {
     public static class App
     {
+        // COM initialization constants and imports
+        private const uint COINIT_APARTMENTTHREADED = 0x2;
+        private const uint COINIT_DISABLE_OLE1DDE = 0x4;
+        private const int RPC_E_CHANGED_MODE = unchecked((int)0x80010106);
+        
+        [DllImport("ole32.dll")]
+        private static extern int CoInitializeEx(IntPtr pvReserved, uint dwCoInit);
+        
+        /// <summary>
+        /// Безопасная инициализация COM - игнорирует ошибку если COM уже инициализирован
+        /// </summary>
+        private static void SafeCoInitialize()
+        {
+            int hr = CoInitializeEx(IntPtr.Zero, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+            if (hr != 0 && hr != RPC_E_CHANGED_MODE)
+            {
+                Marshal.ThrowExceptionForHR(hr);
+            }
+        }
+
         public static GUI gui;
         public static PacketFilterForm packetFilterForm;
         public static ProfileEditForm profileEditForm;
@@ -50,6 +71,9 @@ namespace tickMeter.Classes
         {
             try
             {
+                // Безопасно инициализируем COM перед работой с PcapDotNet
+                SafeCoInitialize();
+                
                 AdaptersList = LivePacketDevice.AllLocalMachine.ToList();
             }
             catch (Exception)
