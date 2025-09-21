@@ -312,6 +312,11 @@ namespace tickMeter
             private Queue<float> udpIntervals = new Queue<float>();
             private const int UdpIntervalsWindow = 10; // размер окна для сглаживания
 
+            // --- Ping Spike Detection ---
+            private DateTime lastSpikeTime = DateTime.MinValue;
+            private const double SpikeThresholdMs = 50.0; // порог для определения спайка (превышение среднего на 50мс)
+            private const int SpikeTimeoutMs = 3000; // время отображения индикатора спайка (3 секунды)
+
             public float UdpPing
             {
                 get
@@ -329,6 +334,51 @@ namespace tickMeter
                 return UdpPing.ToString("0");
             }
 
+            /// <summary>
+            /// Определяет, есть ли сейчас спайк пинга (превышение нормального значения)
+            /// </summary>
+            public bool HasPingSpike
+            {
+                get
+                {
+                    // Проверяем, прошло ли время отображения спайка
+                    if (lastSpikeTime != DateTime.MinValue && 
+                        (DateTime.Now - lastSpikeTime).TotalMilliseconds < SpikeTimeoutMs)
+                    {
+                        return true;
+                    }
+                    return false;
+                }
+            }
+
+            /// <summary>
+            /// Проверяет текущий пинг на предмет спайка
+            /// </summary>
+            private void CheckForPingSpike(int currentPing)
+            {
+                if (App.meterState?.pingBuffer == null || App.meterState.pingBuffer.Count < 5)
+                    return;
+
+                // Вычисляем средний пинг из последних 10 значений (исключая текущее)
+                var bufferCount = App.meterState.pingBuffer.Count;
+                var recentPings = App.meterState.pingBuffer
+                    .Skip(Math.Max(0, bufferCount - 10))
+                    .Where(p => p > 0)
+                    .ToList();
+                    
+                if (recentPings.Count < 3)
+                    return;
+
+                double avgPing = recentPings.Average();
+                
+                // Если текущий пинг превышает средний на установленный порог
+                if (currentPing > avgPing + SpikeThresholdMs && currentPing > 20) // минимум 20мс, чтобы исключить ложные срабатывания
+                {
+                    lastSpikeTime = DateTime.Now;
+                    Debug.Print($"[PING SPIKE DETECTED] Current: {currentPing}ms, Average: {avgPing:F1}ms, Threshold: +{SpikeThresholdMs}ms");
+                }
+            }
+
             public void UpdateUdpPing(DateTime packetTime)
             {
                 if (lastUdpPacketTime != DateTime.MinValue)
@@ -340,6 +390,9 @@ namespace tickMeter
                         udpIntervals.Enqueue(interval);
                         if (udpIntervals.Count > UdpIntervalsWindow)
                             udpIntervals.Dequeue();
+                        
+                        // Проверяем на спайк UDP пинга
+                        CheckForPingSpike((int)UdpPing);
                     }
                     // Добавим логирование каждого интервала и текущего среднего UDP ping
                     Debug.Print($"[UDP PING DEBUG] interval={interval} ms, avgUdpPing={UdpPing:0} ms, intervalsCount={udpIntervals.Count}");
@@ -387,6 +440,9 @@ namespace tickMeter
                         {
                             App.meterState.pingBuffer.RemoveAt(0);
                         }
+                        
+                        // Проверяем на спайк пинга
+                        CheckForPingSpike(_ping);
                     }
                     if (AvgPing == 0 && _ping > 0) AvgPing = _ping;
                     else if (_ping > 0) AvgPing = (AvgPing + _ping) / 2;
@@ -604,7 +660,15 @@ namespace tickMeter
             public int IcmpPing
             {
                 get { return _icmpPing; }
-                set { _icmpPing = value; }
+                set 
+                { 
+                    _icmpPing = value;
+                    // Проверяем на спайк ICMP пинга
+                    if (value > 0)
+                    {
+                        CheckForPingSpike(value);
+                    }
+                }
             }
 
             private int ICMPfails = 0;

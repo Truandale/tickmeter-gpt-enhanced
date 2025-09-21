@@ -31,6 +31,7 @@ namespace tickMeter.Forms
             this.panel1 = new System.Windows.Forms.Panel();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.chkStunEnable = new System.Windows.Forms.CheckBox();
+            this.chkShowPingSpikes = new System.Windows.Forms.CheckBox();
             this.chkRtssOnlyActive = new System.Windows.Forms.CheckBox();
             this.chkEnableIPv6 = new System.Windows.Forms.CheckBox();
             this.chkDedupMultiNic = new System.Windows.Forms.CheckBox();
@@ -91,6 +92,7 @@ namespace tickMeter.Forms
             // groupBox5
             // 
             this.groupBox5.Controls.Add(this.chkStunEnable);
+            this.groupBox5.Controls.Add(this.chkShowPingSpikes);
             this.groupBox5.Controls.Add(this.chkRtssOnlyActive);
             this.groupBox5.Controls.Add(this.chkEnableIPv6);
             this.groupBox5.Controls.Add(this.chkDedupMultiNic);
@@ -125,6 +127,17 @@ namespace tickMeter.Forms
             this.chkStunEnable.TabIndex = 8;
             this.chkStunEnable.Text = "Определять внешний IP через STUN (в фоне)";
             this.chkStunEnable.UseVisualStyleBackColor = true;
+            // 
+            // chkShowPingSpikes
+            // 
+            this.chkShowPingSpikes.AutoSize = true;
+            this.chkShowPingSpikes.Location = new System.Drawing.Point(333, 87);
+            this.chkShowPingSpikes.Margin = new System.Windows.Forms.Padding(4);
+            this.chkShowPingSpikes.Name = "chkShowPingSpikes";
+            this.chkShowPingSpikes.Size = new System.Drawing.Size(280, 20);
+            this.chkShowPingSpikes.TabIndex = 9;
+            this.chkShowPingSpikes.Text = "Показывать индикатор (!) при спайках пинга";
+            this.chkShowPingSpikes.UseVisualStyleBackColor = true;
             // 
             // chkRtssOnlyActive
             // 
@@ -576,6 +589,7 @@ namespace tickMeter.Forms
     private System.Windows.Forms.CheckBox chkEnableIPv6;
     private System.Windows.Forms.CheckBox chkRtssOnlyActive;
     private System.Windows.Forms.CheckBox chkStunEnable;
+    private System.Windows.Forms.CheckBox chkShowPingSpikes;
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.Button btnCancel;
     }

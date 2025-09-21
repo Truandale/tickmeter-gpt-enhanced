@@ -404,6 +404,14 @@ namespace tickMeter.Forms
                             {
                                 pingText = "n/a ms";
                             }
+                            
+                            // Добавляем индикатор спайка если включена соответствующая настройка
+                            bool showSpikeIndicator = App.settingsManager?.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
+                            if (showSpikeIndicator && server.HasPingSpike)
+                            {
+                                pingText += " (!)";
+                            }
+                            
                             ping_val.Text = pingText;
                         }));
                         }

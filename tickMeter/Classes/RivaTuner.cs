@@ -278,7 +278,16 @@ namespace tickMeter.Classes
                 pingFont = "<C1>";
                 pingValue = "n/a";
             }
-            return "<S><C0>Ping: " + pingFont + pingValue + "<S0>ms <S0><C>(" + geo + ")" + Environment.NewLine;
+            
+            // Добавляем индикатор спайка если включена соответствующая настройка
+            bool showSpikeIndicator = App.settingsManager?.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
+            string spikeIndicator = "";
+            if (showSpikeIndicator && meterState.Server.HasPingSpike)
+            {
+                spikeIndicator = " <C1>(!)<C>";
+            }
+            
+            return "<S><C0>Ping: " + pingFont + pingValue + "<S0>ms" + spikeIndicator + " <S0><C>(" + geo + ")" + Environment.NewLine;
         }
 
         public static void BuildRivaOutput()
