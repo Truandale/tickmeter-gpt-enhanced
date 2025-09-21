@@ -36,6 +36,8 @@ namespace tickMeter.Forms
             this.chkDedupMultiNic = new System.Windows.Forms.CheckBox();
             this.chkTickrateSmoothing = new System.Windows.Forms.CheckBox();
             this.chkPingGraphOverlaySmoothing = new System.Windows.Forms.CheckBox();
+            this.chkTickrateGraphOverlaySmoothing = new System.Windows.Forms.CheckBox();
+            this.chkTicktimeGraphOverlaySmoothing = new System.Windows.Forms.CheckBox();
             this.chkPingTargetActiveOnly = new System.Windows.Forms.CheckBox();
             this.chkPingFallbackIcmp = new System.Windows.Forms.CheckBox();
             this.chkPingTcpPrefer = new System.Windows.Forms.CheckBox();
@@ -80,7 +82,7 @@ namespace tickMeter.Forms
             this.panel1.Margin = new System.Windows.Forms.Padding(4);
             this.panel1.Name = "panel1";
             this.panel1.Padding = new System.Windows.Forms.Padding(13, 12, 13, 12);
-            this.panel1.Size = new System.Drawing.Size(781, 836);
+            this.panel1.Size = new System.Drawing.Size(781, 950);
             this.panel1.TabIndex = 0;
             // 
             // groupBox5
@@ -91,6 +93,8 @@ namespace tickMeter.Forms
             this.groupBox5.Controls.Add(this.chkDedupMultiNic);
             this.groupBox5.Controls.Add(this.chkTickrateSmoothing);
             this.groupBox5.Controls.Add(this.chkPingGraphOverlaySmoothing);
+            this.groupBox5.Controls.Add(this.chkTickrateGraphOverlaySmoothing);
+            this.groupBox5.Controls.Add(this.chkTicktimeGraphOverlaySmoothing);
             this.groupBox5.Controls.Add(this.chkPingTargetActiveOnly);
             this.groupBox5.Controls.Add(this.chkPingFallbackIcmp);
             this.groupBox5.Controls.Add(this.chkPingTcpPrefer);
@@ -100,7 +104,7 @@ namespace tickMeter.Forms
             this.groupBox5.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox5.Name = "groupBox5";
             this.groupBox5.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox5.Size = new System.Drawing.Size(755, 300);
+            this.groupBox5.Size = new System.Drawing.Size(755, 450);
             this.groupBox5.TabIndex = 4;
             this.groupBox5.TabStop = false;
             this.groupBox5.Text = "Универсальные";
@@ -130,7 +134,7 @@ namespace tickMeter.Forms
             // chkEnableIPv6
             // 
             this.chkEnableIPv6.AutoSize = true;
-            this.chkEnableIPv6.Location = new System.Drawing.Point(20, 229);
+            this.chkEnableIPv6.Location = new System.Drawing.Point(20, 283);
             this.chkEnableIPv6.Margin = new System.Windows.Forms.Padding(4);
             this.chkEnableIPv6.Name = "chkEnableIPv6";
             this.chkEnableIPv6.Size = new System.Drawing.Size(173, 20);
@@ -141,7 +145,7 @@ namespace tickMeter.Forms
             // chkDedupMultiNic
             // 
             this.chkDedupMultiNic.AutoSize = true;
-            this.chkDedupMultiNic.Location = new System.Drawing.Point(20, 201);
+            this.chkDedupMultiNic.Location = new System.Drawing.Point(20, 255);
             this.chkDedupMultiNic.Margin = new System.Windows.Forms.Padding(4);
             this.chkDedupMultiNic.Name = "chkDedupMultiNic";
             this.chkDedupMultiNic.Size = new System.Drawing.Size(277, 20);
@@ -170,6 +174,28 @@ namespace tickMeter.Forms
             this.chkPingGraphOverlaySmoothing.TabIndex = 10;
             this.chkPingGraphOverlaySmoothing.Text = "Сглаживание графика пинга в оверлее";
             this.chkPingGraphOverlaySmoothing.UseVisualStyleBackColor = true;
+            // 
+            // chkTickrateGraphOverlaySmoothing
+            // 
+            this.chkTickrateGraphOverlaySmoothing.AutoSize = true;
+            this.chkTickrateGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 200);
+            this.chkTickrateGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
+            this.chkTickrateGraphOverlaySmoothing.Name = "chkTickrateGraphOverlaySmoothing";
+            this.chkTickrateGraphOverlaySmoothing.Size = new System.Drawing.Size(310, 20);
+            this.chkTickrateGraphOverlaySmoothing.TabIndex = 11;
+            this.chkTickrateGraphOverlaySmoothing.Text = "Сглаживание графика тикрейта в оверлее";
+            this.chkTickrateGraphOverlaySmoothing.UseVisualStyleBackColor = true;
+            // 
+            // chkTicktimeGraphOverlaySmoothing
+            // 
+            this.chkTicktimeGraphOverlaySmoothing.AutoSize = true;
+            this.chkTicktimeGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 227);
+            this.chkTicktimeGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
+            this.chkTicktimeGraphOverlaySmoothing.Name = "chkTicktimeGraphOverlaySmoothing";
+            this.chkTicktimeGraphOverlaySmoothing.Size = new System.Drawing.Size(311, 20);
+            this.chkTicktimeGraphOverlaySmoothing.TabIndex = 12;
+            this.chkTicktimeGraphOverlaySmoothing.Text = "Сглаживание графика тиктайма в оверлее";
+            this.chkTicktimeGraphOverlaySmoothing.UseVisualStyleBackColor = true;
             // 
             // chkPingTargetActiveOnly
             // 
@@ -448,7 +474,7 @@ namespace tickMeter.Forms
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(781, 836);
+            this.ClientSize = new System.Drawing.Size(781, 950);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnSave);
             this.Controls.Add(this.panel1);
@@ -501,6 +527,8 @@ namespace tickMeter.Forms
     private System.Windows.Forms.CheckBox chkPingTargetActiveOnly;
     private System.Windows.Forms.CheckBox chkTickrateSmoothing;
     private System.Windows.Forms.CheckBox chkPingGraphOverlaySmoothing;
+    private System.Windows.Forms.CheckBox chkTickrateGraphOverlaySmoothing;
+    private System.Windows.Forms.CheckBox chkTicktimeGraphOverlaySmoothing;
     private System.Windows.Forms.CheckBox chkDedupMultiNic;
     private System.Windows.Forms.CheckBox chkEnableIPv6;
     private System.Windows.Forms.CheckBox chkRtssOnlyActive;

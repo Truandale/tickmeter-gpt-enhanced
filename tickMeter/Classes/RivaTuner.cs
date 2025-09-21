@@ -316,8 +316,15 @@ namespace tickMeter.Classes
                     tickrateColor = "<C3>";
 
                 output += "<S0><C4>Tickrate" + Environment.NewLine;
-                output += DrawChart(
+                
+                // Применяем сглаживание графика тикрейта, если включено
+                float[] tickrateGraphData = Classes.SmoothingManager.SmoothSeries(
                     App.meterState.tickrateGraph.ToArray(),
+                    Classes.SmoothingManager.IsTickrateGraphOverlayEnabled()
+                );
+                
+                output += DrawChart(
+                    tickrateGraphData,
                     0,
                     0,
                     "Tickrate",
@@ -343,8 +350,15 @@ namespace tickMeter.Classes
                         ticktimeColor = "<C1>"; // красный
                 }
                 output += Environment.NewLine + "<S0><C4>Ticktime" + Environment.NewLine;
-                output += DrawChart(
+                
+                // Применяем сглаживание графика тиктайма, если включено
+                float[] ticktimeGraphData = Classes.SmoothingManager.SmoothSeries(
                     App.meterState.tickTimeBuffer.ToArray(),
+                    Classes.SmoothingManager.IsTicktimeGraphOverlayEnabled()
+                );
+                
+                output += DrawChart(
+                    ticktimeGraphData,
                     0,
                     100,
                     "Ticktime",
