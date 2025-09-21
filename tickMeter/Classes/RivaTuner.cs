@@ -395,48 +395,51 @@ namespace tickMeter.Classes
                     ticktimeColor
                 );
             }
-            try
-            {
-                if (App.settingsForm.settings_ping_chart.Checked && App.meterState.pingBuffer.Count() > 1)
+                try
                 {
-                    // --- Ping chart label and color ---
-                    string pingValue = "";
-                    string pingColor = "<C1>";
-                    // UDP > TCP > ICMP, всегда числовое значение
-                    if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
+                    if (App.settingsForm.settings_ping_chart.Checked && App.meterState.pingBuffer.Count() > 1)
                     {
-                        pingValue = App.meterState.Server.UdpPing.ToString("0");
-                        pingColor = "<C3>";
-                    }
-                    else if (meterState.Server.Ping > 0 && meterState.Server.Ping < 10000)
-                    {
-                        pingValue = meterState.Server.Ping.ToString();
-                        if (meterState.Server.Ping < 100)
+                        // --- Ping chart label and color ---
+                        string pingValue = "";
+                        string pingColor = "<C1>";
+                        int displayPing = 0;
+                        
+                        // UDP > TCP > ICMP, всегда числовое значение с применением сглаживания
+                        if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
+                        {
+                            displayPing = Classes.SmoothingManager.SmoothPingValueOverlay((int)App.meterState.Server.UdpPing);
+                            pingValue = displayPing.ToString("0");
                             pingColor = "<C3>";
-                        else if (meterState.Server.Ping < 150)
+                        }
+                        else if (meterState.Server.Ping > 0 && meterState.Server.Ping < 10000)
+                        {
+                            displayPing = Classes.SmoothingManager.SmoothPingValueOverlay(meterState.Server.Ping);
+                            pingValue = displayPing.ToString();
+                            if (displayPing < 100)
+                                pingColor = "<C3>";
+                            else if (displayPing < 150)
+                                pingColor = "<C2>";
+                            else
+                                pingColor = "<C1>";
+                        }
+                        else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
+                        {
+                            displayPing = Classes.SmoothingManager.SmoothPingValueOverlay(App.meterState.IcmpPing);
+                            pingValue = displayPing.ToString();
                             pingColor = "<C2>";
+                        }
                         else
+                        {
+                            pingValue = "n/a";
                             pingColor = "<C1>";
-                    }
-                    else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
-                    {
-                        pingValue = App.meterState.IcmpPing.ToString();
-                        pingColor = "<C2>";
-                    }
-                    else
-                    {
-                        pingValue = "n/a";
-                        pingColor = "<C1>";
-                    }
-                    
-                    // Добавляем индикатор спайка если включена соответствующая настройка
-                    bool showSpikeIndicator = App.settingsManager?.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
-                    if (showSpikeIndicator && meterState.Server.HasPingSpike)
-                    {
-                        pingValue += " (!)";
-                    }
-                    
-                    output += Environment.NewLine + "<S0><C4>Ping" + Environment.NewLine;
+                        }
+                        
+                        // Добавляем индикатор спайка если включена соответствующая настройка
+                        bool showSpikeIndicator = App.settingsManager?.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
+                        if (showSpikeIndicator && meterState.Server.HasPingSpike)
+                        {
+                            pingValue += " (!)";
+                        }                    output += Environment.NewLine + "<S0><C4>Ping" + Environment.NewLine;
                     
                     // Применяем сглаживание к графику пинга если включено
                     float[] pingGraphData = Classes.SmoothingManager.SmoothSeries(
