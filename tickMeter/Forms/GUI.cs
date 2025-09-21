@@ -405,7 +405,17 @@ namespace tickMeter.Forms
                         if (!skipGUIUpdate)
                         {
                             tickrate_val.Invoke(new Action(() => {
-                                tickrate_val.Text = App.meterState.OutputTickRate.ToString();
+                                var server = App.meterState.Server;
+                                string tickrateText = App.meterState.OutputTickRate.ToString();
+                                
+                                // Добавляем индикатор спайка если включена соответствующая настройка
+                                bool showSpikeIndicator = App.settingsManager?.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
+                                if (showSpikeIndicator && server.HasPingSpike)
+                                {
+                                    tickrateText += " (!)";
+                                }
+                                
+                                tickrate_val.Text = tickrateText;
                                 tickrate_val.ForeColor = TickRateColor;
                             }));
                             //update tickrate chart

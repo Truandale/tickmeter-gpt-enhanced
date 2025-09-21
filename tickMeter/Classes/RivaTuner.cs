@@ -428,6 +428,14 @@ namespace tickMeter.Classes
                         pingValue = "n/a";
                         pingColor = "<C1>";
                     }
+                    
+                    // Добавляем индикатор спайка если включена соответствующая настройка
+                    bool showSpikeIndicator = App.settingsManager?.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
+                    if (showSpikeIndicator && meterState.Server.HasPingSpike)
+                    {
+                        pingValue += " (!)";
+                    }
+                    
                     output += Environment.NewLine + "<S0><C4>Ping" + Environment.NewLine;
                     
                     // Применяем сглаживание к графику пинга если включено
