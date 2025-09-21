@@ -175,17 +175,21 @@ namespace tickMeter.Classes
         public static string FormatTickrate()
         {
             string tickRateStr = "<S><C0>Tickrate: ";
-            if (meterState.OutputTickRate < 30)
+            
+            // Применяем сглаживание для overlay значений тикрейта, если включено
+            int displayTickrate = Classes.SmoothingManager.SmoothTickrateValueOverlay(meterState.OutputTickRate);
+            
+            if (displayTickrate < 30)
             {
-                tickRateStr += "<C1>" + meterState.OutputTickRate.ToString();
+                tickRateStr += "<C1>" + displayTickrate.ToString();
             }
-            else if (meterState.OutputTickRate < 50)
+            else if (displayTickrate < 50)
             {
-                tickRateStr += "<C2>" + meterState.OutputTickRate.ToString();
+                tickRateStr += "<C2>" + displayTickrate.ToString();
             }
             else
             {
-                tickRateStr += "<C3>" + meterState.OutputTickRate.ToString();
+                tickRateStr += "<C3>" + displayTickrate.ToString();
             }
             string output = tickRateStr + Environment.NewLine;
             return output;
@@ -200,7 +204,12 @@ namespace tickMeter.Classes
         {
             float formatedUpload = (float)meterState.UploadTraffic / (1024 * 1024);
             float formatedDownload = (float)meterState.DownloadTraffic / (1024 * 1024);
-            return "<S><C0>UP/DL: <C>" + formatedUpload.ToString("N2") + " / " + formatedDownload.ToString("N2") + "<S0> Mb" + Environment.NewLine;
+            
+            // Применяем сглаживание для overlay значений трафика, если включено
+            float displayUpload = Classes.SmoothingManager.SmoothUploadMbOverlay(formatedUpload);
+            float displayDownload = Classes.SmoothingManager.SmoothDownloadMbOverlay(formatedDownload);
+            
+            return "<S><C0>UP/DL: <C>" + displayUpload.ToString("N2") + " / " + displayDownload.ToString("N2") + "<S0> Mb" + Environment.NewLine;
         }
 
         public static string FormatDrops()
@@ -240,23 +249,29 @@ namespace tickMeter.Classes
             if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
             {
                 pingFont = "<C3>";
-                // Показываем именно числовое значение UDP ping
-                pingValue = App.meterState.Server.UdpPing.ToString("0");
+                // Применяем сглаживание для overlay значений пинга, если включено
+                int displayPing = Classes.SmoothingManager.SmoothPingValueOverlay((int)App.meterState.Server.UdpPing);
+                pingValue = displayPing.ToString("0");
             }
             else if (meterState.Server.Ping > 0 && meterState.Server.Ping < 10000)
             {
-                if (meterState.Server.Ping < 100)
+                // Применяем сглаживание для overlay значений пинга, если включено
+                int displayPing = Classes.SmoothingManager.SmoothPingValueOverlay(meterState.Server.Ping);
+                
+                if (displayPing < 100)
                     pingFont = "<C3>";
-                else if (meterState.Server.Ping < 150)
+                else if (displayPing < 150)
                     pingFont = "<C2>";
                 else
                     pingFont = "<C1>";
-                pingValue = meterState.Server.Ping.ToString();
+                pingValue = displayPing.ToString();
             }
             else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
             {
                 pingFont = "<C2>";
-                pingValue = App.meterState.IcmpPing.ToString();
+                // Применяем сглаживание для overlay значений пинга, если включено
+                int displayPing = Classes.SmoothingManager.SmoothPingValueOverlay(App.meterState.IcmpPing);
+                pingValue = displayPing.ToString();
             }
             else
             {

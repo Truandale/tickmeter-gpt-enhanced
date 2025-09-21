@@ -16,6 +16,12 @@ namespace tickMeter.Classes
         private static ExponentialMovingAverage _emaPingValue;
         private static ExponentialMovingAverage _emaUploadMb;
         private static ExponentialMovingAverage _emaDownloadMb;
+        
+        // EMA для overlay значений
+        private static ExponentialMovingAverage _emaPingValueOverlay;
+        private static ExponentialMovingAverage _emaTickrateValueOverlay;
+        private static ExponentialMovingAverage _emaUploadMbOverlay;
+        private static ExponentialMovingAverage _emaDownloadMbOverlay;
 
         private static double GetAlpha()
         {
@@ -34,6 +40,9 @@ namespace tickMeter.Classes
     public static bool IsTickrateGraphOverlayEnabled() => App.settingsManager?.GetBool("smoothing_tickrate_graph_overlay", false, "ADVANCED") == true;
     public static bool IsTicktimeGraphOverlayEnabled() => App.settingsManager?.GetBool("smoothing_ticktime_graph_overlay", false, "ADVANCED") == true;
     public static bool IsPingGraphOverlayEnabled() => App.settingsManager?.GetBool("smoothing_ping_graph_overlay", false, "ADVANCED") == true;
+    public static bool IsPingValueOverlayEnabled() => App.settingsManager?.GetBool("smoothing_ping_value_overlay", false, "ADVANCED") == true;
+    public static bool IsTickrateValueOverlayEnabled() => App.settingsManager?.GetBool("smoothing_tickrate_value_overlay", false, "ADVANCED") == true;
+    public static bool IsTrafficValueOverlayEnabled() => App.settingsManager?.GetBool("smoothing_traffic_value_overlay", false, "ADVANCED") == true;
 
         // --- Значения ---
         public static int SmoothPingValue(int raw)
@@ -75,6 +84,59 @@ namespace tickMeter.Classes
             }
         }
 
+        // --- Overlay значения ---
+        public static int SmoothPingValueOverlay(int raw)
+        {
+            if (!IsPingValueOverlayEnabled() || raw <= 0) return raw;
+            lock (_lock)
+            {
+                if (_emaPingValueOverlay == null)
+                {
+                    _emaPingValueOverlay = new ExponentialMovingAverage(GetAlpha());
+                }
+                return (int)Math.Round(_emaPingValueOverlay.Update(raw));
+            }
+        }
+
+        public static int SmoothTickrateValueOverlay(int raw)
+        {
+            if (!IsTickrateValueOverlayEnabled() || raw <= 0) return raw;
+            lock (_lock)
+            {
+                if (_emaTickrateValueOverlay == null)
+                {
+                    _emaTickrateValueOverlay = new ExponentialMovingAverage(GetAlpha());
+                }
+                return (int)Math.Round(_emaTickrateValueOverlay.Update(raw));
+            }
+        }
+
+        public static float SmoothUploadMbOverlay(float rawMb)
+        {
+            if (!IsTrafficValueOverlayEnabled() || rawMb < 0) return rawMb;
+            lock (_lock)
+            {
+                if (_emaUploadMbOverlay == null)
+                {
+                    _emaUploadMbOverlay = new ExponentialMovingAverage(GetAlpha());
+                }
+                return (float)_emaUploadMbOverlay.Update(rawMb);
+            }
+        }
+
+        public static float SmoothDownloadMbOverlay(float rawMb)
+        {
+            if (!IsTrafficValueOverlayEnabled() || rawMb < 0) return rawMb;
+            lock (_lock)
+            {
+                if (_emaDownloadMbOverlay == null)
+                {
+                    _emaDownloadMbOverlay = new ExponentialMovingAverage(GetAlpha());
+                }
+                return (float)_emaDownloadMbOverlay.Update(rawMb);
+            }
+        }
+
         // --- Серии ---
         public static float[] SmoothSeries(IEnumerable<float> series, bool enabled)
         {
@@ -109,9 +171,18 @@ namespace tickMeter.Classes
                 _emaPingValue?.Reset();
                 _emaUploadMb?.Reset();
                 _emaDownloadMb?.Reset();
+                _emaPingValueOverlay?.Reset();
+                _emaTickrateValueOverlay?.Reset();
+                _emaUploadMbOverlay?.Reset();
+                _emaDownloadMbOverlay?.Reset();
+                
                 _emaPingValue = null;
                 _emaUploadMb = null;
                 _emaDownloadMb = null;
+                _emaPingValueOverlay = null;
+                _emaTickrateValueOverlay = null;
+                _emaUploadMbOverlay = null;
+                _emaDownloadMbOverlay = null;
             }
         }
     }

@@ -38,6 +38,9 @@ namespace tickMeter.Forms
             this.chkPingGraphOverlaySmoothing = new System.Windows.Forms.CheckBox();
             this.chkTickrateGraphOverlaySmoothing = new System.Windows.Forms.CheckBox();
             this.chkTicktimeGraphOverlaySmoothing = new System.Windows.Forms.CheckBox();
+            this.chkPingValueOverlaySmoothing = new System.Windows.Forms.CheckBox();
+            this.chkTickrateValueOverlaySmoothing = new System.Windows.Forms.CheckBox();
+            this.chkTrafficValueOverlaySmoothing = new System.Windows.Forms.CheckBox();
             this.chkPingTargetActiveOnly = new System.Windows.Forms.CheckBox();
             this.chkPingFallbackIcmp = new System.Windows.Forms.CheckBox();
             this.chkPingTcpPrefer = new System.Windows.Forms.CheckBox();
@@ -95,6 +98,9 @@ namespace tickMeter.Forms
             this.groupBox5.Controls.Add(this.chkPingGraphOverlaySmoothing);
             this.groupBox5.Controls.Add(this.chkTickrateGraphOverlaySmoothing);
             this.groupBox5.Controls.Add(this.chkTicktimeGraphOverlaySmoothing);
+            this.groupBox5.Controls.Add(this.chkPingValueOverlaySmoothing);
+            this.groupBox5.Controls.Add(this.chkTickrateValueOverlaySmoothing);
+            this.groupBox5.Controls.Add(this.chkTrafficValueOverlaySmoothing);
             this.groupBox5.Controls.Add(this.chkPingTargetActiveOnly);
             this.groupBox5.Controls.Add(this.chkPingFallbackIcmp);
             this.groupBox5.Controls.Add(this.chkPingTcpPrefer);
@@ -104,7 +110,7 @@ namespace tickMeter.Forms
             this.groupBox5.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox5.Name = "groupBox5";
             this.groupBox5.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox5.Size = new System.Drawing.Size(755, 450);
+            this.groupBox5.Size = new System.Drawing.Size(755, 531);
             this.groupBox5.TabIndex = 4;
             this.groupBox5.TabStop = false;
             this.groupBox5.Text = "Универсальные";
@@ -197,6 +203,39 @@ namespace tickMeter.Forms
             this.chkTicktimeGraphOverlaySmoothing.Text = "Сглаживание графика тиктайма в оверлее";
             this.chkTicktimeGraphOverlaySmoothing.UseVisualStyleBackColor = true;
             // 
+            // chkPingValueOverlaySmoothing
+            // 
+            this.chkPingValueOverlaySmoothing.AutoSize = true;
+            this.chkPingValueOverlaySmoothing.Location = new System.Drawing.Point(20, 311);
+            this.chkPingValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
+            this.chkPingValueOverlaySmoothing.Name = "chkPingValueOverlaySmoothing";
+            this.chkPingValueOverlaySmoothing.Size = new System.Drawing.Size(290, 20);
+            this.chkPingValueOverlaySmoothing.TabIndex = 13;
+            this.chkPingValueOverlaySmoothing.Text = "Сглаживание значений пинга в оверлее";
+            this.chkPingValueOverlaySmoothing.UseVisualStyleBackColor = true;
+            // 
+            // chkTickrateValueOverlaySmoothing
+            // 
+            this.chkTickrateValueOverlaySmoothing.AutoSize = true;
+            this.chkTickrateValueOverlaySmoothing.Location = new System.Drawing.Point(20, 338);
+            this.chkTickrateValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
+            this.chkTickrateValueOverlaySmoothing.Name = "chkTickrateValueOverlaySmoothing";
+            this.chkTickrateValueOverlaySmoothing.Size = new System.Drawing.Size(313, 20);
+            this.chkTickrateValueOverlaySmoothing.TabIndex = 14;
+            this.chkTickrateValueOverlaySmoothing.Text = "Сглаживание значений тикрейта в оверлее";
+            this.chkTickrateValueOverlaySmoothing.UseVisualStyleBackColor = true;
+            // 
+            // chkTrafficValueOverlaySmoothing
+            // 
+            this.chkTrafficValueOverlaySmoothing.AutoSize = true;
+            this.chkTrafficValueOverlaySmoothing.Location = new System.Drawing.Point(20, 365);
+            this.chkTrafficValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
+            this.chkTrafficValueOverlaySmoothing.Name = "chkTrafficValueOverlaySmoothing";
+            this.chkTrafficValueOverlaySmoothing.Size = new System.Drawing.Size(311, 20);
+            this.chkTrafficValueOverlaySmoothing.TabIndex = 15;
+            this.chkTrafficValueOverlaySmoothing.Text = "Сглаживание значений трафика в оверлее";
+            this.chkTrafficValueOverlaySmoothing.UseVisualStyleBackColor = true;
+            // 
             // chkPingTargetActiveOnly
             // 
             this.chkPingTargetActiveOnly.AutoSize = true;
@@ -246,7 +285,7 @@ namespace tickMeter.Forms
             this.groupBox4.Controls.Add(this.chkIgnoreVirtualAdapters);
             this.groupBox4.Controls.Add(this.chkCaptureAllAdapters);
             this.groupBox4.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBox4.Location = new System.Drawing.Point(13, 306);
+            this.groupBox4.Location = new System.Drawing.Point(13, 544);
             this.groupBox4.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.Padding = new System.Windows.Forms.Padding(4);
@@ -529,6 +568,9 @@ namespace tickMeter.Forms
     private System.Windows.Forms.CheckBox chkPingGraphOverlaySmoothing;
     private System.Windows.Forms.CheckBox chkTickrateGraphOverlaySmoothing;
     private System.Windows.Forms.CheckBox chkTicktimeGraphOverlaySmoothing;
+    private System.Windows.Forms.CheckBox chkPingValueOverlaySmoothing;
+    private System.Windows.Forms.CheckBox chkTickrateValueOverlaySmoothing;
+    private System.Windows.Forms.CheckBox chkTrafficValueOverlaySmoothing;
     private System.Windows.Forms.CheckBox chkDedupMultiNic;
     private System.Windows.Forms.CheckBox chkEnableIPv6;
     private System.Windows.Forms.CheckBox chkRtssOnlyActive;
