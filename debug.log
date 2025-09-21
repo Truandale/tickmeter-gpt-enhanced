@@ -1,0 +1,26 @@
+2025-09-21 17:22:53.924 VerifyRiva: path='C:\Program Files (x86)\RivaTuner Statistics Server\RTSS.exe', exists=True, running=True
+2025-09-21 17:22:53.959 RivaTuner::.cctor start: verify=True, running=True
+2025-09-21 17:22:53.975 VerifyRiva: path='C:\Program Files (x86)\RivaTuner Statistics Server\RTSS.exe', exists=True, running=True
+2025-09-21 17:22:54.014 RivaTuner::.cctor: RTSS already running, OSD created
+2025-09-21 17:22:54.029 PrintData: run=False, isRunning=True, path='C:\Program Files (x86)\RivaTuner Statistics Server\RTSS.exe'
+2025-09-21 17:22:54.046 VerifyRiva: path='C:\Program Files (x86)\RivaTuner Statistics Server\RTSS.exe', exists=True, running=True
+2025-09-21 17:22:54.060 PrintData: calling Print()
+2025-09-21 17:22:54.077 VerifyRiva: path='C:\Program Files (x86)\RivaTuner Statistics Server\RTSS.exe', exists=True, running=True
+2025-09-21 17:22:54.096 Print: OSD.Update called (len=0)
+2025-09-21 17:22:58.018 Отказано в доступе. (Исключение из HRESULT: 0x80070005 (E_ACCESSDENIED))
+2025-09-21 17:22:58.038    в System.Runtime.InteropServices.Marshal.ThrowExceptionForHRInternal(Int32 errorCode, IntPtr errorInfo)
+   в Microsoft.Diagnostics.Tracing.Session.TraceEventSession.Stop(Boolean noThrow)
+   в Microsoft.Diagnostics.Tracing.Session.TraceEventSession.EnableKernelProvider(Keywords flags, Keywords stackCapture)
+   в tickMeter.Classes.ETW.<>c.<ETWSessionThread>b__3_0() в C:\Users\Predator\Documents\tickmeter-master\tickmeter-master — gpt-fixed tcp ping\tickMeter\Classes\ETW.cs:строка 81
+   в System.Threading.Tasks.Task.Execute()
+--- Конец трассировка стека из предыдущего расположения, где возникло исключение ---
+   в System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   в System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   в System.Runtime.CompilerServices.TaskAwaiter.GetResult()
+   в tickMeter.Classes.ETW.<ETWSessionThread>d__3.MoveNext() в C:\Users\Predator\Documents\tickmeter-master\tickmeter-master — gpt-fixed tcp ping\tickMeter\Classes\ETW.cs:строка 77
+--- Конец трассировка стека из предыдущего расположения, где возникло исключение ---
+   в System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   в System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state, Boolean preserveSyncCtx)
+   в System.Threading.ExecutionContext.Run(ExecutionContext executionContext, ContextCallback callback, Object state, Boolean preserveSyncCtx)
+   в System.Threading.QueueUserWorkItemCallback.System.Threading.IThreadPoolWorkItem.ExecuteWorkItem()
+   в System.Threading.ThreadPoolWorkQueue.Dispatch()

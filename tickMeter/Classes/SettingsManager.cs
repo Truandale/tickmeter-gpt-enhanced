@@ -62,9 +62,12 @@ namespace tickMeter
 
         public void SetOption(string optionName, string value, string scope = "SETTINGS")
         {
-            if (data[scope] == null) return;
+            if (data[scope] == null)
+            {
+                data.Sections.AddSection(scope);
+            }
             data[scope][optionName] = value;
-            
+            SaveConfig(); // Автоматически сохраняем изменения
         }
 
         // Дополнительные методы для универсальности

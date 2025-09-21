@@ -240,6 +240,7 @@
     <Compile Include="Classes\PingManager.cs" />
     <Compile Include="Classes\ProcessNetworkStats.cs" />
     <Compile Include="Classes\PubgStatsManager.cs" />
+    <Compile Include="Classes\SmoothingManager.cs" />
     <Compile Include="Classes\WebStatsManager.cs" />
     <Compile Include="Forms\GUI.cs">
       <SubType>Form</SubType>

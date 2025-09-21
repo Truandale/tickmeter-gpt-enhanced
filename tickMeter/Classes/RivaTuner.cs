@@ -386,9 +386,16 @@ namespace tickMeter.Classes
                         pingColor = "<C1>";
                     }
                     output += Environment.NewLine + "<S0><C4>Ping" + Environment.NewLine;
+                    
+                    // Применяем сглаживание к графику пинга если включено
+                    float[] pingGraphData = Classes.SmoothingManager.SmoothSeries(
+                        App.meterState.pingBuffer, 
+                        Classes.SmoothingManager.IsPingGraphEnabled()
+                    );
+                    
                     output += DrawChart(
-                        App.meterState.pingBuffer.ToArray(),
-                        (int)App.meterState.pingBuffer.Min(),
+                        pingGraphData,
+                        (int)pingGraphData.Min(),
                         0,
                         "Ping",
                         pingValue,
