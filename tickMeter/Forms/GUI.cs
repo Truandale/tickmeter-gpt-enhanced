@@ -392,6 +392,10 @@ namespace tickMeter.Forms
                                     pingText += " (!)";
                                     Debug.Print($"[GUI] Spike indicator added to display: {pingText}");
                                 }
+                                else if (showSpikeIndicator && !server.HasPingSpike)
+                                {
+                                    Debug.Print($"[GUI] No spike detected, indicator removed from display: {pingText}");
+                                }
                                 
                                 ping_val.Text = pingText;
                             }));

@@ -314,8 +314,56 @@ namespace tickMeter
 
             // --- Ping Spike Detection ---
             private DateTime lastSpikeTime = DateTime.MinValue;
-            private const double SpikeThresholdMs = 50.0; // порог для определения спайка (превышение среднего на 50мс)
             private const int SpikeTimeoutMs = 5000; // время отображения индикатора спайка (5 секунд)
+            
+            // Простая система накопления спайков
+            private Queue<DateTime> recentSpikes = new Queue<DateTime>();
+            private const int SpikeCountThreshold = 8; // показывать индикатор при 8+ спайках (было 5)
+            private const int SpikeAnalysisWindowSeconds = 30; // анализируем спайки за последние 30 секунд
+            private bool indicatorShown = false;
+            
+            /// <summary>
+            /// Порог для определения спайка (превышение среднего на указанное количество миллисекунд)
+            /// </summary>
+            private double SpikeThresholdMs
+            {
+                get
+                {
+                    string thresholdStr = App.settingsManager?.GetOption("ping_spike_threshold", "200", "ADVANCED");
+                    if (!string.IsNullOrEmpty(thresholdStr) && double.TryParse(thresholdStr, out double threshold) && threshold > 0)
+                    {
+                        return threshold;
+                    }
+                    return 200.0; // значение по умолчанию (увеличено со 150 до 200)
+                }
+            }
+            
+            /// <summary>
+            /// Процентный порог для определения спайка (превышение среднего на указанный процент)
+            /// </summary>
+            private double SpikeThresholdPercent
+            {
+                get
+                {
+                    string percentStr = App.settingsManager?.GetOption("ping_spike_threshold_percent", "120", "ADVANCED"); // изменено с 80 на 120
+                    if (!string.IsNullOrEmpty(percentStr) && double.TryParse(percentStr, out double percent) && percent > 0)
+                    {
+                        return percent;
+                    }
+                    return 120.0; // значение по умолчанию (120% превышение) - изменено с 80% на 120%
+                }
+            }
+            
+            /// <summary>
+            /// Тип порога для определения спайков: "absolute" (абсолютные мс) или "percent" (процентное превышение)
+            /// </summary>
+            private string SpikeThresholdMode
+            {
+                get
+                {
+                    return App.settingsManager?.GetOption("ping_spike_threshold_mode", "percent", "ADVANCED") ?? "percent";
+                }
+            }
 
             public float UdpPing
             {
@@ -335,21 +383,41 @@ namespace tickMeter
             }
 
             /// <summary>
-            /// Определяет, есть ли сейчас спайк пинга (превышение нормального значения)
+            /// Определяет, есть ли сейчас спайк пинга на основе накопленной статистики
             /// </summary>
             public bool HasPingSpike
             {
                 get
                 {
-                    // Проверяем, прошло ли время отображения спайка
-                    if (lastSpikeTime != DateTime.MinValue && 
-                        (DateTime.Now - lastSpikeTime).TotalMilliseconds < SpikeTimeoutMs)
+                    // Очищаем старые спайки из очереди
+                    var cutoffTime = DateTime.Now.AddSeconds(-SpikeAnalysisWindowSeconds);
+                    while (recentSpikes.Count > 0 && recentSpikes.Peek() < cutoffTime)
                     {
-                        var elapsed = (DateTime.Now - lastSpikeTime).TotalMilliseconds;
-                        Debug.Print($"[SPIKE] HasPingSpike=true, elapsed={elapsed:F0}ms, timeout={SpikeTimeoutMs}ms");
-                        return true;
+                        recentSpikes.Dequeue();
                     }
-                    return false;
+                    
+                    // Подсчитываем количество спайков за последние 30 секунд
+                    int spikeCount = recentSpikes.Count;
+                    
+                    // Логика показа/скрытия индикатора
+                    if (!indicatorShown && spikeCount >= SpikeCountThreshold)
+                    {
+                        // Показать индикатор при накоплении достаточного количества спайков
+                        indicatorShown = true;
+                        Debug.Print($"[SPIKE INDICATOR] SHOW: {spikeCount} spikes in {SpikeAnalysisWindowSeconds}s (threshold: {SpikeCountThreshold})");
+                    }
+                    else if (indicatorShown && spikeCount == 0)
+                    {
+                        // Скрыть индикатор когда спайков нет совсем за 30 секунд
+                        indicatorShown = false;
+                        Debug.Print($"[SPIKE INDICATOR] HIDE: No spikes in {SpikeAnalysisWindowSeconds}s - connection stabilized");
+                    }
+                    else if (indicatorShown)
+                    {
+                        Debug.Print($"[SPIKE INDICATOR] CONTINUE: {spikeCount} spikes in {SpikeAnalysisWindowSeconds}s");
+                    }
+                    
+                    return indicatorShown;
                 }
             }
 
@@ -373,11 +441,60 @@ namespace tickMeter
 
                 double avgPing = recentPings.Average();
                 
-                // Если текущий пинг превышает средний на установленный порог
-                if (currentPing > avgPing + SpikeThresholdMs && currentPing > 20) // минимум 20мс, чтобы исключить ложные срабатывания
+                // Определяем порог в зависимости от режима
+                double threshold;
+                bool isSpike = false;
+                string debugInfo;
+                
+                if (SpikeThresholdMode == "percent")
                 {
-                    lastSpikeTime = DateTime.Now;
-                    Debug.Print($"[PING SPIKE DETECTED] Current: {currentPing}ms, Average: {avgPing:F1}ms, Threshold: +{SpikeThresholdMs}ms");
+                    // Умная адаптивная система детекции спайков
+                    
+                    // 1. Базовый процентный порог
+                    threshold = avgPing * (SpikeThresholdPercent / 100.0);
+                    
+                    // 2. Адаптивный минимальный порог в зависимости от базового пинга
+                    double adaptiveMinThreshold;
+                    if (avgPing < 50)
+                        adaptiveMinThreshold = 50.0;  // Для низкого пинга - высокий порог (увеличено с 30 до 50)
+                    else if (avgPing < 100)
+                        adaptiveMinThreshold = Math.Max(60.0, avgPing * 0.6); // 60% от базового пинга, минимум 60мс (было 40% и 40мс)
+                    else if (avgPing < 200)
+                        adaptiveMinThreshold = Math.Max(80.0, avgPing * 0.5); // 50% от базового пинга, минимум 80мс (было 30% и 50мс)
+                    else
+                        adaptiveMinThreshold = Math.Max(100.0, avgPing * 0.4); // 40% от базового пинга, минимум 100мс (было 25% и 60мс)
+                    
+                    threshold = Math.Max(threshold, adaptiveMinThreshold);
+                    
+                    // 3. Абсолютный минимум - спайком считается только пинг выше определенного значения
+                    double absoluteMinimum = Math.Max(150, avgPing * 2.0); // минимум 150мс или в 2 раза больше среднего (было 80мс и 1.5)
+                    
+                    isSpike = currentPing > avgPing + threshold && currentPing > absoluteMinimum;
+                    debugInfo = $"Current: {currentPing}ms, Average: {avgPing:F1}ms, Adaptive threshold: +{threshold:F1}ms (min {adaptiveMinThreshold:F1}ms), Abs min: {absoluteMinimum:F1}ms";
+                }
+                else
+                {
+                    // Абсолютное превышение в миллисекундах
+                    threshold = SpikeThresholdMs;
+                    double absoluteMinimum = Math.Max(180, avgPing * 2.5); // более строгий минимум для абсолютного режима (было 100 и 1.8)
+                    isSpike = currentPing > avgPing + threshold && currentPing > absoluteMinimum;
+                    debugInfo = $"Current: {currentPing}ms, Average: {avgPing:F1}ms, Absolute threshold: +{threshold}ms, Abs min: {absoluteMinimum:F1}ms";
+                }
+                
+                if (isSpike)
+                {
+                    // Защита от частых срабатываний - минимум 5 секунд между спайками (увеличено с 2)
+                    var timeSinceLastSpike = DateTime.Now - lastSpikeTime;
+                    if (timeSinceLastSpike.TotalSeconds >= 5.0 || lastSpikeTime == DateTime.MinValue)
+                    {
+                        lastSpikeTime = DateTime.Now;
+                        recentSpikes.Enqueue(DateTime.Now); // Добавляем спайк в очередь
+                        Debug.Print($"[PING SPIKE DETECTED] {debugInfo}, Total spikes: {recentSpikes.Count}");
+                    }
+                    else
+                    {
+                        Debug.Print($"[PING SPIKE IGNORED] Too soon after last spike ({timeSinceLastSpike.TotalSeconds:F1}s ago): {debugInfo}");
+                    }
                 }
             }
 

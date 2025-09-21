@@ -32,6 +32,8 @@ namespace tickMeter.Forms
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.chkStunEnable = new System.Windows.Forms.CheckBox();
             this.chkShowPingSpikes = new System.Windows.Forms.CheckBox();
+            this.lblPingSpikeThreshold = new System.Windows.Forms.Label();
+            this.numPingSpikeThreshold = new System.Windows.Forms.NumericUpDown();
             this.chkRtssOnlyActive = new System.Windows.Forms.CheckBox();
             this.chkEnableIPv6 = new System.Windows.Forms.CheckBox();
             this.chkDedupMultiNic = new System.Windows.Forms.CheckBox();
@@ -65,6 +67,7 @@ namespace tickMeter.Forms
             this.btnCancel = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.groupBox5.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numPingSpikeThreshold)).BeginInit();
             this.groupBox4.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.groupBox2.SuspendLayout();
@@ -93,6 +96,8 @@ namespace tickMeter.Forms
             // 
             this.groupBox5.Controls.Add(this.chkStunEnable);
             this.groupBox5.Controls.Add(this.chkShowPingSpikes);
+            this.groupBox5.Controls.Add(this.lblPingSpikeThreshold);
+            this.groupBox5.Controls.Add(this.numPingSpikeThreshold);
             this.groupBox5.Controls.Add(this.chkRtssOnlyActive);
             this.groupBox5.Controls.Add(this.chkEnableIPv6);
             this.groupBox5.Controls.Add(this.chkDedupMultiNic);
@@ -112,7 +117,7 @@ namespace tickMeter.Forms
             this.groupBox5.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox5.Name = "groupBox5";
             this.groupBox5.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox5.Size = new System.Drawing.Size(774, 400);
+            this.groupBox5.Size = new System.Drawing.Size(753, 400);
             this.groupBox5.TabIndex = 4;
             this.groupBox5.TabStop = false;
             this.groupBox5.Text = "Универсальные";
@@ -134,10 +139,43 @@ namespace tickMeter.Forms
             this.chkShowPingSpikes.Location = new System.Drawing.Point(333, 87);
             this.chkShowPingSpikes.Margin = new System.Windows.Forms.Padding(4);
             this.chkShowPingSpikes.Name = "chkShowPingSpikes";
-            this.chkShowPingSpikes.Size = new System.Drawing.Size(280, 20);
+            this.chkShowPingSpikes.Size = new System.Drawing.Size(319, 20);
             this.chkShowPingSpikes.TabIndex = 9;
             this.chkShowPingSpikes.Text = "Показывать индикатор (!) при спайках пинга";
             this.chkShowPingSpikes.UseVisualStyleBackColor = true;
+            // 
+            // lblPingSpikeThreshold
+            // 
+            this.lblPingSpikeThreshold.AutoSize = true;
+            this.lblPingSpikeThreshold.Location = new System.Drawing.Point(333, 115);
+            this.lblPingSpikeThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblPingSpikeThreshold.Name = "lblPingSpikeThreshold";
+            this.lblPingSpikeThreshold.Size = new System.Drawing.Size(167, 16);
+            this.lblPingSpikeThreshold.TabIndex = 10;
+            this.lblPingSpikeThreshold.Text = "Порог спайка пинга (мс):";
+            // 
+            // numPingSpikeThreshold
+            // 
+            this.numPingSpikeThreshold.Location = new System.Drawing.Point(508, 114);
+            this.numPingSpikeThreshold.Margin = new System.Windows.Forms.Padding(4);
+            this.numPingSpikeThreshold.Maximum = new decimal(new int[] {
+            1000,
+            0,
+            0,
+            0});
+            this.numPingSpikeThreshold.Minimum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.numPingSpikeThreshold.Name = "numPingSpikeThreshold";
+            this.numPingSpikeThreshold.Size = new System.Drawing.Size(80, 22);
+            this.numPingSpikeThreshold.TabIndex = 11;
+            this.numPingSpikeThreshold.Value = new decimal(new int[] {
+            150,
+            0,
+            0,
+            0});
             // 
             // chkRtssOnlyActive
             // 
@@ -222,7 +260,7 @@ namespace tickMeter.Forms
             this.chkPingValueOverlaySmoothing.Location = new System.Drawing.Point(20, 311);
             this.chkPingValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingValueOverlaySmoothing.Name = "chkPingValueOverlaySmoothing";
-            this.chkPingValueOverlaySmoothing.Size = new System.Drawing.Size(290, 20);
+            this.chkPingValueOverlaySmoothing.Size = new System.Drawing.Size(295, 20);
             this.chkPingValueOverlaySmoothing.TabIndex = 13;
             this.chkPingValueOverlaySmoothing.Text = "Сглаживание значений пинга в оверлее";
             this.chkPingValueOverlaySmoothing.UseVisualStyleBackColor = true;
@@ -233,7 +271,7 @@ namespace tickMeter.Forms
             this.chkTickrateValueOverlaySmoothing.Location = new System.Drawing.Point(20, 338);
             this.chkTickrateValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTickrateValueOverlaySmoothing.Name = "chkTickrateValueOverlaySmoothing";
-            this.chkTickrateValueOverlaySmoothing.Size = new System.Drawing.Size(313, 20);
+            this.chkTickrateValueOverlaySmoothing.Size = new System.Drawing.Size(318, 20);
             this.chkTickrateValueOverlaySmoothing.TabIndex = 14;
             this.chkTickrateValueOverlaySmoothing.Text = "Сглаживание значений тикрейта в оверлее";
             this.chkTickrateValueOverlaySmoothing.UseVisualStyleBackColor = true;
@@ -244,7 +282,7 @@ namespace tickMeter.Forms
             this.chkTrafficValueOverlaySmoothing.Location = new System.Drawing.Point(20, 365);
             this.chkTrafficValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTrafficValueOverlaySmoothing.Name = "chkTrafficValueOverlaySmoothing";
-            this.chkTrafficValueOverlaySmoothing.Size = new System.Drawing.Size(311, 20);
+            this.chkTrafficValueOverlaySmoothing.Size = new System.Drawing.Size(314, 20);
             this.chkTrafficValueOverlaySmoothing.TabIndex = 15;
             this.chkTrafficValueOverlaySmoothing.Text = "Сглаживание значений трафика в оверлее";
             this.chkTrafficValueOverlaySmoothing.UseVisualStyleBackColor = true;
@@ -298,11 +336,11 @@ namespace tickMeter.Forms
             this.groupBox4.Controls.Add(this.chkIgnoreVirtualAdapters);
             this.groupBox4.Controls.Add(this.chkCaptureAllAdapters);
             this.groupBox4.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBox4.Location = new System.Drawing.Point(13, 817);
+            this.groupBox4.Location = new System.Drawing.Point(13, 306);
             this.groupBox4.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox4.Size = new System.Drawing.Size(755, 98);
+            this.groupBox4.Size = new System.Drawing.Size(753, 98);
             this.groupBox4.TabIndex = 3;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Сетевые адаптеры";
@@ -339,7 +377,7 @@ namespace tickMeter.Forms
             this.groupBox3.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox3.Size = new System.Drawing.Size(755, 98);
+            this.groupBox3.Size = new System.Drawing.Size(753, 98);
             this.groupBox3.TabIndex = 2;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Фильтрация пакетов";
@@ -386,7 +424,7 @@ namespace tickMeter.Forms
             this.groupBox2.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox2.Size = new System.Drawing.Size(755, 98);
+            this.groupBox2.Size = new System.Drawing.Size(753, 98);
             this.groupBox2.TabIndex = 1;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "RTSS Overlay настройки";
@@ -447,7 +485,7 @@ namespace tickMeter.Forms
             this.groupBox1.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox1.Size = new System.Drawing.Size(755, 98);
+            this.groupBox1.Size = new System.Drawing.Size(753, 98);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Live View настройки";
@@ -530,10 +568,7 @@ namespace tickMeter.Forms
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnSave);
             this.Controls.Add(this.panel1);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
             this.Margin = new System.Windows.Forms.Padding(4);
-            this.MaximizeBox = true;
-            this.MinimizeBox = true;
             this.MinimumSize = new System.Drawing.Size(800, 400);
             this.Name = "AdvancedSettingsForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
@@ -541,6 +576,7 @@ namespace tickMeter.Forms
             this.panel1.ResumeLayout(false);
             this.groupBox5.ResumeLayout(false);
             this.groupBox5.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numPingSpikeThreshold)).EndInit();
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
             this.groupBox3.ResumeLayout(false);
@@ -590,6 +626,8 @@ namespace tickMeter.Forms
     private System.Windows.Forms.CheckBox chkRtssOnlyActive;
     private System.Windows.Forms.CheckBox chkStunEnable;
     private System.Windows.Forms.CheckBox chkShowPingSpikes;
+    private System.Windows.Forms.NumericUpDown numPingSpikeThreshold;
+    private System.Windows.Forms.Label lblPingSpikeThreshold;
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.Button btnCancel;
     }
