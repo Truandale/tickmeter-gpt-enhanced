@@ -32,6 +32,7 @@ namespace tickMeter.Classes
     public static bool IsTicktimeGraphEnabled() => App.settingsManager?.GetBool("smoothing_ticktime_graph", false) == true;
     public static bool IsPingGraphEnabled() => App.settingsManager?.GetBool("smoothing_ping_graph", false) == true;
     public static bool IsTickrateGraphOverlayEnabled() => App.settingsManager?.GetBool("smoothing_tickrate_graph_overlay", false) == true;
+    public static bool IsPingGraphOverlayEnabled() => App.settingsManager?.GetBool("smoothing_ping_graph_overlay", false, "ADVANCED") == true;
 
         // --- Значения ---
         public static int SmoothPingValue(int raw)

@@ -390,7 +390,7 @@ namespace tickMeter.Classes
                     // Применяем сглаживание к графику пинга если включено
                     float[] pingGraphData = Classes.SmoothingManager.SmoothSeries(
                         App.meterState.pingBuffer, 
-                        Classes.SmoothingManager.IsPingGraphEnabled()
+                        Classes.SmoothingManager.IsPingGraphOverlayEnabled()
                     );
                     
                     output += DrawChart(

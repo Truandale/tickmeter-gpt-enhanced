@@ -77,7 +77,7 @@ namespace tickMeter.Forms
             this.panel1.Controls.Add(this.groupBox1);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(0, 0);
-            this.panel1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.panel1.Margin = new System.Windows.Forms.Padding(4);
             this.panel1.Name = "panel1";
             this.panel1.Padding = new System.Windows.Forms.Padding(13, 12, 13, 12);
             this.panel1.Size = new System.Drawing.Size(781, 836);
@@ -97,10 +97,10 @@ namespace tickMeter.Forms
             this.groupBox5.Controls.Add(this.chkPingBindToInterface);
             this.groupBox5.Dock = System.Windows.Forms.DockStyle.Top;
             this.groupBox5.Location = new System.Drawing.Point(13, 404);
-            this.groupBox5.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox5.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox5.Name = "groupBox5";
-            this.groupBox5.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.groupBox5.Size = new System.Drawing.Size(755, 352);
+            this.groupBox5.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBox5.Size = new System.Drawing.Size(755, 300);
             this.groupBox5.TabIndex = 4;
             this.groupBox5.TabStop = false;
             this.groupBox5.Text = "Универсальные";
@@ -109,7 +109,7 @@ namespace tickMeter.Forms
             // 
             this.chkStunEnable.AutoSize = true;
             this.chkStunEnable.Location = new System.Drawing.Point(333, 59);
-            this.chkStunEnable.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkStunEnable.Margin = new System.Windows.Forms.Padding(4);
             this.chkStunEnable.Name = "chkStunEnable";
             this.chkStunEnable.Size = new System.Drawing.Size(324, 20);
             this.chkStunEnable.TabIndex = 8;
@@ -120,7 +120,7 @@ namespace tickMeter.Forms
             // 
             this.chkRtssOnlyActive.AutoSize = true;
             this.chkRtssOnlyActive.Location = new System.Drawing.Point(333, 31);
-            this.chkRtssOnlyActive.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkRtssOnlyActive.Margin = new System.Windows.Forms.Padding(4);
             this.chkRtssOnlyActive.Name = "chkRtssOnlyActive";
             this.chkRtssOnlyActive.Size = new System.Drawing.Size(306, 20);
             this.chkRtssOnlyActive.TabIndex = 8;
@@ -131,7 +131,7 @@ namespace tickMeter.Forms
             // 
             this.chkEnableIPv6.AutoSize = true;
             this.chkEnableIPv6.Location = new System.Drawing.Point(20, 229);
-            this.chkEnableIPv6.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkEnableIPv6.Margin = new System.Windows.Forms.Padding(4);
             this.chkEnableIPv6.Name = "chkEnableIPv6";
             this.chkEnableIPv6.Size = new System.Drawing.Size(173, 20);
             this.chkEnableIPv6.TabIndex = 7;
@@ -142,7 +142,7 @@ namespace tickMeter.Forms
             // 
             this.chkDedupMultiNic.AutoSize = true;
             this.chkDedupMultiNic.Location = new System.Drawing.Point(20, 201);
-            this.chkDedupMultiNic.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkDedupMultiNic.Margin = new System.Windows.Forms.Padding(4);
             this.chkDedupMultiNic.Name = "chkDedupMultiNic";
             this.chkDedupMultiNic.Size = new System.Drawing.Size(277, 20);
             this.chkDedupMultiNic.TabIndex = 6;
@@ -153,7 +153,7 @@ namespace tickMeter.Forms
             // 
             this.chkTickrateSmoothing.AutoSize = true;
             this.chkTickrateSmoothing.Location = new System.Drawing.Point(20, 144);
-            this.chkTickrateSmoothing.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkTickrateSmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTickrateSmoothing.Name = "chkTickrateSmoothing";
             this.chkTickrateSmoothing.Size = new System.Drawing.Size(280, 20);
             this.chkTickrateSmoothing.TabIndex = 4;
@@ -163,11 +163,11 @@ namespace tickMeter.Forms
             // chkPingGraphOverlaySmoothing
             // 
             this.chkPingGraphOverlaySmoothing.AutoSize = true;
-            this.chkPingGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 172);
-            this.chkPingGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkPingGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 173);
+            this.chkPingGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingGraphOverlaySmoothing.Name = "chkPingGraphOverlaySmoothing";
             this.chkPingGraphOverlaySmoothing.Size = new System.Drawing.Size(287, 20);
-            this.chkPingGraphOverlaySmoothing.TabIndex = 5;
+            this.chkPingGraphOverlaySmoothing.TabIndex = 10;
             this.chkPingGraphOverlaySmoothing.Text = "Сглаживание графика пинга в оверлее";
             this.chkPingGraphOverlaySmoothing.UseVisualStyleBackColor = true;
             // 
@@ -175,7 +175,7 @@ namespace tickMeter.Forms
             // 
             this.chkPingTargetActiveOnly.AutoSize = true;
             this.chkPingTargetActiveOnly.Location = new System.Drawing.Point(20, 116);
-            this.chkPingTargetActiveOnly.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkPingTargetActiveOnly.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingTargetActiveOnly.Name = "chkPingTargetActiveOnly";
             this.chkPingTargetActiveOnly.Size = new System.Drawing.Size(317, 20);
             this.chkPingTargetActiveOnly.TabIndex = 3;
@@ -186,7 +186,7 @@ namespace tickMeter.Forms
             // 
             this.chkPingFallbackIcmp.AutoSize = true;
             this.chkPingFallbackIcmp.Location = new System.Drawing.Point(20, 87);
-            this.chkPingFallbackIcmp.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkPingFallbackIcmp.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingFallbackIcmp.Name = "chkPingFallbackIcmp";
             this.chkPingFallbackIcmp.Size = new System.Drawing.Size(298, 20);
             this.chkPingFallbackIcmp.TabIndex = 2;
@@ -197,7 +197,7 @@ namespace tickMeter.Forms
             // 
             this.chkPingTcpPrefer.AutoSize = true;
             this.chkPingTcpPrefer.Location = new System.Drawing.Point(20, 59);
-            this.chkPingTcpPrefer.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkPingTcpPrefer.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingTcpPrefer.Name = "chkPingTcpPrefer";
             this.chkPingTcpPrefer.Size = new System.Drawing.Size(323, 20);
             this.chkPingTcpPrefer.TabIndex = 1;
@@ -208,7 +208,7 @@ namespace tickMeter.Forms
             // 
             this.chkPingBindToInterface.AutoSize = true;
             this.chkPingBindToInterface.Location = new System.Drawing.Point(20, 31);
-            this.chkPingBindToInterface.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkPingBindToInterface.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingBindToInterface.Name = "chkPingBindToInterface";
             this.chkPingBindToInterface.Size = new System.Drawing.Size(318, 20);
             this.chkPingBindToInterface.TabIndex = 0;
@@ -221,9 +221,9 @@ namespace tickMeter.Forms
             this.groupBox4.Controls.Add(this.chkCaptureAllAdapters);
             this.groupBox4.Dock = System.Windows.Forms.DockStyle.Top;
             this.groupBox4.Location = new System.Drawing.Point(13, 306);
-            this.groupBox4.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox4.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox4.Padding = new System.Windows.Forms.Padding(4);
             this.groupBox4.Size = new System.Drawing.Size(755, 98);
             this.groupBox4.TabIndex = 3;
             this.groupBox4.TabStop = false;
@@ -233,7 +233,7 @@ namespace tickMeter.Forms
             // 
             this.chkIgnoreVirtualAdapters.AutoSize = true;
             this.chkIgnoreVirtualAdapters.Location = new System.Drawing.Point(20, 62);
-            this.chkIgnoreVirtualAdapters.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkIgnoreVirtualAdapters.Margin = new System.Windows.Forms.Padding(4);
             this.chkIgnoreVirtualAdapters.Name = "chkIgnoreVirtualAdapters";
             this.chkIgnoreVirtualAdapters.Size = new System.Drawing.Size(280, 20);
             this.chkIgnoreVirtualAdapters.TabIndex = 1;
@@ -244,7 +244,7 @@ namespace tickMeter.Forms
             // 
             this.chkCaptureAllAdapters.AutoSize = true;
             this.chkCaptureAllAdapters.Location = new System.Drawing.Point(20, 31);
-            this.chkCaptureAllAdapters.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkCaptureAllAdapters.Margin = new System.Windows.Forms.Padding(4);
             this.chkCaptureAllAdapters.Name = "chkCaptureAllAdapters";
             this.chkCaptureAllAdapters.Size = new System.Drawing.Size(238, 20);
             this.chkCaptureAllAdapters.TabIndex = 0;
@@ -258,9 +258,9 @@ namespace tickMeter.Forms
             this.groupBox3.Controls.Add(this.chkBpfFilter);
             this.groupBox3.Dock = System.Windows.Forms.DockStyle.Top;
             this.groupBox3.Location = new System.Drawing.Point(13, 208);
-            this.groupBox3.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox3.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox3.Padding = new System.Windows.Forms.Padding(4);
             this.groupBox3.Size = new System.Drawing.Size(755, 98);
             this.groupBox3.TabIndex = 2;
             this.groupBox3.TabStop = false;
@@ -280,7 +280,7 @@ namespace tickMeter.Forms
             // 
             this.captureFilterTextBox.Enabled = false;
             this.captureFilterTextBox.Location = new System.Drawing.Point(267, 62);
-            this.captureFilterTextBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.captureFilterTextBox.Margin = new System.Windows.Forms.Padding(4);
             this.captureFilterTextBox.Name = "captureFilterTextBox";
             this.captureFilterTextBox.Size = new System.Drawing.Size(265, 22);
             this.captureFilterTextBox.TabIndex = 1;
@@ -290,7 +290,7 @@ namespace tickMeter.Forms
             // 
             this.chkBpfFilter.AutoSize = true;
             this.chkBpfFilter.Location = new System.Drawing.Point(20, 31);
-            this.chkBpfFilter.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkBpfFilter.Margin = new System.Windows.Forms.Padding(4);
             this.chkBpfFilter.Name = "chkBpfFilter";
             this.chkBpfFilter.Size = new System.Drawing.Size(204, 20);
             this.chkBpfFilter.TabIndex = 0;
@@ -305,9 +305,9 @@ namespace tickMeter.Forms
             this.groupBox2.Controls.Add(this.chkOverlayFps);
             this.groupBox2.Dock = System.Windows.Forms.DockStyle.Top;
             this.groupBox2.Location = new System.Drawing.Point(13, 110);
-            this.groupBox2.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox2.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox2.Padding = new System.Windows.Forms.Padding(4);
             this.groupBox2.Size = new System.Drawing.Size(755, 98);
             this.groupBox2.TabIndex = 1;
             this.groupBox2.TabStop = false;
@@ -327,7 +327,7 @@ namespace tickMeter.Forms
             // 
             this.overlayFpsNumeric.Enabled = false;
             this.overlayFpsNumeric.Location = new System.Drawing.Point(267, 62);
-            this.overlayFpsNumeric.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.overlayFpsNumeric.Margin = new System.Windows.Forms.Padding(4);
             this.overlayFpsNumeric.Maximum = new decimal(new int[] {
             144,
             0,
@@ -351,7 +351,7 @@ namespace tickMeter.Forms
             // 
             this.chkOverlayFps.AutoSize = true;
             this.chkOverlayFps.Location = new System.Drawing.Point(20, 31);
-            this.chkOverlayFps.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkOverlayFps.Margin = new System.Windows.Forms.Padding(4);
             this.chkOverlayFps.Name = "chkOverlayFps";
             this.chkOverlayFps.Size = new System.Drawing.Size(194, 20);
             this.chkOverlayFps.TabIndex = 0;
@@ -366,9 +366,9 @@ namespace tickMeter.Forms
             this.groupBox1.Controls.Add(this.chkLiveMaxRows);
             this.groupBox1.Dock = System.Windows.Forms.DockStyle.Top;
             this.groupBox1.Location = new System.Drawing.Point(13, 12);
-            this.groupBox1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox1.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox1.Padding = new System.Windows.Forms.Padding(4);
             this.groupBox1.Size = new System.Drawing.Size(755, 98);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
@@ -388,7 +388,7 @@ namespace tickMeter.Forms
             // 
             this.liveMaxRowsNumeric.Enabled = false;
             this.liveMaxRowsNumeric.Location = new System.Drawing.Point(267, 62);
-            this.liveMaxRowsNumeric.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.liveMaxRowsNumeric.Margin = new System.Windows.Forms.Padding(4);
             this.liveMaxRowsNumeric.Maximum = new decimal(new int[] {
             5000,
             0,
@@ -412,7 +412,7 @@ namespace tickMeter.Forms
             // 
             this.chkLiveMaxRows.AutoSize = true;
             this.chkLiveMaxRows.Location = new System.Drawing.Point(20, 31);
-            this.chkLiveMaxRows.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkLiveMaxRows.Margin = new System.Windows.Forms.Padding(4);
             this.chkLiveMaxRows.Name = "chkLiveMaxRows";
             this.chkLiveMaxRows.Size = new System.Drawing.Size(224, 20);
             this.chkLiveMaxRows.TabIndex = 0;
@@ -424,7 +424,7 @@ namespace tickMeter.Forms
             // 
             this.btnSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnSave.Location = new System.Drawing.Point(557, 797);
-            this.btnSave.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnSave.Margin = new System.Windows.Forms.Padding(4);
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(100, 28);
             this.btnSave.TabIndex = 1;
@@ -436,7 +436,7 @@ namespace tickMeter.Forms
             // 
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnCancel.Location = new System.Drawing.Point(665, 797);
-            this.btnCancel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnCancel.Margin = new System.Windows.Forms.Padding(4);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(100, 28);
             this.btnCancel.TabIndex = 2;
@@ -453,7 +453,7 @@ namespace tickMeter.Forms
             this.Controls.Add(this.btnSave);
             this.Controls.Add(this.panel1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "AdvancedSettingsForm";
