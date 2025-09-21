@@ -32,7 +32,6 @@ namespace tickMeter.Forms
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SettingsForm));
             this.settings_log_checkbox = new System.Windows.Forms.CheckBox();
-            this.network_connection_lbl = new System.Windows.Forms.Label();
             this.adapters_list = new System.Windows.Forms.ComboBox();
             this.colorDialog1 = new System.Windows.Forms.ColorDialog();
             this.btnSaveSettings = new System.Windows.Forms.Button();
@@ -63,8 +62,6 @@ namespace tickMeter.Forms
             this.run_minimized = new System.Windows.Forms.CheckBox();
             this.local_ip_lbl = new System.Windows.Forms.Label();
             this.local_ip_textbox = new System.Windows.Forms.TextBox();
-            this.chkPingFallbackIcmp = new System.Windows.Forms.CheckBox();
-            this.chkIgnoreVirtualAdapters = new System.Windows.Forms.CheckBox();
             this.label8 = new System.Windows.Forms.Label();
             this.donate_lbl = new System.Windows.Forms.Label();
             this.updateLbl = new System.Windows.Forms.Label();
@@ -80,13 +77,6 @@ namespace tickMeter.Forms
             this.settings_log_checkbox.ForeColor = System.Drawing.Color.Black;
             this.settings_log_checkbox.Name = "settings_log_checkbox";
             this.settings_log_checkbox.UseVisualStyleBackColor = true;
-            // 
-            // network_connection_lbl
-            // 
-            resources.ApplyResources(this.network_connection_lbl, "network_connection_lbl");
-            this.network_connection_lbl.BackColor = System.Drawing.Color.Transparent;
-            this.network_connection_lbl.ForeColor = System.Drawing.Color.Black;
-            this.network_connection_lbl.Name = "network_connection_lbl";
             // 
             // adapters_list
             // 
@@ -348,20 +338,6 @@ namespace tickMeter.Forms
             this.local_ip_textbox.Name = "local_ip_textbox";
             this.local_ip_textbox.TextChanged += new System.EventHandler(this.local_ip_textbox_TextChanged);
             // 
-            // chkPingFallbackIcmp
-            // 
-            resources.ApplyResources(this.chkPingFallbackIcmp, "chkPingFallbackIcmp");
-            this.chkPingFallbackIcmp.ForeColor = System.Drawing.Color.Black;
-            this.chkPingFallbackIcmp.Name = "chkPingFallbackIcmp";
-            this.chkPingFallbackIcmp.UseVisualStyleBackColor = true;
-            // 
-            // chkIgnoreVirtualAdapters
-            // 
-            resources.ApplyResources(this.chkIgnoreVirtualAdapters, "chkIgnoreVirtualAdapters");
-            this.chkIgnoreVirtualAdapters.ForeColor = System.Drawing.Color.Black;
-            this.chkIgnoreVirtualAdapters.Name = "chkIgnoreVirtualAdapters";
-            this.chkIgnoreVirtualAdapters.UseVisualStyleBackColor = true;
-            // 
             // label8
             // 
             resources.ApplyResources(this.label8, "label8");
@@ -400,8 +376,6 @@ namespace tickMeter.Forms
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.btnAdvancedSettings);
-            this.Controls.Add(this.chkPingFallbackIcmp);
-            this.Controls.Add(this.chkIgnoreVirtualAdapters);
             this.Controls.Add(this.local_ip_textbox);
             this.Controls.Add(this.local_ip_lbl);
             this.Controls.Add(this.run_minimized);
@@ -418,7 +392,6 @@ namespace tickMeter.Forms
             this.Controls.Add(this.btnSaveSettings);
             this.Controls.Add(this.label8);
             this.Controls.Add(this.settings_log_checkbox);
-            this.Controls.Add(this.network_connection_lbl);
             this.Controls.Add(this.adapters_list);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.Name = "SettingsForm";
@@ -438,7 +411,6 @@ namespace tickMeter.Forms
         #endregion
         public System.Windows.Forms.ComboBox adapters_list;
         public System.Windows.Forms.CheckBox settings_log_checkbox;
-        public System.Windows.Forms.Label network_connection_lbl;
         public System.Windows.Forms.Button btnSaveSettings;
         private System.Windows.Forms.OpenFileDialog rtss_dialog;
         public CheckBox settings_data_send;
@@ -468,8 +440,6 @@ namespace tickMeter.Forms
         public TextBox local_ip_textbox;
         public ColorDialog colorDialog1;
         public CheckBox packet_drops_checkbox;
-        public CheckBox chkPingFallbackIcmp;
-        public CheckBox chkIgnoreVirtualAdapters;
         public Label label8;
         public Label donate_lbl;
         public Label updateLbl;

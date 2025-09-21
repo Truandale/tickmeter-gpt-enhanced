@@ -306,7 +306,6 @@ namespace tickMeter.Forms
             settings_traffic_checkbox.Text = eng.GetString(settings_traffic_checkbox.Name);
             settings_chart_checkbox.Text = eng.GetString(settings_chart_checkbox.Name);
             settings_session_time_checkbox.Text = eng.GetString(settings_session_time_checkbox.Name);
-            network_connection_lbl.Text = eng.GetString(network_connection_lbl.Name);
             settings_ping_chart.Text = eng.GetString(settings_ping_chart.Name);
             settings_autodetect_checkbox.Text = eng.GetString(settings_autodetect_checkbox.Name);
             packet_drops_checkbox.Text = eng.GetString(packet_drops_checkbox.Name);

@@ -151,40 +151,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;settings_log_checkbox.ZOrder" xml:space="preserve">
-    <value>18</value>
-  </data>
-  <data name="network_connection_lbl.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="network_connection_lbl.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Tahoma, 12pt, style=Bold</value>
-  </data>
-  <data name="network_connection_lbl.Location" type="System.Drawing.Point, System.Drawing">
-    <value>21, 550</value>
-  </data>
-  <data name="network_connection_lbl.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>5, 0, 5, 0</value>
-  </data>
-  <data name="network_connection_lbl.Size" type="System.Drawing.Size, System.Drawing">
-    <value>249, 24</value>
-  </data>
-  <data name="network_connection_lbl.TabIndex" type="System.Int32, mscorlib">
-    <value>44</value>
-  </data>
-  <data name="network_connection_lbl.Text" xml:space="preserve">
-    <value>Сетевое подключение:</value>
-  </data>
-  <data name="&gt;&gt;network_connection_lbl.Name" xml:space="preserve">
-    <value>network_connection_lbl</value>
-  </data>
-  <data name="&gt;&gt;network_connection_lbl.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;network_connection_lbl.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;network_connection_lbl.ZOrder" xml:space="preserve">
-    <value>19</value>
+    <value>16</value>
   </data>
   <data name="adapters_list.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>System</value>
@@ -217,7 +184,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;adapters_list.ZOrder" xml:space="preserve">
-    <value>20</value>
+    <value>17</value>
   </data>
   <metadata name="colorDialog1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
@@ -244,7 +211,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;btnSaveSettings.ZOrder" xml:space="preserve">
-    <value>16</value>
+    <value>14</value>
   </data>
   <metadata name="rtss_dialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>138, 17</value>
@@ -292,7 +259,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;settings_data_send.ZOrder" xml:space="preserve">
-    <value>13</value>
+    <value>11</value>
   </data>
   <data name="ColorChart.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -505,7 +472,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;groupBox1.ZOrder" xml:space="preserve">
-    <value>12</value>
+    <value>10</value>
   </data>
   <data name="packet_drops_checkbox.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -898,7 +865,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;groupBox2.ZOrder" xml:space="preserve">
-    <value>11</value>
+    <value>9</value>
   </data>
   <data name="ping_interval.Location" type="System.Drawing.Point, System.Drawing">
     <value>645, 250</value>
@@ -922,7 +889,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;ping_interval.ZOrder" xml:space="preserve">
-    <value>10</value>
+    <value>8</value>
   </data>
   <data name="settings_ping_interval_lbl.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -955,7 +922,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;settings_ping_interval_lbl.ZOrder" xml:space="preserve">
-    <value>9</value>
+    <value>7</value>
   </data>
   <data name="settings_ping_ports_lbl.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -991,7 +958,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;settings_ping_ports_lbl.ZOrder" xml:space="preserve">
-    <value>8</value>
+    <value>6</value>
   </data>
   <data name="ping_ports.Location" type="System.Drawing.Point, System.Drawing">
     <value>643, 282</value>
@@ -1015,7 +982,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;ping_ports.ZOrder" xml:space="preserve">
-    <value>7</value>
+    <value>5</value>
   </data>
   <data name="settings_autodetect_checkbox.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -1051,7 +1018,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;settings_autodetect_checkbox.ZOrder" xml:space="preserve">
-    <value>6</value>
+    <value>4</value>
   </data>
   <data name="run_minimized.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -1087,7 +1054,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;run_minimized.ZOrder" xml:space="preserve">
-    <value>5</value>
+    <value>3</value>
   </data>
   <data name="local_ip_lbl.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -1123,7 +1090,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;local_ip_lbl.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>2</value>
   </data>
   <data name="local_ip_textbox.Location" type="System.Drawing.Point, System.Drawing">
     <value>643, 320</value>
@@ -1147,61 +1114,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;local_ip_textbox.ZOrder" xml:space="preserve">
-    <value>3</value>
-  </data>
-  <data name="chkPingFallbackIcmp.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="chkPingFallbackIcmp.Location" type="System.Drawing.Point, System.Drawing">
-    <value>24, 577</value>
-  </data>
-  <data name="chkPingFallbackIcmp.Size" type="System.Drawing.Size, System.Drawing">
-    <value>298, 20</value>
-  </data>
-  <data name="chkPingFallbackIcmp.TabIndex" type="System.Int32, mscorlib">
-    <value>33</value>
-  </data>
-  <data name="chkPingFallbackIcmp.Text" xml:space="preserve">
-    <value>Фолбэк на ICMP, если TCP заблокирован</value>
-  </data>
-  <data name="&gt;&gt;chkPingFallbackIcmp.Name" xml:space="preserve">
-    <value>chkPingFallbackIcmp</value>
-  </data>
-  <data name="&gt;&gt;chkPingFallbackIcmp.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;chkPingFallbackIcmp.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;chkPingFallbackIcmp.ZOrder" xml:space="preserve">
     <value>1</value>
-  </data>
-  <data name="chkIgnoreVirtualAdapters.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="chkIgnoreVirtualAdapters.Location" type="System.Drawing.Point, System.Drawing">
-    <value>25, 603</value>
-  </data>
-  <data name="chkIgnoreVirtualAdapters.Size" type="System.Drawing.Size, System.Drawing">
-    <value>280, 20</value>
-  </data>
-  <data name="chkIgnoreVirtualAdapters.TabIndex" type="System.Int32, mscorlib">
-    <value>38</value>
-  </data>
-  <data name="chkIgnoreVirtualAdapters.Text" xml:space="preserve">
-    <value>Игнорировать виртуальные адаптеры</value>
-  </data>
-  <data name="&gt;&gt;chkIgnoreVirtualAdapters.Name" xml:space="preserve">
-    <value>chkIgnoreVirtualAdapters</value>
-  </data>
-  <data name="&gt;&gt;chkIgnoreVirtualAdapters.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;chkIgnoreVirtualAdapters.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;chkIgnoreVirtualAdapters.ZOrder" xml:space="preserve">
-    <value>2</value>
   </data>
   <data name="label8.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -1237,7 +1150,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label8.ZOrder" xml:space="preserve">
-    <value>17</value>
+    <value>15</value>
   </data>
   <data name="donate_lbl.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -1273,7 +1186,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;donate_lbl.ZOrder" xml:space="preserve">
-    <value>14</value>
+    <value>12</value>
   </data>
   <data name="updateLbl.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -1312,10 +1225,10 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;updateLbl.ZOrder" xml:space="preserve">
-    <value>15</value>
+    <value>13</value>
   </data>
   <data name="btnAdvancedSettings.Location" type="System.Drawing.Point, System.Drawing">
-    <value>23, 629</value>
+    <value>23, 531</value>
   </data>
   <data name="btnAdvancedSettings.Size" type="System.Drawing.Size, System.Drawing">
     <value>136, 69</value>
