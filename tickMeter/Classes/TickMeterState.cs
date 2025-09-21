@@ -315,7 +315,7 @@ namespace tickMeter
             // --- Ping Spike Detection ---
             private DateTime lastSpikeTime = DateTime.MinValue;
             private const double SpikeThresholdMs = 50.0; // порог для определения спайка (превышение среднего на 50мс)
-            private const int SpikeTimeoutMs = 3000; // время отображения индикатора спайка (3 секунды)
+            private const int SpikeTimeoutMs = 5000; // время отображения индикатора спайка (5 секунд)
 
             public float UdpPing
             {
@@ -345,6 +345,8 @@ namespace tickMeter
                     if (lastSpikeTime != DateTime.MinValue && 
                         (DateTime.Now - lastSpikeTime).TotalMilliseconds < SpikeTimeoutMs)
                     {
+                        var elapsed = (DateTime.Now - lastSpikeTime).TotalMilliseconds;
+                        Debug.Print($"[SPIKE] HasPingSpike=true, elapsed={elapsed:F0}ms, timeout={SpikeTimeoutMs}ms");
                         return true;
                     }
                     return false;

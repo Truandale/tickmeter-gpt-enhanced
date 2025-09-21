@@ -282,12 +282,17 @@ namespace tickMeter.Classes
             // Добавляем индикатор спайка если включена соответствующая настройка
             bool showSpikeIndicator = App.settingsManager?.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
             string spikeIndicator = "";
-            if (showSpikeIndicator && meterState.Server.HasPingSpike)
+            if (showSpikeIndicator)
             {
-                spikeIndicator = " <C1>(!)<C>";
+                Debug.Print($"[RTSS] Spike check: HasPingSpike={meterState.Server.HasPingSpike}, ShowSetting={showSpikeIndicator}");
+                if (meterState.Server.HasPingSpike)
+                {
+                    spikeIndicator = " <C1>(!)<C0>";
+                    Debug.Print($"[RTSS] Spike indicator added to overlay");
+                }
             }
             
-            return "<S><C0>Ping: " + pingFont + pingValue + "<S0>ms" + spikeIndicator + " <S0><C>(" + geo + ")" + Environment.NewLine;
+            return "<S><C0>Ping: " + pingFont + pingValue + "<S0>ms" + spikeIndicator + " <C0>(" + geo + ")" + Environment.NewLine;
         }
 
         public static void BuildRivaOutput()

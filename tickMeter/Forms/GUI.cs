@@ -342,8 +342,8 @@ namespace tickMeter.Forms
                 });
             }
 
-            //form overlay isn't visible, quit
-            if (!OnScreen) return;
+            //form overlay isn't visible, but still update ping data for both GUI and RTSS
+            bool skipGUIUpdate = !OnScreen;
 
             //update tickrate
             Color TickRateColor = App.settingsForm.ColorGood.ForeColor;
@@ -358,74 +358,81 @@ namespace tickMeter.Forms
             
             await Task.Run(
                     () => {
-                        tickrate_val.Invoke(new Action(() => {
-                            tickrate_val.Text = App.meterState.OutputTickRate.ToString();
-                            tickrate_val.ForeColor = TickRateColor;
-                        }));
-                        //update tickrate chart
-                        if (App.settingsForm.settings_chart_checkbox.Checked)
-                        {
-                            graph.Invoke(new Action(() => graph.Image = UpdateGraph(App.meterState.TicksHistory)));
-                        }
-                        //update traffic
-                        if (App.settingsForm.settings_traffic_checkbox.Checked)
-                        {
-                            float formatedUpload = (float)App.meterState.UploadTraffic / (1024 * 1024);
-                            float formatedDownload = (float)App.meterState.DownloadTraffic / (1024 * 1024);
-                            traffic_val.Invoke(new Action(() => traffic_val.Text = formatedUpload.ToString("N2") + " / " + formatedDownload.ToString("N2") + " mb"));
-                        }
-                        //update IP
-                        if (App.settingsForm.settings_ip_checkbox.Checked)
-                        {
-                        ip_val.Invoke(new Action(() => ip_val.Text = App.meterState.Server.Ip));
-                        }
-                        //update PING
+                        // Always update PING (including spike indicators) for both GUI and RTSS overlay
                         if (App.settingsForm.settings_ping_checkbox.Checked)
                         {
-                        countryLbl.Invoke(new Action(() => countryLbl.Text = App.meterState.Server.Location));
-                        ping_val.Invoke(new Action(() =>
-                        {
-                            var server = App.meterState.Server;
-                            string pingText;
-                            // UDP > TCP > ICMP, всегда только числовое значение, без геолокации
-                            if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
+                            countryLbl.Invoke(new Action(() => countryLbl.Text = App.meterState.Server.Location));
+                            ping_val.Invoke(new Action(() =>
                             {
-                                pingText = $"{server.UdpPing.ToString("0")} ms";
-                            }
-                            else if (server.Ping > 0 && server.Ping < 10000)
-                            {
-                                pingText = $"{server.Ping} ms";
-                            }
-                            else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
-                            {
-                                pingText = $"{App.meterState.IcmpPing} ms";
-                            }
-                            else
-                            {
-                                pingText = "n/a ms";
-                            }
-                            
-                            // Добавляем индикатор спайка если включена соответствующая настройка
-                            bool showSpikeIndicator = App.settingsManager?.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
-                            if (showSpikeIndicator && server.HasPingSpike)
-                            {
-                                pingText += " (!)";
-                            }
-                            
-                            ping_val.Text = pingText;
-                        }));
+                                var server = App.meterState.Server;
+                                string pingText;
+                                // UDP > TCP > ICMP, всегда только числовое значение, без геолокации
+                                if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
+                                {
+                                    pingText = $"{server.UdpPing.ToString("0")} ms";
+                                }
+                                else if (server.Ping > 0 && server.Ping < 10000)
+                                {
+                                    pingText = $"{server.Ping} ms";
+                                }
+                                else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
+                                {
+                                    pingText = $"{App.meterState.IcmpPing} ms";
+                                }
+                                else
+                                {
+                                    pingText = "n/a ms";
+                                }
+                                
+                                // Добавляем индикатор спайка если включена соответствующая настройка
+                                bool showSpikeIndicator = App.settingsManager?.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
+                                Debug.Print($"[GUI] Spike check: HasPingSpike={server.HasPingSpike}, ShowSetting={showSpikeIndicator}, OnScreen={OnScreen}");
+                                if (showSpikeIndicator && server.HasPingSpike)
+                                {
+                                    pingText += " (!)";
+                                    Debug.Print($"[GUI] Spike indicator added to display: {pingText}");
+                                }
+                                
+                                ping_val.Text = pingText;
+                            }));
                         }
-                        //update time
-                        if (App.settingsForm.settings_session_time_checkbox.Checked && App.meterState.Server.Ip != "")
+                        
+                        // Only update other GUI elements if GUI overlay is visible
+                        if (!skipGUIUpdate)
                         {
-                            TimeSpan result = DateTime.Now.Subtract(App.meterState.SessionStart);
-                            string Duration = result.ToString("mm':'ss");
-                            ip_val.Invoke(new Action(() => time_val.Text = Duration));
-                        }
-                        //update drops
-                        if (App.settingsForm.packet_drops_checkbox.Checked && App.meterState.Server.Ip != "")
-                        {
-                            ip_val.Invoke(new Action(() => drops_lbl_val.Text = App.meterState.GetDrops()+"%"));
+                            tickrate_val.Invoke(new Action(() => {
+                                tickrate_val.Text = App.meterState.OutputTickRate.ToString();
+                                tickrate_val.ForeColor = TickRateColor;
+                            }));
+                            //update tickrate chart
+                            if (App.settingsForm.settings_chart_checkbox.Checked)
+                            {
+                                graph.Invoke(new Action(() => graph.Image = UpdateGraph(App.meterState.TicksHistory)));
+                            }
+                            //update traffic
+                            if (App.settingsForm.settings_traffic_checkbox.Checked)
+                            {
+                                float formatedUpload = (float)App.meterState.UploadTraffic / (1024 * 1024);
+                                float formatedDownload = (float)App.meterState.DownloadTraffic / (1024 * 1024);
+                                traffic_val.Invoke(new Action(() => traffic_val.Text = formatedUpload.ToString("N2") + " / " + formatedDownload.ToString("N2") + " mb"));
+                            }
+                            //update IP
+                            if (App.settingsForm.settings_ip_checkbox.Checked)
+                            {
+                                ip_val.Invoke(new Action(() => ip_val.Text = App.meterState.Server.Ip));
+                            }
+                            //update time
+                            if (App.settingsForm.settings_session_time_checkbox.Checked && App.meterState.Server.Ip != "")
+                            {
+                                TimeSpan result = DateTime.Now.Subtract(App.meterState.SessionStart);
+                                string Duration = result.ToString("mm':'ss");
+                                ip_val.Invoke(new Action(() => time_val.Text = Duration));
+                            }
+                            //update drops
+                            if (App.settingsForm.packet_drops_checkbox.Checked && App.meterState.Server.Ip != "")
+                            {
+                                ip_val.Invoke(new Action(() => drops_lbl_val.Text = App.meterState.GetDrops()+"%"));
+                            }
                         }
                     });
             if (!App.meterState.IsTracking)
