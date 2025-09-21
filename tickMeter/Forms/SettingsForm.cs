@@ -331,6 +331,8 @@ namespace tickMeter.Forms
         {
             // SaveToConfig() уже вызывает SaveConfig() внутри себя
             SaveToConfig();
+            // Применяем интервал overlay сразу после сохранения настроек
+            App.gui?.ApplyOverlayIntervalFromSettings();
             
             // Закрыть форму настроек
             this.Close();
@@ -348,6 +350,8 @@ namespace tickMeter.Forms
                 // After dialog closes, reload settings and refresh UI that depends on them
                 App.settingsManager.ReloadConfig();
                 InitCaptureAllAdaptersState();
+                // Применить изменения по overlay FPS без перезапуска
+                App.gui?.ApplyOverlayIntervalFromSettings();
             }
             catch (Exception ex)
             {

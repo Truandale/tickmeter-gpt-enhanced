@@ -200,6 +200,21 @@ namespace tickMeter
                     return;
                 }
 
+                // Применяем опциональный BPF фильтр из Advanced настроек
+                try
+                {
+                    bool bpfEnabled = App.settingsManager?.GetOption("bpf_filter_enabled", "False", "ADVANCED") == "True";
+                    if (bpfEnabled)
+                    {
+                        string filterExpr = App.settingsManager?.GetOption("capture_filter", "ip or ip6", "ADVANCED");
+                        if (!string.IsNullOrWhiteSpace(filterExpr))
+                        {
+                            communicator.SetFilter(filterExpr);
+                        }
+                    }
+                }
+                catch { /* ignore filter errors */ }
+
                 // Начинаем получение пакетов с проверкой на остановку
                 try
                 {
@@ -468,7 +483,27 @@ namespace tickMeter
                     {
                         listView1.BeginUpdate();
                         ListView.ListViewItemCollection lvic = new ListView.ListViewItemCollection(listView1);
+                        // Enforce live view max rows if enabled in Advanced
+                        bool limitRows = App.settingsManager?.GetOption("live_max_rows_enabled", "False", "ADVANCED") == "True";
+                        int maxRows = 1000;
+                        if (limitRows)
+                        {
+                            var rowsStr = App.settingsManager?.GetOption("live_max_rows", "1000", "ADVANCED");
+                            if (!string.IsNullOrEmpty(rowsStr) && int.TryParse(rowsStr, out int parsed) && parsed > 0)
+                                maxRows = parsed;
+                        }
+
+                        // Add new items
                         lvic.AddRange(items);
+
+                        // Trim excess from the top if exceeding maxRows
+                        if (limitRows)
+                        {
+                            while (listView1.Items.Count > maxRows)
+                            {
+                                listView1.Items.RemoveAt(0);
+                            }
+                        }
                         
                         if (autoscroll.Checked && listView1.Items.Count > 0)
                         {

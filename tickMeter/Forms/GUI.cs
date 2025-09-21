@@ -109,16 +109,26 @@ namespace tickMeter.Forms
                 MessageBox.Show(e.Message);
             }
             
-            // Устанавливаем интервал обновления overlay из настроек ping (как было изначально)
-            var pingIntervalStr = App.settingsManager?.GetOption("ping_interval");
-            if (!string.IsNullOrEmpty(pingIntervalStr) && int.TryParse(pingIntervalStr, out int pingVal))
+            // Устанавливаем интервал обновления overlay: учитываем Advanced overlay_fps (если включено), иначе берём ping_interval
+            int intervalMs = 1000; // default 1s
+            var overlayFpsEnabled = App.settingsManager?.GetOption("overlay_fps_enabled", "False", "ADVANCED") == "True";
+            if (overlayFpsEnabled)
             {
-                ticksLoop.Interval = pingVal;
+                var fpsStr = App.settingsManager?.GetOption("overlay_fps", "60", "ADVANCED");
+                if (!string.IsNullOrEmpty(fpsStr) && int.TryParse(fpsStr, out int fps) && fps > 0)
+                {
+                    intervalMs = Math.Max(1, (int)Math.Round(1000.0 / fps));
+                }
             }
             else
             {
-                ticksLoop.Interval = 1000; // по умолчанию 1 секунда
+                var pingIntervalStr = App.settingsManager?.GetOption("ping_interval");
+                if (!string.IsNullOrEmpty(pingIntervalStr) && int.TryParse(pingIntervalStr, out int pingVal))
+                {
+                    intervalMs = pingVal;
+                }
             }
+            ticksLoop.Interval = intervalMs;
         }
 
         static void MyHandler(object sender, UnhandledExceptionEventArgs args)
@@ -243,6 +253,9 @@ namespace tickMeter.Forms
         /// </summary>
         private bool IsDuplicate(Packet packet)
         {
+            // Respect user setting: enable/disable dedup in multi-NIC mode
+            bool dedupEnabled = App.settingsManager?.GetBool("dedup_multi_nic", true) == true;
+            if (!dedupEnabled) return false;
             if (_allSelectedAdapters.Count == 0) return false; // single-NIC режим — без дедупа
             var bytes = packet?.Buffer?.ToArray();
             if (bytes == null) return false;
@@ -565,6 +578,20 @@ namespace tickMeter.Forms
                             using (var comm = dev.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 500))
                             {
                                 if (comm.DataLink.Kind != DataLinkKind.Ethernet) return;
+                                // Apply optional BPF filter from Advanced settings
+                                try
+                                {
+                                    bool bpfEnabled = App.settingsManager?.GetOption("bpf_filter_enabled", "False", "ADVANCED") == "True";
+                                    if (bpfEnabled)
+                                    {
+                                        string filterExpr = App.settingsManager?.GetOption("capture_filter", "ip or ip6", "ADVANCED");
+                                        if (!string.IsNullOrWhiteSpace(filterExpr))
+                                        {
+                                            comm.SetFilter(filterExpr);
+                                        }
+                                    }
+                                }
+                                catch { /* ignore filter errors */ }
                                 comm.ReceivePackets(0, PacketHandler);
                             }
                         };
@@ -636,6 +663,21 @@ namespace tickMeter.Forms
                     MessageBox.Show("This program works only on Ethernet networks!");
                     return;
                 }
+
+                // Apply optional BPF filter from Advanced settings
+                try
+                {
+                    bool bpfEnabled = App.settingsManager?.GetOption("bpf_filter_enabled", "False", "ADVANCED") == "True";
+                    if (bpfEnabled)
+                    {
+                        string filterExpr = App.settingsManager?.GetOption("capture_filter", "ip or ip6", "ADVANCED");
+                        if (!string.IsNullOrWhiteSpace(filterExpr))
+                        {
+                            communicator.SetFilter(filterExpr);
+                        }
+                    }
+                }
+                catch { /* ignore filter errors */ }
 
                 communicator.ReceivePackets(0, PacketHandler);
             }
@@ -752,12 +794,54 @@ namespace tickMeter.Forms
 
         private void ping_interval_ValueChanged(object sender, EventArgs e)
         {
-            // Обновляем интервал overlay согласно настройкам ping interval
+            // Обновляем интервал overlay: если Advanced overlay_fps включён — он приоритетнее, иначе берём ping interval
+            bool overlayFpsEnabled = App.settingsManager?.GetOption("overlay_fps_enabled", "False", "ADVANCED") == "True";
+            if (overlayFpsEnabled)
+            {
+                var fpsStr = App.settingsManager?.GetOption("overlay_fps", "60", "ADVANCED");
+                if (!string.IsNullOrEmpty(fpsStr) && int.TryParse(fpsStr, out int fps) && fps > 0)
+                {
+                    ticksLoop.Interval = Math.Max(1, (int)Math.Round(1000.0 / fps));
+                    return;
+                }
+            }
             var control = sender as NumericUpDown;
             if (control != null)
             {
                 ticksLoop.Interval = (int)control.Value;
             }
+        }
+
+        /// <summary>
+        /// Применяет интервал обновления overlay (ticksLoop.Interval) согласно текущим настройкам.
+        /// Если включён ADVANCED:overlay_fps_enabled — рассчитывает интервал по FPS,
+        /// иначе использует значение ping_interval из настроек.
+        /// </summary>
+        public void ApplyOverlayIntervalFromSettings()
+        {
+            try
+            {
+                int intervalMs = 1000; // default
+                bool overlayFpsEnabled = App.settingsManager?.GetOption("overlay_fps_enabled", "False", "ADVANCED") == "True";
+                if (overlayFpsEnabled)
+                {
+                    var fpsStr = App.settingsManager?.GetOption("overlay_fps", "60", "ADVANCED");
+                    if (!string.IsNullOrEmpty(fpsStr) && int.TryParse(fpsStr, out int fps) && fps > 0)
+                    {
+                        intervalMs = Math.Max(1, (int)Math.Round(1000.0 / fps));
+                    }
+                }
+                else
+                {
+                    var pingIntervalStr = App.settingsManager?.GetOption("ping_interval");
+                    if (!string.IsNullOrEmpty(pingIntervalStr) && int.TryParse(pingIntervalStr, out int pingVal) && pingVal > 0)
+                    {
+                        intervalMs = pingVal;
+                    }
+                }
+                ticksLoop.Interval = intervalMs;
+            }
+            catch { /* ignore */ }
         }
 
         public void UpdateStyle(bool rtssFlag)
