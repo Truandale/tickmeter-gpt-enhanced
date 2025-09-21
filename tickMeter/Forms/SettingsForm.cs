@@ -31,6 +31,41 @@ namespace tickMeter.Forms
         public SettingsForm()
         {
             InitializeComponent();
+            // Ensure the Advanced Settings button opens the dialog even if Designer wiring is missing
+            WireAdvancedSettingsButton();
+        }
+
+        /// <summary>
+        /// Guarantees Click wiring for the Advanced Settings button even if Designer didn't persist it.
+        /// </summary>
+        private void WireAdvancedSettingsButton()
+        {
+            try
+            {
+                // 1) If field exists and created by Designer
+                if (this.btnAdvancedSettings != null)
+                {
+                    this.btnAdvancedSettings.Click -= btnAdvancedSettings_Click;
+                    this.btnAdvancedSettings.Click += btnAdvancedSettings_Click;
+                    return;
+                }
+
+                // 2) Fallback: find by Name in the control tree
+                var found = this.Controls.Find("btnAdvancedSettings", true)
+                                          .OfType<Button>()
+                                          .FirstOrDefault();
+                if (found != null)
+                {
+                    found.Click -= btnAdvancedSettings_Click;
+                    found.Click += btnAdvancedSettings_Click;
+                    // If the field exists in partial class, keep a reference handy
+                    this.btnAdvancedSettings = found;
+                }
+            }
+            catch
+            {
+                // No-op: keep UI responsive even if wiring fails in unusual Designer states
+            }
         }
         private class TagInfo
         {

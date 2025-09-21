@@ -77,6 +77,7 @@ namespace tickMeter.Forms
             this.label8 = new System.Windows.Forms.Label();
             this.donate_lbl = new System.Windows.Forms.Label();
             this.updateLbl = new System.Windows.Forms.Label();
+            this.btnAdvancedSettings = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.ping_interval)).BeginInit();
@@ -460,10 +461,17 @@ namespace tickMeter.Forms
             this.updateLbl.Name = "updateLbl";
             this.updateLbl.Click += new System.EventHandler(this.updateLbl_Click);
             // 
+            // btnAdvancedSettings
+            // 
+            resources.ApplyResources(this.btnAdvancedSettings, "btnAdvancedSettings");
+            this.btnAdvancedSettings.Name = "btnAdvancedSettings";
+            this.btnAdvancedSettings.UseVisualStyleBackColor = true;
+            // 
             // SettingsForm
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.btnAdvancedSettings);
             this.Controls.Add(this.chkPingBindToInterface);
             this.Controls.Add(this.chkPingTcpPrefer);
             this.Controls.Add(this.chkPingFallbackIcmp);
@@ -556,5 +564,6 @@ namespace tickMeter.Forms
         public Label label8;
         public Label donate_lbl;
         public Label updateLbl;
+        private Button btnAdvancedSettings;
     }
 }
