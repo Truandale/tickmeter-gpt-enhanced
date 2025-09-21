@@ -13,6 +13,15 @@
 - В `SettingsForm.cs` добавлен метод `WireAdvancedSettingsButton()` с поиском контрола по имени и безопасной переподпиской обработчика.
 - Проверена конфигурация `AdvancedSettingsForm` (StartPosition = CenterParent) для корректного модального показа.
 
+### 🔁 Перенос универсальных настроек
+- Перенесены чекбоксы универсальных/сетевых опций с главной формы настроек в `AdvancedSettingsForm`:
+  - ping_bind_to_interface, ping_tcp_prefer, ping_fallback_icmp, ping_target_active_only
+  - tickrate_smoothing, dedup_multi_nic, enable_ipv6
+  - rtss_only_active, stun_enable
+  - capture_all_adapters, ignore_virtual_adapters
+- `AdvancedSettingsForm` теперь загружает/сохраняет перечисленные флаги (секция SETTINGS/ADVANCED).
+- После закрытия окна дополнительных настроек главная форма перечитывает конфиг и обновляет состояние дропдауна адаптера.
+
 
 All notab- **Производительность графика**: Оптимизирована отрисовка графика пинга с подходящими интервалами обновления
 - **Синхронизация настроек**: Исправлен таймер overlay для правильной синхронизации с ping_interval настройками

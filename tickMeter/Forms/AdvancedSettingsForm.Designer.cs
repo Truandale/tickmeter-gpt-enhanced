@@ -44,6 +44,16 @@ namespace tickMeter.Forms
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.chkCaptureAllAdapters = new System.Windows.Forms.CheckBox();
             this.chkIgnoreVirtualAdapters = new System.Windows.Forms.CheckBox();
+            this.groupBox5 = new System.Windows.Forms.GroupBox();
+            this.chkPingBindToInterface = new System.Windows.Forms.CheckBox();
+            this.chkPingTcpPrefer = new System.Windows.Forms.CheckBox();
+            this.chkPingFallbackIcmp = new System.Windows.Forms.CheckBox();
+            this.chkPingTargetActiveOnly = new System.Windows.Forms.CheckBox();
+            this.chkTickrateSmoothing = new System.Windows.Forms.CheckBox();
+            this.chkDedupMultiNic = new System.Windows.Forms.CheckBox();
+            this.chkEnableIPv6 = new System.Windows.Forms.CheckBox();
+            this.chkRtssOnlyActive = new System.Windows.Forms.CheckBox();
+            this.chkStunEnable = new System.Windows.Forms.CheckBox();
             this.btnSave = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
@@ -53,11 +63,14 @@ namespace tickMeter.Forms
             ((System.ComponentModel.ISupportInitialize)(this.overlayFpsNumeric)).BeginInit();
             this.groupBox3.SuspendLayout();
             this.groupBox4.SuspendLayout();
+            this.groupBox5.SuspendLayout();
             this.SuspendLayout();
             // 
             // panel1
             // 
             this.panel1.AutoScroll = true;
+            // Add the new group (DockStyle.Top). Adding it first keeps it at the bottom of the stack.
+            this.panel1.Controls.Add(this.groupBox5);
             this.panel1.Controls.Add(this.groupBox4);
             this.panel1.Controls.Add(this.groupBox3);
             this.panel1.Controls.Add(this.groupBox2);
@@ -255,6 +268,115 @@ namespace tickMeter.Forms
             this.chkIgnoreVirtualAdapters.Text = "Игнорировать виртуальные адаптеры";
             this.chkIgnoreVirtualAdapters.UseVisualStyleBackColor = true;
             // 
+            // groupBox5
+            // 
+            this.groupBox5.Controls.Add(this.chkStunEnable);
+            this.groupBox5.Controls.Add(this.chkRtssOnlyActive);
+            this.groupBox5.Controls.Add(this.chkEnableIPv6);
+            this.groupBox5.Controls.Add(this.chkDedupMultiNic);
+            this.groupBox5.Controls.Add(this.chkTickrateSmoothing);
+            this.groupBox5.Controls.Add(this.chkPingTargetActiveOnly);
+            this.groupBox5.Controls.Add(this.chkPingFallbackIcmp);
+            this.groupBox5.Controls.Add(this.chkPingTcpPrefer);
+            this.groupBox5.Controls.Add(this.chkPingBindToInterface);
+            this.groupBox5.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBox5.Location = new System.Drawing.Point(10, 330);
+            this.groupBox5.Name = "groupBox5";
+            this.groupBox5.Size = new System.Drawing.Size(464, 210);
+            this.groupBox5.TabIndex = 4;
+            this.groupBox5.TabStop = false;
+            this.groupBox5.Text = "Универсальные";
+            // 
+            // chkPingBindToInterface
+            // 
+            this.chkPingBindToInterface.AutoSize = true;
+            this.chkPingBindToInterface.Location = new System.Drawing.Point(15, 25);
+            this.chkPingBindToInterface.Name = "chkPingBindToInterface";
+            this.chkPingBindToInterface.Size = new System.Drawing.Size(239, 17);
+            this.chkPingBindToInterface.TabIndex = 0;
+            this.chkPingBindToInterface.Text = "Пинг привязывать к активному интерфейсу";
+            this.chkPingBindToInterface.UseVisualStyleBackColor = true;
+            // 
+            // chkPingTcpPrefer
+            // 
+            this.chkPingTcpPrefer.AutoSize = true;
+            this.chkPingTcpPrefer.Location = new System.Drawing.Point(15, 48);
+            this.chkPingTcpPrefer.Name = "chkPingTcpPrefer";
+            this.chkPingTcpPrefer.Size = new System.Drawing.Size(257, 17);
+            this.chkPingTcpPrefer.TabIndex = 1;
+            this.chkPingTcpPrefer.Text = "Предпочитать TCP-пинг по активному порту";
+            this.chkPingTcpPrefer.UseVisualStyleBackColor = true;
+            // 
+            // chkPingFallbackIcmp
+            // 
+            this.chkPingFallbackIcmp.AutoSize = true;
+            this.chkPingFallbackIcmp.Location = new System.Drawing.Point(15, 71);
+            this.chkPingFallbackIcmp.Name = "chkPingFallbackIcmp";
+            this.chkPingFallbackIcmp.Size = new System.Drawing.Size(230, 17);
+            this.chkPingFallbackIcmp.TabIndex = 2;
+            this.chkPingFallbackIcmp.Text = "Фолбэк на ICMP, если TCP заблокирован";
+            this.chkPingFallbackIcmp.UseVisualStyleBackColor = true;
+            // 
+            // chkPingTargetActiveOnly
+            // 
+            this.chkPingTargetActiveOnly.AutoSize = true;
+            this.chkPingTargetActiveOnly.Location = new System.Drawing.Point(15, 94);
+            this.chkPingTargetActiveOnly.Name = "chkPingTargetActiveOnly";
+            this.chkPingTargetActiveOnly.Size = new System.Drawing.Size(225, 17);
+            this.chkPingTargetActiveOnly.TabIndex = 3;
+            this.chkPingTargetActiveOnly.Text = "Пинговать только цель активного процесса";
+            this.chkPingTargetActiveOnly.UseVisualStyleBackColor = true;
+            // 
+            // chkTickrateSmoothing
+            // 
+            this.chkTickrateSmoothing.AutoSize = true;
+            this.chkTickrateSmoothing.Location = new System.Drawing.Point(15, 117);
+            this.chkTickrateSmoothing.Name = "chkTickrateSmoothing";
+            this.chkTickrateSmoothing.Size = new System.Drawing.Size(200, 17);
+            this.chkTickrateSmoothing.TabIndex = 4;
+            this.chkTickrateSmoothing.Text = "Сглаживание графика тикрейта (EMA)";
+            this.chkTickrateSmoothing.UseVisualStyleBackColor = true;
+            // 
+            // chkDedupMultiNic
+            // 
+            this.chkDedupMultiNic.AutoSize = true;
+            this.chkDedupMultiNic.Location = new System.Drawing.Point(15, 140);
+            this.chkDedupMultiNic.Name = "chkDedupMultiNic";
+            this.chkDedupMultiNic.Size = new System.Drawing.Size(224, 17);
+            this.chkDedupMultiNic.TabIndex = 5;
+            this.chkDedupMultiNic.Text = "Анти-дубли пакетов в мульти-режиме";
+            this.chkDedupMultiNic.UseVisualStyleBackColor = true;
+            // 
+            // chkEnableIPv6
+            // 
+            this.chkEnableIPv6.AutoSize = true;
+            this.chkEnableIPv6.Location = new System.Drawing.Point(15, 163);
+            this.chkEnableIPv6.Name = "chkEnableIPv6";
+            this.chkEnableIPv6.Size = new System.Drawing.Size(119, 17);
+            this.chkEnableIPv6.TabIndex = 6;
+            this.chkEnableIPv6.Text = "Включить анализ IPv6";
+            this.chkEnableIPv6.UseVisualStyleBackColor = true;
+            // 
+            // chkRtssOnlyActive
+            // 
+            this.chkRtssOnlyActive.AutoSize = true;
+            this.chkRtssOnlyActive.Location = new System.Drawing.Point(250, 25);
+            this.chkRtssOnlyActive.Name = "chkRtssOnlyActive";
+            this.chkRtssOnlyActive.Size = new System.Drawing.Size(243, 17);
+            this.chkRtssOnlyActive.TabIndex = 7;
+            this.chkRtssOnlyActive.Text = "RTSS: выводить только активный процесс";
+            this.chkRtssOnlyActive.UseVisualStyleBackColor = true;
+            // 
+            // chkStunEnable
+            // 
+            this.chkStunEnable.AutoSize = true;
+            this.chkStunEnable.Location = new System.Drawing.Point(250, 48);
+            this.chkStunEnable.Name = "chkStunEnable";
+            this.chkStunEnable.Size = new System.Drawing.Size(251, 17);
+            this.chkStunEnable.TabIndex = 8;
+            this.chkStunEnable.Text = "Определять внешний IP через STUN (в фоне)";
+            this.chkStunEnable.UseVisualStyleBackColor = true;
+            // 
             // btnSave
             // 
             this.btnSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
@@ -302,6 +424,8 @@ namespace tickMeter.Forms
             this.groupBox3.PerformLayout();
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
+            this.groupBox5.ResumeLayout(false);
+            this.groupBox5.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -324,6 +448,16 @@ namespace tickMeter.Forms
         private System.Windows.Forms.GroupBox groupBox4;
         private System.Windows.Forms.CheckBox chkIgnoreVirtualAdapters;
         private System.Windows.Forms.CheckBox chkCaptureAllAdapters;
+    private System.Windows.Forms.GroupBox groupBox5;
+    private System.Windows.Forms.CheckBox chkPingBindToInterface;
+    private System.Windows.Forms.CheckBox chkPingTcpPrefer;
+    private System.Windows.Forms.CheckBox chkPingFallbackIcmp;
+    private System.Windows.Forms.CheckBox chkPingTargetActiveOnly;
+    private System.Windows.Forms.CheckBox chkTickrateSmoothing;
+    private System.Windows.Forms.CheckBox chkDedupMultiNic;
+    private System.Windows.Forms.CheckBox chkEnableIPv6;
+    private System.Windows.Forms.CheckBox chkRtssOnlyActive;
+    private System.Windows.Forms.CheckBox chkStunEnable;
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.Button btnCancel;
     }
