@@ -366,18 +366,27 @@ namespace tickMeter.Forms
                             {
                                 var server = App.meterState.Server;
                                 string pingText;
-                                // UDP > TCP > ICMP, всегда только числовое значение, без геолокации
+                                int rawPing = 0;
+                                
+                                // Определяем сырое значение пинга UDP > TCP > ICMP
                                 if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
                                 {
-                                    pingText = $"{server.UdpPing.ToString("0")} ms";
+                                    rawPing = (int)Math.Round(server.UdpPing);
                                 }
                                 else if (server.Ping > 0 && server.Ping < 10000)
                                 {
-                                    pingText = $"{server.Ping} ms";
+                                    rawPing = server.Ping;
                                 }
                                 else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
                                 {
-                                    pingText = $"{App.meterState.IcmpPing} ms";
+                                    rawPing = App.meterState.IcmpPing;
+                                }
+                                
+                                // Применяем сглаживание если включено и есть валидные данные
+                                if (rawPing > 0)
+                                {
+                                    int displayPing = Classes.SmoothingManager.SmoothPingValueGui(rawPing);
+                                    pingText = $"{displayPing} ms";
                                 }
                                 else
                                 {
@@ -405,17 +414,7 @@ namespace tickMeter.Forms
                         if (!skipGUIUpdate)
                         {
                             tickrate_val.Invoke(new Action(() => {
-                                var server = App.meterState.Server;
-                                string tickrateText = App.meterState.OutputTickRate.ToString();
-                                
-                                // Добавляем индикатор спайка если включена соответствующая настройка
-                                bool showSpikeIndicator = App.settingsManager?.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
-                                if (showSpikeIndicator && server.HasPingSpike)
-                                {
-                                    tickrateText += " (!)";
-                                }
-                                
-                                tickrate_val.Text = tickrateText;
+                                tickrate_val.Text = App.meterState.OutputTickRate.ToString();
                                 tickrate_val.ForeColor = TickRateColor;
                             }));
                             //update tickrate chart

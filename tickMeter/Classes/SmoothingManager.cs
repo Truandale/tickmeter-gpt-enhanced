@@ -19,6 +19,7 @@ namespace tickMeter.Classes
         
         // EMA для overlay значений
         private static ExponentialMovingAverage _emaPingValueOverlay;
+        private static ExponentialMovingAverage _emaPingValueGui;
         private static ExponentialMovingAverage _emaTickrateValueOverlay;
         private static ExponentialMovingAverage _emaUploadMbOverlay;
         private static ExponentialMovingAverage _emaDownloadMbOverlay;
@@ -41,6 +42,7 @@ namespace tickMeter.Classes
     public static bool IsTicktimeGraphOverlayEnabled() => App.settingsManager?.GetBool("smoothing_ticktime_graph_overlay", false, "ADVANCED") == true;
     public static bool IsPingGraphOverlayEnabled() => App.settingsManager?.GetBool("smoothing_ping_graph_overlay", false, "ADVANCED") == true;
     public static bool IsPingValueOverlayEnabled() => App.settingsManager?.GetBool("smoothing_ping_value_overlay", false, "ADVANCED") == true;
+    public static bool IsPingValueGuiEnabled() => App.settingsManager?.GetBool("smoothing_ping_value_gui", false, "ADVANCED") == true;
     public static bool IsTickrateValueOverlayEnabled() => App.settingsManager?.GetBool("smoothing_tickrate_value_overlay", false, "ADVANCED") == true;
     public static bool IsTrafficValueOverlayEnabled() => App.settingsManager?.GetBool("smoothing_traffic_value_overlay", false, "ADVANCED") == true;
 
@@ -95,6 +97,19 @@ namespace tickMeter.Classes
                     _emaPingValueOverlay = new ExponentialMovingAverage(GetAlpha());
                 }
                 return (int)Math.Round(_emaPingValueOverlay.Update(raw));
+            }
+        }
+
+        public static int SmoothPingValueGui(int raw)
+        {
+            if (!IsPingValueGuiEnabled() || raw <= 0) return raw;
+            lock (_lock)
+            {
+                if (_emaPingValueGui == null)
+                {
+                    _emaPingValueGui = new ExponentialMovingAverage(GetAlpha());
+                }
+                return (int)Math.Round(_emaPingValueGui.Update(raw));
             }
         }
 

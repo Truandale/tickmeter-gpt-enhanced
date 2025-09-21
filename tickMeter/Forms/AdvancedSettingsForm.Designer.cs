@@ -42,6 +42,7 @@ namespace tickMeter.Forms
             this.chkTickrateGraphOverlaySmoothing = new System.Windows.Forms.CheckBox();
             this.chkTicktimeGraphOverlaySmoothing = new System.Windows.Forms.CheckBox();
             this.chkPingValueOverlaySmoothing = new System.Windows.Forms.CheckBox();
+            this.chkPingValueGuiSmoothing = new System.Windows.Forms.CheckBox();
             this.chkTickrateValueOverlaySmoothing = new System.Windows.Forms.CheckBox();
             this.chkTrafficValueOverlaySmoothing = new System.Windows.Forms.CheckBox();
             this.chkPingTargetActiveOnly = new System.Windows.Forms.CheckBox();
@@ -106,6 +107,7 @@ namespace tickMeter.Forms
             this.groupBox5.Controls.Add(this.chkTickrateGraphOverlaySmoothing);
             this.groupBox5.Controls.Add(this.chkTicktimeGraphOverlaySmoothing);
             this.groupBox5.Controls.Add(this.chkPingValueOverlaySmoothing);
+            this.groupBox5.Controls.Add(this.chkPingValueGuiSmoothing);
             this.groupBox5.Controls.Add(this.chkTickrateValueOverlaySmoothing);
             this.groupBox5.Controls.Add(this.chkTrafficValueOverlaySmoothing);
             this.groupBox5.Controls.Add(this.chkPingTargetActiveOnly);
@@ -265,25 +267,36 @@ namespace tickMeter.Forms
             this.chkPingValueOverlaySmoothing.Text = "Сглаживание значений пинга в оверлее";
             this.chkPingValueOverlaySmoothing.UseVisualStyleBackColor = true;
             // 
+            // chkPingValueGuiSmoothing
+            // 
+            this.chkPingValueGuiSmoothing.AutoSize = true;
+            this.chkPingValueGuiSmoothing.Location = new System.Drawing.Point(20, 338);
+            this.chkPingValueGuiSmoothing.Margin = new System.Windows.Forms.Padding(4);
+            this.chkPingValueGuiSmoothing.Name = "chkPingValueGuiSmoothing";
+            this.chkPingValueGuiSmoothing.Size = new System.Drawing.Size(279, 20);
+            this.chkPingValueGuiSmoothing.TabIndex = 14;
+            this.chkPingValueGuiSmoothing.Text = "Сглаживание значений пинга в GUI";
+            this.chkPingValueGuiSmoothing.UseVisualStyleBackColor = true;
+            // 
             // chkTickrateValueOverlaySmoothing
             // 
             this.chkTickrateValueOverlaySmoothing.AutoSize = true;
-            this.chkTickrateValueOverlaySmoothing.Location = new System.Drawing.Point(20, 338);
+            this.chkTickrateValueOverlaySmoothing.Location = new System.Drawing.Point(20, 365);
             this.chkTickrateValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTickrateValueOverlaySmoothing.Name = "chkTickrateValueOverlaySmoothing";
             this.chkTickrateValueOverlaySmoothing.Size = new System.Drawing.Size(318, 20);
-            this.chkTickrateValueOverlaySmoothing.TabIndex = 14;
+            this.chkTickrateValueOverlaySmoothing.TabIndex = 15;
             this.chkTickrateValueOverlaySmoothing.Text = "Сглаживание значений тикрейта в оверлее";
             this.chkTickrateValueOverlaySmoothing.UseVisualStyleBackColor = true;
             // 
             // chkTrafficValueOverlaySmoothing
             // 
             this.chkTrafficValueOverlaySmoothing.AutoSize = true;
-            this.chkTrafficValueOverlaySmoothing.Location = new System.Drawing.Point(20, 365);
+            this.chkTrafficValueOverlaySmoothing.Location = new System.Drawing.Point(20, 392);
             this.chkTrafficValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTrafficValueOverlaySmoothing.Name = "chkTrafficValueOverlaySmoothing";
             this.chkTrafficValueOverlaySmoothing.Size = new System.Drawing.Size(314, 20);
-            this.chkTrafficValueOverlaySmoothing.TabIndex = 15;
+            this.chkTrafficValueOverlaySmoothing.TabIndex = 16;
             this.chkTrafficValueOverlaySmoothing.Text = "Сглаживание значений трафика в оверлее";
             this.chkTrafficValueOverlaySmoothing.UseVisualStyleBackColor = true;
             // 
@@ -619,6 +632,7 @@ namespace tickMeter.Forms
     private System.Windows.Forms.CheckBox chkTickrateGraphOverlaySmoothing;
     private System.Windows.Forms.CheckBox chkTicktimeGraphOverlaySmoothing;
     private System.Windows.Forms.CheckBox chkPingValueOverlaySmoothing;
+    private System.Windows.Forms.CheckBox chkPingValueGuiSmoothing;
     private System.Windows.Forms.CheckBox chkTickrateValueOverlaySmoothing;
     private System.Windows.Forms.CheckBox chkTrafficValueOverlaySmoothing;
     private System.Windows.Forms.CheckBox chkDedupMultiNic;
