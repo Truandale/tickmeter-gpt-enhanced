@@ -302,6 +302,54 @@ namespace tickMeter.Forms
             
             if (IsDuplicate(packet)) return; // NEW: проверка дублей
             
+            // VPN bypass mode handling
+            bool vpnBypassAdvanced = App.settingsManager?.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+            if (vpnBypassAdvanced)
+            {
+                // В продвинутом режиме обхода VPN пытаемся подменить данные пакета
+                // на реальные данные процесса через ConnectionTracker
+                try
+                {
+                    if (packet.Ethernet.IpV4 != null)
+                    {
+                        var ipv4 = packet.Ethernet.IpV4;
+                        byte proto = 0;
+                        int srcPort = 0, dstPort = 0;
+                        
+                        if (ipv4.Tcp != null)
+                        {
+                            proto = 6; // TCP
+                            srcPort = ipv4.Tcp.SourcePort;
+                            dstPort = ipv4.Tcp.DestinationPort;
+                        }
+                        else if (ipv4.Udp != null)
+                        {
+                            proto = 17; // UDP
+                            srcPort = ipv4.Udp.SourcePort;
+                            dstPort = ipv4.Udp.DestinationPort;
+                        }
+                        
+                        if (proto > 0 && App.connectionTracker != null)
+                        {
+                            // Преобразуем PcapDotNet.IpV4Address в System.Net.IPAddress
+                            var srcIP = new System.Net.IPAddress(ipv4.Source.ToValue());
+                            var dstIP = new System.Net.IPAddress(ipv4.Destination.ToValue());
+                            
+                            // Пытаемся разрешить соединение в реальный процесс
+                            if (App.connectionTracker.TryResolve(proto, srcIP, srcPort, dstIP, dstPort, out var info))
+                            {
+                                Debug.Print($"VPN bypass: packet {srcIP}:{srcPort} -> {dstIP}:{dstPort} resolved to PID {info.Pid} ({info.Exe})");
+                                // TODO: подменить данные пакета для отображения реального процесса
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.Print($"VPN bypass error: {ex.Message}");
+                }
+            }
+            
             try
             {
                 GameProfileManager.CallBuitInProfiles(packet);
@@ -505,7 +553,7 @@ namespace tickMeter.Forms
             
             try
             {
-                lock(ActiveWindowTracker.connections)
+                lock(ActiveWindowTracker.connectionsLock)
                 {
                     if(!ActiveWindowTracker.connections.ContainsKey(key)) return false;
                     
@@ -535,7 +583,7 @@ namespace tickMeter.Forms
                 {
                     // Защищаем от InvalidOperationException при изменении коллекции во время итерации
                     var connectionSnapshot = new Dictionary<string, ProcessNetworkStats>();
-                    lock(ActiveWindowTracker.connections)
+                    lock(ActiveWindowTracker.connectionsLock)
                     {
                         foreach(var kvp in ActiveWindowTracker.connections)
                         {
@@ -565,7 +613,7 @@ namespace tickMeter.Forms
             if(targetKey != "") { 
                 try
                 {
-                    lock(ActiveWindowTracker.connections)
+                    lock(ActiveWindowTracker.connectionsLock)
                     {
                         if(!ActiveWindowTracker.connections.ContainsKey(targetKey))
                         {
@@ -615,6 +663,22 @@ namespace tickMeter.Forms
         }
 
        
+        /// <summary>
+        /// Определяет, является ли адаптер VPN интерфейсом (TUN/TAP)
+        /// </summary>
+        private bool IsVpnAdapter(LivePacketDevice device)
+        {
+            if (device?.Description == null) return false;
+            var desc = device.Description.ToLowerInvariant();
+            
+            // Типичные паттерны VPN адаптеров
+            return desc.Contains("wintun") || desc.Contains("wireguard") || 
+                   desc.Contains("openvpn") || desc.Contains("tap") || 
+                   desc.Contains("tun") || desc.Contains("vpn") ||
+                   desc.Contains("nordvpn") || desc.Contains("expressvpn") ||
+                   desc.Contains("surfshark") || desc.Contains("protonvpn");
+        }
+
         public void StartTracking()
         {
             Debug.Print("StartTracking");
@@ -631,11 +695,15 @@ namespace tickMeter.Forms
                 App.pingManager.StartPinging();
             }
             
+            // Проверяем настройки VPN обхода
+            bool vpnBypassBasic = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
+            bool vpnBypassAdvanced = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+            
             var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
             var devices = App.GetAdapters();
             _allSelectedAdapters.Clear();
 
-            if (captureAll)
+            if (captureAll || vpnBypassBasic || vpnBypassAdvanced)
             {
                 // собрать все «реальные» адаптеры (пропускаем 0-й элемент дропдауна и виртуальные/loopback)
                 IEnumerable<LivePacketDevice> src = devices;
@@ -644,15 +712,55 @@ namespace tickMeter.Forms
                     // список в UI обычно имеет заглушку на позиции 0
                     src = src.Skip(1);
                 }
-                foreach (var d in src)
+                
+                // Режимы VPN обхода - приоритет VPN адаптерам
+                if (vpnBypassBasic || vpnBypassAdvanced)
                 {
-                    var desc = (d.Description ?? "").ToLowerInvariant();
-                    if (desc.Contains("loopback") || desc.Contains("npcap loopback") ||
-                        desc.Contains("hyper-v") || desc.Contains("vmware") ||
-                        desc.Contains("virtualbox") || desc.Contains("vethernet"))
-                        continue;
-                    _allSelectedAdapters.Add(d);
+                    var vpnAdapters = new List<LivePacketDevice>();
+                    var regularAdapters = new List<LivePacketDevice>();
+                    
+                    foreach (var d in src)
+                    {
+                        var desc = (d.Description ?? "").ToLowerInvariant();
+                        // Пропускаем только loopback, но оставляем виртуальные адаптеры для VPN
+                        if (desc.Contains("loopback") || desc.Contains("npcap loopback"))
+                            continue;
+                            
+                        if (IsVpnAdapter(d))
+                        {
+                            vpnAdapters.Add(d);
+                        }
+                        else if (!desc.Contains("hyper-v") && !desc.Contains("vmware") &&
+                                !desc.Contains("virtualbox") && !desc.Contains("vethernet"))
+                        {
+                            regularAdapters.Add(d);
+                        }
+                    }
+                    
+                    // В режиме VPN обхода: сначала VPN адаптеры, потом обычные
+                    _allSelectedAdapters.AddRange(vpnAdapters);
+                    if (vpnAdapters.Count == 0 || vpnBypassAdvanced)
+                    {
+                        // Если VPN адаптеров нет или включён продвинутый режим - добавляем обычные
+                        _allSelectedAdapters.AddRange(regularAdapters);
+                    }
+                    
+                    Debug.Print($"VPN bypass mode: found {vpnAdapters.Count} VPN adapters, {regularAdapters.Count} regular adapters");
                 }
+                else
+                {
+                    // Обычный режим захвата всех адаптеров
+                    foreach (var d in src)
+                    {
+                        var desc = (d.Description ?? "").ToLowerInvariant();
+                        if (desc.Contains("loopback") || desc.Contains("npcap loopback") ||
+                            desc.Contains("hyper-v") || desc.Contains("vmware") ||
+                            desc.Contains("virtualbox") || desc.Contains("vethernet"))
+                            continue;
+                        _allSelectedAdapters.Add(d);
+                    }
+                }
+                
                 if (_allSelectedAdapters.Count == 0)
                 {
                     MessageBox.Show("Не найдено подходящих сетевых адаптеров");
@@ -676,7 +784,7 @@ namespace tickMeter.Forms
             lastSelectedAdapterID = App.settingsForm.adapters_list.SelectedIndex;
             try
             {
-                if (captureAll)
+                if (captureAll || vpnBypassBasic || vpnBypassAdvanced)
                 {
                     // запустить по воркеру на каждый адаптер
                     foreach (var dev in _allSelectedAdapters)
@@ -729,6 +837,19 @@ namespace tickMeter.Forms
         private void PcapWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             if (!App.meterState.IsTracking) return;
+            
+            // Проверяем режимы работы
+            var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
+            bool vpnBypassBasic = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
+            bool vpnBypassAdvanced = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+            
+            // В мульти-режиме или VPN режиме не перезапускаем single worker
+            if (captureAll || vpnBypassBasic || vpnBypassAdvanced)
+            {
+                // В этих режимах используется _pcapWorkers, не pcapWorker
+                return;
+            }
+            
             if (App.meterState.TickRate == 0)
             {
                 restarts++;
@@ -745,20 +866,24 @@ namespace tickMeter.Forms
 
             try
             {
-                pcapWorker.RunWorkerAsync();
-
+                // Проверяем что pcapWorker существует перед использованием
+                if (pcapWorker != null)
+                {
+                    pcapWorker.RunWorkerAsync();
+                }
             }
             catch (Exception) { }
-
         }
 
         private void PcapWorkerDoWork(object sender, DoWorkEventArgs e)
         {
             if (!App.meterState.IsTracking) return;
             
-            // В мульти-режиме этот метод не должен вызываться
+            // В мульти-режиме или VPN режиме этот метод не должен вызываться
             var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
-            if (captureAll) return;
+            bool vpnBypassBasic = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
+            bool vpnBypassAdvanced = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+            if (captureAll || vpnBypassBasic || vpnBypassAdvanced) return;
             
             if (selectedAdapter == null)
             {

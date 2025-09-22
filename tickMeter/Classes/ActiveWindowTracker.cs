@@ -12,7 +12,7 @@ namespace tickMeter.Classes
     public static class ActiveWindowTracker
     {
         public static Dictionary<string, ProcessNetworkStats> connections = new Dictionary<string, ProcessNetworkStats>();
-        private static readonly object connectionsLock = new object();
+        public static readonly object connectionsLock = new object();
 
         public static void AnalyzePacket(Packet packet)
         {

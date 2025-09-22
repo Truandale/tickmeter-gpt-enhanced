@@ -12,38 +12,43 @@ namespace tickMeter.Classes
     {
        
         public static Dictionary<string, ProcessNetworkStats> connections = new Dictionary<string, ProcessNetworkStats>();
+        public static readonly object connectionsLock = new object();
 
         public static void trackTick(string name, string protocol, string localIp, uint localPort, string remoteIp, uint remotePort, int tickIn, int tickOut, uint traffic, DateTime tickTime, uint id)
         {
             string hash = Hash(name, remoteIp, remotePort);
-            if (!connections.ContainsKey(hash)) { 
-                connections.Add(hash, new ProcessNetworkStats());
-                connections[hash].name = name;
-                connections[hash].localIp = localIp;
-                connections[hash].remoteIp = remoteIp;
-                connections[hash].localPort = localPort;
-                connections[hash].remotePort = remotePort;
-                connections[hash].downloaded = 0;
-                connections[hash].sent = 0;
-                connections[hash].ticksIn = 0;
-                connections[hash].ticksOut = 0;
-                connections[hash].startTrack = tickTime;
-                connections[hash].id = 0;
-            }
-            connections[hash].protocol = protocol;
-            connections[hash].ticksIn  += tickIn;
-            connections[hash].ticksOut += tickOut;
+            
+            lock (connectionsLock)
+            {
+                if (!connections.ContainsKey(hash)) { 
+                    connections.Add(hash, new ProcessNetworkStats());
+                    connections[hash].name = name;
+                    connections[hash].localIp = localIp;
+                    connections[hash].remoteIp = remoteIp;
+                    connections[hash].localPort = localPort;
+                    connections[hash].remotePort = remotePort;
+                    connections[hash].downloaded = 0;
+                    connections[hash].sent = 0;
+                    connections[hash].ticksIn = 0;
+                    connections[hash].ticksOut = 0;
+                    connections[hash].startTrack = tickTime;
+                    connections[hash].id = 0;
+                }
+                connections[hash].protocol = protocol;
+                connections[hash].ticksIn  += tickIn;
+                connections[hash].ticksOut += tickOut;
 
-            if (tickIn > 0)
-            {
-                connections[hash].updateTicktimeBuffer(tickTime.Ticks);
-                connections[hash].lastUpdate = tickTime;
-                connections[hash].downloaded += (int)traffic;
-                connections[hash].id = id;
-            }
-            if(tickOut > 0)
-            {
-                connections[hash].sent += (int)traffic;
+                if (tickIn > 0)
+                {
+                    connections[hash].updateTicktimeBuffer(tickTime.Ticks);
+                    connections[hash].lastUpdate = tickTime;
+                    connections[hash].downloaded += (int)traffic;
+                    connections[hash].id = id;
+                }
+                if(tickOut > 0)
+                {
+                    connections[hash].sent += (int)traffic;
+                }
             }
         }
 
