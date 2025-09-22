@@ -128,6 +128,7 @@ namespace tickMeter.Forms
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
+            // Отменяем изменения - просто закрываем форму без сохранения
             this.Close();
         }
 
@@ -149,6 +150,17 @@ namespace tickMeter.Forms
         private void chkTickrateGraphOverlaySmoothing_CheckedChanged(object sender, EventArgs e)
         {
 
+        }
+
+        private void btnOK_Click(object sender, EventArgs e)
+        {
+            SaveSettings();
+            this.Close();
+        }
+
+        private void btnApply_Click(object sender, EventArgs e)
+        {
+            SaveSettings();
         }
     }
 }

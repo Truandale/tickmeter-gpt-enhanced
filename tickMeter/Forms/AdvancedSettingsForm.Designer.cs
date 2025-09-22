@@ -67,8 +67,11 @@ namespace tickMeter.Forms
             this.label1 = new System.Windows.Forms.Label();
             this.liveMaxRowsNumeric = new System.Windows.Forms.NumericUpDown();
             this.chkLiveMaxRows = new System.Windows.Forms.CheckBox();
-            this.btnSave = new System.Windows.Forms.Button();
+            this.panelButtons = new System.Windows.Forms.Panel();
+            this.btnOK = new System.Windows.Forms.Button();
+            this.btnApply = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
+            this.btnSave = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.groupBoxVpnBypass.SuspendLayout();
             this.groupBox5.SuspendLayout();
@@ -79,6 +82,7 @@ namespace tickMeter.Forms
             ((System.ComponentModel.ISupportInitialize)(this.overlayFpsNumeric)).BeginInit();
             this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.liveMaxRowsNumeric)).BeginInit();
+            this.panelButtons.SuspendLayout();
             this.SuspendLayout();
             // 
             // panel1
@@ -92,10 +96,10 @@ namespace tickMeter.Forms
             this.panel1.Controls.Add(this.groupBox1);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(0, 0);
-            this.panel1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 50);
+            this.panel1.Margin = new System.Windows.Forms.Padding(4);
             this.panel1.Name = "panel1";
-            this.panel1.Padding = new System.Windows.Forms.Padding(13, 12, 13, 50);
-            this.panel1.Size = new System.Drawing.Size(800, 600);
+            this.panel1.Padding = new System.Windows.Forms.Padding(13, 12, 13, 12);
+            this.panel1.Size = new System.Drawing.Size(800, 550);
             this.panel1.TabIndex = 0;
             // 
             // groupBoxVpnBypass
@@ -103,25 +107,14 @@ namespace tickMeter.Forms
             this.groupBoxVpnBypass.Controls.Add(this.chkVpnBypassAdvanced);
             this.groupBoxVpnBypass.Controls.Add(this.chkVpnBypassBasic);
             this.groupBoxVpnBypass.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxVpnBypass.Location = new System.Drawing.Point(13, 502);
+            this.groupBoxVpnBypass.Location = new System.Drawing.Point(13, 804);
             this.groupBoxVpnBypass.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxVpnBypass.Name = "groupBoxVpnBypass";
             this.groupBoxVpnBypass.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBoxVpnBypass.Size = new System.Drawing.Size(753, 98);
+            this.groupBoxVpnBypass.Size = new System.Drawing.Size(757, 98);
             this.groupBoxVpnBypass.TabIndex = 5;
             this.groupBoxVpnBypass.TabStop = false;
             this.groupBoxVpnBypass.Text = "VPN Bypass";
-            // 
-            // chkVpnBypassBasic
-            // 
-            this.chkVpnBypassBasic.AutoSize = true;
-            this.chkVpnBypassBasic.Location = new System.Drawing.Point(20, 31);
-            this.chkVpnBypassBasic.Margin = new System.Windows.Forms.Padding(4);
-            this.chkVpnBypassBasic.Name = "chkVpnBypassBasic";
-            this.chkVpnBypassBasic.Size = new System.Drawing.Size(329, 20);
-            this.chkVpnBypassBasic.TabIndex = 0;
-            this.chkVpnBypassBasic.Text = "Простой VPN bypass (показать реальный IP)";
-            this.chkVpnBypassBasic.UseVisualStyleBackColor = true;
             // 
             // chkVpnBypassAdvanced
             // 
@@ -129,10 +122,21 @@ namespace tickMeter.Forms
             this.chkVpnBypassAdvanced.Location = new System.Drawing.Point(20, 59);
             this.chkVpnBypassAdvanced.Margin = new System.Windows.Forms.Padding(4);
             this.chkVpnBypassAdvanced.Name = "chkVpnBypassAdvanced";
-            this.chkVpnBypassAdvanced.Size = new System.Drawing.Size(407, 20);
+            this.chkVpnBypassAdvanced.Size = new System.Drawing.Size(396, 20);
             this.chkVpnBypassAdvanced.TabIndex = 1;
             this.chkVpnBypassAdvanced.Text = "Сложный VPN bypass (отслеживание через IP Helper API)";
             this.chkVpnBypassAdvanced.UseVisualStyleBackColor = true;
+            // 
+            // chkVpnBypassBasic
+            // 
+            this.chkVpnBypassBasic.AutoSize = true;
+            this.chkVpnBypassBasic.Location = new System.Drawing.Point(20, 31);
+            this.chkVpnBypassBasic.Margin = new System.Windows.Forms.Padding(4);
+            this.chkVpnBypassBasic.Name = "chkVpnBypassBasic";
+            this.chkVpnBypassBasic.Size = new System.Drawing.Size(315, 20);
+            this.chkVpnBypassBasic.TabIndex = 0;
+            this.chkVpnBypassBasic.Text = "Простой VPN bypass (показать реальный IP)";
+            this.chkVpnBypassBasic.UseVisualStyleBackColor = true;
             // 
             // groupBox5
             // 
@@ -160,7 +164,7 @@ namespace tickMeter.Forms
             this.groupBox5.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox5.Name = "groupBox5";
             this.groupBox5.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox5.Size = new System.Drawing.Size(753, 400);
+            this.groupBox5.Size = new System.Drawing.Size(757, 400);
             this.groupBox5.TabIndex = 4;
             this.groupBox5.TabStop = false;
             this.groupBox5.Text = "Универсальные";
@@ -171,7 +175,7 @@ namespace tickMeter.Forms
             this.chkStunEnable.Location = new System.Drawing.Point(333, 59);
             this.chkStunEnable.Margin = new System.Windows.Forms.Padding(4);
             this.chkStunEnable.Name = "chkStunEnable";
-            this.chkStunEnable.Size = new System.Drawing.Size(324, 20);
+            this.chkStunEnable.Size = new System.Drawing.Size(321, 20);
             this.chkStunEnable.TabIndex = 8;
             this.chkStunEnable.Text = "Определять внешний IP через STUN (в фоне)";
             this.chkStunEnable.UseVisualStyleBackColor = true;
@@ -182,7 +186,7 @@ namespace tickMeter.Forms
             this.chkShowPingSpikes.Location = new System.Drawing.Point(333, 87);
             this.chkShowPingSpikes.Margin = new System.Windows.Forms.Padding(4);
             this.chkShowPingSpikes.Name = "chkShowPingSpikes";
-            this.chkShowPingSpikes.Size = new System.Drawing.Size(319, 20);
+            this.chkShowPingSpikes.Size = new System.Drawing.Size(316, 20);
             this.chkShowPingSpikes.TabIndex = 9;
             this.chkShowPingSpikes.Text = "Показывать индикатор (!) при спайках пинга";
             this.chkShowPingSpikes.UseVisualStyleBackColor = true;
@@ -226,7 +230,7 @@ namespace tickMeter.Forms
             this.chkRtssOnlyActive.Location = new System.Drawing.Point(333, 31);
             this.chkRtssOnlyActive.Margin = new System.Windows.Forms.Padding(4);
             this.chkRtssOnlyActive.Name = "chkRtssOnlyActive";
-            this.chkRtssOnlyActive.Size = new System.Drawing.Size(306, 20);
+            this.chkRtssOnlyActive.Size = new System.Drawing.Size(303, 20);
             this.chkRtssOnlyActive.TabIndex = 8;
             this.chkRtssOnlyActive.Text = "RTSS: выводить только активный процесс";
             this.chkRtssOnlyActive.UseVisualStyleBackColor = true;
@@ -237,7 +241,7 @@ namespace tickMeter.Forms
             this.chkEnableIPv6.Location = new System.Drawing.Point(20, 283);
             this.chkEnableIPv6.Margin = new System.Windows.Forms.Padding(4);
             this.chkEnableIPv6.Name = "chkEnableIPv6";
-            this.chkEnableIPv6.Size = new System.Drawing.Size(173, 20);
+            this.chkEnableIPv6.Size = new System.Drawing.Size(170, 20);
             this.chkEnableIPv6.TabIndex = 7;
             this.chkEnableIPv6.Text = "Включить анализ IPv6";
             this.chkEnableIPv6.UseVisualStyleBackColor = true;
@@ -248,7 +252,7 @@ namespace tickMeter.Forms
             this.chkDedupMultiNic.Location = new System.Drawing.Point(20, 255);
             this.chkDedupMultiNic.Margin = new System.Windows.Forms.Padding(4);
             this.chkDedupMultiNic.Name = "chkDedupMultiNic";
-            this.chkDedupMultiNic.Size = new System.Drawing.Size(277, 20);
+            this.chkDedupMultiNic.Size = new System.Drawing.Size(274, 20);
             this.chkDedupMultiNic.TabIndex = 6;
             this.chkDedupMultiNic.Text = "Анти-дубли пакетов в мульти-режиме";
             this.chkDedupMultiNic.UseVisualStyleBackColor = true;
@@ -259,7 +263,7 @@ namespace tickMeter.Forms
             this.chkTickrateSmoothing.Location = new System.Drawing.Point(20, 144);
             this.chkTickrateSmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTickrateSmoothing.Name = "chkTickrateSmoothing";
-            this.chkTickrateSmoothing.Size = new System.Drawing.Size(280, 20);
+            this.chkTickrateSmoothing.Size = new System.Drawing.Size(277, 20);
             this.chkTickrateSmoothing.TabIndex = 4;
             this.chkTickrateSmoothing.Text = "Сглаживание графика тикрейта (EMA)";
             this.chkTickrateSmoothing.UseVisualStyleBackColor = true;
@@ -270,7 +274,7 @@ namespace tickMeter.Forms
             this.chkPingGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 173);
             this.chkPingGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingGraphOverlaySmoothing.Name = "chkPingGraphOverlaySmoothing";
-            this.chkPingGraphOverlaySmoothing.Size = new System.Drawing.Size(287, 20);
+            this.chkPingGraphOverlaySmoothing.Size = new System.Drawing.Size(284, 20);
             this.chkPingGraphOverlaySmoothing.TabIndex = 10;
             this.chkPingGraphOverlaySmoothing.Text = "Сглаживание графика пинга в оверлее";
             this.chkPingGraphOverlaySmoothing.UseVisualStyleBackColor = true;
@@ -281,7 +285,7 @@ namespace tickMeter.Forms
             this.chkTickrateGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 200);
             this.chkTickrateGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTickrateGraphOverlaySmoothing.Name = "chkTickrateGraphOverlaySmoothing";
-            this.chkTickrateGraphOverlaySmoothing.Size = new System.Drawing.Size(310, 20);
+            this.chkTickrateGraphOverlaySmoothing.Size = new System.Drawing.Size(307, 20);
             this.chkTickrateGraphOverlaySmoothing.TabIndex = 11;
             this.chkTickrateGraphOverlaySmoothing.Text = "Сглаживание графика тикрейта в оверлее";
             this.chkTickrateGraphOverlaySmoothing.UseVisualStyleBackColor = true;
@@ -292,7 +296,7 @@ namespace tickMeter.Forms
             this.chkTicktimeGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 227);
             this.chkTicktimeGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTicktimeGraphOverlaySmoothing.Name = "chkTicktimeGraphOverlaySmoothing";
-            this.chkTicktimeGraphOverlaySmoothing.Size = new System.Drawing.Size(311, 20);
+            this.chkTicktimeGraphOverlaySmoothing.Size = new System.Drawing.Size(308, 20);
             this.chkTicktimeGraphOverlaySmoothing.TabIndex = 12;
             this.chkTicktimeGraphOverlaySmoothing.Text = "Сглаживание графика тиктайма в оверлее";
             this.chkTicktimeGraphOverlaySmoothing.UseVisualStyleBackColor = true;
@@ -303,7 +307,7 @@ namespace tickMeter.Forms
             this.chkPingValueOverlaySmoothing.Location = new System.Drawing.Point(20, 311);
             this.chkPingValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingValueOverlaySmoothing.Name = "chkPingValueOverlaySmoothing";
-            this.chkPingValueOverlaySmoothing.Size = new System.Drawing.Size(295, 20);
+            this.chkPingValueOverlaySmoothing.Size = new System.Drawing.Size(292, 20);
             this.chkPingValueOverlaySmoothing.TabIndex = 13;
             this.chkPingValueOverlaySmoothing.Text = "Сглаживание значений пинга в оверлее";
             this.chkPingValueOverlaySmoothing.UseVisualStyleBackColor = true;
@@ -314,7 +318,7 @@ namespace tickMeter.Forms
             this.chkPingValueGuiSmoothing.Location = new System.Drawing.Point(20, 338);
             this.chkPingValueGuiSmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingValueGuiSmoothing.Name = "chkPingValueGuiSmoothing";
-            this.chkPingValueGuiSmoothing.Size = new System.Drawing.Size(279, 20);
+            this.chkPingValueGuiSmoothing.Size = new System.Drawing.Size(259, 20);
             this.chkPingValueGuiSmoothing.TabIndex = 14;
             this.chkPingValueGuiSmoothing.Text = "Сглаживание значений пинга в GUI";
             this.chkPingValueGuiSmoothing.UseVisualStyleBackColor = true;
@@ -325,7 +329,7 @@ namespace tickMeter.Forms
             this.chkTickrateValueOverlaySmoothing.Location = new System.Drawing.Point(20, 365);
             this.chkTickrateValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTickrateValueOverlaySmoothing.Name = "chkTickrateValueOverlaySmoothing";
-            this.chkTickrateValueOverlaySmoothing.Size = new System.Drawing.Size(318, 20);
+            this.chkTickrateValueOverlaySmoothing.Size = new System.Drawing.Size(315, 20);
             this.chkTickrateValueOverlaySmoothing.TabIndex = 15;
             this.chkTickrateValueOverlaySmoothing.Text = "Сглаживание значений тикрейта в оверлее";
             this.chkTickrateValueOverlaySmoothing.UseVisualStyleBackColor = true;
@@ -336,7 +340,7 @@ namespace tickMeter.Forms
             this.chkTrafficValueOverlaySmoothing.Location = new System.Drawing.Point(20, 392);
             this.chkTrafficValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTrafficValueOverlaySmoothing.Name = "chkTrafficValueOverlaySmoothing";
-            this.chkTrafficValueOverlaySmoothing.Size = new System.Drawing.Size(314, 20);
+            this.chkTrafficValueOverlaySmoothing.Size = new System.Drawing.Size(311, 20);
             this.chkTrafficValueOverlaySmoothing.TabIndex = 16;
             this.chkTrafficValueOverlaySmoothing.Text = "Сглаживание значений трафика в оверлее";
             this.chkTrafficValueOverlaySmoothing.UseVisualStyleBackColor = true;
@@ -347,7 +351,7 @@ namespace tickMeter.Forms
             this.chkPingTargetActiveOnly.Location = new System.Drawing.Point(20, 116);
             this.chkPingTargetActiveOnly.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingTargetActiveOnly.Name = "chkPingTargetActiveOnly";
-            this.chkPingTargetActiveOnly.Size = new System.Drawing.Size(317, 20);
+            this.chkPingTargetActiveOnly.Size = new System.Drawing.Size(314, 20);
             this.chkPingTargetActiveOnly.TabIndex = 3;
             this.chkPingTargetActiveOnly.Text = "Пинговать только цель активного процесса";
             this.chkPingTargetActiveOnly.UseVisualStyleBackColor = true;
@@ -358,7 +362,7 @@ namespace tickMeter.Forms
             this.chkPingFallbackIcmp.Location = new System.Drawing.Point(20, 87);
             this.chkPingFallbackIcmp.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingFallbackIcmp.Name = "chkPingFallbackIcmp";
-            this.chkPingFallbackIcmp.Size = new System.Drawing.Size(298, 20);
+            this.chkPingFallbackIcmp.Size = new System.Drawing.Size(295, 20);
             this.chkPingFallbackIcmp.TabIndex = 2;
             this.chkPingFallbackIcmp.Text = "Фолбэк на ICMP, если TCP заблокирован";
             this.chkPingFallbackIcmp.UseVisualStyleBackColor = true;
@@ -369,7 +373,7 @@ namespace tickMeter.Forms
             this.chkPingTcpPrefer.Location = new System.Drawing.Point(20, 59);
             this.chkPingTcpPrefer.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingTcpPrefer.Name = "chkPingTcpPrefer";
-            this.chkPingTcpPrefer.Size = new System.Drawing.Size(323, 20);
+            this.chkPingTcpPrefer.Size = new System.Drawing.Size(320, 20);
             this.chkPingTcpPrefer.TabIndex = 1;
             this.chkPingTcpPrefer.Text = "Предпочитать TCP-пинг по активному порту";
             this.chkPingTcpPrefer.UseVisualStyleBackColor = true;
@@ -380,7 +384,7 @@ namespace tickMeter.Forms
             this.chkPingBindToInterface.Location = new System.Drawing.Point(20, 31);
             this.chkPingBindToInterface.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingBindToInterface.Name = "chkPingBindToInterface";
-            this.chkPingBindToInterface.Size = new System.Drawing.Size(318, 20);
+            this.chkPingBindToInterface.Size = new System.Drawing.Size(315, 20);
             this.chkPingBindToInterface.TabIndex = 0;
             this.chkPingBindToInterface.Text = "Пинг привязывать к активному интерфейсу";
             this.chkPingBindToInterface.UseVisualStyleBackColor = true;
@@ -394,7 +398,7 @@ namespace tickMeter.Forms
             this.groupBox4.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox4.Size = new System.Drawing.Size(753, 98);
+            this.groupBox4.Size = new System.Drawing.Size(757, 98);
             this.groupBox4.TabIndex = 3;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Сетевые адаптеры";
@@ -405,7 +409,7 @@ namespace tickMeter.Forms
             this.chkIgnoreVirtualAdapters.Location = new System.Drawing.Point(20, 62);
             this.chkIgnoreVirtualAdapters.Margin = new System.Windows.Forms.Padding(4);
             this.chkIgnoreVirtualAdapters.Name = "chkIgnoreVirtualAdapters";
-            this.chkIgnoreVirtualAdapters.Size = new System.Drawing.Size(280, 20);
+            this.chkIgnoreVirtualAdapters.Size = new System.Drawing.Size(277, 20);
             this.chkIgnoreVirtualAdapters.TabIndex = 1;
             this.chkIgnoreVirtualAdapters.Text = "Игнорировать виртуальные адаптеры";
             this.chkIgnoreVirtualAdapters.UseVisualStyleBackColor = true;
@@ -416,7 +420,7 @@ namespace tickMeter.Forms
             this.chkCaptureAllAdapters.Location = new System.Drawing.Point(20, 31);
             this.chkCaptureAllAdapters.Margin = new System.Windows.Forms.Padding(4);
             this.chkCaptureAllAdapters.Name = "chkCaptureAllAdapters";
-            this.chkCaptureAllAdapters.Size = new System.Drawing.Size(238, 20);
+            this.chkCaptureAllAdapters.Size = new System.Drawing.Size(235, 20);
             this.chkCaptureAllAdapters.TabIndex = 0;
             this.chkCaptureAllAdapters.Text = "Захватывать со всех адаптеров";
             this.chkCaptureAllAdapters.UseVisualStyleBackColor = true;
@@ -431,7 +435,7 @@ namespace tickMeter.Forms
             this.groupBox3.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox3.Size = new System.Drawing.Size(753, 98);
+            this.groupBox3.Size = new System.Drawing.Size(757, 98);
             this.groupBox3.TabIndex = 2;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Фильтрация пакетов";
@@ -462,7 +466,7 @@ namespace tickMeter.Forms
             this.chkBpfFilter.Location = new System.Drawing.Point(20, 31);
             this.chkBpfFilter.Margin = new System.Windows.Forms.Padding(4);
             this.chkBpfFilter.Name = "chkBpfFilter";
-            this.chkBpfFilter.Size = new System.Drawing.Size(204, 20);
+            this.chkBpfFilter.Size = new System.Drawing.Size(201, 20);
             this.chkBpfFilter.TabIndex = 0;
             this.chkBpfFilter.Text = "Использовать BPF фильтр";
             this.chkBpfFilter.UseVisualStyleBackColor = true;
@@ -478,7 +482,7 @@ namespace tickMeter.Forms
             this.groupBox2.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox2.Size = new System.Drawing.Size(753, 98);
+            this.groupBox2.Size = new System.Drawing.Size(757, 98);
             this.groupBox2.TabIndex = 1;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "RTSS Overlay настройки";
@@ -523,7 +527,7 @@ namespace tickMeter.Forms
             this.chkOverlayFps.Location = new System.Drawing.Point(20, 31);
             this.chkOverlayFps.Margin = new System.Windows.Forms.Padding(4);
             this.chkOverlayFps.Name = "chkOverlayFps";
-            this.chkOverlayFps.Size = new System.Drawing.Size(194, 20);
+            this.chkOverlayFps.Size = new System.Drawing.Size(191, 20);
             this.chkOverlayFps.TabIndex = 0;
             this.chkOverlayFps.Text = "Ограничить FPS оверлея";
             this.chkOverlayFps.UseVisualStyleBackColor = true;
@@ -539,7 +543,7 @@ namespace tickMeter.Forms
             this.groupBox1.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox1.Size = new System.Drawing.Size(753, 98);
+            this.groupBox1.Size = new System.Drawing.Size(757, 98);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Live View настройки";
@@ -584,11 +588,59 @@ namespace tickMeter.Forms
             this.chkLiveMaxRows.Location = new System.Drawing.Point(20, 31);
             this.chkLiveMaxRows.Margin = new System.Windows.Forms.Padding(4);
             this.chkLiveMaxRows.Name = "chkLiveMaxRows";
-            this.chkLiveMaxRows.Size = new System.Drawing.Size(224, 20);
+            this.chkLiveMaxRows.Size = new System.Drawing.Size(221, 20);
             this.chkLiveMaxRows.TabIndex = 0;
             this.chkLiveMaxRows.Text = "Ограничить строки в таблице";
             this.chkLiveMaxRows.UseVisualStyleBackColor = true;
             this.chkLiveMaxRows.CheckedChanged += new System.EventHandler(this.chkLiveMaxRows_CheckedChanged);
+            // 
+            // panelButtons
+            // 
+            this.panelButtons.Controls.Add(this.btnOK);
+            this.panelButtons.Controls.Add(this.btnApply);
+            this.panelButtons.Controls.Add(this.btnCancel);
+            this.panelButtons.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.panelButtons.Location = new System.Drawing.Point(0, 550);
+            this.panelButtons.Margin = new System.Windows.Forms.Padding(4);
+            this.panelButtons.Name = "panelButtons";
+            this.panelButtons.Size = new System.Drawing.Size(800, 50);
+            this.panelButtons.TabIndex = 1;
+            // 
+            // btnOK
+            // 
+            this.btnOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnOK.Location = new System.Drawing.Point(469, 12);
+            this.btnOK.Margin = new System.Windows.Forms.Padding(4);
+            this.btnOK.Name = "btnOK";
+            this.btnOK.Size = new System.Drawing.Size(100, 28);
+            this.btnOK.TabIndex = 0;
+            this.btnOK.Text = "ОК";
+            this.btnOK.UseVisualStyleBackColor = true;
+            this.btnOK.Click += new System.EventHandler(this.btnOK_Click);
+            // 
+            // btnApply
+            // 
+            this.btnApply.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnApply.Location = new System.Drawing.Point(577, 12);
+            this.btnApply.Margin = new System.Windows.Forms.Padding(4);
+            this.btnApply.Name = "btnApply";
+            this.btnApply.Size = new System.Drawing.Size(100, 28);
+            this.btnApply.TabIndex = 1;
+            this.btnApply.Text = "Применить";
+            this.btnApply.UseVisualStyleBackColor = true;
+            this.btnApply.Click += new System.EventHandler(this.btnApply_Click);
+            // 
+            // btnCancel
+            // 
+            this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnCancel.Location = new System.Drawing.Point(685, 12);
+            this.btnCancel.Margin = new System.Windows.Forms.Padding(4);
+            this.btnCancel.Name = "btnCancel";
+            this.btnCancel.Size = new System.Drawing.Size(100, 28);
+            this.btnCancel.TabIndex = 2;
+            this.btnCancel.Text = "Отмена";
+            this.btnCancel.UseVisualStyleBackColor = true;
+            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
             // btnSave
             // 
@@ -600,28 +652,16 @@ namespace tickMeter.Forms
             this.btnSave.TabIndex = 1;
             this.btnSave.Text = "Сохранить";
             this.btnSave.UseVisualStyleBackColor = true;
+            this.btnSave.Visible = false;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
-            // 
-            // btnCancel
-            // 
-            this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnCancel.Location = new System.Drawing.Point(685, 565);
-            this.btnCancel.Margin = new System.Windows.Forms.Padding(4);
-            this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(100, 28);
-            this.btnCancel.TabIndex = 2;
-            this.btnCancel.Text = "Отмена";
-            this.btnCancel.UseVisualStyleBackColor = true;
-            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
             // AdvancedSettingsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 600);
-            this.Controls.Add(this.btnCancel);
-            this.Controls.Add(this.btnSave);
             this.Controls.Add(this.panel1);
+            this.Controls.Add(this.panelButtons);
             this.Margin = new System.Windows.Forms.Padding(4);
             this.MinimumSize = new System.Drawing.Size(800, 400);
             this.Name = "AdvancedSettingsForm";
@@ -643,6 +683,7 @@ namespace tickMeter.Forms
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.liveMaxRowsNumeric)).EndInit();
+            this.panelButtons.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -688,7 +729,10 @@ namespace tickMeter.Forms
         private System.Windows.Forms.GroupBox groupBoxVpnBypass;
         private System.Windows.Forms.CheckBox chkVpnBypassBasic;
         private System.Windows.Forms.CheckBox chkVpnBypassAdvanced;
-        private System.Windows.Forms.Button btnSave;
+        private System.Windows.Forms.Panel panelButtons;
+        private System.Windows.Forms.Button btnOK;
+        private System.Windows.Forms.Button btnApply;
         private System.Windows.Forms.Button btnCancel;
+        private System.Windows.Forms.Button btnSave;
     }
 }
