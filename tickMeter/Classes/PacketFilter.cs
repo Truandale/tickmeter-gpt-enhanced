@@ -49,6 +49,9 @@ namespace tickMeter.Classes
 
         protected bool ValidateProtocol()
         {
+            // Проверяем, что ip не null
+            if (ip == null) return false;
+            
             switch (ProtocolFilter.ToLower())
             {
                 case "udp":
@@ -171,6 +174,9 @@ namespace tickMeter.Classes
 
         public bool Validate()
         {
+            // Проверяем, что ip не null (может быть null при VPN/тунелировании)
+            if (ip == null) return false;
+            
             if (!ValidateProtocol()) return false;
 
             string SourcePort = "";
@@ -179,10 +185,14 @@ namespace tickMeter.Classes
             switch(ip.Protocol)
             {
                 case IpV4Protocol.Udp:
+                    // Проверяем, что UDP данные доступны
+                    if (ip.Udp == null) return false;
                     SourcePort = ip.Udp.SourcePort.ToString();
                     DestPort = ip.Udp.DestinationPort.ToString();
                     break;
                 case IpV4Protocol.Tcp:
+                    // Проверяем, что TCP данные доступны
+                    if (ip.Tcp == null) return false;
                     SourcePort = ip.Tcp.SourcePort.ToString();
                     DestPort = ip.Tcp.DestinationPort.ToString();
                     break;

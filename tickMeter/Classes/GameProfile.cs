@@ -22,6 +22,10 @@ namespace tickMeter.Classes
             if(App.meterState.isBuiltInProfileActive) { return false; }
             App.meterState.isCustomProfileActive = false;
             if (!isEnabled) return false;
+            
+            // Проверяем, что IPv4 данные доступны (может быть null при VPN/тунелировании)
+            if (packet?.Ethernet?.IpV4 == null) return false;
+            
             profileFilter.ip = packet.Ethernet.IpV4;
             if (profileFilter.Validate())
             {
@@ -33,7 +37,11 @@ namespace tickMeter.Classes
                     App.meterState.Server.Ip = packet.Ethernet.IpV4.Source.ToString();
                     App.meterState.DownloadTraffic += packet.Ethernet.IpV4.TotalLength;
                     App.meterState.TickRate++;
-                    App.meterState.Server.PingPort = packet.Ethernet.IpV4.Udp.SourcePort;
+                    // Проверяем, что UDP данные доступны перед обращением к SourcePort
+                    if (packet.Ethernet.IpV4.Udp != null)
+                    {
+                        App.meterState.Server.PingPort = packet.Ethernet.IpV4.Udp.SourcePort;
+                    }
                     App.meterState.isCustomProfileActive = true;
                     return true;
                 }
