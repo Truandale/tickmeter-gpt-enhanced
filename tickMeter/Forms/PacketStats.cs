@@ -18,6 +18,8 @@ namespace tickMeter
     public partial class PacketStats : Form
     {
         List<Packet> PacketBuffer;
+        private readonly object _packetBufferLock = new object();  // Thread synchronization lock
+        private const int MAX_PACKET_BUFFER_SIZE = 1000;  // Максимальный размер буфера для предотвращения утечек
         public int inPackets = 0;
         public int outPackets = 0;
         public int inTraffic = 0;
@@ -266,7 +268,19 @@ namespace tickMeter
             catch (Exception) { return; }
             packetFilter.ip = ip;
             if (!packetFilter.Validate()) return;
-            PacketBuffer.Add(packet);
+            
+            // Thread-safe addition to PacketBuffer with size limit
+            lock (_packetBufferLock)
+            {
+                // Если буфер переполнен, удаляем старые пакеты
+                if (PacketBuffer.Count >= MAX_PACKET_BUFFER_SIZE)
+                {
+                    // Удаляем половину старых пакетов для предотвращения постоянных очисток
+                    int removeCount = MAX_PACKET_BUFFER_SIZE / 2;
+                    PacketBuffer.RemoveRange(0, removeCount);
+                }
+                PacketBuffer.Add(packet);
+            }
 
             // Простая логика: подсчитываем все пакеты
             // Исходящие: если source из приватной подсети (наша сеть)
@@ -310,34 +324,59 @@ namespace tickMeter
         private void RefreshTick(object sender, EventArgs e)
         {
             AutoDetectMngr.GetActiveProcessName(true);
-            if (PacketBuffer.Count < 1)
+            
+            // Thread-safe check of PacketBuffer count
+            int bufferCount;
+            lock (_packetBufferLock)
+            {
+                bufferCount = PacketBuffer.Count;
+            }
+            
+            if (bufferCount < 1)
             {
                 return;
             }
+            
             List<Packet> tmpPackets;
             try
             {
-                // Ограничиваем количество пакетов для обработки за раз (максимум 50)
-                tmpPackets = PacketBuffer.Where(p => p != null).Take(50).ToList();
+                // Thread-safe extraction of packets from buffer
+                lock (_packetBufferLock)
+                {
+                    // Увеличиваем количество обрабатываемых пакетов для лучшей производительности
+                    int processCount = Math.Min(200, PacketBuffer.Count);
+                    tmpPackets = PacketBuffer.Take(processCount).Where(p => p != null).ToList();
+                    
+                    // Удаляем обработанные пакеты из буфера более эффективно
+                    if (processCount > 0)
+                    {
+                        PacketBuffer.RemoveRange(0, processCount);
+                    }
+                    
+                    // Дополнительная защита: если буфер всё ещё слишком большой, очищаем его полностью
+                    if (PacketBuffer.Count > MAX_PACKET_BUFFER_SIZE * 2)
+                    {
+                        PacketBuffer.Clear();
+                        System.GC.Collect(); // Принудительная сборка мусора при критическом переполнении
+                    }
+                }
             } 
             catch(Exception) 
             { 
-                return; 
-            }
-            
-            // Удаляем обработанные пакеты из буфера
-            try
-            {
-                int removeCount = Math.Min(tmpPackets.Count, PacketBuffer.Count);
-                for (int i = 0; i < removeCount; i++)
+                // В случае ошибки безопасно очищаем буфер
+                lock (_packetBufferLock)
                 {
-                    if (PacketBuffer.Count > 0)
-                        PacketBuffer.RemoveAt(0);
+                    try
+                    {
+                        PacketBuffer.Clear();
+                    }
+                    catch (Exception)
+                    {
+                        // Если даже Clear() падает, пересоздаём список
+                        PacketBuffer = new List<Packet>();
+                    }
                 }
-            }
-            catch(Exception)
-            {
-                PacketBuffer.Clear(); // В случае ошибки просто очищаем весь буфер
+                return; 
             }
             
             ListViewItem[] items = new ListViewItem[tmpPackets.Count];
@@ -550,7 +589,18 @@ namespace tickMeter
         private void clear_Click(object sender, EventArgs e)
         {
             packet_id = 0;
-            PacketBuffer.Clear();
+            lock (_packetBufferLock)
+            {
+                try
+                {
+                    PacketBuffer.Clear();
+                }
+                catch (Exception)
+                {
+                    // Если Clear() падает, пересоздаём список
+                    PacketBuffer = new List<Packet>();
+                }
+            }
             listView1.Items.Clear();
         }
 

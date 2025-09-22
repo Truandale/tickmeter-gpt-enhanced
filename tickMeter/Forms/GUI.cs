@@ -30,16 +30,19 @@ namespace tickMeter.Forms
         private readonly List<PacketDevice> _allSelectedAdapters = new List<PacketDevice>();
         private readonly List<BackgroundWorker> _pcapWorkers = new List<BackgroundWorker>();
         // простая защита от дублей на бриджах/VPN
-        private readonly Dictionary<ulong, long> _dedup = new Dictionary<ulong, long>(capacity: 8192);
+        private readonly Dictionary<ulong, long> _dedup = new Dictionary<ulong, long>(capacity: 4096);
         private readonly Stopwatch _dedupSw = Stopwatch.StartNew();
         private readonly object _dedupLock = new object();
+        
+        // Константы для дедупликации
+        private const int MAX_DEDUP_SIZE = 8192;  // Уменьшен с 20000
+        private const int DEDUP_CLEANUP_THRESHOLD = 500;  // Более частая очистка
         
         public Boolean allowClose = false;
         int restarts = 0;
         int restartLimit = 1;
         int lastSelectedAdapterID = -1;
         public string threadID = ""; 
-        Bitmap chartBckg;
         int chartLeftPadding = 25;
         int chartXStep = 4;
         int appInitHeigh;
@@ -48,6 +51,9 @@ namespace tickMeter.Forms
         public PubgStatsManager PubgMngr;
         public DbdStatsManager DbdMngr;
         public string targetKey = "";
+        private int _gcCounter = 0; // Счётчик для периодической сборки мусора
+        
+        // Убираем chartBckg как поле класса - теперь создаётся локально в UpdateGraph()
 
         private const int WM_ACTIVATE = 0x0006;
         private const int WA_ACTIVE = 1;
@@ -268,10 +274,18 @@ namespace tickMeter.Forms
             {
                 if (_dedup.TryGetValue(h, out var ts) && now - ts < 3) return true;
                 _dedup[h] = now;
-                if (_dedup.Count > 20000)
+                
+                // Более эффективная очистка с меньшим порогом
+                if (_dedup.Count > MAX_DEDUP_SIZE)
                 {
-                    // лёгкая чистка
-                    foreach (var key in _dedup.Where(kv => now - kv.Value > 250).Select(kv => kv.Key).ToList())
+                    // Радикальная очистка для предотвращения роста памяти
+                    _dedup.Clear();
+                }
+                else if (_dedup.Count > DEDUP_CLEANUP_THRESHOLD)
+                {
+                    // Лёгкая очистка устаревших записей
+                    var keysToRemove = _dedup.Where(kv => now - kv.Value > 250).Select(kv => kv.Key).Take(100).ToList();
+                    foreach (var key in keysToRemove)
                         _dedup.Remove(key);
                 }
             }
@@ -541,6 +555,17 @@ namespace tickMeter.Forms
                             }
                         }
                     });
+            
+            // Периодическая сборка мусора для предотвращения утечек памяти
+            _gcCounter++;
+            if (_gcCounter >= 100) // Каждые 100 циклов (~10 секунд при интервале 100мс)
+            {
+                _gcCounter = 0;
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+            }
+            
             if (!App.meterState.IsTracking)
             {
                 StopTracking();
@@ -575,31 +600,29 @@ namespace tickMeter.Forms
 
         private void updateMetherStateFromActiveWindow()
         {
-            int maxTicks = 0;
-
             if(!isValidToTrack(targetKey))
             {
                 try
                 {
-                    // Защищаем от InvalidOperationException при изменении коллекции во время итерации
-                    var connectionSnapshot = new Dictionary<string, ProcessNetworkStats>();
+                    // Оптимизированный поиск без полного копирования словаря
+                    string bestConnection = "";
+                    int bestTicks = 0;
+                    
                     lock(ActiveWindowTracker.connectionsLock)
                     {
                         foreach(var kvp in ActiveWindowTracker.connections)
                         {
-                            connectionSnapshot[kvp.Key] = kvp.Value;
+                            if (kvp.Value.ticksIn > bestTicks && isValidToTrack(kvp.Key))
+                            {
+                                bestTicks = kvp.Value.ticksIn;
+                                bestConnection = kvp.Key;
+                            }
                         }
                     }
                     
-                    foreach (var kvp in connectionSnapshot)
+                    if (!string.IsNullOrEmpty(bestConnection))
                     {
-                        string connection = kvp.Key;
-                        var stats = kvp.Value;
-                        if (stats.ticksIn > maxTicks && isValidToTrack(connection))
-                        {
-                            maxTicks = stats.ticksIn;
-                            targetKey = connection;
-                        }
+                        targetKey = bestConnection;
                     }
                 }
                 catch (InvalidOperationException)
@@ -645,21 +668,34 @@ namespace tickMeter.Forms
 
         public Bitmap UpdateGraph(List<int> ticks)
         {
-            chartBckg = new Bitmap(graph.InitialImage);
-            if (ticks.Count < 2) return chartBckg;
-            Graphics g = Graphics.FromImage(chartBckg);
-            int w = graph.Image.Width;
-            int h = graph.Image.Height;
-            float scale =  (float)h / 61; //2.8
-            int GraphMaxTicks = (w - chartLeftPadding) / chartXStep;
-            Pen pen = new Pen(Color.Red, 1);
-            int stepX = 0;
-            for (int i = ticks.Count-2; i >= 0 && ticks.Count - i - 1 < GraphMaxTicks; i--)
+            if (ticks.Count < 2) 
             {
-                stepX++;
-                g.DrawLine(pen, new Point(chartLeftPadding + (stepX - 1) * chartXStep, h - (int)((float)ticks[i + 1]*scale)), new Point(chartLeftPadding + stepX * chartXStep, h - (int)((float)ticks[i]*scale)));
+                // Возвращаем копию начального изображения без создания лишних объектов
+                return new Bitmap(graph.InitialImage);
             }
-            return chartBckg;
+
+            // Используем using для автоматического освобождения ресурсов
+            using (var chartBckg = new Bitmap(graph.InitialImage))
+            using (var g = Graphics.FromImage(chartBckg))
+            using (var pen = new Pen(Color.Red, 1))
+            {
+                int w = graph.Image.Width;
+                int h = graph.Image.Height;
+                float scale = (float)h / 61; //2.8
+                int GraphMaxTicks = (w - chartLeftPadding) / chartXStep;
+                int stepX = 0;
+                
+                for (int i = ticks.Count - 2; i >= 0 && ticks.Count - i - 1 < GraphMaxTicks; i--)
+                {
+                    stepX++;
+                    g.DrawLine(pen, 
+                        new Point(chartLeftPadding + (stepX - 1) * chartXStep, h - (int)((float)ticks[i + 1] * scale)), 
+                        new Point(chartLeftPadding + stepX * chartXStep, h - (int)((float)ticks[i] * scale)));
+                }
+                
+                // Возвращаем копию, чтобы исходный bitmap можно было корректно освободить
+                return new Bitmap(chartBckg);
+            }
         }
 
        
@@ -951,11 +987,32 @@ namespace tickMeter.Forms
             {
                 foreach (var w in _pcapWorkers)
                 {
-                    // ReceivePackets не прерываем — PacketHandler сам гасит обработку по флагу
+                    try
+                    {
+                        // Останавливаем и освобождаем каждый воркер
+                        w?.CancelAsync();
+                        w?.Dispose();
+                    }
+                    catch { /* ignore disposal errors */ }
                 }
             } catch { }
             _pcapWorkers.Clear();
             _allSelectedAdapters.Clear();
+            
+            // Также очищаем одиночный pcapWorker если он есть
+            try
+            {
+                pcapWorker?.CancelAsync();
+                pcapWorker?.Dispose();
+                pcapWorker = null;
+            }
+            catch { /* ignore disposal errors */ }
+            
+            // Очищаем словарь дедупликации для освобождения памяти
+            lock (_dedupLock)
+            {
+                _dedup.Clear();
+            }
             
             // Сбрасываем сглаживание при остановке трекинга
             Classes.TickrateSmoothingManager.Reset();
@@ -1005,6 +1062,11 @@ namespace tickMeter.Forms
 
 
             App.meterState.IsTracking = false;
+            
+            // Принудительная сборка мусора после остановки трекинга
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
         }
 
         private void GUI_FormClosed(object sender, FormClosedEventArgs e)
