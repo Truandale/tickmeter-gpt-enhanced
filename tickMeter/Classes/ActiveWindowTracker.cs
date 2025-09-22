@@ -12,20 +12,47 @@ namespace tickMeter.Classes
     public static class ActiveWindowTracker
     {
         public static Dictionary<string, ProcessNetworkStats> connections = new Dictionary<string, ProcessNetworkStats>();
+        private static readonly object connectionsLock = new object();
 
         public static void AnalyzePacket(Packet packet)
         {
             if (App.meterState.isBuiltInProfileActive || App.meterState.isCustomProfileActive) { return; }
             if (!IsEnabled()) return;
+            if (packet?.Ethernet == null) return; // Защита от null/поврежденных пакетов
+            
             IpV4Datagram ip;
             try
             {
                 ip = packet.Ethernet.IpV4;
+                if (ip == null) return; // VPN/туннелированные пакеты могут не содержать IPv4
             }
-            catch (Exception) { return; }
+            catch (IndexOutOfRangeException) 
+            { 
+                // Пакет поврежден или имеет недостаточный размер
+                return; 
+            }
+            catch (Exception) 
+            { 
+                return; 
+            }
 
-            UdpDatagram udp = ip.Udp;
-            TcpDatagram tcp = ip.Tcp;
+            UdpDatagram udp = null;
+            TcpDatagram tcp = null;
+            
+            try
+            {
+                udp = ip.Udp;
+                tcp = ip.Tcp;
+            }
+            catch (IndexOutOfRangeException)
+            {
+                // Пакет не содержит полных UDP/TCP данных
+                return;
+            }
+            catch (Exception)
+            {
+                return;
+            }
 
             if (udp == null && tcp == null) return;
 
@@ -39,47 +66,62 @@ namespace tickMeter.Classes
             uint toPort = 0;
             string processName = @"n\a";
             uint id = 0;
-            if (protocol == IpV4Protocol.Udp.ToString())
+            
+            try
             {
-                fromPort = udp.SourcePort;
-                toPort = udp.DestinationPort;
-                try
+                if (protocol == IpV4Protocol.Udp.ToString())
                 {
-                    UdpProcessRecord record;
-                    List<UdpProcessRecord> UdpConnections = App.connMngr.UdpActiveConnections;
-                    if (UdpConnections.Count > 0)
+                    if (udp == null) return; // Дополнительная проверка
+                    fromPort = udp.SourcePort;
+                    toPort = udp.DestinationPort;
+                    try
                     {
-                        record = UdpConnections.Find(procReq => procReq.LocalPort == fromPort || procReq.LocalPort == toPort);
+                        UdpProcessRecord record;
+                        List<UdpProcessRecord> UdpConnections = App.connMngr.UdpActiveConnections;
+                        if (UdpConnections.Count > 0)
+                        {
+                            record = UdpConnections.Find(procReq => procReq.LocalPort == fromPort || procReq.LocalPort == toPort);
 
-                        if (record != null)
-                        {
-                            processName = record.ProcessName != null ? record.ProcessName : record.ProcessId.ToString();
+                            if (record != null)
+                            {
+                                processName = record.ProcessName != null ? record.ProcessName : record.ProcessId.ToString();
+                            }
                         }
                     }
+                    catch (Exception) { processName = @"n\a"; }
                 }
-                catch (Exception) { processName = @"n\a"; }
-            }
-            else
-            {
-                fromPort = tcp.SourcePort;
-                toPort = tcp.DestinationPort;
-                try
+                else
                 {
-                    TcpProcessRecord record;
-                    List<TcpProcessRecord> TcpConnections = App.connMngr.TcpActiveConnections;
-                    if (TcpConnections.Count > 0)
+                    if (tcp == null) return; // Дополнительная проверка
+                    fromPort = tcp.SourcePort;
+                    toPort = tcp.DestinationPort;
+                    try
                     {
-                        record = TcpConnections.Find(procReq =>
-                        (procReq.LocalPort == fromPort && procReq.RemotePort == toPort)
-                        || (procReq.LocalPort == toPort && procReq.RemotePort == fromPort)
-                        );
-                        if (record != null)
+                        TcpProcessRecord record;
+                        List<TcpProcessRecord> TcpConnections = App.connMngr.TcpActiveConnections;
+                        if (TcpConnections.Count > 0)
                         {
-                            processName = record.ProcessName;
+                            record = TcpConnections.Find(procReq =>
+                            (procReq.LocalPort == fromPort && procReq.RemotePort == toPort)
+                            || (procReq.LocalPort == toPort && procReq.RemotePort == fromPort)
+                            );
+                            if (record != null)
+                            {
+                                processName = record.ProcessName;
+                            }
                         }
                     }
+                    catch (InvalidOperationException) { processName = @"n\a"; }
                 }
-                catch (InvalidOperationException) { processName = @"n\a"; }
+            }
+            catch (IndexOutOfRangeException)
+            {
+                // Пакет не содержит полной информации о портах
+                return;
+            }
+            catch (Exception)
+            {
+                return;
             }
 
             if (processName == @"n\a")
@@ -91,76 +133,104 @@ namespace tickMeter.Classes
             if (activeProcess != processName) { return; }
             uint remotePort = 0;
             uint localPort = 0;
-            if (App.meterState.LocalIP == toIp.ToString())
+            
+            try
             {
-                switch (protocol.ToLower())
+                if (App.meterState.LocalIP == toIp.ToString())
                 {
-                    case "udp":
-                        remotePort = udp.SourcePort;
-                        localPort = udp.DestinationPort;
-                        break;
-                    case "tcp":
-                        remotePort = tcp.SourcePort;
-                        localPort = tcp.DestinationPort;
-                        break;
+                    switch (protocol.ToLower())
+                    {
+                        case "udp":
+                            if (udp != null)
+                            {
+                                remotePort = udp.SourcePort;
+                                localPort = udp.DestinationPort;
+                            }
+                            break;
+                        case "tcp":
+                            if (tcp != null)
+                            {
+                                remotePort = tcp.SourcePort;
+                                localPort = tcp.DestinationPort;
+                            }
+                            break;
+                    }
+                    trackTick(processName, protocol.ToLower(), App.meterState.LocalIP, localPort, remotePort, 1, 0, packetSize, packet.Timestamp, id);
                 }
-                trackTick(processName, protocol.ToLower(), App.meterState.LocalIP, localPort, remotePort, 1, 0, packetSize, packet.Timestamp, id);
+                else
+                {
+                    switch (protocol.ToLower())
+                    {
+                        case "udp":
+                            if (udp != null)
+                            {
+                                remotePort = udp.DestinationPort;
+                                localPort = udp.SourcePort;
+                            }
+                            break;
+                        case "tcp":
+                            if (tcp != null)
+                            {
+                                remotePort = tcp.DestinationPort;
+                                localPort = tcp.SourcePort;
+                            }
+                            break;
+                    }
+                    trackTick(processName, protocol.ToLower(), App.meterState.LocalIP, localPort, remotePort, 0, 1, packetSize, packet.Timestamp, 0);
+                }
             }
-            else
+            catch (IndexOutOfRangeException)
             {
-                switch (protocol.ToLower())
-                {
-                    case "udp":
-                        remotePort = udp.DestinationPort;
-                        localPort = udp.SourcePort;
-                        break;
-                    case "tcp":
-                        remotePort = tcp.DestinationPort;
-                        localPort = tcp.SourcePort;
-                        break;
-                }
-                trackTick(processName, protocol.ToLower(), App.meterState.LocalIP, localPort, remotePort, 0, 1, packetSize, packet.Timestamp, 0);
+                // Пакет не содержит полной информации о портах
+                return;
+            }
+            catch (Exception)
+            {
+                return;
             }
         }
 
         public static void trackTick(string name, string protocol, string localIp, uint localPort, string remoteIp, uint remotePort, int tickIn, int tickOut, uint traffic, DateTime tickTime, uint id)
         {
             string hash = Hash(name, remoteIp, remotePort);
-            if (!connections.ContainsKey(hash))
+            lock(connectionsLock)
             {
-                connections.Add(hash, new ProcessNetworkStats());
-                connections[hash].name = name;
-                connections[hash].localIp = localIp;
-                connections[hash].remoteIp = remoteIp;
-                connections[hash].localPort = localPort;
-                connections[hash].remotePort = remotePort;
-                connections[hash].downloaded = 0;
-                connections[hash].sent = 0;
-                connections[hash].ticksIn = 0;
-                connections[hash].ticksOut = 0;
-                connections[hash].startTrack = tickTime;
-                connections[hash].id = 0;
-            }
-            connections[hash].protocol = protocol;
-            connections[hash].ticksIn += tickIn;
-            connections[hash].ticksOut += tickOut;
+                if (!connections.ContainsKey(hash))
+                {
+                    connections.Add(hash, new ProcessNetworkStats());
+                    connections[hash].name = name;
+                    connections[hash].localIp = localIp;
+                    connections[hash].remoteIp = remoteIp;
+                    connections[hash].localPort = localPort;
+                    connections[hash].remotePort = remotePort;
+                    connections[hash].downloaded = 0;
+                    connections[hash].sent = 0;
+                    connections[hash].ticksIn = 0;
+                    connections[hash].ticksOut = 0;
+                    connections[hash].startTrack = tickTime;
+                    connections[hash].id = 0;
+                }
+                connections[hash].protocol = protocol;
+                connections[hash].ticksIn += tickIn;
+                connections[hash].ticksOut += tickOut;
 
-            if (tickIn > 0)
-            {
-                connections[hash].updateTicktimeBuffer(tickTime.Ticks);
-                connections[hash].lastUpdate = tickTime;
-                connections[hash].downloaded += (int)traffic;
-                connections[hash].id = id;
+                if (tickIn > 0)
+                {
+                    connections[hash].updateTicktimeBuffer(tickTime.Ticks);
+                    connections[hash].lastUpdate = tickTime;
+                    connections[hash].downloaded += (int)traffic;
+                    connections[hash].id = id;
 
-                if (App.meterState.Server.Ip != remoteIp)
-                    App.meterState.Server.Ip = remoteIp; // триггерит DetectLocation()
+                    if (App.meterState.Server.Ip != remoteIp)
+                        App.meterState.Server.Ip = remoteIp; // триггерит DetectLocation()
 
-                App.meterState.DownloadTraffic += (int)traffic;
-            }
-            if (tickOut > 0)
-            {
-                connections[hash].sent += (int)traffic;
-                App.meterState.UploadTraffic += (int)traffic;
+                    App.meterState.DownloadTraffic += (int)traffic;
+                }
+                if (tickOut > 0)
+                {
+                    connections[hash].sent += (int)traffic;
+                    App.meterState.UploadTraffic += (int)traffic;
+                }
             }
         }
 

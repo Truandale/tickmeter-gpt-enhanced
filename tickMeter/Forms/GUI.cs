@@ -281,14 +281,50 @@ namespace tickMeter.Forms
         private void PacketHandler(Packet packet)
         {
             if (!App.meterState.IsTracking) return;
+            if (packet == null) return; // Защита от null пакетов
+            
+            // Проверяем основную структуру пакета
+            try
+            {
+                if (packet.Ethernet == null) return;
+                if (packet.Buffer == null || packet.Buffer.Length == 0) return;
+            }
+            catch (IndexOutOfRangeException)
+            {
+                // Пакет имеет недостаточный размер или поврежден
+                return;
+            }
+            catch (Exception)
+            {
+                // Любые другие ошибки доступа к пакету
+                return;
+            }
+            
             if (IsDuplicate(packet)) return; // NEW: проверка дублей
-            GameProfileManager.CallBuitInProfiles(packet);
-            GameProfileManager.CallCustomProfiles(packet);
-            ActiveWindowTracker.AnalyzePacket(packet);
+            
+            try
+            {
+                GameProfileManager.CallBuitInProfiles(packet);
+                GameProfileManager.CallCustomProfiles(packet);
+                ActiveWindowTracker.AnalyzePacket(packet);
+            }
+            catch (IndexOutOfRangeException)
+            {
+                // Игнорируем поврежденные пакеты в профилях
+                return;
+            }
+            catch (Exception)
+            {
+                // Игнорируем любые другие ошибки в обработке профилей
+                return;
+            }
 
             // --- Добавлено: обработка входящих UDP-пакетов для расчёта UDP ping ---
             try
             {
+                // Дополнительная проверка IPv4 доступности
+                if (packet.Ethernet.IpV4 == null) return;
+                
                 var udp = packet.Ethernet.IpV4?.Udp;
                 if (udp != null)
                 {
@@ -316,7 +352,16 @@ namespace tickMeter.Forms
                     }
                 }
             }
-            catch { /* ignore errors in UDP ping logic */ }
+            catch (IndexOutOfRangeException)
+            {
+                // Пакет поврежден или не содержит полные UDP данные
+                return;
+            }
+            catch 
+            {
+                // Игнорируем любые другие ошибки в UDP ping логике
+                return;
+            }
             // --- Конец добавления ---
         }
 
@@ -456,18 +501,28 @@ namespace tickMeter.Forms
 
         private bool isValidToTrack(string key)
         {
-            if(key != "" && ActiveWindowTracker.connections.Keys.Contains(key))
+            if(string.IsNullOrEmpty(key)) return false;
+            
+            try
             {
-                ProcessNetworkStats connection = ActiveWindowTracker.connections[key];
-                return
-                    AutoDetectMngr.GetActiveProcessName() == connection.name
-                    && ActiveWindowTracker.connections[key].TrackingDelta() > 3
-                    && ActiveWindowTracker.connections[key].LastUpdateDelta() < 2
-                    && ActiveWindowTracker.connections[key].remoteIp != App.meterState.LocalIP
-                    && ActiveWindowTracker.connections[key].ticksIn > 3
-                    && ActiveWindowTracker.connections[key].downloaded > 0;
+                lock(ActiveWindowTracker.connections)
+                {
+                    if(!ActiveWindowTracker.connections.ContainsKey(key)) return false;
+                    
+                    ProcessNetworkStats connection = ActiveWindowTracker.connections[key];
+                    return
+                        AutoDetectMngr.GetActiveProcessName() == connection.name
+                        && connection.TrackingDelta() > 3
+                        && connection.LastUpdateDelta() < 2
+                        && connection.remoteIp != App.meterState.LocalIP
+                        && connection.ticksIn > 3
+                        && connection.downloaded > 0;
+                }
             }
-            return false;
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
         }
 
         private void updateMetherStateFromActiveWindow()
@@ -476,40 +531,67 @@ namespace tickMeter.Forms
 
             if(!isValidToTrack(targetKey))
             {
-                string[] connectionNames = ActiveWindowTracker.connections.Keys.ToArray();
-                foreach (string connection in connectionNames)
+                try
                 {
-                    if(!ActiveWindowTracker.connections.ContainsKey(connection)) { continue; }
-                    if (
-                        ActiveWindowTracker.connections[connection].ticksIn > maxTicks
-                        && isValidToTrack(connection)
-                        )
+                    // Защищаем от InvalidOperationException при изменении коллекции во время итерации
+                    var connectionSnapshot = new Dictionary<string, ProcessNetworkStats>();
+                    lock(ActiveWindowTracker.connections)
                     {
-                        maxTicks = ActiveWindowTracker.connections[connection].ticksIn;
-                        targetKey = connection;
+                        foreach(var kvp in ActiveWindowTracker.connections)
+                        {
+                            connectionSnapshot[kvp.Key] = kvp.Value;
+                        }
                     }
+                    
+                    foreach (var kvp in connectionSnapshot)
+                    {
+                        string connection = kvp.Key;
+                        var stats = kvp.Value;
+                        if (stats.ticksIn > maxTicks && isValidToTrack(connection))
+                        {
+                            maxTicks = stats.ticksIn;
+                            targetKey = connection;
+                        }
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                    // Коллекция была изменена, пропускаем этот цикл
+                    return;
                 }
             }
             
             
             if(targetKey != "") { 
-                if(!ActiveWindowTracker.connections.ContainsKey(targetKey))
+                try
                 {
+                    lock(ActiveWindowTracker.connections)
+                    {
+                        if(!ActiveWindowTracker.connections.ContainsKey(targetKey))
+                        {
+                            targetKey = "";
+                            return;
+                        }
+                        ProcessNetworkStats procStats = ActiveWindowTracker.connections[targetKey];
+                        App.meterState.tickTimeBuffer = procStats.tickTimeBuffer;
+                        App.meterState.CurrentTimestamp = DateTime.Now;
+                        App.meterState.Game = procStats.name;
+                        App.meterState.Server.Ip = procStats.remoteIp.ToString();
+                        App.meterState.DownloadTraffic = procStats.downloaded;
+                        App.meterState.TickRate = procStats.getTicksIn();
+                        App.meterState.Server.PingPort = (int)procStats.remotePort;
+                        App.meterState.SessionStart = procStats.startTrack;
+                        App.meterState.IsTracking = true;
+                        App.meterState.loss = procStats.loss;
+                        App.meterState.totalTicksCnt = procStats.totalTicksCnt;
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                    // Коллекция была изменена, пропускаем
                     targetKey = "";
                     return;
                 }
-                ProcessNetworkStats procStats = ActiveWindowTracker.connections[targetKey];
-                App.meterState.tickTimeBuffer = procStats.tickTimeBuffer;
-                App.meterState.CurrentTimestamp = DateTime.Now;
-                App.meterState.Game = procStats.name;
-                App.meterState.Server.Ip = procStats.remoteIp.ToString();
-                App.meterState.DownloadTraffic = procStats.downloaded;
-                App.meterState.TickRate = procStats.getTicksIn();
-                App.meterState.Server.PingPort = (int)procStats.remotePort;
-                App.meterState.SessionStart = procStats.startTrack;
-                App.meterState.IsTracking = true;
-                App.meterState.loss = procStats.loss;
-                App.meterState.totalTicksCnt = procStats.totalTicksCnt;
             }
         }
 
