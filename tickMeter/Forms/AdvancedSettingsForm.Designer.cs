@@ -29,6 +29,9 @@ namespace tickMeter.Forms
         private void InitializeComponent()
         {
             this.panel1 = new System.Windows.Forms.Panel();
+            this.groupBoxVpnBypass = new System.Windows.Forms.GroupBox();
+            this.chkVpnBypassAdvanced = new System.Windows.Forms.CheckBox();
+            this.chkVpnBypassBasic = new System.Windows.Forms.CheckBox();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.chkStunEnable = new System.Windows.Forms.CheckBox();
             this.chkShowPingSpikes = new System.Windows.Forms.CheckBox();
@@ -67,6 +70,7 @@ namespace tickMeter.Forms
             this.btnSave = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
+            this.groupBoxVpnBypass.SuspendLayout();
             this.groupBox5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPingSpikeThreshold)).BeginInit();
             this.groupBox4.SuspendLayout();
@@ -80,6 +84,7 @@ namespace tickMeter.Forms
             // panel1
             // 
             this.panel1.AutoScroll = true;
+            this.panel1.Controls.Add(this.groupBoxVpnBypass);
             this.panel1.Controls.Add(this.groupBox5);
             this.panel1.Controls.Add(this.groupBox4);
             this.panel1.Controls.Add(this.groupBox3);
@@ -92,6 +97,42 @@ namespace tickMeter.Forms
             this.panel1.Padding = new System.Windows.Forms.Padding(13, 12, 13, 50);
             this.panel1.Size = new System.Drawing.Size(800, 600);
             this.panel1.TabIndex = 0;
+            // 
+            // groupBoxVpnBypass
+            // 
+            this.groupBoxVpnBypass.Controls.Add(this.chkVpnBypassAdvanced);
+            this.groupBoxVpnBypass.Controls.Add(this.chkVpnBypassBasic);
+            this.groupBoxVpnBypass.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBoxVpnBypass.Location = new System.Drawing.Point(13, 502);
+            this.groupBoxVpnBypass.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBoxVpnBypass.Name = "groupBoxVpnBypass";
+            this.groupBoxVpnBypass.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBoxVpnBypass.Size = new System.Drawing.Size(753, 98);
+            this.groupBoxVpnBypass.TabIndex = 5;
+            this.groupBoxVpnBypass.TabStop = false;
+            this.groupBoxVpnBypass.Text = "VPN Bypass";
+            // 
+            // chkVpnBypassBasic
+            // 
+            this.chkVpnBypassBasic.AutoSize = true;
+            this.chkVpnBypassBasic.Location = new System.Drawing.Point(20, 31);
+            this.chkVpnBypassBasic.Margin = new System.Windows.Forms.Padding(4);
+            this.chkVpnBypassBasic.Name = "chkVpnBypassBasic";
+            this.chkVpnBypassBasic.Size = new System.Drawing.Size(329, 20);
+            this.chkVpnBypassBasic.TabIndex = 0;
+            this.chkVpnBypassBasic.Text = "Простой VPN bypass (показать реальный IP)";
+            this.chkVpnBypassBasic.UseVisualStyleBackColor = true;
+            // 
+            // chkVpnBypassAdvanced
+            // 
+            this.chkVpnBypassAdvanced.AutoSize = true;
+            this.chkVpnBypassAdvanced.Location = new System.Drawing.Point(20, 59);
+            this.chkVpnBypassAdvanced.Margin = new System.Windows.Forms.Padding(4);
+            this.chkVpnBypassAdvanced.Name = "chkVpnBypassAdvanced";
+            this.chkVpnBypassAdvanced.Size = new System.Drawing.Size(407, 20);
+            this.chkVpnBypassAdvanced.TabIndex = 1;
+            this.chkVpnBypassAdvanced.Text = "Сложный VPN bypass (отслеживание через IP Helper API)";
+            this.chkVpnBypassAdvanced.UseVisualStyleBackColor = true;
             // 
             // groupBox5
             // 
@@ -587,6 +628,8 @@ namespace tickMeter.Forms
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Дополнительные настройки";
             this.panel1.ResumeLayout(false);
+            this.groupBoxVpnBypass.ResumeLayout(false);
+            this.groupBoxVpnBypass.PerformLayout();
             this.groupBox5.ResumeLayout(false);
             this.groupBox5.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPingSpikeThreshold)).EndInit();
@@ -642,6 +685,9 @@ namespace tickMeter.Forms
     private System.Windows.Forms.CheckBox chkShowPingSpikes;
     private System.Windows.Forms.NumericUpDown numPingSpikeThreshold;
     private System.Windows.Forms.Label lblPingSpikeThreshold;
+        private System.Windows.Forms.GroupBox groupBoxVpnBypass;
+        private System.Windows.Forms.CheckBox chkVpnBypassBasic;
+        private System.Windows.Forms.CheckBox chkVpnBypassAdvanced;
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.Button btnCancel;
     }

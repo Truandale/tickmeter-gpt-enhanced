@@ -24,6 +24,7 @@ namespace tickMeter.Classes
         public static SettingsManager settingsManager;
         public static ConnectionsManager connMngr;
         public static PingManager pingManager;
+        public static ConnectionTracker connectionTracker;
         static List<LivePacketDevice> AdaptersList;
 
         public static void Init()
@@ -37,7 +38,9 @@ namespace tickMeter.Classes
             settingsManager = new SettingsManager();
             connMngr = new ConnectionsManager();
             pingManager = new PingManager(settingsManager, connMngr);
-
+            
+            // Инициализируем VPN bypass компоненты
+            connectionTracker = new ConnectionTracker();
         }
 
         public static List<LivePacketDevice> GetAdapters()

@@ -53,6 +53,10 @@ namespace tickMeter.Forms
                 
                 // Настройки порогов для спайков пинга
                 numPingSpikeThreshold.Value = decimal.Parse(App.settingsManager.GetOption("ping_spike_threshold", "150", "ADVANCED"));
+                
+                // VPN bypass настройки
+                chkVpnBypassBasic.Checked = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
+                chkVpnBypassAdvanced.Checked = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
             }
             catch (Exception ex)
             {
@@ -101,6 +105,10 @@ namespace tickMeter.Forms
                 
                 // Настройки порогов для спайков пинга
                 App.settingsManager.SetOption("ping_spike_threshold", numPingSpikeThreshold.Value.ToString(), "ADVANCED");
+                
+                // VPN bypass настройки
+                App.settingsManager.SetOption("vpn_bypass_basic", chkVpnBypassBasic.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("vpn_bypass_advanced", chkVpnBypassAdvanced.Checked.ToString(), "ADVANCED");
                 
                 // Применяем новые настройки интервала overlay
                 App.gui?.ApplyOverlayIntervalFromSettings();
