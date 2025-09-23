@@ -16,6 +16,7 @@ using System.Threading;
 using System.Net.Sockets;
 using System.Linq;
 using System.Reflection;
+using System.Collections.Concurrent;
 
 namespace tickMeter.Forms
 {
@@ -38,6 +39,13 @@ namespace tickMeter.Forms
         // Константы для дедупликации
         private const int MAX_DEDUP_SIZE = 8192;  // Уменьшен с 20000
         private const int DEDUP_CLEANUP_THRESHOLD = 500;  // Более частая очистка
+        
+        // Phase 3: Thread Priority & Single Consumer управление
+        private readonly List<Thread> _highPriorityThreads = new List<Thread>();
+        private readonly ConcurrentQueue<Action> _uiUpdateQueue = new ConcurrentQueue<Action>();
+        private readonly System.Threading.Timer _uiProcessingTimer;
+        private volatile bool _uiProcessingActive = false;
+        private readonly object _threadManagementLock = new object();
         
         public Boolean allowClose = false;
         int restarts = 0;
@@ -143,6 +151,9 @@ namespace tickMeter.Forms
                 }
             }
             ticksLoop.Interval = intervalMs;
+            
+            // Phase 3: Инициализация Single Consumer UI Processing
+            _uiProcessingTimer = new System.Threading.Timer(ProcessUIUpdates, null, 16, 16); // 60 FPS
         }
 
         static void MyHandler(object sender, UnhandledExceptionEventArgs args)
@@ -490,9 +501,9 @@ namespace tickMeter.Forms
                         // Always update PING (including spike indicators) for both GUI and RTSS overlay
                         if (App.settingsForm.settings_ping_checkbox.Checked)
                         {
-                            countryLbl.Invoke(new Action(() => countryLbl.Text = App.meterState.Server.Location));
-                            ping_val.Invoke(new Action(() =>
-                            {
+                            // Phase 3: Single Consumer Pattern - queue UI updates instead of direct Invoke
+                            QueueUIUpdate(() => countryLbl.Text = App.meterState.Server.Location);
+                            QueueUIUpdate(() => {
                                 var server = App.meterState.Server;
                                 string pingText;
                                 int rawPing = 0;
@@ -536,44 +547,50 @@ namespace tickMeter.Forms
                                 }
                                 
                                 ping_val.Text = pingText;
-                            }));
+                            });
                         }
                         
                         // Only update other GUI elements if GUI overlay is visible
                         if (!skipGUIUpdate)
                         {
-                            tickrate_val.Invoke(new Action(() => {
+                            // Phase 3: Single Consumer Pattern - queue UI updates
+                            QueueUIUpdate(() => {
                                 tickrate_val.Text = App.meterState.OutputTickRate.ToString();
                                 tickrate_val.ForeColor = TickRateColor;
-                            }));
+                            });
+                            
                             //update tickrate chart
                             if (App.settingsForm.settings_chart_checkbox.Checked)
                             {
-                                graph.Invoke(new Action(() => graph.Image = UpdateGraph(App.meterState.TicksHistory)));
+                                QueueUIUpdate(() => graph.Image = UpdateGraph(App.meterState.TicksHistory));
                             }
+                            
                             //update traffic
                             if (App.settingsForm.settings_traffic_checkbox.Checked)
                             {
                                 float formatedUpload = (float)App.meterState.UploadTraffic / (1024 * 1024);
                                 float formatedDownload = (float)App.meterState.DownloadTraffic / (1024 * 1024);
-                                traffic_val.Invoke(new Action(() => traffic_val.Text = formatedUpload.ToString("N2") + " / " + formatedDownload.ToString("N2") + " mb"));
+                                QueueUIUpdate(() => traffic_val.Text = formatedUpload.ToString("N2") + " / " + formatedDownload.ToString("N2") + " mb");
                             }
+                            
                             //update IP
                             if (App.settingsForm.settings_ip_checkbox.Checked)
                             {
-                                ip_val.Invoke(new Action(() => ip_val.Text = App.meterState.Server.Ip));
+                                QueueUIUpdate(() => ip_val.Text = App.meterState.Server.Ip);
                             }
+                            
                             //update time
                             if (App.settingsForm.settings_session_time_checkbox.Checked && App.meterState.Server.Ip != "")
                             {
                                 TimeSpan result = DateTime.Now.Subtract(App.meterState.SessionStart);
                                 string Duration = result.ToString("mm':'ss");
-                                ip_val.Invoke(new Action(() => time_val.Text = Duration));
+                                QueueUIUpdate(() => time_val.Text = Duration);
                             }
+                            
                             //update drops
                             if (App.settingsForm.packet_drops_checkbox.Checked && App.meterState.Server.Ip != "")
                             {
-                                ip_val.Invoke(new Action(() => drops_lbl_val.Text = App.meterState.GetDrops()+"%"));
+                                QueueUIUpdate(() => drops_lbl_val.Text = App.meterState.GetDrops()+"%");
                             }
                         }
                     });
@@ -856,13 +873,18 @@ namespace tickMeter.Forms
             {
                 if (captureAll || vpnBypassBasic || vpnBypassAdvanced)
                 {
-                    // запустить по воркеру на каждый адаптер
+                    // запустить по воркеру на каждый адаптер с высоким приоритетом
+                    int workerIndex = 0;
                     foreach (var dev in _allSelectedAdapters)
                     {
                         var worker = new BackgroundWorker();
                         worker.DoWork += (s, e) =>
                         {
                             if (!App.meterState.IsTracking) return;
+                            
+                            // Phase 3: Устанавливаем высокий приоритет для PCAP потока
+                            SetHighPriorityThread(Thread.CurrentThread, $"PCAP-Multi-{workerIndex}");
+                            
                             using (var comm = dev.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 500))
                             {
                                 if (comm.DataLink.Kind != DataLinkKind.Ethernet) return;
@@ -879,6 +901,7 @@ namespace tickMeter.Forms
                         worker.RunWorkerCompleted += PcapWorkerCompleted;
                         _pcapWorkers.Add(worker);
                         worker.RunWorkerAsync();
+                        workerIndex++;
                     }
                 }
                 else
@@ -886,6 +909,10 @@ namespace tickMeter.Forms
                     if (PcapThread == null)
                     {
                         PcapThread = new Thread(InitPcapWorker);
+                        
+                        // Phase 3: Устанавливаем высокий приоритет для одиночного PCAP потока
+                        SetHighPriorityThread(PcapThread, "PCAP-Single");
+                        
                         PcapThread.Start();
                         PcapThread.Join();
                         Debug.Print("Starting thread " + PcapThread.ManagedThreadId.ToString());
@@ -941,6 +968,9 @@ namespace tickMeter.Forms
         private void PcapWorkerDoWork(object sender, DoWorkEventArgs e)
         {
             if (!App.meterState.IsTracking) return;
+            
+            // Phase 3: Устанавливаем высокий приоритет для BackgroundWorker потока
+            SetHighPriorityThread(Thread.CurrentThread, "PCAP-BgWorker");
             
             // В мульти-режиме или VPN режиме этот метод не должен вызываться
             var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
@@ -999,6 +1029,9 @@ namespace tickMeter.Forms
             }
             
             Debug.Print("StopTracking");
+            
+            // Phase 3: Очищаем высокоприоритетные потоки
+            CleanupHighPriorityThreads();
             
             // NEW: остановка мульти-захвата: флаг IsTracking и очистка воркеров
             try
@@ -1237,6 +1270,17 @@ namespace tickMeter.Forms
         private void icon_menu_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
             StopTracking();
+            
+            // Phase 3: Очистка UI Processing Timer
+            try
+            {
+                _uiProcessingTimer?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[UI] Timer disposal error: {ex.Message}");
+            }
+            
             App.settingsForm.SaveToConfig();
             RivaTuner.KillRtss();
             allowClose = true;
@@ -1351,5 +1395,135 @@ namespace tickMeter.Forms
                 // Продолжаем без фильтра
             }
         }
+        
+        #region Phase 3: Thread Priority & Single Consumer Methods
+        
+        /// <summary>
+        /// Single Consumer Pattern: обработка всех UI обновлений в одном потоке
+        /// </summary>
+        private void ProcessUIUpdates(object state)
+        {
+            if (_uiProcessingActive || !InvokeRequired) return;
+            
+            _uiProcessingActive = true;
+            try
+            {
+                var updates = new List<Action>();
+                
+                // Собираем batch UI updates (max 50 за раз для предотвращения блокировки)
+                for (int i = 0; i < 50 && _uiUpdateQueue.TryDequeue(out Action update); i++)
+                {
+                    updates.Add(update);
+                }
+                
+                if (updates.Count > 0)
+                {
+                    // Выполняем все обновления в UI потоке одним блоком
+                    BeginInvoke(new Action(() => {
+                        foreach (var update in updates)
+                        {
+                            try { update?.Invoke(); }
+                            catch (Exception ex) { Debug.Print($"[UI] Update error: {ex.Message}"); }
+                        }
+                    }));
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[UI] ProcessUIUpdates error: {ex.Message}");
+            }
+            finally
+            {
+                _uiProcessingActive = false;
+            }
+        }
+        
+        /// <summary>
+        /// Добавляет UI обновление в очередь Single Consumer
+        /// </summary>
+        private void QueueUIUpdate(Action updateAction)
+        {
+            if (updateAction != null)
+            {
+                _uiUpdateQueue.Enqueue(updateAction);
+            }
+        }
+        
+        /// <summary>
+        /// Устанавливает высокий приоритет для PCAP потока
+        /// </summary>
+        private void SetHighPriorityThread(Thread thread, string name)
+        {
+            if (thread == null) return;
+            
+            try
+            {
+                thread.Name = $"TickMeter-{name}";
+                thread.Priority = GetPcapThreadPriority();
+                thread.IsBackground = true;
+                
+                lock (_threadManagementLock)
+                {
+                    _highPriorityThreads.Add(thread);
+                }
+                
+                Debug.Print($"[THREAD] Set priority {thread.Priority} for {thread.Name}");
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[THREAD] Priority setting failed: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Получает приоритет для PCAP потоков из настроек
+        /// </summary>
+        private ThreadPriority GetPcapThreadPriority()
+        {
+            var priorityStr = App.settingsManager?.GetOption("pcap_thread_priority", "AboveNormal", "ADVANCED");
+            switch (priorityStr)
+            {
+                case "Highest":
+                    return ThreadPriority.Highest;
+                case "AboveNormal":
+                    return ThreadPriority.AboveNormal;
+                case "Normal":
+                    return ThreadPriority.Normal;
+                case "BelowNormal":
+                    return ThreadPriority.BelowNormal;
+                case "Lowest":
+                    return ThreadPriority.Lowest;
+                default:
+                    return ThreadPriority.AboveNormal;
+            }
+        }
+        
+        /// <summary>
+        /// Очистка high priority потоков при остановке
+        /// </summary>
+        private void CleanupHighPriorityThreads()
+        {
+            lock (_threadManagementLock)
+            {
+                foreach (var thread in _highPriorityThreads)
+                {
+                    try
+                    {
+                        if (thread?.IsAlive == true)
+                        {
+                            thread.Priority = ThreadPriority.Normal;
+                            Debug.Print($"[THREAD] Reset priority for {thread.Name}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Print($"[THREAD] Cleanup error: {ex.Message}");
+                    }
+                }
+                _highPriorityThreads.Clear();
+            }
+        }
+        
+        #endregion Phase 3: Thread Priority & Single Consumer Methods
     }
 }
