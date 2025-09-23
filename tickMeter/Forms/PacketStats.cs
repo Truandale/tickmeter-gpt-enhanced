@@ -1104,7 +1104,8 @@ namespace tickMeter
                 return;
             }
             
-            top_process_name.Text = AutoDetectMngr.GetActiveProcessName();
+            // Очищаем название процесса из старого места, теперь оно будет в label5
+            top_process_name.Text = "";
             label3.Text = "IN " + inPackets.ToString() + " | OUT " + outPackets.ToString();
             label4.Text = "DL " + (inTraffic / 1024).ToString() + " | UP " + (outTraffic / 1024).ToString();
             
@@ -1120,9 +1121,11 @@ namespace tickMeter
                 bufferCount = _useVirtual ? _ringCount : (listView1?.Items?.Count ?? 0);
             }
             
-            label5.Text = $"Local IP: {App.meterState.LocalIP} | Workers: {activeWorkers} | Subs: {activeSubs} | Queue: {queueSize} | Items: {bufferCount}" + 
+            label5.Text = $"Workers: {activeWorkers} | Subs: {activeSubs} | Queue: {queueSize} | Items: {bufferCount}" + 
                          (dedupDrops > 0 ? $" | Dedup drop: {dedupDrops}" : "") +
-                         (_useVirtual ? " (Virtual)" : "");
+                         (_useVirtual ? " (Virtual)" : "") + 
+                         $"\nLocal IP: {App.meterState.LocalIP}" +
+                         $"\n{AutoDetectMngr.GetActiveProcessName()}";
                          
             // Лайв-дамп воркеров каждые 10 секунд для диагностики роста
             if (App.Capture != null && Environment.TickCount % 10000 < 1000) // примерно каждые 10с
