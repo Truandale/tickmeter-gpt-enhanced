@@ -32,6 +32,33 @@ namespace tickMeter.Forms
             this.groupBoxVpnBypass = new System.Windows.Forms.GroupBox();
             this.chkVpnBypassAdvanced = new System.Windows.Forms.CheckBox();
             this.chkVpnBypassBasic = new System.Windows.Forms.CheckBox();
+            
+            // Performance Optimization Phase Controls
+            this.groupBoxPhase1 = new System.Windows.Forms.GroupBox();
+            this.chkAntiReentrancy = new System.Windows.Forms.CheckBox();
+            this.chkRtssThrottling = new System.Windows.Forms.CheckBox();
+            this.chkPcapOptimization = new System.Windows.Forms.CheckBox();
+            this.lblPcapKernelBufferMb = new System.Windows.Forms.Label();
+            this.numPcapKernelBufferMb = new System.Windows.Forms.NumericUpDown();
+            this.lblPcapMinToCopy = new System.Windows.Forms.Label();
+            this.numPcapMinToCopy = new System.Windows.Forms.NumericUpDown();
+            
+            this.groupBoxPhase2 = new System.Windows.Forms.GroupBox();
+            this.chkVirtualModeListView = new System.Windows.Forms.CheckBox();
+            this.lblVirtualModeThreshold = new System.Windows.Forms.Label();
+            this.numVirtualModeThreshold = new System.Windows.Forms.NumericUpDown();
+            this.lblRingBufferSize = new System.Windows.Forms.Label();
+            this.numRingBufferSize = new System.Windows.Forms.NumericUpDown();
+            this.chkShowVirtualModeStats = new System.Windows.Forms.CheckBox();
+            
+            this.groupBoxPhase3 = new System.Windows.Forms.GroupBox();
+            this.chkHighPriorityThreads = new System.Windows.Forms.CheckBox();
+            this.chkSingleConsumerPattern = new System.Windows.Forms.CheckBox();
+            this.lblUiProcessingRate = new System.Windows.Forms.Label();
+            this.numUiProcessingRate = new System.Windows.Forms.NumericUpDown();
+            this.lblUiBatchSize = new System.Windows.Forms.Label();
+            this.numUiBatchSize = new System.Windows.Forms.NumericUpDown();
+            
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.chkStunEnable = new System.Windows.Forms.CheckBox();
             this.chkShowPingSpikes = new System.Windows.Forms.CheckBox();
@@ -74,6 +101,15 @@ namespace tickMeter.Forms
             this.btnSave = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.groupBoxVpnBypass.SuspendLayout();
+            this.groupBoxPhase3.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numUiProcessingRate)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numUiBatchSize)).BeginInit();
+            this.groupBoxPhase2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numVirtualModeThreshold)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numRingBufferSize)).BeginInit();
+            this.groupBoxPhase1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numPcapKernelBufferMb)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numPcapMinToCopy)).BeginInit();
             this.groupBox5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPingSpikeThreshold)).BeginInit();
             this.groupBox4.SuspendLayout();
@@ -89,6 +125,9 @@ namespace tickMeter.Forms
             // 
             this.panel1.AutoScroll = true;
             this.panel1.Controls.Add(this.groupBoxVpnBypass);
+            this.panel1.Controls.Add(this.groupBoxPhase3);
+            this.panel1.Controls.Add(this.groupBoxPhase2);
+            this.panel1.Controls.Add(this.groupBoxPhase1);
             this.panel1.Controls.Add(this.groupBox5);
             this.panel1.Controls.Add(this.groupBox4);
             this.panel1.Controls.Add(this.groupBox3);
@@ -137,6 +176,264 @@ namespace tickMeter.Forms
             this.chkVpnBypassBasic.TabIndex = 0;
             this.chkVpnBypassBasic.Text = "Простой VPN bypass (показать реальный IP)";
             this.chkVpnBypassBasic.UseVisualStyleBackColor = true;
+            // 
+            // groupBoxPhase3
+            // 
+            this.groupBoxPhase3.Controls.Add(this.chkHighPriorityThreads);
+            this.groupBoxPhase3.Controls.Add(this.chkSingleConsumerPattern);
+            this.groupBoxPhase3.Controls.Add(this.lblUiProcessingRate);
+            this.groupBoxPhase3.Controls.Add(this.numUiProcessingRate);
+            this.groupBoxPhase3.Controls.Add(this.lblUiBatchSize);
+            this.groupBoxPhase3.Controls.Add(this.numUiBatchSize);
+            this.groupBoxPhase3.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBoxPhase3.Location = new System.Drawing.Point(13, 604);
+            this.groupBoxPhase3.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBoxPhase3.Name = "groupBoxPhase3";
+            this.groupBoxPhase3.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBoxPhase3.Size = new System.Drawing.Size(757, 200);
+            this.groupBoxPhase3.TabIndex = 6;
+            this.groupBoxPhase3.TabStop = false;
+            this.groupBoxPhase3.Text = "Phase 3: Thread Priority & Single Consumer";
+            // 
+            // chkHighPriorityThreads
+            // 
+            this.chkHighPriorityThreads.AutoSize = true;
+            this.chkHighPriorityThreads.Location = new System.Drawing.Point(20, 31);
+            this.chkHighPriorityThreads.Margin = new System.Windows.Forms.Padding(4);
+            this.chkHighPriorityThreads.Name = "chkHighPriorityThreads";
+            this.chkHighPriorityThreads.Size = new System.Drawing.Size(320, 20);
+            this.chkHighPriorityThreads.TabIndex = 0;
+            this.chkHighPriorityThreads.Text = "Высокий приоритет для PCAP потоков";
+            this.chkHighPriorityThreads.UseVisualStyleBackColor = true;
+            // 
+            // chkSingleConsumerPattern
+            // 
+            this.chkSingleConsumerPattern.AutoSize = true;
+            this.chkSingleConsumerPattern.Location = new System.Drawing.Point(20, 59);
+            this.chkSingleConsumerPattern.Margin = new System.Windows.Forms.Padding(4);
+            this.chkSingleConsumerPattern.Name = "chkSingleConsumerPattern";
+            this.chkSingleConsumerPattern.Size = new System.Drawing.Size(350, 20);
+            this.chkSingleConsumerPattern.TabIndex = 1;
+            this.chkSingleConsumerPattern.Text = "Single Consumer Pattern для UI обновлений";
+            this.chkSingleConsumerPattern.UseVisualStyleBackColor = true;
+            // 
+            // lblUiProcessingRate
+            // 
+            this.lblUiProcessingRate.AutoSize = true;
+            this.lblUiProcessingRate.Location = new System.Drawing.Point(20, 95);
+            this.lblUiProcessingRate.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblUiProcessingRate.Name = "lblUiProcessingRate";
+            this.lblUiProcessingRate.Size = new System.Drawing.Size(184, 16);
+            this.lblUiProcessingRate.TabIndex = 2;
+            this.lblUiProcessingRate.Text = "Частота обработки UI (FPS):";
+            // 
+            // numUiProcessingRate
+            // 
+            this.numUiProcessingRate.Location = new System.Drawing.Point(220, 93);
+            this.numUiProcessingRate.Margin = new System.Windows.Forms.Padding(4);
+            this.numUiProcessingRate.Maximum = new decimal(new int[] { 120, 0, 0, 0 });
+            this.numUiProcessingRate.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
+            this.numUiProcessingRate.Name = "numUiProcessingRate";
+            this.numUiProcessingRate.Size = new System.Drawing.Size(80, 22);
+            this.numUiProcessingRate.TabIndex = 3;
+            this.numUiProcessingRate.Value = new decimal(new int[] { 60, 0, 0, 0 });
+            // 
+            // lblUiBatchSize
+            // 
+            this.lblUiBatchSize.AutoSize = true;
+            this.lblUiBatchSize.Location = new System.Drawing.Point(20, 125);
+            this.lblUiBatchSize.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblUiBatchSize.Name = "lblUiBatchSize";
+            this.lblUiBatchSize.Size = new System.Drawing.Size(168, 16);
+            this.lblUiBatchSize.TabIndex = 4;
+            this.lblUiBatchSize.Text = "Размер пакета UI (шт.):";
+            // 
+            // numUiBatchSize
+            // 
+            this.numUiBatchSize.Location = new System.Drawing.Point(220, 123);
+            this.numUiBatchSize.Margin = new System.Windows.Forms.Padding(4);
+            this.numUiBatchSize.Maximum = new decimal(new int[] { 50, 0, 0, 0 });
+            this.numUiBatchSize.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            this.numUiBatchSize.Name = "numUiBatchSize";
+            this.numUiBatchSize.Size = new System.Drawing.Size(80, 22);
+            this.numUiBatchSize.TabIndex = 5;
+            this.numUiBatchSize.Value = new decimal(new int[] { 10, 0, 0, 0 });
+            // 
+            // groupBoxPhase2
+            // 
+            this.groupBoxPhase2.Controls.Add(this.chkVirtualModeListView);
+            this.groupBoxPhase2.Controls.Add(this.lblVirtualModeThreshold);
+            this.groupBoxPhase2.Controls.Add(this.numVirtualModeThreshold);
+            this.groupBoxPhase2.Controls.Add(this.lblRingBufferSize);
+            this.groupBoxPhase2.Controls.Add(this.numRingBufferSize);
+            this.groupBoxPhase2.Controls.Add(this.chkShowVirtualModeStats);
+            this.groupBoxPhase2.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBoxPhase2.Location = new System.Drawing.Point(13, 454);
+            this.groupBoxPhase2.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBoxPhase2.Name = "groupBoxPhase2";
+            this.groupBoxPhase2.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBoxPhase2.Size = new System.Drawing.Size(757, 150);
+            this.groupBoxPhase2.TabIndex = 7;
+            this.groupBoxPhase2.TabStop = false;
+            this.groupBoxPhase2.Text = "Phase 2: VirtualMode ListView";
+            // 
+            // chkVirtualModeListView
+            // 
+            this.chkVirtualModeListView.AutoSize = true;
+            this.chkVirtualModeListView.Location = new System.Drawing.Point(20, 31);
+            this.chkVirtualModeListView.Margin = new System.Windows.Forms.Padding(4);
+            this.chkVirtualModeListView.Name = "chkVirtualModeListView";
+            this.chkVirtualModeListView.Size = new System.Drawing.Size(320, 20);
+            this.chkVirtualModeListView.TabIndex = 0;
+            this.chkVirtualModeListView.Text = "Автоматический VirtualMode для ListView";
+            this.chkVirtualModeListView.UseVisualStyleBackColor = true;
+            // 
+            // lblVirtualModeThreshold
+            // 
+            this.lblVirtualModeThreshold.AutoSize = true;
+            this.lblVirtualModeThreshold.Location = new System.Drawing.Point(20, 65);
+            this.lblVirtualModeThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblVirtualModeThreshold.Name = "lblVirtualModeThreshold";
+            this.lblVirtualModeThreshold.Size = new System.Drawing.Size(198, 16);
+            this.lblVirtualModeThreshold.TabIndex = 1;
+            this.lblVirtualModeThreshold.Text = "Порог переключения (пакеты):";
+            // 
+            // numVirtualModeThreshold
+            // 
+            this.numVirtualModeThreshold.Location = new System.Drawing.Point(230, 63);
+            this.numVirtualModeThreshold.Margin = new System.Windows.Forms.Padding(4);
+            this.numVirtualModeThreshold.Maximum = new decimal(new int[] { 10000, 0, 0, 0 });
+            this.numVirtualModeThreshold.Minimum = new decimal(new int[] { 100, 0, 0, 0 });
+            this.numVirtualModeThreshold.Name = "numVirtualModeThreshold";
+            this.numVirtualModeThreshold.Size = new System.Drawing.Size(80, 22);
+            this.numVirtualModeThreshold.TabIndex = 2;
+            this.numVirtualModeThreshold.Value = new decimal(new int[] { 2000, 0, 0, 0 });
+            // 
+            // lblRingBufferSize
+            // 
+            this.lblRingBufferSize.AutoSize = true;
+            this.lblRingBufferSize.Location = new System.Drawing.Point(320, 65);
+            this.lblRingBufferSize.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblRingBufferSize.Name = "lblRingBufferSize";
+            this.lblRingBufferSize.Size = new System.Drawing.Size(156, 16);
+            this.lblRingBufferSize.TabIndex = 3;
+            this.lblRingBufferSize.Text = "Размер буфера (шт.):";
+            // 
+            // numRingBufferSize
+            // 
+            this.numRingBufferSize.Location = new System.Drawing.Point(490, 63);
+            this.numRingBufferSize.Margin = new System.Windows.Forms.Padding(4);
+            this.numRingBufferSize.Maximum = new decimal(new int[] { 50000, 0, 0, 0 });
+            this.numRingBufferSize.Minimum = new decimal(new int[] { 1000, 0, 0, 0 });
+            this.numRingBufferSize.Name = "numRingBufferSize";
+            this.numRingBufferSize.Size = new System.Drawing.Size(80, 22);
+            this.numRingBufferSize.TabIndex = 4;
+            this.numRingBufferSize.Value = new decimal(new int[] { 10000, 0, 0, 0 });
+            // 
+            // chkShowVirtualModeStats
+            // 
+            this.chkShowVirtualModeStats.AutoSize = true;
+            this.chkShowVirtualModeStats.Location = new System.Drawing.Point(20, 95);
+            this.chkShowVirtualModeStats.Margin = new System.Windows.Forms.Padding(4);
+            this.chkShowVirtualModeStats.Name = "chkShowVirtualModeStats";
+            this.chkShowVirtualModeStats.Size = new System.Drawing.Size(280, 20);
+            this.chkShowVirtualModeStats.TabIndex = 5;
+            this.chkShowVirtualModeStats.Text = "Показывать диагностику VirtualMode";
+            this.chkShowVirtualModeStats.UseVisualStyleBackColor = true;
+            // 
+            // groupBoxPhase1
+            // 
+            this.groupBoxPhase1.Controls.Add(this.chkAntiReentrancy);
+            this.groupBoxPhase1.Controls.Add(this.chkRtssThrottling);
+            this.groupBoxPhase1.Controls.Add(this.chkPcapOptimization);
+            this.groupBoxPhase1.Controls.Add(this.lblPcapKernelBufferMb);
+            this.groupBoxPhase1.Controls.Add(this.numPcapKernelBufferMb);
+            this.groupBoxPhase1.Controls.Add(this.lblPcapMinToCopy);
+            this.groupBoxPhase1.Controls.Add(this.numPcapMinToCopy);
+            this.groupBoxPhase1.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBoxPhase1.Location = new System.Drawing.Point(13, 304);
+            this.groupBoxPhase1.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBoxPhase1.Name = "groupBoxPhase1";
+            this.groupBoxPhase1.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBoxPhase1.Size = new System.Drawing.Size(757, 150);
+            this.groupBoxPhase1.TabIndex = 8;
+            this.groupBoxPhase1.TabStop = false;
+            this.groupBoxPhase1.Text = "Phase 1: Anti-Reentrancy & PCAP Optimization";
+            // 
+            // chkAntiReentrancy
+            // 
+            this.chkAntiReentrancy.AutoSize = true;
+            this.chkAntiReentrancy.Location = new System.Drawing.Point(20, 31);
+            this.chkAntiReentrancy.Margin = new System.Windows.Forms.Padding(4);
+            this.chkAntiReentrancy.Name = "chkAntiReentrancy";
+            this.chkAntiReentrancy.Size = new System.Drawing.Size(280, 20);
+            this.chkAntiReentrancy.TabIndex = 0;
+            this.chkAntiReentrancy.Text = "Защита от реэнтерабельности";
+            this.chkAntiReentrancy.UseVisualStyleBackColor = true;
+            // 
+            // chkRtssThrottling
+            // 
+            this.chkRtssThrottling.AutoSize = true;
+            this.chkRtssThrottling.Location = new System.Drawing.Point(320, 31);
+            this.chkRtssThrottling.Margin = new System.Windows.Forms.Padding(4);
+            this.chkRtssThrottling.Name = "chkRtssThrottling";
+            this.chkRtssThrottling.Size = new System.Drawing.Size(200, 20);
+            this.chkRtssThrottling.TabIndex = 1;
+            this.chkRtssThrottling.Text = "Троттлинг RTSS обновлений";
+            this.chkRtssThrottling.UseVisualStyleBackColor = true;
+            // 
+            // chkPcapOptimization
+            // 
+            this.chkPcapOptimization.AutoSize = true;
+            this.chkPcapOptimization.Location = new System.Drawing.Point(20, 59);
+            this.chkPcapOptimization.Margin = new System.Windows.Forms.Padding(4);
+            this.chkPcapOptimization.Name = "chkPcapOptimization";
+            this.chkPcapOptimization.Size = new System.Drawing.Size(220, 20);
+            this.chkPcapOptimization.TabIndex = 2;
+            this.chkPcapOptimization.Text = "Оптимизация PCAP буферов";
+            this.chkPcapOptimization.UseVisualStyleBackColor = true;
+            // 
+            // lblPcapKernelBufferMb
+            // 
+            this.lblPcapKernelBufferMb.AutoSize = true;
+            this.lblPcapKernelBufferMb.Location = new System.Drawing.Point(20, 95);
+            this.lblPcapKernelBufferMb.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblPcapKernelBufferMb.Name = "lblPcapKernelBufferMb";
+            this.lblPcapKernelBufferMb.Size = new System.Drawing.Size(180, 16);
+            this.lblPcapKernelBufferMb.TabIndex = 3;
+            this.lblPcapKernelBufferMb.Text = "Kernel Buffer размер (MB):";
+            // 
+            // numPcapKernelBufferMb
+            // 
+            this.numPcapKernelBufferMb.Location = new System.Drawing.Point(210, 93);
+            this.numPcapKernelBufferMb.Margin = new System.Windows.Forms.Padding(4);
+            this.numPcapKernelBufferMb.Maximum = new decimal(new int[] { 64, 0, 0, 0 });
+            this.numPcapKernelBufferMb.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            this.numPcapKernelBufferMb.Name = "numPcapKernelBufferMb";
+            this.numPcapKernelBufferMb.Size = new System.Drawing.Size(80, 22);
+            this.numPcapKernelBufferMb.TabIndex = 4;
+            this.numPcapKernelBufferMb.Value = new decimal(new int[] { 8, 0, 0, 0 });
+            // 
+            // lblPcapMinToCopy
+            // 
+            this.lblPcapMinToCopy.AutoSize = true;
+            this.lblPcapMinToCopy.Location = new System.Drawing.Point(320, 95);
+            this.lblPcapMinToCopy.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblPcapMinToCopy.Name = "lblPcapMinToCopy";
+            this.lblPcapMinToCopy.Size = new System.Drawing.Size(140, 16);
+            this.lblPcapMinToCopy.TabIndex = 5;
+            this.lblPcapMinToCopy.Text = "Min To Copy (bytes):";
+            // 
+            // numPcapMinToCopy
+            // 
+            this.numPcapMinToCopy.Location = new System.Drawing.Point(470, 93);
+            this.numPcapMinToCopy.Margin = new System.Windows.Forms.Padding(4);
+            this.numPcapMinToCopy.Maximum = new decimal(new int[] { 65536, 0, 0, 0 });
+            this.numPcapMinToCopy.Minimum = new decimal(new int[] { 0, 0, 0, 0 });
+            this.numPcapMinToCopy.Name = "numPcapMinToCopy";
+            this.numPcapMinToCopy.Size = new System.Drawing.Size(80, 22);
+            this.numPcapMinToCopy.TabIndex = 6;
+            this.numPcapMinToCopy.Value = new decimal(new int[] { 4096, 0, 0, 0 });
             // 
             // groupBox5
             // 
@@ -670,6 +967,18 @@ namespace tickMeter.Forms
             this.panel1.ResumeLayout(false);
             this.groupBoxVpnBypass.ResumeLayout(false);
             this.groupBoxVpnBypass.PerformLayout();
+            this.groupBoxPhase3.ResumeLayout(false);
+            this.groupBoxPhase3.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numUiProcessingRate)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numUiBatchSize)).EndInit();
+            this.groupBoxPhase2.ResumeLayout(false);
+            this.groupBoxPhase2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numVirtualModeThreshold)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numRingBufferSize)).EndInit();
+            this.groupBoxPhase1.ResumeLayout(false);
+            this.groupBoxPhase1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numPcapKernelBufferMb)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numPcapMinToCopy)).EndInit();
             this.groupBox5.ResumeLayout(false);
             this.groupBox5.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPingSpikeThreshold)).EndInit();
@@ -729,6 +1038,33 @@ namespace tickMeter.Forms
         private System.Windows.Forms.GroupBox groupBoxVpnBypass;
         private System.Windows.Forms.CheckBox chkVpnBypassBasic;
         private System.Windows.Forms.CheckBox chkVpnBypassAdvanced;
+        
+        // Performance Optimization Controls
+        private System.Windows.Forms.GroupBox groupBoxPhase1;
+        private System.Windows.Forms.CheckBox chkAntiReentrancy;
+        private System.Windows.Forms.CheckBox chkRtssThrottling;
+        private System.Windows.Forms.CheckBox chkPcapOptimization;
+        private System.Windows.Forms.Label lblPcapKernelBufferMb;
+        private System.Windows.Forms.NumericUpDown numPcapKernelBufferMb;
+        private System.Windows.Forms.Label lblPcapMinToCopy;
+        private System.Windows.Forms.NumericUpDown numPcapMinToCopy;
+        
+        private System.Windows.Forms.GroupBox groupBoxPhase2;
+        private System.Windows.Forms.CheckBox chkVirtualModeListView;
+        private System.Windows.Forms.Label lblVirtualModeThreshold;
+        private System.Windows.Forms.NumericUpDown numVirtualModeThreshold;
+        private System.Windows.Forms.Label lblRingBufferSize;
+        private System.Windows.Forms.NumericUpDown numRingBufferSize;
+        private System.Windows.Forms.CheckBox chkShowVirtualModeStats;
+        
+        private System.Windows.Forms.GroupBox groupBoxPhase3;
+        private System.Windows.Forms.CheckBox chkHighPriorityThreads;
+        private System.Windows.Forms.CheckBox chkSingleConsumerPattern;
+        private System.Windows.Forms.Label lblUiProcessingRate;
+        private System.Windows.Forms.NumericUpDown numUiProcessingRate;
+        private System.Windows.Forms.Label lblUiBatchSize;
+        private System.Windows.Forms.NumericUpDown numUiBatchSize;
+        
         private System.Windows.Forms.Panel panelButtons;
         private System.Windows.Forms.Button btnOK;
         private System.Windows.Forms.Button btnApply;

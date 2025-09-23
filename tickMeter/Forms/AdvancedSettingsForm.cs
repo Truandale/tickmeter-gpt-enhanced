@@ -57,6 +57,26 @@ namespace tickMeter.Forms
                 // VPN bypass настройки
                 chkVpnBypassBasic.Checked = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
                 chkVpnBypassAdvanced.Checked = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+                
+                // Performance Optimization Phase 1-3 настройки
+                // TODO: Раскомментировать после создания контролов в Designer
+                /*
+                chkAntiReentrancy.Checked = App.settingsManager.GetOption("anti_reentrancy", "True", "ADVANCED") == "True";
+                chkRtssThrottling.Checked = App.settingsManager.GetOption("rtss_throttling", "True", "ADVANCED") == "True";
+                chkPcapOptimization.Checked = App.settingsManager.GetOption("pcap_optimization", "True", "ADVANCED") == "True";
+                numPcapKernelBufferMb.Value = decimal.Parse(App.settingsManager.GetOption("pcap_kernel_buffer_mb", "8", "ADVANCED"));
+                numPcapMinToCopy.Value = decimal.Parse(App.settingsManager.GetOption("pcap_min_to_copy", "4096", "ADVANCED"));
+                
+                chkVirtualModeListView.Checked = App.settingsManager.GetOption("virtual_mode_listview", "True", "ADVANCED") == "True";
+                numVirtualModeThreshold.Value = decimal.Parse(App.settingsManager.GetOption("virtual_mode_threshold", "2000", "ADVANCED"));
+                numRingBufferSize.Value = decimal.Parse(App.settingsManager.GetOption("ring_buffer_size", "10000", "ADVANCED"));
+                chkShowVirtualModeStats.Checked = App.settingsManager.GetOption("show_virtual_mode_stats", "False", "ADVANCED") == "True";
+                
+                chkHighPriorityThreads.Checked = App.settingsManager.GetOption("high_priority_threads", "True", "ADVANCED") == "True";
+                chkSingleConsumerPattern.Checked = App.settingsManager.GetOption("single_consumer_pattern", "True", "ADVANCED") == "True";
+                numUiProcessingRate.Value = decimal.Parse(App.settingsManager.GetOption("ui_processing_rate", "60", "ADVANCED"));
+                numUiBatchSize.Value = decimal.Parse(App.settingsManager.GetOption("ui_batch_size", "10", "ADVANCED"));
+                */
             }
             catch (Exception ex)
             {
@@ -109,6 +129,26 @@ namespace tickMeter.Forms
                 // VPN bypass настройки
                 App.settingsManager.SetOption("vpn_bypass_basic", chkVpnBypassBasic.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("vpn_bypass_advanced", chkVpnBypassAdvanced.Checked.ToString(), "ADVANCED");
+                
+                // Performance Optimization Phase 1-3 настройки  
+                // TODO: Раскомментировать после создания контролов в Designer
+                /*
+                App.settingsManager.SetOption("anti_reentrancy", chkAntiReentrancy.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("rtss_throttling", chkRtssThrottling.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("pcap_optimization", chkPcapOptimization.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("pcap_kernel_buffer_mb", numPcapKernelBufferMb.Value.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("pcap_min_to_copy", numPcapMinToCopy.Value.ToString(), "ADVANCED");
+                
+                App.settingsManager.SetOption("virtual_mode_listview", chkVirtualModeListView.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("virtual_mode_threshold", numVirtualModeThreshold.Value.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("ring_buffer_size", numRingBufferSize.Value.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("show_virtual_mode_stats", chkShowVirtualModeStats.Checked.ToString(), "ADVANCED");
+                
+                App.settingsManager.SetOption("high_priority_threads", chkHighPriorityThreads.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("single_consumer_pattern", chkSingleConsumerPattern.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("ui_processing_rate", numUiProcessingRate.Value.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("ui_batch_size", numUiBatchSize.Value.ToString(), "ADVANCED");
+                */
                 
                 // Применяем новые настройки интервала overlay
                 App.gui?.ApplyOverlayIntervalFromSettings();
