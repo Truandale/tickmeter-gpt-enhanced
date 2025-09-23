@@ -65,15 +65,19 @@ namespace tickMeter
         public BackgroundWorker pcapWorker;
         public PacketFilter packetFilter;
 
-        // Multi-adapter support
+        // Multi-adapter support - DEPRECATED: переходим на CaptureService
         private readonly List<BackgroundWorker> _pcapWorkers = new List<BackgroundWorker>();
         private bool CaptureAll => App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
         private bool _ignoreVirtual => App.settingsManager.GetOption("ignore_virtual_adapters", "True", "SETTINGS") == "True";
 
-        // CaptureService integration - временно отключено до исправления проблем компиляции
-        // private tickMeter.Classes.CaptureService.Subscription _captureSub;
+        // CaptureService integration - ОСНОВНАЯ СИСТЕМА
+        private tickMeter.Classes.CaptureService.Subscription _captureSub;
         private bool _captureRunning;
         private long _lastStartMs;
+        
+        // Анти-реэнтерабельность для предотвращения роста воркеров
+        private int _subBusy = 0;
+        private readonly object _restartLock = new object();
 
         // VirtualMode ListView support
         private readonly object _ringLock = new object();
@@ -114,34 +118,326 @@ namespace tickMeter
 
         
 
+        /// <summary>
+        /// Безопасный запуск с CaptureService и анти-реэнтерабельностью
+        /// </summary>
         public void Start()
         {
-            
-            PacketBuffer = new List<Packet>();
-            connMngr = new ConnectionsManager(500);
-            try
+            SafeRestartCapture();
+        }
+        
+        /// <summary>
+        /// Безопасный перезапуск с debounce и анти-реэнтерабельностью
+        /// </summary>
+        private void SafeRestartCapture()
+        {
+            // Анти-реэнтерабельность: если уже идет restart - выходим
+            if (Interlocked.Exchange(ref _subBusy, 1) == 1) 
             {
-                if (PcapThread == null)
-                {
-                    PcapThread = new Thread(InitWorker);
-                    PcapThread.Start();
-                }
-                
-                
-            } catch (Exception)
-            {
-                MessageBox.Show("NPCAP Thread init error");
+                Debug.Print("[PacketStats] SafeRestartCapture: already in progress, skipping");
+                return;
             }
             
-            App.meterState.LocalIP = App.settingsForm.local_ip_textbox.Text;
-            RefreshTimer.Enabled = true;
-            active_refresh.Enabled = true;
-            avgStats.Enabled = true;
-            tracking = true;
+            try
+            {
+                // Debounce: не чаще чем раз в 500мс
+                long now = Environment.TickCount;
+                if (now - _lastStartMs < 500)
+                {
+                    Debug.Print("[PacketStats] SafeRestartCapture: debounce protection");
+                    return;
+                }
+                _lastStartMs = now;
+                
+                Debug.Print("[PacketStats] SafeRestartCapture: starting");
+                
+                // Сначала останавливаем все предыдущие подписки
+                StopSubscription();
+                
+                // Инициализация пакетного буфера и менеджера соединений
+                if (PacketBuffer == null) PacketBuffer = new List<Packet>();
+                else 
+                {
+                    lock (_packetBufferLock) { PacketBuffer.Clear(); }
+                }
+                if (connMngr == null) connMngr = new ConnectionsManager(500);
+                
+                // Настройка Local IP
+                App.meterState.LocalIP = App.settingsForm.local_ip_textbox.Text;
+                
+                // Запуск CaptureService подписки
+                StartCaptureService();
+                
+                // Включение UI таймеров
+                RefreshTimer.Enabled = true;
+                active_refresh.Enabled = true;
+                avgStats.Enabled = true;
+                tracking = true;
+                
+                // Сброс счетчиков
+                inPackets = outPackets = inTraffic = outTraffic = 0;
+                
+                Debug.Print("[PacketStats] SafeRestartCapture: completed successfully");
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[PacketStats] SafeRestartCapture error: {ex.Message}");
+                MessageBox.Show($"Packet capture start error: {ex.Message}");
+            }
+            finally
+            {
+                Volatile.Write(ref _subBusy, 0);
+            }
+        }
+        
+        /// <summary>
+        /// Запуск подписки через CaptureService вместо BackgroundWorker
+        /// </summary>
+        private void StartCaptureService()
+        {
+            if (App.Capture == null)
+            {
+                Debug.Print("[PacketStats] StartCaptureService: App.Capture is null!");
+                return;
+            }
             
-            // Сбрасываем счетчики при запуске
-            inPackets = outPackets = inTraffic = outTraffic = 0;
-
+            // Получаем список адаптеров
+            var devices = GetSelectedDevices();
+            if (devices.Count == 0)
+            {
+                Debug.Print("[PacketStats] StartCaptureService: no devices selected");
+                return;
+            }
+            
+            // Создаем подписку через CaptureService (автоматический дедуп по StableKey)
+            _captureSub = App.Capture.Subscribe(devices, OnPacketReceived);
+            _captureRunning = true;
+            
+            Debug.Print($"[PacketStats] StartCaptureService: subscribed to {devices.Count} devices via CaptureService");
+        }
+        
+        /// <summary>
+        /// Получить список адаптеров для захвата (с фильтрацией виртуальных)
+        /// </summary>
+        private List<LivePacketDevice> GetSelectedDevices()
+        {
+            var devices = new List<LivePacketDevice>();
+            var allDevices = App.GetAdapters();
+            
+            if (CaptureAll)
+            {
+                // Захват всех адаптеров с фильтрацией
+                foreach (var device in allDevices.Skip(1)) // Пропускаем первый элемент (заглушка)
+                {
+                    if (ShouldIncludeDevice(device))
+                        devices.Add(device);
+                }
+            }
+            else
+            {
+                // Выбранный адаптер
+                int selectedIndex = App.settingsForm.adapters_list.SelectedIndex;
+                if (selectedIndex > 0 && selectedIndex < allDevices.Count)
+                {
+                    devices.Add(allDevices[selectedIndex]);
+                }
+            }
+            
+            Debug.Print($"[PacketStats] GetSelectedDevices: {devices.Count} devices selected (CaptureAll={CaptureAll})");
+            return devices;
+        }
+        
+        /// <summary>
+        /// Проверить, должен ли адаптер быть включен в захват
+        /// </summary>
+        private bool ShouldIncludeDevice(LivePacketDevice device)
+        {
+            if (device?.Description == null) return false;
+            
+            var desc = device.Description.ToLowerInvariant();
+            
+            // Всегда исключаем loopback
+            if (desc.Contains("loopback") || desc.Contains("npcap loopback"))
+                return false;
+            
+            // Фильтрация виртуальных адаптеров если включена
+            if (_ignoreVirtual)
+            {
+                if (desc.Contains("hyper-v") || desc.Contains("vmware") ||
+                    desc.Contains("virtualbox") || desc.Contains("vethernet"))
+                    return false;
+            }
+            
+            return true;
+        }
+        
+        /// <summary>
+        /// Обработчик пакетов от CaptureService
+        /// </summary>
+        private void OnPacketReceived(Packet packet, LivePacketDevice device)
+        {
+            try
+            {
+                if (!tracking || packet == null) return;
+                
+                // Применяем фильтры пакетов (упрощенная версия)
+                if (!ShouldIncludePacket(packet)) return;
+                
+                // Добавляем в буфер (thread-safe)
+                lock (_packetBufferLock)
+                {
+                    if (PacketBuffer.Count < MAX_PACKET_BUFFER_SIZE)
+                    {
+                        PacketBuffer.Add(packet);
+                    }
+                    else
+                    {
+                        // Удаляем старые пакеты при переполнении
+                        PacketBuffer.RemoveAt(0);
+                        PacketBuffer.Add(packet);
+                    }
+                }
+                
+                // Обновляем статистику трафика
+                UpdateTrafficCounters(packet);
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[PacketStats] OnPacketReceived error: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Упрощенная проверка фильтров пакетов
+        /// </summary>
+        private bool ShouldIncludePacket(Packet packet)
+        {
+            try
+            {
+                // Базовая проверка наличия IP
+                if (packet.Ethernet?.IpV4 == null && packet.Ethernet?.IpV6 == null)
+                    return false;
+                
+                // Применяем фильтр IP если установлен
+                if (!string.IsNullOrEmpty(packetFilter.DestIpFilter) || !string.IsNullOrEmpty(packetFilter.SourceIpFilter))
+                {
+                    var ipv4 = packet.Ethernet.IpV4;
+                    if (ipv4 != null)
+                    {
+                        var srcIp = ipv4.Source.ToString();
+                        var dstIp = ipv4.Destination.ToString();
+                        
+                        bool matchesSrc = string.IsNullOrEmpty(packetFilter.SourceIpFilter) || srcIp.Contains(packetFilter.SourceIpFilter);
+                        bool matchesDst = string.IsNullOrEmpty(packetFilter.DestIpFilter) || dstIp.Contains(packetFilter.DestIpFilter);
+                        
+                        if (!matchesSrc && !matchesDst)
+                            return false;
+                    }
+                }
+                
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        /// <summary>
+        /// Обновление счетчиков трафика
+        /// </summary>
+        private void UpdateTrafficCounters(Packet packet)
+        {
+            try
+            {
+                var ip = packet.Ethernet?.IpV4;
+                if (ip == null) return;
+                
+                string sourceIP = ip.Source.ToString();
+                string destIP = ip.Destination.ToString();
+                
+                // Определяем направление трафика
+                bool sourceIsLocal = IsLocalIP(sourceIP);
+                bool destIsLocal = IsLocalIP(destIP);
+                
+                if (sourceIsLocal && !destIsLocal)
+                {
+                    // Исходящий трафик
+                    outPackets++;
+                    outTraffic += ip.TotalLength;
+                }
+                else if (!sourceIsLocal && destIsLocal)
+                {
+                    // Входящий трафик
+                    inPackets++;
+                    inTraffic += ip.TotalLength;
+                }
+                else
+                {
+                    // Внутренний трафик считаем как исходящий
+                    outPackets++;
+                    outTraffic += ip.TotalLength;
+                }
+            }
+            catch
+            {
+                // Игнорируем ошибки при подсчете трафика
+            }
+        }
+        
+        /// <summary>
+        /// Проверка является ли IP локальным
+        /// </summary>
+        private bool IsLocalIP(string ip)
+        {
+            return ip.StartsWith("192.168.") || ip.StartsWith("10.") ||
+                   ip.StartsWith("172.16.") || ip.StartsWith("172.17.") ||
+                   ip.StartsWith("172.18.") || ip.StartsWith("172.19.") ||
+                   ip.StartsWith("172.2") || ip.StartsWith("172.30.") ||
+                   ip.StartsWith("127.") || ip == "::1";
+        }
+        
+        /// <summary>
+        /// Остановка подписки CaptureService
+        /// </summary>
+        private void StopSubscription()
+        {
+            try
+            {
+                if (_captureSub != null)
+                {
+                    Debug.Print("[PacketStats] StopSubscription: disposing CaptureService subscription");
+                    _captureSub.Dispose();
+                    _captureSub = null;
+                }
+                _captureRunning = false;
+                
+                // Дополнительно очищаем старые BackgroundWorker (для совместимости)
+                if (_pcapWorkers.Count > 0)
+                {
+                    Debug.Print($"[PacketStats] StopSubscription: cleaning up {_pcapWorkers.Count} legacy workers");
+                    foreach (var worker in _pcapWorkers)
+                    {
+                        try
+                        {
+                            if (worker != null)
+                            {
+                                if (worker.IsBusy) worker.CancelAsync();
+                                worker.Dispose();
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.Print($"[PacketStats] Error disposing legacy worker: {ex.Message}");
+                        }
+                    }
+                    _pcapWorkers.Clear();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[PacketStats] StopSubscription error: {ex.Message}");
+            }
         }
 
         private void PacketStats_Shown(object sender, EventArgs e)
@@ -690,23 +986,20 @@ namespace tickMeter
         }
 
         
+        /// <summary>
+        /// Остановка мониторинга с полной очисткой CaptureService подписки
+        /// </summary>
         public void Stop()
         {
+            Debug.Print("[PacketStats] Stop: beginning");
+            
             tracking = false;
             RefreshTimer.Enabled = false;
+            avgStats.Enabled = false;
+            active_refresh.Enabled = false;
             
-            // Останавливаем все multi-adapter воркеры
-            try 
-            { 
-                foreach (var worker in _pcapWorkers) 
-                { 
-                    if (worker.IsBusy)
-                        worker.CancelAsync();
-                    worker?.Dispose();
-                } 
-            }
-            catch { }
-            _pcapWorkers.Clear();
+            // Останавливаем CaptureService подписку (основная система)
+            StopSubscription();
             
             // Агрессивная очистка PacketBuffer при остановке
             lock (_packetBufferLock)
@@ -724,17 +1017,23 @@ namespace tickMeter
             
             // Сброс счётчиков
             _refreshCounter = 0;
+            inPackets = outPackets = inTraffic = outTraffic = 0;
             
             // Принудительная сборка мусора после остановки
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
+            
+            Debug.Print("[PacketStats] Stop: completed");
         }
 
+        /// <summary>
+        /// Безопасный перезапуск с debounce
+        /// </summary>
         public void Restart()
         {
-            Stop();
-            Start();
+            Debug.Print("[PacketStats] Restart: called");
+            SafeRestartCapture();
         }
 
         private void clear_Click(object sender, EventArgs e)
@@ -809,8 +1108,10 @@ namespace tickMeter
             label3.Text = "IN " + inPackets.ToString() + " | OUT " + outPackets.ToString();
             label4.Text = "DL " + (inTraffic / 1024).ToString() + " | UP " + (outTraffic / 1024).ToString();
             
-            // Диагностические счетчики
-            int activeWorkers = _pcapWorkers.Count;
+            // Диагностические счетчики - используем CaptureService метрики
+            int activeWorkers = App.Capture?.WorkersCount ?? 0;
+            int activeSubs = App.Capture?.SubscriptionsCount ?? 0;
+            long dedupDrops = App.Capture?.DedupDropped ?? 0;
             int queueSize;
             int bufferCount;
             lock (_packetBufferLock)
@@ -819,8 +1120,21 @@ namespace tickMeter
                 bufferCount = _useVirtual ? _ringCount : (listView1?.Items?.Count ?? 0);
             }
             
-            label5.Text = $"Local IP: {App.meterState.LocalIP} | Workers: {activeWorkers} | Queue: {queueSize} | Items: {bufferCount}" + 
+            label5.Text = $"Local IP: {App.meterState.LocalIP} | Workers: {activeWorkers} | Subs: {activeSubs} | Queue: {queueSize} | Items: {bufferCount}" + 
+                         (dedupDrops > 0 ? $" | Dedup drop: {dedupDrops}" : "") +
                          (_useVirtual ? " (Virtual)" : "");
+                         
+            // Лайв-дамп воркеров каждые 10 секунд для диагностики роста
+            if (App.Capture != null && Environment.TickCount % 10000 < 1000) // примерно каждые 10с
+            {
+                var dump = App.Capture.DebugWorkers();
+                if (dump.Length > 8) // Показываем детали только если воркеров больше ожидаемого
+                {
+                    Debug.Print($"[PacketStats] LIVE DUMP: Workers={dump.Length} :: " +
+                        string.Join(", ", dump.Take(10).Select(x => $"{x.key}:{x.refs}")) + 
+                        (dump.Length > 10 ? "..." : ""));
+                }
+            }
         }
 
         private async void active_refresh_Tick(object sender, EventArgs e)

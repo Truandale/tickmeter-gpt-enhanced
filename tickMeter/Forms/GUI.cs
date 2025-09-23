@@ -47,6 +47,10 @@ namespace tickMeter.Forms
         private volatile bool _uiProcessingActive = false;
         private readonly object _threadManagementLock = new object();
         
+        // Анти-реэнтерабельность для StartTracking/StopTracking (предотвращение роста воркеров)
+        private int _startTrackingBusy = 0;
+        private int _stopTrackingBusy = 0;
+        
         public Boolean allowClose = false;
         int restarts = 0;
         int restartLimit = 1;
@@ -617,10 +621,9 @@ namespace tickMeter.Forms
                     Debug.Print($"[TicksLoop] PERIODIC: CaptureService workers count: {debugInfo.Length}");
                     if (debugInfo.Length > 8) // Показываем детали если воркеров больше ожидаемого
                     {
-                        foreach (var (key, refs) in debugInfo)
-                        {
-                            Debug.Print($"[TicksLoop] PERIODIC: Worker {key} -> refs: {refs}");
-                        }
+                        Debug.Print($"[TicksLoop] PERIODIC DETAILS: " + 
+                            string.Join(", ", debugInfo.Take(8).Select(x => $"{x.key}:{x.refs}")) +
+                            (debugInfo.Length > 8 ? $"... (+{debugInfo.Length - 8} more)" : ""));
                     }
                 }
                 
@@ -867,28 +870,40 @@ namespace tickMeter.Forms
 
         public void StartTracking()
         {
-            Debug.Print("StartTracking");
-            
-            // Диагностика CaptureService ПЕРЕД стартом
-            if (App.Capture != null)
+            // Анти-реэнтерабельность: если уже идет запуск - выходим
+            if (Interlocked.Exchange(ref _startTrackingBusy, 1) == 1) 
             {
-                var debugInfo = App.Capture.DebugWorkers();
-                Debug.Print($"[StartTracking] BEFORE: CaptureService workers count: {debugInfo.Length}");
-                foreach (var (key, refs) in debugInfo)
+                Debug.Print("[StartTracking] Already in progress, skipping");
+                return;
+            }
+            
+            try
+            {
+                Debug.Print("StartTracking");
+                
+                // Диагностика CaptureService ПЕРЕД стартом
+                if (App.Capture != null)
                 {
-                    Debug.Print($"[StartTracking] BEFORE: Worker {key} -> refs: {refs}");
+                    var debugInfo = App.Capture.DebugWorkers();
+                    Debug.Print($"[StartTracking] BEFORE: CaptureService workers count: {debugInfo.Length}");
+                    if (debugInfo.Length > 8)
+                    {
+                        foreach (var (key, refs) in debugInfo)
+                        {
+                            Debug.Print($"[StartTracking] BEFORE: Worker {key} -> refs: {refs}");
+                        }
+                    }
                 }
-            }
-            else
-            {
-                Debug.Print("[StartTracking] WARNING: App.Capture is NULL! CaptureService not initialized!");
-            }
-            
-            if (App.meterState != null)
-                StopTracking();
-            InitMeterState();
-            App.meterState.IsTracking = true;
-            ticksLoop.Enabled = true;
+                else
+                {
+                    Debug.Print("[StartTracking] WARNING: App.Capture is NULL! CaptureService not initialized!");
+                }
+                
+                if (App.meterState != null)
+                    StopTracking();
+                InitMeterState();
+                App.meterState.IsTracking = true;
+                ticksLoop.Enabled = true;
             
             // Запускаем ping manager
             if (App.pingManager != null)
@@ -1101,6 +1116,17 @@ namespace tickMeter.Forms
             {
                 Debug.Print("[StartTracking] WARNING: App.Capture is NULL after worker start!");
             }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[StartTracking] Error: {ex.Message}");
+                DebugLogger.log(ex);
+            }
+            finally
+            {
+                // Всегда освобождаем блокировку
+                Volatile.Write(ref _startTrackingBusy, 0);
+            }
         }
         private void PcapWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
@@ -1268,16 +1294,25 @@ namespace tickMeter.Forms
 
         public void StopTracking()
         {
-            Debug.Print("StopTracking - entry point");
-
-            // КРИТИЧЕСКИ ВАЖНО: Сначала отключаем все флаги чтобы предотвратить перезапуск
-            ticksLoop.Enabled = false;
-            if (App.meterState != null)
+            // Анти-реэнтерабельность: если уже идет остановка - выходим
+            if (Interlocked.Exchange(ref _stopTrackingBusy, 1) == 1) 
             {
-                App.meterState.IsTracking = false; // Устанавливаем СРАЗУ
+                Debug.Print("[StopTracking] Already in progress, skipping");
+                return;
             }
             
-            if (App.meterState == null) return;
+            try
+            {
+                Debug.Print("StopTracking - entry point");
+
+                // КРИТИЧЕСКИ ВАЖНО: Сначала отключаем все флаги чтобы предотвратить перезапуск
+                ticksLoop.Enabled = false;
+                if (App.meterState != null)
+                {
+                    App.meterState.IsTracking = false; // Устанавливаем СРАЗУ
+                }
+                
+                if (App.meterState == null) return;
             
             // Диагностика CaptureService ПЕРЕД остановкой
             if (App.Capture != null)
@@ -1445,6 +1480,17 @@ namespace tickMeter.Forms
                 {
                     Debug.Print($"[StopTracking] AFTER: Worker {key} -> refs: {refs}");
                 }
+            }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[StopTracking] Error: {ex.Message}");
+                DebugLogger.log(ex);
+            }
+            finally
+            {
+                // Всегда освобождаем блокировку
+                Volatile.Write(ref _stopTrackingBusy, 0);
             }
         }
 

@@ -102,10 +102,10 @@ namespace tickMeter.Classes
             return "";
         }
         
-        // Диагностические свойства для CaptureService - временно отключены
-        // public static int CaptureWorkersCount => Capture?.WorkersCount ?? 0;
-        // public static int CaptureSubsCount => Capture?.SubscriptionsCount ?? 0;
-        // public static long CaptureDedupDrops => Capture?.DedupDropped ?? 0L;
+        // Диагностические свойства для CaptureService
+        public static int CaptureWorkersCount => Capture?.WorkersCount ?? 0;
+        public static int CaptureSubsCount => Capture?.SubscriptionsCount ?? 0;
+        public static long CaptureDedupDrops => Capture?.DedupDropped ?? 0L;
 
     }
 }
