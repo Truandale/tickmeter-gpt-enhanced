@@ -72,7 +72,9 @@ namespace tickMeter
 
                 lock (_tcpLock)
                 {
-                    foreach (var record in TcpActiveConnections.ToList())
+                    var tcpConnectionsCopy = TcpActiveConnections.ToList();
+                
+                    foreach (var record in tcpConnectionsCopy)
                     {
                         lock (_processInfoLock)
                         {
@@ -102,7 +104,9 @@ namespace tickMeter
 
                 lock (_udpLock)
                 {
-                    foreach (var record in UdpActiveConnections.ToList())
+                    var udpConnectionsCopy = UdpActiveConnections.ToList();
+                
+                    foreach (var record in udpConnectionsCopy)
                     {
                         lock (_processInfoLock)
                         {

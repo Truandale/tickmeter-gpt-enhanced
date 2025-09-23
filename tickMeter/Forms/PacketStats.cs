@@ -19,7 +19,9 @@ namespace tickMeter
     {
         List<Packet> PacketBuffer;
         private readonly object _packetBufferLock = new object();  // Thread synchronization lock
-        private const int MAX_PACKET_BUFFER_SIZE = 1000;  // Максимальный размер буфера для предотвращения утечек
+        private const int MAX_PACKET_BUFFER_SIZE = 100;  // Максимальный размер буфера для Live View (уменьшен с 1000)
+        private const int CRITICAL_BUFFER_SIZE = 200;    // Критический размер для экстренной очистки
+        private int _refreshCounter = 0;                  // Счётчик для периодической очистки памяти
         public int inPackets = 0;
         public int outPackets = 0;
         public int inTraffic = 0;
@@ -269,16 +271,26 @@ namespace tickMeter
             packetFilter.ip = ip;
             if (!packetFilter.Validate()) return;
             
-            // Thread-safe addition to PacketBuffer with size limit
+            // Thread-safe addition to PacketBuffer with aggressive size limit for Live View
             lock (_packetBufferLock)
             {
-                // Если буфер переполнен, удаляем старые пакеты
+                // Критическая проверка: если буфер сильно превысил лимит - полная очистка
+                if (PacketBuffer.Count >= CRITICAL_BUFFER_SIZE)
+                {
+                    PacketBuffer.Clear();
+                    // Форсированная сборка мусора при критическом переполнении
+                    GC.Collect();
+                    return; // Пропускаем этот пакет
+                }
+                
+                // Обычная очистка при достижении лимита
                 if (PacketBuffer.Count >= MAX_PACKET_BUFFER_SIZE)
                 {
-                    // Удаляем половину старых пакетов для предотвращения постоянных очисток
-                    int removeCount = MAX_PACKET_BUFFER_SIZE / 2;
+                    // Удаляем 80% старых пакетов для Live View
+                    int removeCount = (int)(PacketBuffer.Count * 0.8);
                     PacketBuffer.RemoveRange(0, removeCount);
                 }
+                
                 PacketBuffer.Add(packet);
             }
 
@@ -325,6 +337,25 @@ namespace tickMeter
         {
             AutoDetectMngr.GetActiveProcessName(true);
             
+            // Периодическая принудительная очистка памяти для Live View
+            _refreshCounter++;
+            if (_refreshCounter >= 50) // Каждые 50 циклов (~5 секунд)
+            {
+                _refreshCounter = 0;
+                lock (_packetBufferLock)
+                {
+                    // Агрессивная очистка буфера для Live View
+                    if (PacketBuffer.Count > MAX_PACKET_BUFFER_SIZE / 2)
+                    {
+                        PacketBuffer.Clear();
+                    }
+                }
+                // Принудительная сборка мусора
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+            }
+            
             // Thread-safe check of PacketBuffer count
             int bufferCount;
             lock (_packetBufferLock)
@@ -340,11 +371,11 @@ namespace tickMeter
             List<Packet> tmpPackets;
             try
             {
-                // Thread-safe extraction of packets from buffer
+                // Thread-safe extraction of packets from buffer with aggressive cleanup
                 lock (_packetBufferLock)
                 {
-                    // Увеличиваем количество обрабатываемых пакетов для лучшей производительности
-                    int processCount = Math.Min(200, PacketBuffer.Count);
+                    // Для Live View обрабатываем меньше пакетов за раз, но чаще
+                    int processCount = Math.Min(50, PacketBuffer.Count);
                     tmpPackets = PacketBuffer.Take(processCount).Where(p => p != null).ToList();
                     
                     // Удаляем обработанные пакеты из буфера более эффективно
@@ -353,8 +384,8 @@ namespace tickMeter
                         PacketBuffer.RemoveRange(0, processCount);
                     }
                     
-                    // Дополнительная защита: если буфер всё ещё слишком большой, очищаем его полностью
-                    if (PacketBuffer.Count > MAX_PACKET_BUFFER_SIZE * 2)
+                    // Дополнительная защита: если буфер превышает критический размер, полная очистка
+                    if (PacketBuffer.Count > CRITICAL_BUFFER_SIZE)
                     {
                         PacketBuffer.Clear();
                         System.GC.Collect(); // Принудительная сборка мусора при критическом переполнении
@@ -574,10 +605,33 @@ namespace tickMeter
                 { 
                     if (worker.IsBusy)
                         worker.CancelAsync();
+                    worker?.Dispose();
                 } 
             }
             catch { }
             _pcapWorkers.Clear();
+            
+            // Агрессивная очистка PacketBuffer при остановке
+            lock (_packetBufferLock)
+            {
+                try
+                {
+                    PacketBuffer.Clear();
+                }
+                catch (Exception)
+                {
+                    // Если даже Clear() падает, пересоздаём список
+                    PacketBuffer = new List<Packet>();
+                }
+            }
+            
+            // Сброс счётчиков
+            _refreshCounter = 0;
+            
+            // Принудительная сборка мусора после остановки
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
         }
 
         public void Restart()
