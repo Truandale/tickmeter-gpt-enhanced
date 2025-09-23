@@ -196,5 +196,90 @@ namespace tickMeter.Forms
         {
             SaveSettings();
         }
+
+        private void btnReset_Click(object sender, EventArgs e)
+        {
+            var result = MessageBox.Show(
+                "Установить оптимальные настройки для повседневного использования?\n\n" +
+                "Это изменит все параметры на рекомендуемые значения.",
+                "Сброс к оптимальным настройкам",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (result == DialogResult.Yes)
+            {
+                SetOptimalSettings();
+                MessageBox.Show("Оптимальные настройки установлены!", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        /// <summary>
+        /// Устанавливает оптимальные настройки для повседневного использования
+        /// </summary>
+        private void SetOptimalSettings()
+        {
+            // Live View - умеренные настройки
+            chkLiveMaxRows.Checked = true;
+            liveMaxRowsNumeric.Value = 1000;
+            
+            // RTSS - отключаем FPS ограничение, используем ping_interval
+            chkOverlayFps.Checked = false;
+            overlayFpsNumeric.Value = 60;
+            
+            // BPF фильтр - отключен для простоты
+            chkBpfFilter.Checked = false;
+            captureFilterTextBox.Text = "ip or ip6";
+            
+            // Основные настройки - все активные
+            chkCaptureAllAdapters.Checked = true;
+            chkIgnoreVirtualAdapters.Checked = true;
+            chkPingBindToInterface.Checked = true;
+            chkPingTcpPrefer.Checked = true;
+            chkPingFallbackIcmp.Checked = true;
+            chkPingTargetActiveOnly.Checked = true;
+            chkTickrateSmoothing.Checked = true;
+            chkDedupMultiNic.Checked = true;
+            chkEnableIPv6.Checked = true;
+            chkRtssOnlyActive.Checked = true;
+            chkStunEnable.Checked = true;
+            
+            // Smoothing - включены для стабильности
+            chkPingGraphOverlaySmoothing.Checked = true;
+            chkTickrateGraphOverlaySmoothing.Checked = true;
+            chkTicktimeGraphOverlaySmoothing.Checked = true;
+            chkPingValueOverlaySmoothing.Checked = true;
+            chkPingValueGuiSmoothing.Checked = true;
+            chkTickrateValueOverlaySmoothing.Checked = true;
+            chkTrafficValueOverlaySmoothing.Checked = true;
+            
+            // Ping Spikes - полезно для геймеров
+            chkShowPingSpikes.Checked = true;
+            numPingSpikeThreshold.Value = 150;
+            
+            // VPN bypass - отключен по умолчанию
+            chkVpnBypassBasic.Checked = false;
+            chkVpnBypassAdvanced.Checked = false;
+            
+            // === PHASE 1: Anti-reentrancy (ВКЛЮЧЕНЫ) ===
+            chkAntiReentrancy.Checked = true;
+            chkRtssThrottling.Checked = true;
+            chkPcapOptimization.Checked = true;
+            
+            // === PHASE 2: PCAP optimization (ОПТИМАЛЬНЫЕ ЗНАЧЕНИЯ) ===
+            numPcapKernelBufferMb.Value = 8;  // 8MB для хорошей производительности
+            numPcapMinToCopy.Value = 4096;    // Оптимальный размер
+            
+            // === PHASE 3: Virtual Mode & Priorities (СБАЛАНСИРОВАННЫЕ) ===
+            chkVirtualModeListView.Checked = true;
+            numVirtualModeThreshold.Value = 1000; // Умеренный порог
+            numRingBufferSize.Value = 10000;      // Достаточный буфер
+            chkShowVirtualModeStats.Checked = true;
+            
+            // === PHASE 3: Thread Management (КОНСЕРВАТИВНЫЕ) ===
+            chkHighPriorityThreads.Checked = true;
+            chkSingleConsumerPattern.Checked = false; // Пока экспериментальное
+            numUiProcessingRate.Value = 60;           // 60 FPS UI
+            numUiBatchSize.Value = 10;                // Оптимальный batch размер
+        }
     }
 }

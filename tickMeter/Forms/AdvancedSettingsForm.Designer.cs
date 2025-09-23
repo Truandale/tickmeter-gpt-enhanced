@@ -32,8 +32,20 @@ namespace tickMeter.Forms
             this.groupBoxVpnBypass = new System.Windows.Forms.GroupBox();
             this.chkVpnBypassAdvanced = new System.Windows.Forms.CheckBox();
             this.chkVpnBypassBasic = new System.Windows.Forms.CheckBox();
-            
-            // Performance Optimization Phase Controls
+            this.groupBoxPhase3 = new System.Windows.Forms.GroupBox();
+            this.chkHighPriorityThreads = new System.Windows.Forms.CheckBox();
+            this.chkSingleConsumerPattern = new System.Windows.Forms.CheckBox();
+            this.lblUiProcessingRate = new System.Windows.Forms.Label();
+            this.numUiProcessingRate = new System.Windows.Forms.NumericUpDown();
+            this.lblUiBatchSize = new System.Windows.Forms.Label();
+            this.numUiBatchSize = new System.Windows.Forms.NumericUpDown();
+            this.groupBoxPhase2 = new System.Windows.Forms.GroupBox();
+            this.chkVirtualModeListView = new System.Windows.Forms.CheckBox();
+            this.lblVirtualModeThreshold = new System.Windows.Forms.Label();
+            this.numVirtualModeThreshold = new System.Windows.Forms.NumericUpDown();
+            this.lblRingBufferSize = new System.Windows.Forms.Label();
+            this.numRingBufferSize = new System.Windows.Forms.NumericUpDown();
+            this.chkShowVirtualModeStats = new System.Windows.Forms.CheckBox();
             this.groupBoxPhase1 = new System.Windows.Forms.GroupBox();
             this.chkAntiReentrancy = new System.Windows.Forms.CheckBox();
             this.chkRtssThrottling = new System.Windows.Forms.CheckBox();
@@ -42,23 +54,6 @@ namespace tickMeter.Forms
             this.numPcapKernelBufferMb = new System.Windows.Forms.NumericUpDown();
             this.lblPcapMinToCopy = new System.Windows.Forms.Label();
             this.numPcapMinToCopy = new System.Windows.Forms.NumericUpDown();
-            
-            this.groupBoxPhase2 = new System.Windows.Forms.GroupBox();
-            this.chkVirtualModeListView = new System.Windows.Forms.CheckBox();
-            this.lblVirtualModeThreshold = new System.Windows.Forms.Label();
-            this.numVirtualModeThreshold = new System.Windows.Forms.NumericUpDown();
-            this.lblRingBufferSize = new System.Windows.Forms.Label();
-            this.numRingBufferSize = new System.Windows.Forms.NumericUpDown();
-            this.chkShowVirtualModeStats = new System.Windows.Forms.CheckBox();
-            
-            this.groupBoxPhase3 = new System.Windows.Forms.GroupBox();
-            this.chkHighPriorityThreads = new System.Windows.Forms.CheckBox();
-            this.chkSingleConsumerPattern = new System.Windows.Forms.CheckBox();
-            this.lblUiProcessingRate = new System.Windows.Forms.Label();
-            this.numUiProcessingRate = new System.Windows.Forms.NumericUpDown();
-            this.lblUiBatchSize = new System.Windows.Forms.Label();
-            this.numUiBatchSize = new System.Windows.Forms.NumericUpDown();
-            
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.chkStunEnable = new System.Windows.Forms.CheckBox();
             this.chkShowPingSpikes = new System.Windows.Forms.CheckBox();
@@ -98,6 +93,7 @@ namespace tickMeter.Forms
             this.btnOK = new System.Windows.Forms.Button();
             this.btnApply = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
+            this.btnReset = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.groupBoxVpnBypass.SuspendLayout();
@@ -146,7 +142,7 @@ namespace tickMeter.Forms
             this.groupBoxVpnBypass.Controls.Add(this.chkVpnBypassAdvanced);
             this.groupBoxVpnBypass.Controls.Add(this.chkVpnBypassBasic);
             this.groupBoxVpnBypass.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxVpnBypass.Location = new System.Drawing.Point(13, 804);
+            this.groupBoxVpnBypass.Location = new System.Drawing.Point(13, 1304);
             this.groupBoxVpnBypass.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxVpnBypass.Name = "groupBoxVpnBypass";
             this.groupBoxVpnBypass.Padding = new System.Windows.Forms.Padding(4);
@@ -186,7 +182,7 @@ namespace tickMeter.Forms
             this.groupBoxPhase3.Controls.Add(this.lblUiBatchSize);
             this.groupBoxPhase3.Controls.Add(this.numUiBatchSize);
             this.groupBoxPhase3.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxPhase3.Location = new System.Drawing.Point(13, 604);
+            this.groupBoxPhase3.Location = new System.Drawing.Point(13, 1104);
             this.groupBoxPhase3.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxPhase3.Name = "groupBoxPhase3";
             this.groupBoxPhase3.Padding = new System.Windows.Forms.Padding(4);
@@ -201,7 +197,7 @@ namespace tickMeter.Forms
             this.chkHighPriorityThreads.Location = new System.Drawing.Point(20, 31);
             this.chkHighPriorityThreads.Margin = new System.Windows.Forms.Padding(4);
             this.chkHighPriorityThreads.Name = "chkHighPriorityThreads";
-            this.chkHighPriorityThreads.Size = new System.Drawing.Size(320, 20);
+            this.chkHighPriorityThreads.Size = new System.Drawing.Size(277, 20);
             this.chkHighPriorityThreads.TabIndex = 0;
             this.chkHighPriorityThreads.Text = "Высокий приоритет для PCAP потоков";
             this.chkHighPriorityThreads.UseVisualStyleBackColor = true;
@@ -212,7 +208,7 @@ namespace tickMeter.Forms
             this.chkSingleConsumerPattern.Location = new System.Drawing.Point(20, 59);
             this.chkSingleConsumerPattern.Margin = new System.Windows.Forms.Padding(4);
             this.chkSingleConsumerPattern.Name = "chkSingleConsumerPattern";
-            this.chkSingleConsumerPattern.Size = new System.Drawing.Size(350, 20);
+            this.chkSingleConsumerPattern.Size = new System.Drawing.Size(298, 20);
             this.chkSingleConsumerPattern.TabIndex = 1;
             this.chkSingleConsumerPattern.Text = "Single Consumer Pattern для UI обновлений";
             this.chkSingleConsumerPattern.UseVisualStyleBackColor = true;
@@ -223,20 +219,32 @@ namespace tickMeter.Forms
             this.lblUiProcessingRate.Location = new System.Drawing.Point(20, 95);
             this.lblUiProcessingRate.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblUiProcessingRate.Name = "lblUiProcessingRate";
-            this.lblUiProcessingRate.Size = new System.Drawing.Size(184, 16);
+            this.lblUiProcessingRate.Size = new System.Drawing.Size(190, 16);
             this.lblUiProcessingRate.TabIndex = 2;
             this.lblUiProcessingRate.Text = "Частота обработки UI (FPS):";
             // 
             // numUiProcessingRate
             // 
-            this.numUiProcessingRate.Location = new System.Drawing.Point(220, 93);
+            this.numUiProcessingRate.Location = new System.Drawing.Point(228, 93);
             this.numUiProcessingRate.Margin = new System.Windows.Forms.Padding(4);
-            this.numUiProcessingRate.Maximum = new decimal(new int[] { 120, 0, 0, 0 });
-            this.numUiProcessingRate.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
+            this.numUiProcessingRate.Maximum = new decimal(new int[] {
+            120,
+            0,
+            0,
+            0});
+            this.numUiProcessingRate.Minimum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
             this.numUiProcessingRate.Name = "numUiProcessingRate";
             this.numUiProcessingRate.Size = new System.Drawing.Size(80, 22);
             this.numUiProcessingRate.TabIndex = 3;
-            this.numUiProcessingRate.Value = new decimal(new int[] { 60, 0, 0, 0 });
+            this.numUiProcessingRate.Value = new decimal(new int[] {
+            60,
+            0,
+            0,
+            0});
             // 
             // lblUiBatchSize
             // 
@@ -244,20 +252,32 @@ namespace tickMeter.Forms
             this.lblUiBatchSize.Location = new System.Drawing.Point(20, 125);
             this.lblUiBatchSize.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblUiBatchSize.Name = "lblUiBatchSize";
-            this.lblUiBatchSize.Size = new System.Drawing.Size(168, 16);
+            this.lblUiBatchSize.Size = new System.Drawing.Size(155, 16);
             this.lblUiBatchSize.TabIndex = 4;
             this.lblUiBatchSize.Text = "Размер пакета UI (шт.):";
             // 
             // numUiBatchSize
             // 
-            this.numUiBatchSize.Location = new System.Drawing.Point(220, 123);
+            this.numUiBatchSize.Location = new System.Drawing.Point(228, 123);
             this.numUiBatchSize.Margin = new System.Windows.Forms.Padding(4);
-            this.numUiBatchSize.Maximum = new decimal(new int[] { 50, 0, 0, 0 });
-            this.numUiBatchSize.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            this.numUiBatchSize.Maximum = new decimal(new int[] {
+            50,
+            0,
+            0,
+            0});
+            this.numUiBatchSize.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
             this.numUiBatchSize.Name = "numUiBatchSize";
             this.numUiBatchSize.Size = new System.Drawing.Size(80, 22);
             this.numUiBatchSize.TabIndex = 5;
-            this.numUiBatchSize.Value = new decimal(new int[] { 10, 0, 0, 0 });
+            this.numUiBatchSize.Value = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
             // 
             // groupBoxPhase2
             // 
@@ -268,7 +288,7 @@ namespace tickMeter.Forms
             this.groupBoxPhase2.Controls.Add(this.numRingBufferSize);
             this.groupBoxPhase2.Controls.Add(this.chkShowVirtualModeStats);
             this.groupBoxPhase2.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxPhase2.Location = new System.Drawing.Point(13, 454);
+            this.groupBoxPhase2.Location = new System.Drawing.Point(13, 954);
             this.groupBoxPhase2.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxPhase2.Name = "groupBoxPhase2";
             this.groupBoxPhase2.Padding = new System.Windows.Forms.Padding(4);
@@ -283,7 +303,7 @@ namespace tickMeter.Forms
             this.chkVirtualModeListView.Location = new System.Drawing.Point(20, 31);
             this.chkVirtualModeListView.Margin = new System.Windows.Forms.Padding(4);
             this.chkVirtualModeListView.Name = "chkVirtualModeListView";
-            this.chkVirtualModeListView.Size = new System.Drawing.Size(320, 20);
+            this.chkVirtualModeListView.Size = new System.Drawing.Size(289, 20);
             this.chkVirtualModeListView.TabIndex = 0;
             this.chkVirtualModeListView.Text = "Автоматический VirtualMode для ListView";
             this.chkVirtualModeListView.UseVisualStyleBackColor = true;
@@ -294,41 +314,65 @@ namespace tickMeter.Forms
             this.lblVirtualModeThreshold.Location = new System.Drawing.Point(20, 65);
             this.lblVirtualModeThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblVirtualModeThreshold.Name = "lblVirtualModeThreshold";
-            this.lblVirtualModeThreshold.Size = new System.Drawing.Size(198, 16);
+            this.lblVirtualModeThreshold.Size = new System.Drawing.Size(207, 16);
             this.lblVirtualModeThreshold.TabIndex = 1;
             this.lblVirtualModeThreshold.Text = "Порог переключения (пакеты):";
             // 
             // numVirtualModeThreshold
             // 
-            this.numVirtualModeThreshold.Location = new System.Drawing.Point(230, 63);
+            this.numVirtualModeThreshold.Location = new System.Drawing.Point(248, 63);
             this.numVirtualModeThreshold.Margin = new System.Windows.Forms.Padding(4);
-            this.numVirtualModeThreshold.Maximum = new decimal(new int[] { 10000, 0, 0, 0 });
-            this.numVirtualModeThreshold.Minimum = new decimal(new int[] { 100, 0, 0, 0 });
+            this.numVirtualModeThreshold.Maximum = new decimal(new int[] {
+            10000,
+            0,
+            0,
+            0});
+            this.numVirtualModeThreshold.Minimum = new decimal(new int[] {
+            100,
+            0,
+            0,
+            0});
             this.numVirtualModeThreshold.Name = "numVirtualModeThreshold";
             this.numVirtualModeThreshold.Size = new System.Drawing.Size(80, 22);
             this.numVirtualModeThreshold.TabIndex = 2;
-            this.numVirtualModeThreshold.Value = new decimal(new int[] { 2000, 0, 0, 0 });
+            this.numVirtualModeThreshold.Value = new decimal(new int[] {
+            2000,
+            0,
+            0,
+            0});
             // 
             // lblRingBufferSize
             // 
             this.lblRingBufferSize.AutoSize = true;
-            this.lblRingBufferSize.Location = new System.Drawing.Point(320, 65);
+            this.lblRingBufferSize.Location = new System.Drawing.Point(361, 65);
             this.lblRingBufferSize.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblRingBufferSize.Name = "lblRingBufferSize";
-            this.lblRingBufferSize.Size = new System.Drawing.Size(156, 16);
+            this.lblRingBufferSize.Size = new System.Drawing.Size(144, 16);
             this.lblRingBufferSize.TabIndex = 3;
             this.lblRingBufferSize.Text = "Размер буфера (шт.):";
             // 
             // numRingBufferSize
             // 
-            this.numRingBufferSize.Location = new System.Drawing.Point(490, 63);
+            this.numRingBufferSize.Location = new System.Drawing.Point(523, 63);
             this.numRingBufferSize.Margin = new System.Windows.Forms.Padding(4);
-            this.numRingBufferSize.Maximum = new decimal(new int[] { 50000, 0, 0, 0 });
-            this.numRingBufferSize.Minimum = new decimal(new int[] { 1000, 0, 0, 0 });
+            this.numRingBufferSize.Maximum = new decimal(new int[] {
+            50000,
+            0,
+            0,
+            0});
+            this.numRingBufferSize.Minimum = new decimal(new int[] {
+            1000,
+            0,
+            0,
+            0});
             this.numRingBufferSize.Name = "numRingBufferSize";
             this.numRingBufferSize.Size = new System.Drawing.Size(80, 22);
             this.numRingBufferSize.TabIndex = 4;
-            this.numRingBufferSize.Value = new decimal(new int[] { 10000, 0, 0, 0 });
+            this.numRingBufferSize.Value = new decimal(new int[] {
+            10000,
+            0,
+            0,
+            0});
             // 
             // chkShowVirtualModeStats
             // 
@@ -336,7 +380,7 @@ namespace tickMeter.Forms
             this.chkShowVirtualModeStats.Location = new System.Drawing.Point(20, 95);
             this.chkShowVirtualModeStats.Margin = new System.Windows.Forms.Padding(4);
             this.chkShowVirtualModeStats.Name = "chkShowVirtualModeStats";
-            this.chkShowVirtualModeStats.Size = new System.Drawing.Size(280, 20);
+            this.chkShowVirtualModeStats.Size = new System.Drawing.Size(267, 20);
             this.chkShowVirtualModeStats.TabIndex = 5;
             this.chkShowVirtualModeStats.Text = "Показывать диагностику VirtualMode";
             this.chkShowVirtualModeStats.UseVisualStyleBackColor = true;
@@ -351,7 +395,7 @@ namespace tickMeter.Forms
             this.groupBoxPhase1.Controls.Add(this.lblPcapMinToCopy);
             this.groupBoxPhase1.Controls.Add(this.numPcapMinToCopy);
             this.groupBoxPhase1.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxPhase1.Location = new System.Drawing.Point(13, 304);
+            this.groupBoxPhase1.Location = new System.Drawing.Point(13, 804);
             this.groupBoxPhase1.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxPhase1.Name = "groupBoxPhase1";
             this.groupBoxPhase1.Padding = new System.Windows.Forms.Padding(4);
@@ -366,7 +410,7 @@ namespace tickMeter.Forms
             this.chkAntiReentrancy.Location = new System.Drawing.Point(20, 31);
             this.chkAntiReentrancy.Margin = new System.Windows.Forms.Padding(4);
             this.chkAntiReentrancy.Name = "chkAntiReentrancy";
-            this.chkAntiReentrancy.Size = new System.Drawing.Size(280, 20);
+            this.chkAntiReentrancy.Size = new System.Drawing.Size(228, 20);
             this.chkAntiReentrancy.TabIndex = 0;
             this.chkAntiReentrancy.Text = "Защита от реэнтерабельности";
             this.chkAntiReentrancy.UseVisualStyleBackColor = true;
@@ -377,7 +421,7 @@ namespace tickMeter.Forms
             this.chkRtssThrottling.Location = new System.Drawing.Point(320, 31);
             this.chkRtssThrottling.Margin = new System.Windows.Forms.Padding(4);
             this.chkRtssThrottling.Name = "chkRtssThrottling";
-            this.chkRtssThrottling.Size = new System.Drawing.Size(200, 20);
+            this.chkRtssThrottling.Size = new System.Drawing.Size(218, 20);
             this.chkRtssThrottling.TabIndex = 1;
             this.chkRtssThrottling.Text = "Троттлинг RTSS обновлений";
             this.chkRtssThrottling.UseVisualStyleBackColor = true;
@@ -388,7 +432,7 @@ namespace tickMeter.Forms
             this.chkPcapOptimization.Location = new System.Drawing.Point(20, 59);
             this.chkPcapOptimization.Margin = new System.Windows.Forms.Padding(4);
             this.chkPcapOptimization.Name = "chkPcapOptimization";
-            this.chkPcapOptimization.Size = new System.Drawing.Size(220, 20);
+            this.chkPcapOptimization.Size = new System.Drawing.Size(216, 20);
             this.chkPcapOptimization.TabIndex = 2;
             this.chkPcapOptimization.Text = "Оптимизация PCAP буферов";
             this.chkPcapOptimization.UseVisualStyleBackColor = true;
@@ -399,20 +443,32 @@ namespace tickMeter.Forms
             this.lblPcapKernelBufferMb.Location = new System.Drawing.Point(20, 95);
             this.lblPcapKernelBufferMb.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblPcapKernelBufferMb.Name = "lblPcapKernelBufferMb";
-            this.lblPcapKernelBufferMb.Size = new System.Drawing.Size(180, 16);
+            this.lblPcapKernelBufferMb.Size = new System.Drawing.Size(168, 16);
             this.lblPcapKernelBufferMb.TabIndex = 3;
             this.lblPcapKernelBufferMb.Text = "Kernel Buffer размер (MB):";
             // 
             // numPcapKernelBufferMb
             // 
-            this.numPcapKernelBufferMb.Location = new System.Drawing.Point(210, 93);
+            this.numPcapKernelBufferMb.Location = new System.Drawing.Point(206, 93);
             this.numPcapKernelBufferMb.Margin = new System.Windows.Forms.Padding(4);
-            this.numPcapKernelBufferMb.Maximum = new decimal(new int[] { 64, 0, 0, 0 });
-            this.numPcapKernelBufferMb.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            this.numPcapKernelBufferMb.Maximum = new decimal(new int[] {
+            64,
+            0,
+            0,
+            0});
+            this.numPcapKernelBufferMb.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
             this.numPcapKernelBufferMb.Name = "numPcapKernelBufferMb";
             this.numPcapKernelBufferMb.Size = new System.Drawing.Size(80, 22);
             this.numPcapKernelBufferMb.TabIndex = 4;
-            this.numPcapKernelBufferMb.Value = new decimal(new int[] { 8, 0, 0, 0 });
+            this.numPcapKernelBufferMb.Value = new decimal(new int[] {
+            8,
+            0,
+            0,
+            0});
             // 
             // lblPcapMinToCopy
             // 
@@ -420,20 +476,27 @@ namespace tickMeter.Forms
             this.lblPcapMinToCopy.Location = new System.Drawing.Point(320, 95);
             this.lblPcapMinToCopy.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblPcapMinToCopy.Name = "lblPcapMinToCopy";
-            this.lblPcapMinToCopy.Size = new System.Drawing.Size(140, 16);
+            this.lblPcapMinToCopy.Size = new System.Drawing.Size(130, 16);
             this.lblPcapMinToCopy.TabIndex = 5;
             this.lblPcapMinToCopy.Text = "Min To Copy (bytes):";
             // 
             // numPcapMinToCopy
             // 
-            this.numPcapMinToCopy.Location = new System.Drawing.Point(470, 93);
+            this.numPcapMinToCopy.Location = new System.Drawing.Point(468, 93);
             this.numPcapMinToCopy.Margin = new System.Windows.Forms.Padding(4);
-            this.numPcapMinToCopy.Maximum = new decimal(new int[] { 65536, 0, 0, 0 });
-            this.numPcapMinToCopy.Minimum = new decimal(new int[] { 0, 0, 0, 0 });
+            this.numPcapMinToCopy.Maximum = new decimal(new int[] {
+            65536,
+            0,
+            0,
+            0});
             this.numPcapMinToCopy.Name = "numPcapMinToCopy";
             this.numPcapMinToCopy.Size = new System.Drawing.Size(80, 22);
             this.numPcapMinToCopy.TabIndex = 6;
-            this.numPcapMinToCopy.Value = new decimal(new int[] { 4096, 0, 0, 0 });
+            this.numPcapMinToCopy.Value = new decimal(new int[] {
+            4096,
+            0,
+            0,
+            0});
             // 
             // groupBox5
             // 
@@ -500,7 +563,7 @@ namespace tickMeter.Forms
             // 
             // numPingSpikeThreshold
             // 
-            this.numPingSpikeThreshold.Location = new System.Drawing.Point(508, 114);
+            this.numPingSpikeThreshold.Location = new System.Drawing.Point(518, 113);
             this.numPingSpikeThreshold.Margin = new System.Windows.Forms.Padding(4);
             this.numPingSpikeThreshold.Maximum = new decimal(new int[] {
             1000,
@@ -535,7 +598,7 @@ namespace tickMeter.Forms
             // chkEnableIPv6
             // 
             this.chkEnableIPv6.AutoSize = true;
-            this.chkEnableIPv6.Location = new System.Drawing.Point(20, 283);
+            this.chkEnableIPv6.Location = new System.Drawing.Point(20, 255);
             this.chkEnableIPv6.Margin = new System.Windows.Forms.Padding(4);
             this.chkEnableIPv6.Name = "chkEnableIPv6";
             this.chkEnableIPv6.Size = new System.Drawing.Size(170, 20);
@@ -546,7 +609,7 @@ namespace tickMeter.Forms
             // chkDedupMultiNic
             // 
             this.chkDedupMultiNic.AutoSize = true;
-            this.chkDedupMultiNic.Location = new System.Drawing.Point(20, 255);
+            this.chkDedupMultiNic.Location = new System.Drawing.Point(20, 227);
             this.chkDedupMultiNic.Margin = new System.Windows.Forms.Padding(4);
             this.chkDedupMultiNic.Name = "chkDedupMultiNic";
             this.chkDedupMultiNic.Size = new System.Drawing.Size(274, 20);
@@ -557,7 +620,7 @@ namespace tickMeter.Forms
             // chkTickrateSmoothing
             // 
             this.chkTickrateSmoothing.AutoSize = true;
-            this.chkTickrateSmoothing.Location = new System.Drawing.Point(20, 144);
+            this.chkTickrateSmoothing.Location = new System.Drawing.Point(20, 115);
             this.chkTickrateSmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTickrateSmoothing.Name = "chkTickrateSmoothing";
             this.chkTickrateSmoothing.Size = new System.Drawing.Size(277, 20);
@@ -568,7 +631,7 @@ namespace tickMeter.Forms
             // chkPingGraphOverlaySmoothing
             // 
             this.chkPingGraphOverlaySmoothing.AutoSize = true;
-            this.chkPingGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 173);
+            this.chkPingGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 143);
             this.chkPingGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingGraphOverlaySmoothing.Name = "chkPingGraphOverlaySmoothing";
             this.chkPingGraphOverlaySmoothing.Size = new System.Drawing.Size(284, 20);
@@ -579,7 +642,7 @@ namespace tickMeter.Forms
             // chkTickrateGraphOverlaySmoothing
             // 
             this.chkTickrateGraphOverlaySmoothing.AutoSize = true;
-            this.chkTickrateGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 200);
+            this.chkTickrateGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 171);
             this.chkTickrateGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTickrateGraphOverlaySmoothing.Name = "chkTickrateGraphOverlaySmoothing";
             this.chkTickrateGraphOverlaySmoothing.Size = new System.Drawing.Size(307, 20);
@@ -590,7 +653,7 @@ namespace tickMeter.Forms
             // chkTicktimeGraphOverlaySmoothing
             // 
             this.chkTicktimeGraphOverlaySmoothing.AutoSize = true;
-            this.chkTicktimeGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 227);
+            this.chkTicktimeGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 199);
             this.chkTicktimeGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTicktimeGraphOverlaySmoothing.Name = "chkTicktimeGraphOverlaySmoothing";
             this.chkTicktimeGraphOverlaySmoothing.Size = new System.Drawing.Size(308, 20);
@@ -601,7 +664,7 @@ namespace tickMeter.Forms
             // chkPingValueOverlaySmoothing
             // 
             this.chkPingValueOverlaySmoothing.AutoSize = true;
-            this.chkPingValueOverlaySmoothing.Location = new System.Drawing.Point(20, 311);
+            this.chkPingValueOverlaySmoothing.Location = new System.Drawing.Point(20, 283);
             this.chkPingValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingValueOverlaySmoothing.Name = "chkPingValueOverlaySmoothing";
             this.chkPingValueOverlaySmoothing.Size = new System.Drawing.Size(292, 20);
@@ -612,7 +675,7 @@ namespace tickMeter.Forms
             // chkPingValueGuiSmoothing
             // 
             this.chkPingValueGuiSmoothing.AutoSize = true;
-            this.chkPingValueGuiSmoothing.Location = new System.Drawing.Point(20, 338);
+            this.chkPingValueGuiSmoothing.Location = new System.Drawing.Point(20, 311);
             this.chkPingValueGuiSmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingValueGuiSmoothing.Name = "chkPingValueGuiSmoothing";
             this.chkPingValueGuiSmoothing.Size = new System.Drawing.Size(259, 20);
@@ -623,7 +686,7 @@ namespace tickMeter.Forms
             // chkTickrateValueOverlaySmoothing
             // 
             this.chkTickrateValueOverlaySmoothing.AutoSize = true;
-            this.chkTickrateValueOverlaySmoothing.Location = new System.Drawing.Point(20, 365);
+            this.chkTickrateValueOverlaySmoothing.Location = new System.Drawing.Point(20, 339);
             this.chkTickrateValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTickrateValueOverlaySmoothing.Name = "chkTickrateValueOverlaySmoothing";
             this.chkTickrateValueOverlaySmoothing.Size = new System.Drawing.Size(315, 20);
@@ -634,7 +697,7 @@ namespace tickMeter.Forms
             // chkTrafficValueOverlaySmoothing
             // 
             this.chkTrafficValueOverlaySmoothing.AutoSize = true;
-            this.chkTrafficValueOverlaySmoothing.Location = new System.Drawing.Point(20, 392);
+            this.chkTrafficValueOverlaySmoothing.Location = new System.Drawing.Point(20, 367);
             this.chkTrafficValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTrafficValueOverlaySmoothing.Name = "chkTrafficValueOverlaySmoothing";
             this.chkTrafficValueOverlaySmoothing.Size = new System.Drawing.Size(311, 20);
@@ -645,7 +708,7 @@ namespace tickMeter.Forms
             // chkPingTargetActiveOnly
             // 
             this.chkPingTargetActiveOnly.AutoSize = true;
-            this.chkPingTargetActiveOnly.Location = new System.Drawing.Point(20, 116);
+            this.chkPingTargetActiveOnly.Location = new System.Drawing.Point(333, 135);
             this.chkPingTargetActiveOnly.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingTargetActiveOnly.Name = "chkPingTargetActiveOnly";
             this.chkPingTargetActiveOnly.Size = new System.Drawing.Size(314, 20);
@@ -896,6 +959,7 @@ namespace tickMeter.Forms
             this.panelButtons.Controls.Add(this.btnOK);
             this.panelButtons.Controls.Add(this.btnApply);
             this.panelButtons.Controls.Add(this.btnCancel);
+            this.panelButtons.Controls.Add(this.btnReset);
             this.panelButtons.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.panelButtons.Location = new System.Drawing.Point(0, 550);
             this.panelButtons.Margin = new System.Windows.Forms.Padding(4);
@@ -938,6 +1002,18 @@ namespace tickMeter.Forms
             this.btnCancel.Text = "Отмена";
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
+            // 
+            // btnReset
+            // 
+            this.btnReset.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnReset.Location = new System.Drawing.Point(12, 12);
+            this.btnReset.Margin = new System.Windows.Forms.Padding(4);
+            this.btnReset.Name = "btnReset";
+            this.btnReset.Size = new System.Drawing.Size(120, 28);
+            this.btnReset.TabIndex = 3;
+            this.btnReset.Text = "Сброс (Опт.)";
+            this.btnReset.UseVisualStyleBackColor = true;
+            this.btnReset.Click += new System.EventHandler(this.btnReset_Click);
             // 
             // btnSave
             // 
@@ -1070,5 +1146,6 @@ namespace tickMeter.Forms
         private System.Windows.Forms.Button btnApply;
         private System.Windows.Forms.Button btnCancel;
         private System.Windows.Forms.Button btnSave;
+        private System.Windows.Forms.Button btnReset;
     }
 }
