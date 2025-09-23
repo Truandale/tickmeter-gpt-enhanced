@@ -25,6 +25,7 @@ namespace tickMeter.Classes
         public static ConnectionsManager connMngr;
         public static PingManager pingManager;
         public static ConnectionTracker connectionTracker;
+        // public static tickMeter.Classes.CaptureService Capture; // TODO: Временно отключено до исправления
         static List<LivePacketDevice> AdaptersList;
 
         public static void Init()
@@ -38,6 +39,9 @@ namespace tickMeter.Classes
             settingsManager = new SettingsManager();
             connMngr = new ConnectionsManager();
             pingManager = new PingManager(settingsManager, connMngr);
+            
+            // Инициализируем CaptureService для централизованного управления PCAP воркерами
+            // Capture = new tickMeter.Classes.CaptureService(); // TODO: Временно отключено
             
             // Инициализируем VPN bypass компоненты
             connectionTracker = new ConnectionTracker();
@@ -96,6 +100,11 @@ namespace tickMeter.Classes
             }
             return "";
         }
+        
+        // Диагностические свойства для CaptureService - временно отключены
+        // public static int CaptureWorkersCount => Capture?.WorkersCount ?? 0;
+        // public static int CaptureSubsCount => Capture?.SubscriptionsCount ?? 0;
+        // public static long CaptureDedupDrops => Capture?.DedupDropped ?? 0L;
 
     }
 }
