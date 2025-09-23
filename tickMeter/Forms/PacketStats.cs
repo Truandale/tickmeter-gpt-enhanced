@@ -12,9 +12,40 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using tickMeter.Classes;
+using System.Runtime.CompilerServices;
 
 namespace tickMeter
 {
+    /// <summary>
+    /// Легкая структура для представления пакета в VirtualMode
+    /// </summary>
+    public struct PacketRow
+    {
+        public DateTime Timestamp;
+        public int Id;
+        public string SourceIP;
+        public uint SourcePort;
+        public string DestIP;
+        public uint DestPort;
+        public int Length;
+        public string Protocol;
+        public string ProcessName;
+        
+        public PacketRow(DateTime ts, int id, string srcIp, uint srcPort, string dstIp, uint dstPort, 
+                        int len, string proto, string proc)
+        {
+            Timestamp = ts;
+            Id = id;
+            SourceIP = srcIp;
+            SourcePort = srcPort;
+            DestIP = dstIp;
+            DestPort = dstPort;
+            Length = len;
+            Protocol = proto;
+            ProcessName = proc;
+        }
+    }
+    
     public partial class PacketStats : Form
     {
         List<Packet> PacketBuffer;
@@ -39,10 +70,34 @@ namespace tickMeter
         private bool CaptureAll => App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
         private bool _ignoreVirtual => App.settingsManager.GetOption("ignore_virtual_adapters", "True", "SETTINGS") == "True";
 
+        // VirtualMode ListView support
+        private readonly object _ringLock = new object();
+        private PacketRow[] _ring;
+        private int _ringHead = 0, _ringCount = 0; // head — индекс самого старого
+        private bool _useVirtual = false;
+        private int _packetIdCounter = 0;
+
         public PacketStats()
         {
             InitializeComponent();
             packetFilter = new PacketFilter();
+            
+            // Инициализация VirtualMode на основе настроек
+            _useVirtual = App.settingsManager?.GetOption("live_virtual_list", "False", "ADVANCED") == "True";
+            int maxRows = Math.Max(1000, int.Parse(App.settingsManager?.GetOption("live_max_rows", "5000", "ADVANCED") ?? "5000"));
+            
+            if (_useVirtual)
+            {
+                _ring = new PacketRow[maxRows];
+                listView1.VirtualMode = true;
+                listView1.RetrieveVirtualItem += ListView1_RetrieveVirtualItem;
+                listView1.VirtualListSize = 0;
+                Debug.Print($"[PacketStats] VirtualMode enabled with buffer size: {maxRows}");
+            }
+            else
+            {
+                Debug.Print("[PacketStats] Classic ListView mode");
+            }
         }
         public void InitWorker()
         {
@@ -517,37 +572,71 @@ namespace tickMeter
                 
                 if (!packetFilter.ValidateProcess(processName)) continue;
 
-                ListViewItem item = new ListViewItem(packet.Timestamp.ToString("HH:mm:ss.fff"));
+                if (_useVirtual)
+                {
+                    // VirtualMode: добавляем в кольцевой буфер
+                    var row = CreatePacketRow(packet, ip, udp, tcp, processName);
+                    RingAdd(row);
+                }
+                else
+                {
+                    // Классический режим: создаем ListViewItem
+                    ListViewItem item = new ListViewItem(packet.Timestamp.ToString("HH:mm:ss.fff"));
 
-                packet_id++;
-                string id = packet_id.ToString();
-                item.SubItems.Add(id);
-                item.SubItems.Add(from_ip);
-                item.SubItems.Add(fromPort.ToString());
-                item.SubItems.Add(to_ip);
-                item.SubItems.Add(toPort.ToString());
-                item.SubItems.Add(packet_size);
-                item.SubItems.Add(protocol);
-                item.SubItems.Add(processName);
-                
-                items[iKey] = item;
-                iKey++;
+                    packet_id++;
+                    string id = packet_id.ToString();
+                    item.SubItems.Add(id);
+                    item.SubItems.Add(from_ip);
+                    item.SubItems.Add(fromPort.ToString());
+                    item.SubItems.Add(to_ip);
+                    item.SubItems.Add(toPort.ToString());
+                    item.SubItems.Add(packet_size);
+                    item.SubItems.Add(protocol);
+                    item.SubItems.Add(processName);
+                    
+                    items[iKey] = item;
+                    iKey++;
+                }
 
                 AutoDetectMngr.AnalyzePacket(packet);
             }
-            int realItems = items.Where(id => id != null).Count();
-           
-            if (realItems > 0)
-            {
-                items =  items.Where(id => id != null).ToArray();
-            } else {
-                return;
-            }
+            
             procItems.Clear();
             procItems = AutoDetectMngr.GetActiveProccessesList(procItems);
-            if(items.Length > 0)
+            
+            if (_useVirtual)
             {
-                // Используем BeginInvoke вместо Invoke для избежания deadlock
+                // VirtualMode: обновляем размер виртуального списка
+                this.BeginInvoke(new Action(() => {
+                    try
+                    {
+                        lock (_ringLock)
+                        {
+                            listView1.VirtualListSize = _ringCount;
+                            if (_ringCount > 0 && autoscroll.Checked)
+                            {
+                                listView1.EnsureVisible(_ringCount - 1);
+                            }
+                        }
+                    }
+                    catch(Exception) 
+                    { 
+                        // Игнорируем ошибки обновления UI
+                    }
+                }));
+            }
+            else if(items.Length > 0)
+            {
+                int realItems = items.Where(id => id != null).Count();
+               
+                if (realItems > 0)
+                {
+                    items =  items.Where(id => id != null).ToArray();
+                } else {
+                    return;
+                }
+                
+                // Классический режим: используем BeginInvoke вместо Invoke для избежания deadlock
                 this.BeginInvoke(new Action(() => {
                     try
                     {
@@ -579,6 +668,9 @@ namespace tickMeter
                         {
                             listView1.EnsureVisible(listView1.Items.Count - 1);
                         }
+                        
+                        // Проверяем необходимость переключения на VirtualMode
+                        CheckAndSwitchMode();
                         listView1.EndUpdate();
                     }
                     catch(Exception) 
@@ -643,6 +735,8 @@ namespace tickMeter
         private void clear_Click(object sender, EventArgs e)
         {
             packet_id = 0;
+            _packetIdCounter = 0;
+            
             lock (_packetBufferLock)
             {
                 try
@@ -655,7 +749,20 @@ namespace tickMeter
                     PacketBuffer = new List<Packet>();
                 }
             }
-            listView1.Items.Clear();
+            
+            if (_useVirtual)
+            {
+                lock (_ringLock)
+                {
+                    _ringHead = 0;
+                    _ringCount = 0;
+                    listView1.VirtualListSize = 0;
+                }
+            }
+            else
+            {
+                listView1.Items.Clear();
+            }
         }
 
         private void stop_Click(object sender, EventArgs e)
@@ -696,7 +803,19 @@ namespace tickMeter
             top_process_name.Text = AutoDetectMngr.GetActiveProcessName();
             label3.Text = "IN " + inPackets.ToString() + " | OUT " + outPackets.ToString();
             label4.Text = "DL " + (inTraffic / 1024).ToString() + " | UP " + (outTraffic / 1024).ToString();
-            label5.Text = "Local IP: " + App.meterState.LocalIP;
+            
+            // Диагностические счетчики
+            int activeWorkers = _pcapWorkers.Count;
+            int queueSize;
+            int bufferCount;
+            lock (_packetBufferLock)
+            {
+                queueSize = PacketBuffer?.Count ?? 0;
+                bufferCount = _useVirtual ? _ringCount : (listView1?.Items?.Count ?? 0);
+            }
+            
+            label5.Text = $"Local IP: {App.meterState.LocalIP} | Workers: {activeWorkers} | Queue: {queueSize} | Items: {bufferCount}" + 
+                         (_useVirtual ? " (Virtual)" : "");
         }
 
         private async void active_refresh_Tick(object sender, EventArgs e)
@@ -721,6 +840,160 @@ namespace tickMeter
                     listView2.EndUpdate();
                 }));
             });
+        }
+        
+        /// <summary>
+        /// Обработчик для VirtualMode ListView
+        /// </summary>
+        private void ListView1_RetrieveVirtualItem(object sender, RetrieveVirtualItemEventArgs e)
+        {
+            lock (_ringLock)
+            {
+                if (e.ItemIndex >= 0 && e.ItemIndex < _ringCount)
+                {
+                    var row = RingGetUnsafe(e.ItemIndex);
+                    e.Item = CreateListViewItem(row);
+                }
+                else
+                {
+                    e.Item = new ListViewItem("-");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Создает ListViewItem из PacketRow
+        /// </summary>
+        private ListViewItem CreateListViewItem(PacketRow row)
+        {
+            var item = new ListViewItem(row.Timestamp.ToString("HH:mm:ss.fff"));
+            item.SubItems.Add(row.Id.ToString());
+            item.SubItems.Add(row.SourceIP);
+            item.SubItems.Add(row.SourcePort.ToString());
+            item.SubItems.Add(row.DestIP);
+            item.SubItems.Add(row.DestPort.ToString());
+            item.SubItems.Add(row.Length.ToString());
+            item.SubItems.Add(row.Protocol);
+            item.SubItems.Add(row.ProcessName);
+            return item;
+        }
+        
+        /// <summary>
+        /// Добавляет пакет в кольцевой буфер для VirtualMode
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void RingAdd(PacketRow row)
+        {
+            lock (_ringLock)
+            {
+                int cap = Math.Max(1000, int.Parse(App.settingsManager?.GetOption("live_max_rows", "5000", "ADVANCED") ?? "5000"));
+                if (_ring.Length != cap)
+                {
+                    // Переаллокация под новый лимит
+                    var newBuf = new PacketRow[cap];
+                    int toCopy = Math.Min(_ringCount, cap);
+                    for (int i = 0; i < toCopy; i++) 
+                        newBuf[i] = RingGetUnsafe(i);
+                    _ring = newBuf; 
+                    _ringHead = 0; 
+                    _ringCount = toCopy;
+                }
+                
+                if (_ringCount < _ring.Length)
+                {
+                    _ring[(_ringHead + _ringCount) % _ring.Length] = row;
+                    _ringCount++;
+                }
+                else
+                {
+                    // Переполнение: перезаписываем самый старый и двигаем head
+                    _ring[_ringHead] = row;
+                    _ringHead = (_ringHead + 1) % _ring.Length;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Получает элемент из кольцевого буфера по индексу
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private PacketRow RingGetUnsafe(int index)
+        {
+            // index: 0.._ringCount-1
+            return _ring[(_ringHead + index) % _ring.Length];
+        }
+        
+        /// <summary>
+        /// Создает PacketRow из пакета для VirtualMode
+        /// </summary>
+        private PacketRow CreatePacketRow(Packet packet, IpV4Datagram ip, UdpDatagram udp, TcpDatagram tcp, string processName)
+        {
+            string protocol = ip.Protocol.ToString();
+            uint fromPort = 0;
+            uint toPort = 0;
+            
+            if (protocol == IpV4Protocol.Udp.ToString() && udp != null)
+            {
+                fromPort = udp.SourcePort;
+                toPort = udp.DestinationPort;
+            }
+            else if (protocol == IpV4Protocol.Tcp.ToString() && tcp != null)
+            {
+                fromPort = tcp.SourcePort;
+                toPort = tcp.DestinationPort;
+            }
+            
+            return new PacketRow(
+                packet.Timestamp,
+                Interlocked.Increment(ref _packetIdCounter),
+                ip.Source.ToString(),
+                fromPort,
+                ip.Destination.ToString(),
+                toPort,
+                ip.TotalLength,
+                protocol,
+                processName ?? "n/a"
+            );
+        }
+        
+        private void CheckAndSwitchMode()
+        {
+            const int VIRTUAL_THRESHOLD = 2000;
+            int currentCount = _useVirtual ? _ringCount : listView1.Items.Count;
+            
+            // Переход на Virtual mode при превышении порога
+            if (!_useVirtual && currentCount >= VIRTUAL_THRESHOLD)
+            {
+                listView1.VirtualMode = true;
+                listView1.VirtualListSize = currentCount;
+                _useVirtual = true;
+                
+                // Перенос данных из Items в Ring Buffer
+                for (int i = 0; i < Math.Min(currentCount, _ring.Length); i++)
+                {
+                    var item = listView1.Items[i];
+                    
+                    // Парсим данные из SubItems
+                    DateTime.TryParse(item.SubItems[0].Text, out DateTime ts);
+                    int.TryParse(item.SubItems[1].Text, out int id);
+                    uint.TryParse(item.SubItems[2].Text, out uint srcPort);
+                    uint.TryParse(item.SubItems[4].Text, out uint dstPort);
+                    int.TryParse(item.SubItems[5].Text, out int len);
+                    
+                    _ring[i] = new PacketRow(
+                        ts, id, 
+                        item.SubItems[3].Text, srcPort,  // source IP, source port
+                        item.SubItems[4].Text, dstPort,  // dest IP, dest port
+                        len, 
+                        item.SubItems[6].Text,           // protocol
+                        item.SubItems[7].Text            // process
+                    );
+                }
+                _ringCount = Math.Min(currentCount, _ring.Length);
+                _ringHead = _ringCount % _ring.Length;
+                
+                listView1.Items.Clear();
+            }
         }
     }
 }
