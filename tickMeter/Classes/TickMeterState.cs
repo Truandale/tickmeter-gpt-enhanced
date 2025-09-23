@@ -41,6 +41,9 @@ namespace tickMeter
         public List<float> tickTimeBuffer = new List<float>();
         public List<float> pingBuffer = new List<float>();
         public List<float> tickrateGraph = new List<float>();
+        
+        // Thread-safe access to pingBuffer
+        private readonly object _pingBufferLock = new object();
 
         public int TickRate
         {
@@ -104,7 +107,10 @@ namespace tickMeter
             {
                 tickTimeBuffer.Add(0);
                 tickrateGraph.Add(0);
-                pingBuffer.Add(30); // Начальное значение для графика пинга
+                lock (_pingBufferLock)
+                {
+                    pingBuffer.Add(30); // Начальное значение для графика пинга
+                }
             }
             Server = new GameServer(); // Инициализация сервера до Reset
             Reset(); // Сброс всех счетчиков и состояния
@@ -180,9 +186,12 @@ namespace tickMeter
                     else
                         pingValue = 0;
 
-                    pingBuffer.Add(pingValue);
-                    if (pingBuffer.Count > 512)
-                        pingBuffer.RemoveAt(0);
+                    lock (_pingBufferLock)
+                    {
+                        pingBuffer.Add(pingValue);
+                        if (pingBuffer.Count > 512)
+                            pingBuffer.RemoveAt(0);
+                    }
                 }
                 timeStamp = value;
             }
@@ -235,12 +244,18 @@ namespace tickMeter
 
             tickTimeBuffer.Clear();
             tickrateGraph.Clear();
-            pingBuffer.Clear();
+            lock (_pingBufferLock)
+            {
+                pingBuffer.Clear();
+            }
             for (int i = 0; i < 513; i++)
             {
                 tickTimeBuffer.Add(0);
                 tickrateGraph.Add(0);
-                pingBuffer.Add(30);
+                lock (_pingBufferLock)
+                {
+                    pingBuffer.Add(30);
+                }
             }
 
             UploadTraffic = 0;
@@ -426,15 +441,27 @@ namespace tickMeter
             /// </summary>
             private void CheckForPingSpike(int currentPing)
             {
-                if (App.meterState?.pingBuffer == null || App.meterState.pingBuffer.Count < 5)
+                if (App.meterState?.pingBuffer == null)
                     return;
 
-                // Вычисляем средний пинг из последних 10 значений (исключая текущее)
-                var bufferCount = App.meterState.pingBuffer.Count;
-                var recentPings = App.meterState.pingBuffer
-                    .Skip(Math.Max(0, bufferCount - 10))
-                    .Where(p => p > 0)
-                    .ToList();
+                // Thread-safe копирование pingBuffer для избежания InvalidOperationException
+                List<float> recentPings;
+                lock (App.meterState._pingBufferLock)
+                {
+                    if (App.meterState.pingBuffer.Count < 5)
+                        return;
+
+                    // Создаем копию последних 10 значений для безопасной обработки
+                    var bufferCount = App.meterState.pingBuffer.Count;
+                    var startIndex = Math.Max(0, bufferCount - 10);
+                    recentPings = new List<float>();
+                    
+                    for (int i = startIndex; i < bufferCount; i++)
+                    {
+                        if (App.meterState.pingBuffer[i] > 0)
+                            recentPings.Add(App.meterState.pingBuffer[i]);
+                    }
+                }
                     
                 if (recentPings.Count < 3)
                     return;
@@ -554,10 +581,13 @@ namespace tickMeter
                     // Обновляем pingBuffer при изменении пинга
                     if (App.meterState != null && value > 0)
                     {
-                        App.meterState.pingBuffer.Add(_ping);
-                        if (App.meterState.pingBuffer.Count > 512)
+                        lock (App.meterState._pingBufferLock)
                         {
-                            App.meterState.pingBuffer.RemoveAt(0);
+                            App.meterState.pingBuffer.Add(_ping);
+                            if (App.meterState.pingBuffer.Count > 512)
+                            {
+                                App.meterState.pingBuffer.RemoveAt(0);
+                            }
                         }
                         
                         // Проверяем на спайк пинга

@@ -70,6 +70,11 @@ namespace tickMeter
         private bool CaptureAll => App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
         private bool _ignoreVirtual => App.settingsManager.GetOption("ignore_virtual_adapters", "True", "SETTINGS") == "True";
 
+        // CaptureService integration - временно отключено до исправления проблем компиляции
+        // private tickMeter.Classes.CaptureService.Subscription _captureSub;
+        private bool _captureRunning;
+        private long _lastStartMs;
+
         // VirtualMode ListView support
         private readonly object _ringLock = new object();
         private PacketRow[] _ring;

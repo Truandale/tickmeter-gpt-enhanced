@@ -15,14 +15,23 @@ namespace tickMeter.Classes
     /// Глобальный сервис захвата: один воркер на адаптер, рассылает пакеты подписчикам.
     /// Управляет жизненным циклом воркеров по ref-count.
     /// </summary>
-    internal sealed class CaptureService : IDisposable
+    public sealed class CaptureService : IDisposable
     {
+        private static string StableKey(LivePacketDevice d)
+        {
+            // Для Npcap это "\Device\NPF_{GUID}" — стабильный ключ
+            var n = d?.Name ?? "";
+            // На всякий извлекаем GUID — если формат другой
+            var i = n.IndexOf("NPF_{", StringComparison.OrdinalIgnoreCase);
+            if (i >= 0) return n.Substring(i); // "NPF_{GUID}..."
+            return n;
+        }
         private sealed class WorkerEntry : IDisposable
         {
             public readonly LivePacketDevice Device;
             private PacketCommunicator _comm;
             private Thread _thread;
-            private readonly CancellationTokenSource _cts = new();
+            private readonly CancellationTokenSource _cts = new CancellationTokenSource();
             private volatile bool _started;
             private readonly CaptureService _owner;
 
@@ -88,8 +97,10 @@ namespace tickMeter.Classes
                 // BPF
                 try {
                     var expr = App.settingsManager.GetOption("capture_filter","ip or ip6");
-                    using var filter = comm.CreateFilter(expr);
-                    comm.SetFilter(filter);
+                    using (var filter = comm.CreateFilter(expr))
+                    {
+                        comm.SetFilter(filter);
+                    }
                 } catch { }
                 // Kernel buffer (через рефлексию; молчим если метода нет)
                 try {
@@ -127,7 +138,7 @@ namespace tickMeter.Classes
                                   Action<Packet, LivePacketDevice> cb)
             {
                 _owner = owner; Id = id; Callback = cb;
-                DeviceNames = new HashSet<string>(devices.Select(d => d.Name));
+                DeviceNames = new HashSet<string>(devices.Select(d => StableKey(d)));
             }
 
             public void Dispose()
@@ -138,9 +149,9 @@ namespace tickMeter.Classes
             }
         }
 
-        private readonly object _gate = new();
-        private readonly ConcurrentDictionary<string, WorkerEntry> _workers = new(); // key = device.Name
-        private readonly ConcurrentDictionary<int, Subscription> _subs = new();
+        private readonly object _gate = new object();
+        private readonly ConcurrentDictionary<string, WorkerEntry> _workers = new ConcurrentDictionary<string, WorkerEntry>(); // key = device.Name
+        private readonly ConcurrentDictionary<int, Subscription> _subs = new ConcurrentDictionary<int, Subscription>();
         private int _nextId = 0;
         private volatile bool _disposed;
 
@@ -156,12 +167,34 @@ namespace tickMeter.Classes
         public int WorkersCount => _workers.Count;
         public int SubscriptionsCount => _subs.Count;
         public long DedupDropped => Interlocked.Read(ref _dedupDrops);
+        
+        public (string key, int refs)[] DebugWorkers()
+        {
+            return _workers.Select(kv => (kv.Key, kv.Value.RefCount)).ToArray();
+        }
+
+        public void Reset()
+        {
+            lock (_gate)
+            {
+                foreach (var s in _subs.Values) s.Disposed = true;
+                _subs.Clear();
+                foreach (var w in _workers.Values) { try { w.Dispose(); } catch { } }
+                _workers.Clear();
+                _nextId = 0;
+            }
+        }
 
         public Subscription Subscribe(IEnumerable<LivePacketDevice> devices, Action<Packet, LivePacketDevice> onPacket)
         {
             if (_disposed) throw new ObjectDisposedException(nameof(CaptureService));
             if (devices == null) throw new ArgumentNullException(nameof(devices));
-            var devList = devices.ToList();
+            // 1) удаляем дубликаты адаптеров по стабильному ключу
+            var devList = devices
+                .Where(d => d != null)
+                .GroupBy(d => StableKey(d))
+                .Select(g => g.First())
+                .ToList();
             if (devList.Count == 0) throw new ArgumentException("No devices provided");
             if (onPacket == null) throw new ArgumentNullException(nameof(onPacket));
 
@@ -172,7 +205,7 @@ namespace tickMeter.Classes
             {
                 foreach (var dev in devList)
                 {
-                    var we = _workers.GetOrAdd(dev.Name, _ => new WorkerEntry(this, dev));
+                    var we = _workers.GetOrAdd(StableKey(dev), _ => new WorkerEntry(this, dev));
                     we.AddRef();
                     we.EnsureStarted();
                 }
@@ -215,7 +248,7 @@ namespace tickMeter.Classes
             {
                 var sub = kv.Value;
                 if (sub.Disposed) continue;
-                if (sub.DeviceNames.Contains(device.Name))
+                if (sub.DeviceNames.Contains(StableKey(device)))
                 {
                     try { sub.Callback(packet, device); } catch { /* изоляция подписчика */ }
                 }
@@ -271,18 +304,13 @@ namespace tickMeter.Classes
                 var ip6 = eth.IpV6;
                 if (ip6 != null)
                 {
-                    // src/dst IPv6 (16 байт каждая) — возьмём по первым 4 байтам для скорости
-                    var srcBytes = ip6.Source.ToValue();
-                    var dstBytes = ip6.Destination.ToValue();
-                    // Берем первые 4 байта каждого адреса
-                    if (srcBytes.Length >= 4)
-                    {
-                        h = (h ^ (uint)((srcBytes[0] << 24) | (srcBytes[1] << 16) | (srcBytes[2] << 8) | srcBytes[3])) * FNV_PRM;
-                    }
-                    if (dstBytes.Length >= 4)
-                    {
-                        h = (h ^ (uint)((dstBytes[0] << 24) | (dstBytes[1] << 16) | (dstBytes[2] << 8) | dstBytes[3])) * FNV_PRM;
-                    }
+                    // src/dst IPv6 - используем только старшие биты для производительности
+                    var srcVal = ip6.Source.ToValue();
+                    var dstVal = ip6.CurrentDestination.ToValue();
+                    
+                    // Извлекаем 32-битные части из 128-битных адресов
+                    h = (h ^ (uint)(srcVal >> 96)) * FNV_PRM; // старшие 32 бита src
+                    h = (h ^ (uint)(dstVal >> 96)) * FNV_PRM; // старшие 32 бита dst
                     h = (h ^ (uint)ip6.NextHeader) * FNV_PRM;
                     // L4 порты
                     if (ip6.NextHeader == IpV4Protocol.Tcp)
