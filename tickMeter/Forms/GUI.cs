@@ -15,6 +15,7 @@ using tickMeter.Classes;
 using System.Threading;
 using System.Net.Sockets;
 using System.Linq;
+using System.Reflection;
 
 namespace tickMeter.Forms
 {
@@ -52,6 +53,13 @@ namespace tickMeter.Forms
         public DbdStatsManager DbdMngr;
         public string targetKey = "";
         private int _gcCounter = 0; // Счётчик для периодической сборки мусора
+        
+        // Оптимизация главного цикла
+        private int _tickBusy = 0; // Защита от реэнтерабельности
+        private readonly Stopwatch _rtssSw = Stopwatch.StartNew(); // Троттлинг RTSS
+        private int RtssPeriodMs => Math.Max(33, Math.Min(1000, // 30-1000ms
+            (int)Math.Round(1000.0 / Math.Max(1, Math.Min(60, 
+                int.Parse(App.settingsManager?.GetOption("overlay_fps", "15", "ADVANCED") ?? "15"))))));
         
         // Убираем chartBckg как поле класса - теперь создаётся локально в UpdateGraph()
 
@@ -431,23 +439,37 @@ namespace tickMeter.Forms
         
         private async void TicksLoop_Tick(object sender, EventArgs e)
         {
-            AutoDetectMngr.GetActiveProcessName(true);
-            if(!App.meterState.isBuiltInProfileActive && !App.meterState.isCustomProfileActive)
+            // Анти-реэнтерабельность: если предыдущий тик еще не завершен - пропускаем
+            if (Interlocked.Exchange(ref _tickBusy, 1) == 1) 
             {
-                updateMetherStateFromActiveWindow();
+                Debug.Print("[GUI] Tick skipped - previous still running");
+                return;
             }
-            if (App.settingsForm.settings_rtss_output.Checked)
+            
+            try
             {
-                await Task.Run(() => {
-                    try { RivaTuner.BuildRivaOutput(); } catch (Exception ex) {
-                        if(!RTSS_Failed)
-                        {
-                            DebugLogger.log(ex);
-                            RTSS_Failed = true;
+                AutoDetectMngr.GetActiveProcessName(true);
+                if(!App.meterState.isBuiltInProfileActive && !App.meterState.isCustomProfileActive)
+                {
+                    updateMetherStateFromActiveWindow();
+                }
+                
+                // Троттлинг RTSS: обновляем не каждый тик, а по таймеру
+                if (App.settingsForm.settings_rtss_output.Checked && _rtssSw.ElapsedMilliseconds >= RtssPeriodMs)
+                {
+                    await Task.Run(() => {
+                        try { 
+                            RivaTuner.BuildRivaOutput(); 
+                            _rtssSw.Restart();
+                        } catch (Exception ex) {
+                            if(!RTSS_Failed)
+                            {
+                                DebugLogger.log(ex);
+                                RTSS_Failed = true;
+                            }
                         }
-                    }
-                });
-            }
+                    });
+                }
 
             //form overlay isn't visible, but still update ping data for both GUI and RTSS
             bool skipGUIUpdate = !OnScreen;
@@ -569,6 +591,18 @@ namespace tickMeter.Forms
             if (!App.meterState.IsTracking)
             {
                 StopTracking();
+            }
+            }
+            catch (Exception ex)
+            {
+                // Логируем ошибки главного цикла без падения приложения
+                Debug.Print($"[GUI] TicksLoop error: {ex.Message}");
+                DebugLogger.log(ex);
+            }
+            finally 
+            {
+                // Всегда освобождаем блокировку
+                Volatile.Write(ref _tickBusy, 0);
             }
         }
 
@@ -832,20 +866,13 @@ namespace tickMeter.Forms
                             using (var comm = dev.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 500))
                             {
                                 if (comm.DataLink.Kind != DataLinkKind.Ethernet) return;
-                                // Apply optional BPF filter from Advanced settings
-                                try
-                                {
-                                    bool bpfEnabled = App.settingsManager?.GetOption("bpf_filter_enabled", "False", "ADVANCED") == "True";
-                                    if (bpfEnabled)
-                                    {
-                                        string filterExpr = App.settingsManager?.GetOption("capture_filter", "ip or ip6", "ADVANCED");
-                                        if (!string.IsNullOrWhiteSpace(filterExpr))
-                                        {
-                                            comm.SetFilter(filterExpr);
-                                        }
-                                    }
-                                }
-                                catch { /* ignore filter errors */ }
+                                
+                                // PCAP тюнинг для производительности
+                                TryOptimizePcapCommunicator(comm);
+                                
+                                // Применяем BPF фильтр из настроек
+                                ApplyBpfFilterSafely(comm);
+                                
                                 comm.ReceivePackets(0, PacketHandler);
                             }
                         };
@@ -935,20 +962,11 @@ namespace tickMeter.Forms
                     return;
                 }
 
-                // Apply optional BPF filter from Advanced settings
-                try
-                {
-                    bool bpfEnabled = App.settingsManager?.GetOption("bpf_filter_enabled", "False", "ADVANCED") == "True";
-                    if (bpfEnabled)
-                    {
-                        string filterExpr = App.settingsManager?.GetOption("capture_filter", "ip or ip6", "ADVANCED");
-                        if (!string.IsNullOrWhiteSpace(filterExpr))
-                        {
-                            communicator.SetFilter(filterExpr);
-                        }
-                    }
-                }
-                catch { /* ignore filter errors */ }
+                // PCAP тюнинг для производительности
+                TryOptimizePcapCommunicator(communicator);
+                
+                // Применяем BPF фильтр из настроек
+                ApplyBpfFilterSafely(communicator);
 
                 communicator.ReceivePackets(0, PacketHandler);
             }
@@ -1239,6 +1257,98 @@ namespace tickMeter.Forms
                 
                 // pingBuffer будет обновляться через CurrentTimestamp как раньше
                 // Не добавляем данные сюда, чтобы избежать слишком частых обновлений графика
+            }
+        }
+        
+        /// <summary>
+        /// Безопасная настройка PCAP буферов через рефлексию
+        /// </summary>
+        private static void TryOptimizePcapCommunicator(PacketCommunicator comm)
+        {
+            try
+            {
+                // Kernel buffer size (default 8MB, range 1-64MB)
+                var kernelMbStr = App.settingsManager?.GetOption("pcap_kernel_buffer_mb", "8", "ADVANCED");
+                if (int.TryParse(kernelMbStr, out int kernelMb) && kernelMb > 0 && kernelMb <= 64)
+                {
+                    TrySetKernelBuffer(comm, kernelMb * 1024 * 1024);
+                }
+                
+                // Minimum bytes to copy (default 4KB, range 0-64KB)
+                var minToCopyStr = App.settingsManager?.GetOption("pcap_min_to_copy", "4096", "ADVANCED");
+                if (int.TryParse(minToCopyStr, out int minToCopy) && minToCopy >= 0 && minToCopy <= 65536)
+                {
+                    TrySetMinToCopy(comm, minToCopy);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[PCAP] Tuning failed: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Попытка установки размера kernel buffer через рефлексию
+        /// </summary>
+        private static void TrySetKernelBuffer(PacketCommunicator comm, int bytes)
+        {
+            try
+            {
+                var method = comm.GetType().GetMethod("SetKernelBufferSize", 
+                    System.Reflection.BindingFlags.Instance | 
+                    System.Reflection.BindingFlags.Public | 
+                    System.Reflection.BindingFlags.NonPublic);
+                method?.Invoke(comm, new object[] { bytes });
+                Debug.Print($"[PCAP] Kernel buffer set to {bytes / 1024 / 1024}MB");
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[PCAP] SetKernelBufferSize failed: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Попытка установки MinToCopy через рефлексию
+        /// </summary>
+        private static void TrySetMinToCopy(PacketCommunicator comm, int bytes)
+        {
+            try
+            {
+                var method = comm.GetType().GetMethod("SetMinToCopy", 
+                    System.Reflection.BindingFlags.Instance | 
+                    System.Reflection.BindingFlags.Public | 
+                    System.Reflection.BindingFlags.NonPublic);
+                method?.Invoke(comm, new object[] { bytes });
+                Debug.Print($"[PCAP] MinToCopy set to {bytes} bytes");
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[PCAP] SetMinToCopy failed: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Безопасное применение BPF фильтра из настроек
+        /// </summary>
+        private static void ApplyBpfFilterSafely(PacketCommunicator comm)
+        {
+            try
+            {
+                bool bpfEnabled = App.settingsManager?.GetOption("bpf_filter_enabled", "False", "ADVANCED") == "True";
+                if (bpfEnabled)
+                {
+                    string filterExpr = App.settingsManager?.GetOption("capture_filter", "ip or ip6", "ADVANCED");
+                    if (!string.IsNullOrWhiteSpace(filterExpr))
+                    {
+                        comm.SetFilter(filterExpr);
+                        Debug.Print($"[PCAP] BPF filter applied: {filterExpr}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[PCAP] BPF filter failed: {ex.Message}");
+                // Продолжаем без фильтра
             }
         }
     }
