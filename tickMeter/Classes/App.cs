@@ -42,6 +42,7 @@ namespace tickMeter.Classes
             
             // Инициализируем CaptureService для централизованного управления PCAP воркерами
             Capture = new Classes.CaptureService();
+            Debug.Print("[App.Init] CaptureService initialized successfully");
             
             // Инициализируем VPN bypass компоненты
             connectionTracker = new ConnectionTracker();

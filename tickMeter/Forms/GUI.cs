@@ -313,27 +313,29 @@ namespace tickMeter.Forms
 
         private void PacketHandler(Packet packet)
         {
-            if (!App.meterState.IsTracking) return;
-            if (packet == null) return; // Защита от null пакетов
-            
-            // Проверяем основную структуру пакета
-            try
+            try 
             {
-                if (packet.Ethernet == null) return;
-                if (packet.Buffer == null || packet.Buffer.Length == 0) return;
-            }
-            catch (IndexOutOfRangeException)
-            {
-                // Пакет имеет недостаточный размер или поврежден
-                return;
-            }
-            catch (Exception)
-            {
-                // Любые другие ошибки доступа к пакету
-                return;
-            }
-            
-            if (IsDuplicate(packet)) return; // NEW: проверка дублей
+                if (!App.meterState.IsTracking) return;
+                if (packet == null) return; // Защита от null пакетов
+                
+                // Проверяем основную структуру пакета
+                try
+                {
+                    if (packet.Ethernet == null) return;
+                    if (packet.Buffer == null || packet.Buffer.Length == 0) return;
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    // Пакет имеет недостаточный размер или поврежден
+                    return;
+                }
+                catch (Exception)
+                {
+                    // Любые другие ошибки доступа к пакету
+                    return;
+                }
+                
+                if (IsDuplicate(packet)) return; // NEW: проверка дублей
             
             // VPN bypass mode handling
             bool vpnBypassAdvanced = App.settingsManager?.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
@@ -444,6 +446,13 @@ namespace tickMeter.Forms
                 return;
             }
             // --- Конец добавления ---
+            }
+            catch (Exception ex)
+            {
+                // Глобальная защита от любых ошибок в PacketHandler
+                Debug.Print($"[PacketHandler] Unexpected error: {ex.GetType().Name}: {ex.Message}");
+                return;
+            }
         }
 
         bool RTSS_Failed = false;
@@ -870,6 +879,10 @@ namespace tickMeter.Forms
                     Debug.Print($"[StartTracking] BEFORE: Worker {key} -> refs: {refs}");
                 }
             }
+            else
+            {
+                Debug.Print("[StartTracking] WARNING: App.Capture is NULL! CaptureService not initialized!");
+            }
             
             if (App.meterState != null)
                 StopTracking();
@@ -979,14 +992,18 @@ namespace tickMeter.Forms
                     foreach (var dev in _allSelectedAdapters)
                     {
                         var worker = new BackgroundWorker();
+                        worker.WorkerSupportsCancellation = true; // ИСПРАВЛЕНИЕ: поддержка отмены
                         var currentWorkerIndex = workerIndex; // Захватываем значение для лямбды
                         var currentDevice = dev; // Захватываем устройство для лямбды
                         
                         worker.DoWork += (s, e) =>
                         {
-                            if (!App.meterState.IsTracking) 
+                            var bgWorker = s as BackgroundWorker;
+                            
+                            if (!App.meterState.IsTracking || (bgWorker != null && bgWorker.CancellationPending)) 
                             {
-                                Debug.Print($"[PCAP-Multi-{currentWorkerIndex}] Tracking stopped, exiting worker");
+                                Debug.Print($"[PCAP-Multi-{currentWorkerIndex}] Tracking stopped or cancelled, exiting worker");
+                                if (bgWorker != null) e.Cancel = true;
                                 return;
                             }
                             
@@ -1011,8 +1028,28 @@ namespace tickMeter.Forms
                                     // Применяем BPF фильтр из настроек
                                     ApplyBpfFilterSafely(comm);
                                     
-                                    // Основной цикл захвата с проверкой флага IsTracking
-                                    comm.ReceivePackets(0, PacketHandler);
+                                    // Основной цикл захвата с проверками отмены
+                                    // НЕ ИСПОЛЬЗУЕМ ReceivePackets(0) - это блокирующий вызов!
+                                    // Вместо этого делаем цикл с проверками отмены
+                                    while (!bgWorker?.CancellationPending == true && App.meterState.IsTracking)
+                                    {
+                                        Packet packet;
+                                        var result = comm.ReceivePacket(out packet);
+                                        if (result == PacketCommunicatorReceiveResult.Ok && packet != null)
+                                        {
+                                            PacketHandler(packet);
+                                        }
+                                        else
+                                        {
+                                            Thread.Sleep(1); // Небольшая пауза если пакетов нет
+                                        }
+                                    }
+                                    
+                                    if (bgWorker?.CancellationPending == true)
+                                    {
+                                        Debug.Print($"[PCAP-Multi-{currentWorkerIndex}] Cancellation requested, exiting loop");
+                                        e.Cancel = true;
+                                    }
                                 }
                             }
                             catch (Exception ex)
@@ -1060,6 +1097,10 @@ namespace tickMeter.Forms
                     Debug.Print($"[StartTracking] AFTER: Worker {key} -> refs: {refs}");
                 }
             }
+            else
+            {
+                Debug.Print("[StartTracking] WARNING: App.Capture is NULL after worker start!");
+            }
         }
         private void PcapWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
@@ -1095,9 +1136,17 @@ namespace tickMeter.Forms
                 }
             }
             
+            // КРИТИЧЕСКАЯ ПРОВЕРКА: НЕ перезапускаем воркеры если трекинг остановлен
             if (!App.meterState.IsTracking) 
             {
                 Debug.Print("[PcapWorkerCompleted] Tracking stopped, not restarting worker");
+                return;
+            }
+            
+            // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: НЕ перезапускаем если ticksLoop отключен
+            if (!ticksLoop.Enabled)
+            {
+                Debug.Print("[PcapWorkerCompleted] TicksLoop disabled, not restarting worker");
                 return;
             }
             
@@ -1106,19 +1155,20 @@ namespace tickMeter.Forms
             bool vpnBypassBasic = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
             bool vpnBypassAdvanced = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
             
-            // В мульти-режиме или VPN режиме не перезапускаем single worker
+            // В мульти-режиме или VPN режиме НЕ ПЕРЕЗАПУСКАЕМ воркеры автоматически
             if (captureAll || vpnBypassBasic || vpnBypassAdvanced)
             {
-                // В этих режимах используется _pcapWorkers, не pcapWorker
-                Debug.Print("[PcapWorkerCompleted] Multi-mode active, not restarting single worker");
+                Debug.Print("[PcapWorkerCompleted] Multi-mode active, not auto-restarting workers");
                 return;
             }
             
+            // Перезапуск только для одиночного режима и только если нет ошибок
             if (App.meterState.TickRate == 0)
             {
                 restarts++;
                 if (restarts > restartLimit)
                 {
+                    Debug.Print("[PcapWorkerCompleted] Too many restarts, stopping tracking");
                     StopTracking();
                     return;
                 }
@@ -1130,18 +1180,32 @@ namespace tickMeter.Forms
 
             try
             {
-                // Проверяем что pcapWorker существует перед использованием
-                if (pcapWorker != null)
+                // Проверяем что pcapWorker существует и трекинг все еще активен
+                if (pcapWorker != null && App.meterState.IsTracking && ticksLoop.Enabled)
                 {
+                    Debug.Print("[PcapWorkerCompleted] Restarting single pcapWorker");
                     pcapWorker.RunWorkerAsync();
                 }
+                else
+                {
+                    Debug.Print("[PcapWorkerCompleted] Not restarting: pcapWorker null or tracking stopped");
+                }
             }
-            catch (Exception) { }
+            catch (Exception ex) 
+            { 
+                Debug.Print($"[PcapWorkerCompleted] Error restarting worker: {ex.Message}");
+            }
         }
 
         private void PcapWorkerDoWork(object sender, DoWorkEventArgs e)
         {
-            if (!App.meterState.IsTracking) return;
+            var bgWorker = sender as BackgroundWorker;
+            
+            if (!App.meterState.IsTracking || (bgWorker != null && bgWorker.CancellationPending)) 
+            {
+                if (bgWorker != null) e.Cancel = true;
+                return;
+            }
             
             // Phase 3: Устанавливаем высокий приоритет для BackgroundWorker потока
             SetHighPriorityThread(Thread.CurrentThread, "PCAP-BgWorker");
@@ -1172,12 +1236,31 @@ namespace tickMeter.Forms
                 // Применяем BPF фильтр из настроек
                 ApplyBpfFilterSafely(communicator);
 
-                communicator.ReceivePackets(0, PacketHandler);
+                // Основной цикл захвата с проверкой отмены
+                while (!bgWorker?.CancellationPending == true && App.meterState.IsTracking)
+                {
+                    Packet packet;
+                    var result = communicator.ReceivePacket(out packet);
+                    if (result == PacketCommunicatorReceiveResult.Ok && packet != null)
+                    {
+                        PacketHandler(packet);
+                    }
+                    else
+                    {
+                        Thread.Sleep(1);
+                    }
+                }
+                
+                if (bgWorker?.CancellationPending == true)
+                {
+                    e.Cancel = true;
+                }
             }
         }
         public void InitPcapWorker()
         {
             pcapWorker = new BackgroundWorker();
+            pcapWorker.WorkerSupportsCancellation = true; // ИСПРАВЛЕНИЕ: поддержка отмены
             pcapWorker.DoWork += PcapWorkerDoWork;
             pcapWorker.RunWorkerCompleted += PcapWorkerCompleted;
             pcapWorker.RunWorkerAsync();
@@ -1185,8 +1268,15 @@ namespace tickMeter.Forms
 
         public void StopTracking()
         {
+            Debug.Print("StopTracking - entry point");
 
+            // КРИТИЧЕСКИ ВАЖНО: Сначала отключаем все флаги чтобы предотвратить перезапуск
             ticksLoop.Enabled = false;
+            if (App.meterState != null)
+            {
+                App.meterState.IsTracking = false; // Устанавливаем СРАЗУ
+            }
+            
             if (App.meterState == null) return;
             
             // Диагностика CaptureService ПЕРЕД остановкой
@@ -1218,11 +1308,11 @@ namespace tickMeter.Forms
             // Phase 3: Очищаем высокоприоритетные потоки
             CleanupHighPriorityThreads();
             
-            // NEW: остановка мульти-захвата: флаг IsTracking и очистка воркеров
+            // NEW: остановка мульти-захвата: очистка воркеров
             Debug.Print($"[StopTracking] Cleaning up {_pcapWorkers.Count} PCAP workers");
             try
             {
-                App.meterState.IsTracking = false; // Сначала устанавливаем флаг для остановки
+                // Флаг IsTracking уже установлен выше
                 Thread.Sleep(100); // Даем время воркерам для корректного завершения
                 
                 for (int i = _pcapWorkers.Count - 1; i >= 0; i--)
@@ -1232,32 +1322,26 @@ namespace tickMeter.Forms
                     {
                         if (w != null)
                         {
-                            Debug.Print($"[StopTracking] Stopping worker {i}: IsBusy={w.IsBusy}");
+                            Debug.Print($"[StopTracking] Stopping worker {i}: IsBusy={w.IsBusy}, SupportsCancellation={w.WorkerSupportsCancellation}");
                             
-                            // Отменяем работу если воркер еще активен
-                            if (w.IsBusy)
+                            // Отменяем работу если воркер еще активен и поддерживает отмену
+                            if (w.IsBusy && w.WorkerSupportsCancellation)
                             {
                                 w.CancelAsync();
-                                
-                                // Ждем завершения максимум 500мс
-                                var timeout = DateTime.Now.AddMilliseconds(500);
-                                while (w.IsBusy && DateTime.Now < timeout)
-                                {
-                                    Thread.Sleep(10);
-                                    Application.DoEvents();
-                                }
+                                Debug.Print($"[StopTracking] Worker {i} cancellation requested");
+                            }
+                            else if (w.IsBusy)
+                            {
+                                Debug.Print($"[StopTracking] Worker {i} busy but cancellation not supported");
                             }
                             
-                            // Принудительно освобождаем ресурсы
-                            w.DoWork -= null; // Отключаем обработчики
-                            w.RunWorkerCompleted -= null;
-                            w.Dispose();
-                            Debug.Print($"[StopTracking] Worker {i} disposed");
+                            // НЕ ждем завершения и НЕ dispose - позволяем воркеру завершиться естественно
+                            // через RunWorkerCompleted event
                         }
                     }
                     catch (Exception ex) 
                     { 
-                        Debug.Print($"[StopTracking] Error disposing worker {i}: {ex.Message}");
+                        Debug.Print($"[StopTracking] Error stopping worker {i}: {ex.Message}");
                     }
                 }
             } 
@@ -1273,11 +1357,24 @@ namespace tickMeter.Forms
             // Также очищаем одиночный pcapWorker если он есть
             try
             {
-                pcapWorker?.CancelAsync();
-                pcapWorker?.Dispose();
-                pcapWorker = null;
+                if (pcapWorker != null)
+                {
+                    Debug.Print($"[StopTracking] Stopping single worker: IsBusy={pcapWorker.IsBusy}, SupportsCancellation={pcapWorker.WorkerSupportsCancellation}");
+                    if (pcapWorker.IsBusy && pcapWorker.WorkerSupportsCancellation)
+                    {
+                        pcapWorker.CancelAsync();
+                        Debug.Print("[StopTracking] Single worker cancellation requested");
+                    }
+                    // НЕ dispose сразу - позволяем завершиться через event
+                }
             }
-            catch { /* ignore disposal errors */ }
+            catch (Exception ex) 
+            { 
+                Debug.Print($"[StopTracking] Error stopping single worker: {ex.Message}");
+            }
+            
+            // Сбрасываем счетчик рестартов
+            restarts = 0;
             
             // Очищаем словарь дедупликации для освобождения памяти
             lock (_dedupLock)
@@ -1495,6 +1592,19 @@ namespace tickMeter.Forms
             {
                 Hide();
                 e.Cancel = true;
+            }
+            else
+            {
+                // Принудительно останавливаем все воркеры при закрытии формы
+                Debug.Print("[GUI_FormClosing] Force stopping all workers");
+                try
+                {
+                    StopTracking();
+                }
+                catch (Exception ex)
+                {
+                    Debug.Print($"[GUI_FormClosing] Error stopping tracking: {ex.Message}");
+                }
             }
         }
 
