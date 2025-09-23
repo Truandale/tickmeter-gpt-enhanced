@@ -601,6 +601,20 @@ namespace tickMeter.Forms
             {
                 _gcCounter = 0;
                 
+                // Диагностика CaptureService - периодический мониторинг
+                if (App.Capture != null)
+                {
+                    var debugInfo = App.Capture.DebugWorkers();
+                    Debug.Print($"[TicksLoop] PERIODIC: CaptureService workers count: {debugInfo.Length}");
+                    if (debugInfo.Length > 8) // Показываем детали если воркеров больше ожидаемого
+                    {
+                        foreach (var (key, refs) in debugInfo)
+                        {
+                            Debug.Print($"[TicksLoop] PERIODIC: Worker {key} -> refs: {refs}");
+                        }
+                    }
+                }
+                
                 // Очищаем мертвые воркеры перед сборкой мусора
                 CleanupDeadWorkers();
                 
@@ -846,6 +860,17 @@ namespace tickMeter.Forms
         {
             Debug.Print("StartTracking");
             
+            // Диагностика CaptureService ПЕРЕД стартом
+            if (App.Capture != null)
+            {
+                var debugInfo = App.Capture.DebugWorkers();
+                Debug.Print($"[StartTracking] BEFORE: CaptureService workers count: {debugInfo.Length}");
+                foreach (var (key, refs) in debugInfo)
+                {
+                    Debug.Print($"[StartTracking] BEFORE: Worker {key} -> refs: {refs}");
+                }
+            }
+            
             if (App.meterState != null)
                 StopTracking();
             InitMeterState();
@@ -1024,9 +1049,34 @@ namespace tickMeter.Forms
             {
                 MessageBox.Show("PCAP Thread init error");
             }
+            
+            // Диагностика CaptureService ПОСЛЕ стартов воркеров
+            if (App.Capture != null)
+            {
+                var debugInfo = App.Capture.DebugWorkers();
+                Debug.Print($"[StartTracking] AFTER: CaptureService workers count: {debugInfo.Length}");
+                foreach (var (key, refs) in debugInfo)
+                {
+                    Debug.Print($"[StartTracking] AFTER: Worker {key} -> refs: {refs}");
+                }
+            }
         }
         private void PcapWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            // Диагностика CaptureService при завершении воркера
+            if (App.Capture != null)
+            {
+                var debugInfo = App.Capture.DebugWorkers();
+                Debug.Print($"[PcapWorkerCompleted] BEFORE cleanup: CaptureService workers count: {debugInfo.Length}");
+                if (debugInfo.Length > 8) // Показываем детали если воркеров больше ожидаемого
+                {
+                    foreach (var (key, refs) in debugInfo)
+                    {
+                        Debug.Print($"[PcapWorkerCompleted] BEFORE: Worker {key} -> refs: {refs}");
+                    }
+                }
+            }
+            
             // Всегда удаляем завершившийся воркер из списка
             var completedWorker = sender as BackgroundWorker;
             if (completedWorker != null)
@@ -1138,6 +1188,17 @@ namespace tickMeter.Forms
 
             ticksLoop.Enabled = false;
             if (App.meterState == null) return;
+            
+            // Диагностика CaptureService ПЕРЕД остановкой
+            if (App.Capture != null)
+            {
+                var debugInfo = App.Capture.DebugWorkers();
+                Debug.Print($"[StopTracking] BEFORE: CaptureService workers count: {debugInfo.Length}");
+                foreach (var (key, refs) in debugInfo)
+                {
+                    Debug.Print($"[StopTracking] BEFORE: Worker {key} -> refs: {refs}");
+                }
+            }
             
             // Останавливаем ping manager
             if (App.pingManager != null)
@@ -1277,6 +1338,17 @@ namespace tickMeter.Forms
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
+            
+            // Диагностика CaptureService ПОСЛЕ очистки
+            if (App.Capture != null)
+            {
+                var debugInfo = App.Capture.DebugWorkers();
+                Debug.Print($"[StopTracking] AFTER: CaptureService workers count: {debugInfo.Length}");
+                foreach (var (key, refs) in debugInfo)
+                {
+                    Debug.Print($"[StopTracking] AFTER: Worker {key} -> refs: {refs}");
+                }
+            }
         }
 
         private void GUI_FormClosed(object sender, FormClosedEventArgs e)
