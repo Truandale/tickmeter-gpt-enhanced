@@ -35,17 +35,9 @@ namespace tickMeter
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.Windows.Forms.ColumnHeader columnHeader3;
             System.Windows.Forms.ColumnHeader from_ip;
             System.Windows.Forms.ColumnHeader from_port;
-            System.Windows.Forms.ColumnHeader columnHeader3;
-            this.listView1 = new tickMeter.Classes.ListViewNF();
-            this.time = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.ID = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.to_ip = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.to_port = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.packet_size = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.protocol = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.process = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.autoscroll = new System.Windows.Forms.CheckBox();
             this.start = new System.Windows.Forms.Button();
             this.stop = new System.Windows.Forms.Button();
@@ -54,6 +46,7 @@ namespace tickMeter
             this.filter = new System.Windows.Forms.Button();
             this.clear = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.top_process_name = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
@@ -69,24 +62,19 @@ namespace tickMeter
             this.columnHeader10 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.active_refresh = new System.Windows.Forms.Timer(this.components);
-            this.top_process_name = new System.Windows.Forms.Label();
+            this.listView1 = new tickMeter.Classes.ListViewNF();
+            this.time = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ID = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.to_ip = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.to_port = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.packet_size = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.protocol = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.process = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             from_ip = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             from_port = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // from_ip
-            // 
-            from_ip.Text = "From IP";
-            from_ip.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            from_ip.Width = 125;
-            // 
-            // from_port
-            // 
-            from_port.Text = "From Port";
-            from_port.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            from_port.Width = 90;
             // 
             // columnHeader3
             // 
@@ -94,75 +82,13 @@ namespace tickMeter
             columnHeader3.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             columnHeader3.Width = 125;
             // 
-            // listView1
-            // 
-            this.listView1.Activation = System.Windows.Forms.ItemActivation.OneClick;
-            this.listView1.AllowColumnReorder = true;
-            this.listView1.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.time,
-            this.ID,
-            from_ip,
-            from_port,
-            this.to_ip,
-            this.to_port,
-            this.packet_size,
-            this.protocol,
-            this.process});
-            this.listView1.FullRowSelect = true;
-            this.listView1.GridLines = true;
-            this.listView1.HideSelection = false;
-            this.listView1.HoverSelection = true;
-            this.listView1.Location = new System.Drawing.Point(5, 239);
-            this.listView1.Margin = new System.Windows.Forms.Padding(4);
-            this.listView1.MinimumSize = new System.Drawing.Size(781, 390);
-            this.listView1.Name = "listView1";
-            this.listView1.Size = new System.Drawing.Size(905, 429);
-            this.listView1.TabIndex = 15;
-            this.listView1.UseCompatibleStateImageBehavior = false;
-            this.listView1.View = System.Windows.Forms.View.Details;
-            // 
-            // time
-            // 
-            this.time.Text = "Time";
-            this.time.Width = 100;
-            // 
-            // ID
-            // 
-            this.ID.Text = "ID";
-            this.ID.Width = 55;
-            // 
-            // to_ip
-            // 
-            this.to_ip.Text = "To IP";
-            this.to_ip.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.to_ip.Width = 125;
-            // 
-            // to_port
-            // 
-            this.to_port.Text = "To Port";
-            this.to_port.Width = 90;
-            // 
-            // packet_size
-            // 
-            this.packet_size.Text = "Packet Size";
-            this.packet_size.Width = 80;
-            // 
-            // protocol
-            // 
-            this.protocol.Text = "Protocol";
-            this.protocol.Width = 80;
-            // 
-            // process
-            // 
-            this.process.Text = "Process";
-            this.process.Width = 120;
-            // 
             // autoscroll
             // 
             this.autoscroll.AutoSize = true;
-            this.autoscroll.Location = new System.Drawing.Point(361, 38);
+            this.autoscroll.Location = new System.Drawing.Point(49, 0);
+            this.autoscroll.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.autoscroll.Name = "autoscroll";
-            this.autoscroll.Size = new System.Drawing.Size(102, 17);
+            this.autoscroll.Size = new System.Drawing.Size(127, 20);
             this.autoscroll.TabIndex = 16;
             this.autoscroll.Text = "Автопрокрутка";
             this.autoscroll.UseVisualStyleBackColor = true;
@@ -170,9 +96,10 @@ namespace tickMeter
             // start
             // 
             this.start.Image = global::tickMeter.Properties.Resources.movie;
-            this.start.Location = new System.Drawing.Point(7, 12);
+            this.start.Location = new System.Drawing.Point(9, 15);
+            this.start.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.start.Name = "start";
-            this.start.Size = new System.Drawing.Size(66, 60);
+            this.start.Size = new System.Drawing.Size(88, 74);
             this.start.TabIndex = 17;
             this.start.UseVisualStyleBackColor = true;
             this.start.Click += new System.EventHandler(this.start_Click);
@@ -180,18 +107,20 @@ namespace tickMeter
             // stop
             // 
             this.stop.Image = global::tickMeter.Properties.Resources.multimedia;
-            this.stop.Location = new System.Drawing.Point(79, 13);
+            this.stop.Location = new System.Drawing.Point(105, 16);
+            this.stop.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.stop.Name = "stop";
-            this.stop.Size = new System.Drawing.Size(64, 59);
+            this.stop.Size = new System.Drawing.Size(85, 73);
             this.stop.TabIndex = 18;
             this.stop.UseVisualStyleBackColor = true;
             this.stop.Click += new System.EventHandler(this.stop_Click);
             // 
             // statusStrip1
             // 
-            this.statusStrip1.Location = new System.Drawing.Point(0, 672);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 832);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(910, 22);
+            this.statusStrip1.Padding = new System.Windows.Forms.Padding(1, 0, 19, 0);
+            this.statusStrip1.Size = new System.Drawing.Size(1213, 22);
             this.statusStrip1.TabIndex = 20;
             this.statusStrip1.Text = "statusStrip1";
             // 
@@ -203,9 +132,10 @@ namespace tickMeter
             // filter
             // 
             this.filter.Image = global::tickMeter.Properties.Resources.tools_icon;
-            this.filter.Location = new System.Drawing.Point(219, 13);
+            this.filter.Location = new System.Drawing.Point(292, 16);
+            this.filter.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.filter.Name = "filter";
-            this.filter.Size = new System.Drawing.Size(66, 60);
+            this.filter.Size = new System.Drawing.Size(88, 74);
             this.filter.TabIndex = 21;
             this.filter.UseVisualStyleBackColor = false;
             this.filter.Click += new System.EventHandler(this.filter_Click);
@@ -213,9 +143,10 @@ namespace tickMeter
             // clear
             // 
             this.clear.Image = global::tickMeter.Properties.Resources.reload;
-            this.clear.Location = new System.Drawing.Point(149, 14);
+            this.clear.Location = new System.Drawing.Point(199, 17);
+            this.clear.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.clear.Name = "clear";
-            this.clear.Size = new System.Drawing.Size(64, 60);
+            this.clear.Size = new System.Drawing.Size(85, 74);
             this.clear.TabIndex = 19;
             this.clear.UseVisualStyleBackColor = true;
             this.clear.Click += new System.EventHandler(this.clear_Click);
@@ -229,57 +160,75 @@ namespace tickMeter
             this.groupBox1.Controls.Add(this.label2);
             this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.Controls.Add(this.autoscroll);
-            this.groupBox1.Location = new System.Drawing.Point(301, 13);
+            this.groupBox1.Location = new System.Drawing.Point(401, 16);
+            this.groupBox1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(604, 61);
+            this.groupBox1.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox1.Size = new System.Drawing.Size(805, 75);
             this.groupBox1.TabIndex = 22;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Stats";
+            // 
+            // top_process_name
+            // 
+            this.top_process_name.AutoSize = true;
+            this.top_process_name.Location = new System.Drawing.Point(477, 20);
+            this.top_process_name.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.top_process_name.Name = "top_process_name";
+            this.top_process_name.Size = new System.Drawing.Size(85, 16);
+            this.top_process_name.TabIndex = 17;
+            this.top_process_name.Text = "Top Process";
+            this.top_process_name.UseMnemonic = false;
             // 
             // label5
             // 
             this.label5.AutoSize = true;
             this.label5.Dock = System.Windows.Forms.DockStyle.Right;
             this.label5.ForeColor = System.Drawing.Color.Black;
-            this.label5.Location = new System.Drawing.Point(601, 16);
+            this.label5.Location = new System.Drawing.Point(801, 19);
+            this.label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(0, 13);
+            this.label5.Size = new System.Drawing.Size(0, 16);
             this.label5.TabIndex = 4;
             this.label5.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(69, 44);
+            this.label4.Location = new System.Drawing.Point(92, 54);
+            this.label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(73, 13);
+            this.label4.Size = new System.Drawing.Size(84, 16);
             this.label4.TabIndex = 3;
             this.label4.Text = "IN 0  |  OUT 0";
             // 
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(69, 20);
+            this.label3.Location = new System.Drawing.Point(92, 25);
+            this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(73, 13);
+            this.label3.Size = new System.Drawing.Size(84, 16);
             this.label3.TabIndex = 2;
             this.label3.Text = "IN 0  |  OUT 0";
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(7, 43);
+            this.label2.Location = new System.Drawing.Point(9, 53);
+            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(30, 13);
+            this.label2.Size = new System.Drawing.Size(34, 16);
             this.label2.TabIndex = 1;
             this.label2.Text = "Kb/s";
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(7, 20);
+            this.label1.Location = new System.Drawing.Point(9, 25);
+            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(56, 13);
+            this.label1.Size = new System.Drawing.Size(67, 16);
             this.label1.TabIndex = 0;
             this.label1.Text = "Packets/s";
             // 
@@ -305,11 +254,11 @@ namespace tickMeter
             this.listView2.GridLines = true;
             this.listView2.HideSelection = false;
             this.listView2.HoverSelection = true;
-            this.listView2.Location = new System.Drawing.Point(5, 81);
-            this.listView2.Margin = new System.Windows.Forms.Padding(4);
-            this.listView2.MinimumSize = new System.Drawing.Size(781, 150);
+            this.listView2.Location = new System.Drawing.Point(7, 100);
+            this.listView2.Margin = new System.Windows.Forms.Padding(5, 5, 5, 5);
+            this.listView2.MinimumSize = new System.Drawing.Size(1040, 184);
             this.listView2.Name = "listView2";
-            this.listView2.Size = new System.Drawing.Size(905, 150);
+            this.listView2.Size = new System.Drawing.Size(1205, 184);
             this.listView2.TabIndex = 23;
             this.listView2.UseCompatibleStateImageBehavior = false;
             this.listView2.View = System.Windows.Forms.View.Details;
@@ -355,21 +304,86 @@ namespace tickMeter
             this.active_refresh.Interval = 1000;
             this.active_refresh.Tick += new System.EventHandler(this.active_refresh_Tick);
             // 
-            // top_process_name
+            // listView1
             // 
-            this.top_process_name.AutoSize = true;
-            this.top_process_name.Location = new System.Drawing.Point(358, 16);
-            this.top_process_name.Name = "top_process_name";
-            this.top_process_name.Size = new System.Drawing.Size(67, 13);
-            this.top_process_name.TabIndex = 17;
-            this.top_process_name.Text = "Top Process";
-            this.top_process_name.UseMnemonic = false;
+            this.listView1.Activation = System.Windows.Forms.ItemActivation.OneClick;
+            this.listView1.AllowColumnReorder = true;
+            this.listView1.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.time,
+            this.ID,
+            from_ip,
+            from_port,
+            this.to_ip,
+            this.to_port,
+            this.packet_size,
+            this.protocol,
+            this.process});
+            this.listView1.FullRowSelect = true;
+            this.listView1.GridLines = true;
+            this.listView1.HideSelection = false;
+            this.listView1.HoverSelection = true;
+            this.listView1.Location = new System.Drawing.Point(7, 294);
+            this.listView1.Margin = new System.Windows.Forms.Padding(5);
+            this.listView1.MinimumSize = new System.Drawing.Size(1040, 479);
+            this.listView1.Name = "listView1";
+            this.listView1.Size = new System.Drawing.Size(1205, 527);
+            this.listView1.TabIndex = 15;
+            this.listView1.UseCompatibleStateImageBehavior = false;
+            this.listView1.View = System.Windows.Forms.View.Details;
+            // 
+            // time
+            // 
+            this.time.Text = "Time";
+            this.time.Width = 100;
+            // 
+            // ID
+            // 
+            this.ID.Text = "ID";
+            this.ID.Width = 55;
+            // 
+            // from_ip
+            // 
+            from_ip.Text = "From IP";
+            from_ip.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            from_ip.Width = 125;
+            // 
+            // from_port
+            // 
+            from_port.Text = "From Port";
+            from_port.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            from_port.Width = 90;
+            // 
+            // to_ip
+            // 
+            this.to_ip.Text = "To IP";
+            this.to_ip.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.to_ip.Width = 125;
+            // 
+            // to_port
+            // 
+            this.to_port.Text = "To Port";
+            this.to_port.Width = 90;
+            // 
+            // packet_size
+            // 
+            this.packet_size.Text = "Packet Size";
+            this.packet_size.Width = 80;
+            // 
+            // protocol
+            // 
+            this.protocol.Text = "Protocol";
+            this.protocol.Width = 80;
+            // 
+            // process
+            // 
+            this.process.Text = "Process";
+            this.process.Width = 120;
             // 
             // PacketStats
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(910, 694);
+            this.ClientSize = new System.Drawing.Size(1213, 854);
             this.Controls.Add(this.listView2);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.filter);
@@ -379,8 +393,9 @@ namespace tickMeter
             this.Controls.Add(this.start);
             this.Controls.Add(this.listView1);
             this.DoubleBuffered = true;
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.MaximizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(798, 733);
+            this.MinimumSize = new System.Drawing.Size(1059, 893);
             this.Name = "PacketStats";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
