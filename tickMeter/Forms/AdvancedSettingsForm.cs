@@ -51,6 +51,9 @@ namespace tickMeter.Forms
                 chkStunEnable.Checked = App.settingsManager.GetOption("stun_enable", "True", "SETTINGS") == "True";
                 chkShowPingSpikes.Checked = App.settingsManager.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
                 
+                // TODO: Добавить chkAdvancedSpikeDetection в designer файл
+                // chkAdvancedSpikeDetection.Checked = App.settingsManager.GetOption("advanced_spike_detection", "True", "ADVANCED") == "True";
+                
                 // Настройки порогов для спайков пинга
                 numPingSpikeThreshold.Value = decimal.Parse(App.settingsManager.GetOption("ping_spike_threshold", "150", "ADVANCED"));
                 
@@ -119,6 +122,9 @@ namespace tickMeter.Forms
                 App.settingsManager.SetOption("rtss_only_active", chkRtssOnlyActive.Checked.ToString(), "SETTINGS");
                 App.settingsManager.SetOption("stun_enable", chkStunEnable.Checked.ToString(), "SETTINGS");
                 App.settingsManager.SetOption("show_ping_spikes", chkShowPingSpikes.Checked.ToString(), "ADVANCED");
+                
+                // TODO: Добавить chkAdvancedSpikeDetection в designer файл
+                // App.settingsManager.SetOption("advanced_spike_detection", chkAdvancedSpikeDetection.Checked.ToString(), "ADVANCED");
                 
                 // Настройки порогов для спайков пинга
                 App.settingsManager.SetOption("ping_spike_threshold", numPingSpikeThreshold.Value.ToString(), "ADVANCED");
@@ -252,9 +258,11 @@ namespace tickMeter.Forms
             chkTickrateValueOverlaySmoothing.Checked = true;
             chkTrafficValueOverlaySmoothing.Checked = true;
             
-            // Ping Spikes - полезно для геймеров
+            // Ping Spikes - полезно для геймеров + НОВАЯ продвинутая детекция
             chkShowPingSpikes.Checked = true;
             numPingSpikeThreshold.Value = 150;
+            // TODO: раскомментировать когда добавим checkbox в designer
+            // chkAdvancedSpikeDetection.Checked = true; // Включаем улучшенную детекцию
             
             // VPN bypass - отключен по умолчанию
             chkVpnBypassBasic.Checked = false;

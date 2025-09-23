@@ -327,13 +327,12 @@ namespace tickMeter
             private Queue<float> udpIntervals = new Queue<float>();
             private const int UdpIntervalsWindow = 10; // размер окна для сглаживания
 
-            // --- Ping Spike Detection ---
-            private DateTime lastSpikeTime = DateTime.MinValue;
+            // --- Advanced Ping Spike Detection ---
             private const int SpikeTimeoutMs = 5000; // время отображения индикатора спайка (5 секунд)
             
-            // Простая система накопления спайков
+            // Система накопления спайков для UI индикатора
             private Queue<DateTime> recentSpikes = new Queue<DateTime>();
-            private const int SpikeCountThreshold = 8; // показывать индикатор при 8+ спайках (было 5)
+            private const int SpikeCountThreshold = 5; // показывать индикатор при 5+ спайках (понижено с 8 для новой системы)
             private const int SpikeAnalysisWindowSeconds = 30; // анализируем спайки за последние 30 секунд
             private bool indicatorShown = false;
             
@@ -398,12 +397,21 @@ namespace tickMeter
             }
 
             /// <summary>
-            /// Определяет, есть ли сейчас спайк пинга на основе накопленной статистики
+            /// Определяет, есть ли сейчас спайк пинга на основе накопленной статистики и активного спайка
             /// </summary>
             public bool HasPingSpike
             {
                 get
                 {
+                    // Проверяем настройки продвинутой детекции
+                    bool useAdvancedDetection = App.settingsManager?.GetOption("advanced_spike_detection", "True", "ADVANCED") == "True";
+                    
+                    // Если используем продвинутую детекцию, проверяем активный спайк
+                    if (useAdvancedDetection && HasActivePingSpike)
+                    {
+                        return true;
+                    }
+                    
                     // Очищаем старые спайки из очереди
                     var cutoffTime = DateTime.Now.AddSeconds(-SpikeAnalysisWindowSeconds);
                     while (recentSpikes.Count > 0 && recentSpikes.Peek() < cutoffTime)
@@ -437,9 +445,158 @@ namespace tickMeter
             }
 
             /// <summary>
-            /// Проверяет текущий пинг на предмет спайка
+            /// Проверяет текущий пинг на предмет спайка с использованием улучшенного алгоритма
             /// </summary>
             private void CheckForPingSpike(int currentPing)
+            {
+                // Проверяем настройки улучшенной детекции
+                bool useAdvancedDetection = App.settingsManager?.GetOption("advanced_spike_detection", "True", "ADVANCED") == "True";
+                if (!useAdvancedDetection)
+                {
+                    // Используем классическую систему детекции
+                    CheckForPingSpikeClassic(currentPing);
+                    return;
+                }
+
+                // Улучшенная система детекции с EMA и EW-стандартным отклонением
+                CheckForPingSpikeAdvanced(currentPing);
+            }
+
+            // EMA состояние для продвинутой детекции
+            private double _pingEma = 0;
+            private double _pingEwVar = 0;
+            private bool _pingDetectorInitialized = false;
+            private bool _inPingSpike = false;
+            private DateTime _spikeStartTime = DateTime.MinValue;
+            private DateTime _spikeEndTime = DateTime.MinValue;
+            private double _spikeHoldTime = 0;
+            private double _timeSinceSpike = 1000; // большое значение для начала
+            private double _spikePeak = 0;
+
+            /// <summary>
+            /// Продвинутая детекция спайков с EMA, EW-стандартным отклонением и гистерезисом
+            /// </summary>
+            private void CheckForPingSpikeAdvanced(int currentPing)
+            {
+                var now = DateTime.Now;
+                var pingSeconds = currentPing / 1000.0; // конвертируем в секунды для внутренних расчетов
+                
+                // Параметры детектора (настраиваемые через Advanced Settings)
+                double tauSec = 6.0; // инерция EMA
+                double minAbsMs = 15.0; // минимальный абсолютный порог (мс)
+                double minRel = 0.6; // минимальный относительный порог (60% от μ)
+                double kHi = 3.0; // верхний z-порог
+                double kLo = 1.5; // нижний z-порог для гистерезиса
+                double minHoldSec = 0.15; // минимальная длительность спайка
+                double refractorySec = 3.0; // рефрактерный период
+                double mergeWindow = 0.5; // окно объединения
+
+                // Инициализация при первом запуске
+                if (!_pingDetectorInitialized)
+                {
+                    _pingEma = pingSeconds;
+                    _pingEwVar = Math.Pow(pingSeconds * 0.1, 2); // начальная дисперсия как 10% от начального значения
+                    _pingDetectorInitialized = true;
+                    Debug.Print($"[AdvancedPingSpike] Initialized with base {currentPing}ms");
+                    return;
+                }
+
+                // Вычисляем dt для адаптации
+                double dt = 0.1; // предполагаем ~100мс между обновлениями пинга
+                
+                // Обновляем EMA
+                double alpha = dt / (tauSec + dt);
+                double dx = pingSeconds - _pingEma;
+                _pingEma += alpha * dx;
+
+                // Обновляем EW дисперсию
+                double beta = alpha;
+                _pingEwVar = (1 - beta) * _pingEwVar + beta * dx * dx;
+                double sigma = Math.Sqrt(Math.Max(_pingEwVar, 1e-12));
+
+                // Вычисляем гибридный порог
+                double thrAbs = minAbsMs / 1000.0; // конвертируем в секунды
+                double thrRel = Math.Abs(minRel * _pingEma);
+                double thrSig = kHi * sigma;
+                double threshold = Math.Max(thrAbs, Math.Max(thrRel, thrSig));
+
+                _timeSinceSpike += dt;
+
+                if (!_inPingSpike)
+                {
+                    // Проверяем превышение порога для пинга (только возрастающие спайки)
+                    bool cross = (pingSeconds - _pingEma) > threshold;
+                    
+                    if (cross && _timeSinceSpike >= refractorySec)
+                    {
+                        // Проверяем анти-бурст объединение
+                        if (_spikeEndTime != DateTime.MinValue && 
+                            (now - _spikeEndTime).TotalSeconds < mergeWindow)
+                        {
+                            Debug.Print($"[AdvancedPingSpike] Merging with recent spike (within {mergeWindow}s)");
+                            _inPingSpike = true;
+                            _spikePeak = Math.Max(_spikePeak, (pingSeconds - _pingEma) * 1000); // пик в мс
+                            return;
+                        }
+                        
+                        // Начинаем новый спайк
+                        _spikeHoldTime = 0;
+                        _inPingSpike = true;
+                        _timeSinceSpike = 0;
+                        _spikeStartTime = now;
+                        _spikePeak = (pingSeconds - _pingEma) * 1000; // пик в мс
+                        
+                        // Добавляем в очередь для UI индикатора
+                        recentSpikes.Enqueue(DateTime.Now);
+                        
+                        Debug.Print($"[AdvancedPingSpike] SPIKE START: {currentPing}ms, μ={_pingEma*1000:F1}ms, σ={sigma*1000:F2}ms, threshold={threshold*1000:F1}ms, peak={_spikePeak:F1}ms");
+                    }
+                }
+                else
+                {
+                    _spikeHoldTime += dt;
+                    
+                    // Обновляем пик спайка
+                    var currentDeviation = (pingSeconds - _pingEma) * 1000;
+                    if (currentDeviation > _spikePeak)
+                    {
+                        _spikePeak = currentDeviation;
+                    }
+                    
+                    // Проверяем условие выхода из спайка (гистерезис)
+                    double lowerThreshold = kLo * sigma;
+                    bool belowLower = (pingSeconds - _pingEma) < lowerThreshold;
+                    
+                    if (belowLower && _spikeHoldTime >= minHoldSec)
+                    {
+                        _inPingSpike = false;
+                        _timeSinceSpike = 0;
+                        _spikeEndTime = now;
+                        
+                        // Вычисляем "энергию" спайка для диагностики
+                        double spikeEnergy = _spikePeak * _spikeHoldTime;
+                        
+                        Debug.Print($"[AdvancedPingSpike] SPIKE END: duration={_spikeHoldTime:F3}s, peak={_spikePeak:F1}ms, energy={spikeEnergy:F1}");
+                        
+                        _spikePeak = 0;
+                        _spikeStartTime = DateTime.MinValue;
+                    }
+                    else if (_spikeHoldTime > 0 && DateTime.Now.Millisecond % 500 < 50) // логируем каждые ~500мс
+                    {
+                        Debug.Print($"[AdvancedPingSpike] ONGOING: current={currentPing}ms, peak={_spikePeak:F1}ms, hold={_spikeHoldTime:F2}s");
+                    }
+                }
+            }
+
+            /// <summary>
+            /// Определяет, есть ли сейчас активный спайк пинга (для UI)
+            /// </summary>
+            public bool HasActivePingSpike => _inPingSpike;
+
+            /// <summary>
+            /// Классическая система детекции спайков (для совместимости)
+            /// </summary>
+            private void CheckForPingSpikeClassic(int currentPing)
             {
                 if (App.meterState?.pingBuffer == null)
                     return;
@@ -510,18 +667,8 @@ namespace tickMeter
                 
                 if (isSpike)
                 {
-                    // Защита от частых срабатываний - минимум 5 секунд между спайками (увеличено с 2)
-                    var timeSinceLastSpike = DateTime.Now - lastSpikeTime;
-                    if (timeSinceLastSpike.TotalSeconds >= 5.0 || lastSpikeTime == DateTime.MinValue)
-                    {
-                        lastSpikeTime = DateTime.Now;
-                        recentSpikes.Enqueue(DateTime.Now); // Добавляем спайк в очередь
-                        Debug.Print($"[PING SPIKE DETECTED] {debugInfo}, Total spikes: {recentSpikes.Count}");
-                    }
-                    else
-                    {
-                        Debug.Print($"[PING SPIKE IGNORED] Too soon after last spike ({timeSinceLastSpike.TotalSeconds:F1}s ago): {debugInfo}");
-                    }
+                    recentSpikes.Enqueue(DateTime.Now);
+                    Debug.Print($"[CLASSIC PING SPIKE DETECTED] {debugInfo}, Total spikes: {recentSpikes.Count}");
                 }
             }
 
