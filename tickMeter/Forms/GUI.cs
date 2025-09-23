@@ -600,6 +600,10 @@ namespace tickMeter.Forms
             if (_gcCounter >= 100) // Каждые 100 циклов (~10 секунд при интервале 100мс)
             {
                 _gcCounter = 0;
+                
+                // Очищаем мертвые воркеры перед сборкой мусора
+                CleanupDeadWorkers();
+                
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
                 GC.Collect();
@@ -620,6 +624,78 @@ namespace tickMeter.Forms
             {
                 // Всегда освобождаем блокировку
                 Volatile.Write(ref _tickBusy, 0);
+            }
+        }
+
+        /// <summary>
+        /// Очищает мертвые/завершившие работу PCAP воркеры для предотвращения утечек памяти
+        /// </summary>
+        private void CleanupDeadWorkers()
+        {
+            try
+            {
+                if (_pcapWorkers.Count == 0) return;
+                
+                var originalCount = _pcapWorkers.Count;
+                var toRemove = new List<BackgroundWorker>();
+                
+                // Находим воркеры которые можно безопасно удалить
+                for (int i = 0; i < _pcapWorkers.Count; i++)
+                {
+                    var worker = _pcapWorkers[i];
+                    try
+                    {
+                        // Если воркер не занят и можно его освободить
+                        if (worker != null && !worker.IsBusy)
+                        {
+                            // Дополнительная проверка - если tracking остановлен, удаляем все воркеры
+                            if (!App.meterState.IsTracking)
+                            {
+                                toRemove.Add(worker);
+                            }
+                        }
+                        // Если воркер null или поврежден - тоже удаляем
+                        else if (worker == null)
+                        {
+                            toRemove.Add(worker);
+                        }
+                    }
+                    catch
+                    {
+                        // Если не можем получить доступ к воркеру - помечаем на удаление
+                        toRemove.Add(worker);
+                    }
+                }
+                
+                // Удаляем найденные мертвые воркеры
+                foreach (var deadWorker in toRemove)
+                {
+                    try
+                    {
+                        if (deadWorker != null)
+                        {
+                            deadWorker.DoWork -= null;
+                            deadWorker.RunWorkerCompleted -= null;
+                            deadWorker.Dispose();
+                        }
+                        _pcapWorkers.Remove(deadWorker);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Print($"[CleanupDeadWorkers] Error disposing worker: {ex.Message}");
+                        // Все равно удаляем из списка
+                        _pcapWorkers.Remove(deadWorker);
+                    }
+                }
+                
+                if (toRemove.Count > 0)
+                {
+                    Debug.Print($"[CleanupDeadWorkers] Cleaned {toRemove.Count} dead workers (was {originalCount}, now {_pcapWorkers.Count})");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[CleanupDeadWorkers] Error in cleanup: {ex.Message}");
             }
         }
 
@@ -878,28 +954,53 @@ namespace tickMeter.Forms
                     foreach (var dev in _allSelectedAdapters)
                     {
                         var worker = new BackgroundWorker();
+                        var currentWorkerIndex = workerIndex; // Захватываем значение для лямбды
+                        var currentDevice = dev; // Захватываем устройство для лямбды
+                        
                         worker.DoWork += (s, e) =>
                         {
-                            if (!App.meterState.IsTracking) return;
+                            if (!App.meterState.IsTracking) 
+                            {
+                                Debug.Print($"[PCAP-Multi-{currentWorkerIndex}] Tracking stopped, exiting worker");
+                                return;
+                            }
+                            
+                            Debug.Print($"[PCAP-Multi-{currentWorkerIndex}] Worker started for device {currentDevice.Name}");
                             
                             // Phase 3: Устанавливаем высокий приоритет для PCAP потока
-                            SetHighPriorityThread(Thread.CurrentThread, $"PCAP-Multi-{workerIndex}");
+                            SetHighPriorityThread(Thread.CurrentThread, $"PCAP-Multi-{currentWorkerIndex}");
                             
-                            using (var comm = dev.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 500))
+                            try
                             {
-                                if (comm.DataLink.Kind != DataLinkKind.Ethernet) return;
-                                
-                                // PCAP тюнинг для производительности
-                                TryOptimizePcapCommunicator(comm);
-                                
-                                // Применяем BPF фильтр из настроек
-                                ApplyBpfFilterSafely(comm);
-                                
-                                comm.ReceivePackets(0, PacketHandler);
+                                using (var comm = currentDevice.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 500))
+                                {
+                                    if (comm.DataLink.Kind != DataLinkKind.Ethernet) 
+                                    {
+                                        Debug.Print($"[PCAP-Multi-{currentWorkerIndex}] Not Ethernet, exiting");
+                                        return;
+                                    }
+                                    
+                                    // PCAP тюнинг для производительности
+                                    TryOptimizePcapCommunicator(comm);
+                                    
+                                    // Применяем BPF фильтр из настроек
+                                    ApplyBpfFilterSafely(comm);
+                                    
+                                    // Основной цикл захвата с проверкой флага IsTracking
+                                    comm.ReceivePackets(0, PacketHandler);
+                                }
                             }
+                            catch (Exception ex)
+                            {
+                                Debug.Print($"[PCAP-Multi-{currentWorkerIndex}] Error: {ex.Message}");
+                            }
+                            
+                            Debug.Print($"[PCAP-Multi-{currentWorkerIndex}] Worker finished");
                         };
+                        
                         worker.RunWorkerCompleted += PcapWorkerCompleted;
                         _pcapWorkers.Add(worker);
+                        Debug.Print($"[StartTracking] Starting worker {workerIndex} for device {dev.Name}, total workers: {_pcapWorkers.Count}");
                         worker.RunWorkerAsync();
                         workerIndex++;
                     }
@@ -926,7 +1027,29 @@ namespace tickMeter.Forms
         }
         private void PcapWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            if (!App.meterState.IsTracking) return;
+            // Всегда удаляем завершившийся воркер из списка
+            var completedWorker = sender as BackgroundWorker;
+            if (completedWorker != null)
+            {
+                try
+                {
+                    _pcapWorkers.Remove(completedWorker);
+                    completedWorker.DoWork -= null;
+                    completedWorker.RunWorkerCompleted -= null;
+                    completedWorker.Dispose();
+                    Debug.Print($"[PcapWorkerCompleted] Worker removed from list, remaining: {_pcapWorkers.Count}");
+                }
+                catch (Exception ex)
+                {
+                    Debug.Print($"[PcapWorkerCompleted] Error removing worker: {ex.Message}");
+                }
+            }
+            
+            if (!App.meterState.IsTracking) 
+            {
+                Debug.Print("[PcapWorkerCompleted] Tracking stopped, not restarting worker");
+                return;
+            }
             
             // Проверяем режимы работы
             var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
@@ -937,6 +1060,7 @@ namespace tickMeter.Forms
             if (captureAll || vpnBypassBasic || vpnBypassAdvanced)
             {
                 // В этих режимах используется _pcapWorkers, не pcapWorker
+                Debug.Print("[PcapWorkerCompleted] Multi-mode active, not restarting single worker");
                 return;
             }
             
@@ -1034,21 +1158,56 @@ namespace tickMeter.Forms
             CleanupHighPriorityThreads();
             
             // NEW: остановка мульти-захвата: флаг IsTracking и очистка воркеров
+            Debug.Print($"[StopTracking] Cleaning up {_pcapWorkers.Count} PCAP workers");
             try
             {
-                foreach (var w in _pcapWorkers)
+                App.meterState.IsTracking = false; // Сначала устанавливаем флаг для остановки
+                Thread.Sleep(100); // Даем время воркерам для корректного завершения
+                
+                for (int i = _pcapWorkers.Count - 1; i >= 0; i--)
                 {
+                    var w = _pcapWorkers[i];
                     try
                     {
-                        // Останавливаем и освобождаем каждый воркер
-                        w?.CancelAsync();
-                        w?.Dispose();
+                        if (w != null)
+                        {
+                            Debug.Print($"[StopTracking] Stopping worker {i}: IsBusy={w.IsBusy}");
+                            
+                            // Отменяем работу если воркер еще активен
+                            if (w.IsBusy)
+                            {
+                                w.CancelAsync();
+                                
+                                // Ждем завершения максимум 500мс
+                                var timeout = DateTime.Now.AddMilliseconds(500);
+                                while (w.IsBusy && DateTime.Now < timeout)
+                                {
+                                    Thread.Sleep(10);
+                                    Application.DoEvents();
+                                }
+                            }
+                            
+                            // Принудительно освобождаем ресурсы
+                            w.DoWork -= null; // Отключаем обработчики
+                            w.RunWorkerCompleted -= null;
+                            w.Dispose();
+                            Debug.Print($"[StopTracking] Worker {i} disposed");
+                        }
                     }
-                    catch { /* ignore disposal errors */ }
+                    catch (Exception ex) 
+                    { 
+                        Debug.Print($"[StopTracking] Error disposing worker {i}: {ex.Message}");
+                    }
                 }
-            } catch { }
+            } 
+            catch (Exception ex)
+            {
+                Debug.Print($"[StopTracking] Error in worker cleanup: {ex.Message}");
+            }
+            
             _pcapWorkers.Clear();
             _allSelectedAdapters.Clear();
+            Debug.Print($"[StopTracking] Workers cleared, count now: {_pcapWorkers.Count}");
             
             // Также очищаем одиночный pcapWorker если он есть
             try
