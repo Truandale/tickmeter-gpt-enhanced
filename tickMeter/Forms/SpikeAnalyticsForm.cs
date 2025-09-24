@@ -62,6 +62,10 @@ namespace tickMeter.Forms
             area.AxisX.LabelStyle.Format = "HH:mm";
             area.AxisX.IntervalType = DateTimeIntervalType.Minutes; // Интервалы по минутам
             area.AxisX.Interval = 15; // Метки каждые 15 минут
+            area.AxisX.LabelStyle.Enabled = true; // ИСПРАВЛЕНИЕ: принудительно включаем метки
+            area.AxisX.LabelStyle.IsEndLabelVisible = true; // Показываем крайние метки
+            area.AxisX.IsLabelAutoFit = false; // Отключаем автоподгонку меток
+            area.AxisX.LabelStyle.Angle = -45; // Наклоняем метки для лучшей читаемости
             area.BackColor = Color.FromArgb(245, 245, 245);
             chartSpikeFrequency.ChartAreas.Add(area);
             
@@ -196,6 +200,12 @@ namespace tickMeter.Forms
                 {
                     series.Points.AddXY(group.Key, group.Count());
                 }
+                
+                // ИСПРАВЛЕНИЕ: Принудительно устанавливаем диапазон оси X для стабильного отображения меток
+                var chartArea = chartSpikeFrequency.ChartAreas["FrequencyArea"];
+                chartArea.AxisX.Minimum = startTime.ToOADate();
+                chartArea.AxisX.Maximum = now.ToOADate();
+                chartArea.AxisX.IntervalOffset = 0; // Начинаем с 0 смещения
                 
                 chartSpikeFrequency.Invalidate();
             }
