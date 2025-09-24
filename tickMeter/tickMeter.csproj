@@ -247,6 +247,7 @@
     <Compile Include="Classes\SpikeDetection\SpikeDetector.cs" />
     <Compile Include="Classes\SpikeDetection\SpikeDetectionManager.cs" />
     <Compile Include="Classes\AlertManager.cs" />
+    <Compile Include="Classes\NetworkQualityAnalyzer.cs" />
     <Compile Include="Classes\VpnBypass.cs" />
     <Compile Include="Classes\WebStatsManager.cs" />
     <Compile Include="Forms\GUI.cs">

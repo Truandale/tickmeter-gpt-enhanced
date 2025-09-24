@@ -147,6 +147,17 @@ namespace tickMeter.Forms
             this.lblAlertTicktimeSoundPath = new System.Windows.Forms.Label();
             this.txtAlertTicktimeSoundPath = new System.Windows.Forms.TextBox();
             this.btnBrowseTicktimeSound = new System.Windows.Forms.Button();
+            this.groupBoxNetworkQuality = new System.Windows.Forms.GroupBox();
+            this.chkNetworkQualityEnabled = new System.Windows.Forms.CheckBox();
+            this.lblQualityHistorySize = new System.Windows.Forms.Label();
+            this.numQualityHistorySize = new System.Windows.Forms.NumericUpDown();
+            this.lblStabilityThreshold = new System.Windows.Forms.Label();
+            this.numStabilityThreshold = new System.Windows.Forms.NumericUpDown();
+            this.lblQualityThreshold = new System.Windows.Forms.Label();
+            this.numQualityThreshold = new System.Windows.Forms.NumericUpDown();
+            this.btnResetQualityAnalyzer = new System.Windows.Forms.Button();
+            this.lblCurrentQuality = new System.Windows.Forms.Label();
+            this.lblQualityRating = new System.Windows.Forms.Label();
             this.panel1.SuspendLayout();
             this.groupBoxVpnBypass.SuspendLayout();
             this.groupBoxPhase3.SuspendLayout();
@@ -180,6 +191,10 @@ namespace tickMeter.Forms
             this.groupBoxAlerts.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numAlertCooldown)).BeginInit();
             this.groupBoxAlertSounds.SuspendLayout();
+            this.groupBoxNetworkQuality.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numQualityHistorySize)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numStabilityThreshold)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numQualityThreshold)).BeginInit();
             this.panelButtons.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -194,6 +209,7 @@ namespace tickMeter.Forms
             this.panel1.Controls.Add(this.groupBoxSpikeAdvanced);
             this.panel1.Controls.Add(this.groupBoxAlerts);
             this.panel1.Controls.Add(this.groupBoxAlertSounds);
+            this.panel1.Controls.Add(this.groupBoxNetworkQuality);
             this.panel1.Controls.Add(this.groupBox5);
             this.panel1.Controls.Add(this.groupBox4);
             this.panel1.Controls.Add(this.groupBox3);
@@ -1547,6 +1563,139 @@ namespace tickMeter.Forms
             this.btnBrowseTicktimeSound.Text = "...";
             this.btnBrowseTicktimeSound.UseVisualStyleBackColor = true;
             // 
+            // groupBoxNetworkQuality
+            // 
+            this.groupBoxNetworkQuality.Controls.Add(this.chkNetworkQualityEnabled);
+            this.groupBoxNetworkQuality.Controls.Add(this.lblQualityHistorySize);
+            this.groupBoxNetworkQuality.Controls.Add(this.numQualityHistorySize);
+            this.groupBoxNetworkQuality.Controls.Add(this.lblStabilityThreshold);
+            this.groupBoxNetworkQuality.Controls.Add(this.numStabilityThreshold);
+            this.groupBoxNetworkQuality.Controls.Add(this.lblQualityThreshold);
+            this.groupBoxNetworkQuality.Controls.Add(this.numQualityThreshold);
+            this.groupBoxNetworkQuality.Controls.Add(this.btnResetQualityAnalyzer);
+            this.groupBoxNetworkQuality.Controls.Add(this.lblCurrentQuality);
+            this.groupBoxNetworkQuality.Controls.Add(this.lblQualityRating);
+            this.groupBoxNetworkQuality.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBoxNetworkQuality.Location = new System.Drawing.Point(0, 1220);
+            this.groupBoxNetworkQuality.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBoxNetworkQuality.Name = "groupBoxNetworkQuality";
+            this.groupBoxNetworkQuality.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBoxNetworkQuality.Size = new System.Drawing.Size(757, 180);
+            this.groupBoxNetworkQuality.TabIndex = 8;
+            this.groupBoxNetworkQuality.TabStop = false;
+            this.groupBoxNetworkQuality.Text = "Stage 6: Анализ качества сети";
+            // 
+            // chkNetworkQualityEnabled
+            // 
+            this.chkNetworkQualityEnabled.AutoSize = true;
+            this.chkNetworkQualityEnabled.Location = new System.Drawing.Point(8, 25);
+            this.chkNetworkQualityEnabled.Margin = new System.Windows.Forms.Padding(4);
+            this.chkNetworkQualityEnabled.Name = "chkNetworkQualityEnabled";
+            this.chkNetworkQualityEnabled.Size = new System.Drawing.Size(204, 20);
+            this.chkNetworkQualityEnabled.TabIndex = 0;
+            this.chkNetworkQualityEnabled.Text = "Включить анализ качества сети";
+            this.chkNetworkQualityEnabled.UseVisualStyleBackColor = true;
+            // 
+            // lblQualityHistorySize
+            // 
+            this.lblQualityHistorySize.AutoSize = true;
+            this.lblQualityHistorySize.Location = new System.Drawing.Point(8, 55);
+            this.lblQualityHistorySize.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblQualityHistorySize.Name = "lblQualityHistorySize";
+            this.lblQualityHistorySize.Size = new System.Drawing.Size(110, 16);
+            this.lblQualityHistorySize.TabIndex = 1;
+            this.lblQualityHistorySize.Text = "Размер буфера:";
+            // 
+            // numQualityHistorySize
+            // 
+            this.numQualityHistorySize.Location = new System.Drawing.Point(130, 53);
+            this.numQualityHistorySize.Margin = new System.Windows.Forms.Padding(4);
+            this.numQualityHistorySize.Maximum = new decimal(new int[] { 500, 0, 0, 0 });
+            this.numQualityHistorySize.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
+            this.numQualityHistorySize.Name = "numQualityHistorySize";
+            this.numQualityHistorySize.Size = new System.Drawing.Size(80, 22);
+            this.numQualityHistorySize.TabIndex = 2;
+            this.numQualityHistorySize.Value = new decimal(new int[] { 100, 0, 0, 0 });
+            // 
+            // lblStabilityThreshold
+            // 
+            this.lblStabilityThreshold.AutoSize = true;
+            this.lblStabilityThreshold.Location = new System.Drawing.Point(220, 55);
+            this.lblStabilityThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblStabilityThreshold.Name = "lblStabilityThreshold";
+            this.lblStabilityThreshold.Size = new System.Drawing.Size(120, 16);
+            this.lblStabilityThreshold.TabIndex = 3;
+            this.lblStabilityThreshold.Text = "Порог стабильности:";
+            // 
+            // numStabilityThreshold
+            // 
+            this.numStabilityThreshold.DecimalPlaces = 2;
+            this.numStabilityThreshold.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+            this.numStabilityThreshold.Location = new System.Drawing.Point(350, 53);
+            this.numStabilityThreshold.Margin = new System.Windows.Forms.Padding(4);
+            this.numStabilityThreshold.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+            this.numStabilityThreshold.Minimum = new decimal(new int[] { 1, 0, 0, 131072 });
+            this.numStabilityThreshold.Name = "numStabilityThreshold";
+            this.numStabilityThreshold.Size = new System.Drawing.Size(80, 22);
+            this.numStabilityThreshold.TabIndex = 4;
+            this.numStabilityThreshold.Value = new decimal(new int[] { 15, 0, 0, 131072 });
+            // 
+            // lblQualityThreshold
+            // 
+            this.lblQualityThreshold.AutoSize = true;
+            this.lblQualityThreshold.Location = new System.Drawing.Point(8, 85);
+            this.lblQualityThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblQualityThreshold.Name = "lblQualityThreshold";
+            this.lblQualityThreshold.Size = new System.Drawing.Size(103, 16);
+            this.lblQualityThreshold.TabIndex = 5;
+            this.lblQualityThreshold.Text = "Порог качества:";
+            // 
+            // numQualityThreshold
+            // 
+            this.numQualityThreshold.DecimalPlaces = 2;
+            this.numQualityThreshold.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+            this.numQualityThreshold.Location = new System.Drawing.Point(130, 83);
+            this.numQualityThreshold.Margin = new System.Windows.Forms.Padding(4);
+            this.numQualityThreshold.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+            this.numQualityThreshold.Minimum = new decimal(new int[] { 1, 0, 0, 131072 });
+            this.numQualityThreshold.Name = "numQualityThreshold";
+            this.numQualityThreshold.Size = new System.Drawing.Size(80, 22);
+            this.numQualityThreshold.TabIndex = 6;
+            this.numQualityThreshold.Value = new decimal(new int[] { 80, 0, 0, 131072 });
+            // 
+            // btnResetQualityAnalyzer
+            // 
+            this.btnResetQualityAnalyzer.Location = new System.Drawing.Point(220, 81);
+            this.btnResetQualityAnalyzer.Margin = new System.Windows.Forms.Padding(4);
+            this.btnResetQualityAnalyzer.Name = "btnResetQualityAnalyzer";
+            this.btnResetQualityAnalyzer.Size = new System.Drawing.Size(120, 28);
+            this.btnResetQualityAnalyzer.TabIndex = 7;
+            this.btnResetQualityAnalyzer.Text = "Сбросить анализ";
+            this.btnResetQualityAnalyzer.UseVisualStyleBackColor = true;
+            // 
+            // lblCurrentQuality
+            // 
+            this.lblCurrentQuality.AutoSize = true;
+            this.lblCurrentQuality.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.lblCurrentQuality.Location = new System.Drawing.Point(8, 120);
+            this.lblCurrentQuality.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblCurrentQuality.Name = "lblCurrentQuality";
+            this.lblCurrentQuality.Size = new System.Drawing.Size(150, 18);
+            this.lblCurrentQuality.TabIndex = 8;
+            this.lblCurrentQuality.Text = "Качество сети: 100%";
+            // 
+            // lblQualityRating
+            // 
+            this.lblQualityRating.AutoSize = true;
+            this.lblQualityRating.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.lblQualityRating.ForeColor = System.Drawing.Color.Green;
+            this.lblQualityRating.Location = new System.Drawing.Point(8, 145);
+            this.lblQualityRating.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblQualityRating.Name = "lblQualityRating";
+            this.lblQualityRating.Size = new System.Drawing.Size(120, 18);
+            this.lblQualityRating.TabIndex = 9;
+            this.lblQualityRating.Text = "Рейтинг: Excellent";
+            // 
             // groupBox4
             // 
             this.groupBox4.Controls.Add(this.chkIgnoreVirtualAdapters);
@@ -1874,6 +2023,11 @@ namespace tickMeter.Forms
             ((System.ComponentModel.ISupportInitialize)(this.numAlertCooldown)).EndInit();
             this.groupBoxAlertSounds.ResumeLayout(false);
             this.groupBoxAlertSounds.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numQualityHistorySize)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numStabilityThreshold)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numQualityThreshold)).EndInit();
+            this.groupBoxNetworkQuality.ResumeLayout(false);
+            this.groupBoxNetworkQuality.PerformLayout();
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
             this.groupBox3.ResumeLayout(false);
@@ -2017,5 +2171,16 @@ namespace tickMeter.Forms
         private System.Windows.Forms.Label lblAlertTicktimeSoundPath;
         private System.Windows.Forms.TextBox txtAlertTicktimeSoundPath;
         private System.Windows.Forms.Button btnBrowseTicktimeSound;
+        private System.Windows.Forms.GroupBox groupBoxNetworkQuality;
+        private System.Windows.Forms.CheckBox chkNetworkQualityEnabled;
+        private System.Windows.Forms.Label lblQualityHistorySize;
+        private System.Windows.Forms.NumericUpDown numQualityHistorySize;
+        private System.Windows.Forms.Label lblStabilityThreshold;
+        private System.Windows.Forms.NumericUpDown numStabilityThreshold;
+        private System.Windows.Forms.Label lblQualityThreshold;
+        private System.Windows.Forms.NumericUpDown numQualityThreshold;
+        private System.Windows.Forms.Button btnResetQualityAnalyzer;
+        private System.Windows.Forms.Label lblCurrentQuality;
+        private System.Windows.Forms.Label lblQualityRating;
     }
 }

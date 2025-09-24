@@ -86,6 +86,9 @@ namespace tickMeter.Forms
                 
                 // Загружаем настройки алертов
                 LoadAlertSettings();
+                
+                // Stage 6: Network Quality Analysis настройки
+                LoadNetworkQualitySettings();
             }
             catch (Exception ex)
             {
@@ -165,6 +168,9 @@ namespace tickMeter.Forms
                 
                 // Alert Settings
                 SaveAlertSettings();
+                
+                // Stage 6: Network Quality Analysis настройки
+                SaveNetworkQualitySettings();
                 
                 // Применяем новые настройки интервала overlay
                 App.gui?.ApplyOverlayIntervalFromSettings();
@@ -805,5 +811,183 @@ namespace tickMeter.Forms
         }
         
         #endregion Stage 8: Advanced Alerting System
+        
+        #region Stage 6: Network Quality Analysis
+        
+        private void LoadNetworkQualitySettings()
+        {
+            try
+            {
+                chkNetworkQualityEnabled.Checked = App.settingsManager.GetOption("network_quality_enabled", "True", "ADVANCED") == "True";
+                numQualityHistorySize.Value = decimal.Parse(App.settingsManager.GetOption("quality_history_size", "100", "ADVANCED"));
+                numStabilityThreshold.Value = decimal.Parse(App.settingsManager.GetOption("stability_threshold", "0.15", "ADVANCED"));
+                numQualityThreshold.Value = decimal.Parse(App.settingsManager.GetOption("quality_threshold", "0.8", "ADVANCED"));
+                
+                // Инициализируем анализатор если он включен
+                if (chkNetworkQualityEnabled.Checked)
+                {
+                    NetworkQualityAnalyzer.Initialize();
+                    
+                    // Подписываемся на события анализатора
+                    NetworkQualityAnalyzer.QualityChanged += OnQualityChanged;
+                    NetworkQualityAnalyzer.QualityRatingChanged += OnQualityRatingChanged;
+                    NetworkQualityAnalyzer.PredictionChanged += OnPredictionChanged;
+                }
+                
+                // Устанавливаем обработчики событий
+                chkNetworkQualityEnabled.CheckedChanged += ChkNetworkQualityEnabled_CheckedChanged;
+                numQualityHistorySize.ValueChanged += NumQualityHistorySize_ValueChanged;
+                numStabilityThreshold.ValueChanged += NumStabilityThreshold_ValueChanged;
+                numQualityThreshold.ValueChanged += NumQualityThreshold_ValueChanged;
+                btnResetQualityAnalyzer.Click += BtnResetQualityAnalyzer_Click;
+                
+                UpdateQualityDisplay();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[LoadNetworkQualitySettings] Error: {ex.Message}");
+            }
+        }
+        
+        private void SaveNetworkQualitySettings()
+        {
+            try
+            {
+                App.settingsManager.SetOption("network_quality_enabled", chkNetworkQualityEnabled.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("quality_history_size", numQualityHistorySize.Value.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("stability_threshold", numStabilityThreshold.Value.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("quality_threshold", numQualityThreshold.Value.ToString(), "ADVANCED");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[SaveNetworkQualitySettings] Error: {ex.Message}");
+            }
+        }
+        
+        private void ChkNetworkQualityEnabled_CheckedChanged(object sender, EventArgs e)
+        {
+            if (chkNetworkQualityEnabled.Checked)
+            {
+                NetworkQualityAnalyzer.Initialize();
+                NetworkQualityAnalyzer.QualityChanged += OnQualityChanged;
+                NetworkQualityAnalyzer.QualityRatingChanged += OnQualityRatingChanged;
+                NetworkQualityAnalyzer.PredictionChanged += OnPredictionChanged;
+            }
+            else
+            {
+                NetworkQualityAnalyzer.QualityChanged -= OnQualityChanged;
+                NetworkQualityAnalyzer.QualityRatingChanged -= OnQualityRatingChanged;
+                NetworkQualityAnalyzer.PredictionChanged -= OnPredictionChanged;
+                NetworkQualityAnalyzer.Clear();
+            }
+            UpdateQualityDisplay();
+        }
+        
+        private void NumQualityHistorySize_ValueChanged(object sender, EventArgs e)
+        {
+            if (chkNetworkQualityEnabled.Checked)
+            {
+                NetworkQualityAnalyzer.Initialize(); // Переинициализируем с новыми настройками
+            }
+        }
+        
+        private void NumStabilityThreshold_ValueChanged(object sender, EventArgs e)
+        {
+            if (chkNetworkQualityEnabled.Checked)
+            {
+                NetworkQualityAnalyzer.Initialize(); // Переинициализируем с новыми настройками  
+            }
+        }
+        
+        private void NumQualityThreshold_ValueChanged(object sender, EventArgs e)
+        {
+            if (chkNetworkQualityEnabled.Checked)
+            {
+                NetworkQualityAnalyzer.Initialize(); // Переинициализируем с новыми настройками
+            }
+        }
+        
+        private void BtnResetQualityAnalyzer_Click(object sender, EventArgs e)
+        {
+            NetworkQualityAnalyzer.Clear();
+            UpdateQualityDisplay();
+            MessageBox.Show("Анализатор качества сети сброшен", "Информация", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        
+        private void OnQualityChanged(float quality)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<float>(OnQualityChanged), quality);
+                return;
+            }
+            UpdateQualityDisplay();
+        }
+        
+        private void OnQualityRatingChanged(string rating)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<string>(OnQualityRatingChanged), rating);
+                return;
+            }
+            UpdateQualityDisplay();
+        }
+        
+        private void OnPredictionChanged(bool isPredicting, string details)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<bool, string>(OnPredictionChanged), isPredicting, details);
+                return;
+            }
+            
+            if (isPredicting)
+            {
+                System.Diagnostics.Debug.Print($"[NetworkQuality] Prediction: {details}");
+            }
+        }
+        
+        private void UpdateQualityDisplay()
+        {
+            try
+            {
+                if (!chkNetworkQualityEnabled.Checked)
+                {
+                    lblCurrentQuality.Text = "Анализ качества сети отключен";
+                    lblQualityRating.Text = "";
+                    lblCurrentQuality.ForeColor = System.Drawing.Color.Gray;
+                    lblQualityRating.ForeColor = System.Drawing.Color.Gray;
+                    return;
+                }
+                
+                var stats = NetworkQualityAnalyzer.GetDetailedStats();
+                
+                lblCurrentQuality.Text = $"Качество сети: {(stats.OverallQuality * 100):F0}%";
+                lblQualityRating.Text = $"Рейтинг: {stats.QualityRating}";
+                
+                // Цветовая индикация качества
+                if (stats.OverallQuality >= 0.9f)
+                {
+                    lblQualityRating.ForeColor = System.Drawing.Color.Green;
+                }
+                else if (stats.OverallQuality >= 0.7f)
+                {
+                    lblQualityRating.ForeColor = System.Drawing.Color.Orange;
+                }
+                else
+                {
+                    lblQualityRating.ForeColor = System.Drawing.Color.Red;
+                }
+                
+                lblCurrentQuality.ForeColor = System.Drawing.Color.Black;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[UpdateQualityDisplay] Error: {ex.Message}");
+            }
+        }
+        
+        #endregion Stage 6: Network Quality Analysis
     }
 }

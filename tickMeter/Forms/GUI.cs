@@ -642,6 +642,52 @@ namespace tickMeter.Forms
                         }
                     });
             
+            // Stage 6: Обновляем анализатор качества сети
+            if (App.settingsManager?.GetOption("network_quality_enabled", "True", "ADVANCED") == "True")
+            {
+                try
+                {
+                    float currentPing = 0;
+                    float currentTickrate = App.meterState.OutputTickRate;
+                    float currentTicktime = 0;
+                    float currentPacketLoss = 0;
+                    if (float.TryParse(App.meterState.GetDrops().Replace("%", ""), out float drops))
+                    {
+                        currentPacketLoss = drops;
+                    }
+                    
+                    // Получаем ping из разных источников
+                    if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
+                    {
+                        currentPing = App.meterState.Server.UdpPing;
+                    }
+                    else if (App.meterState.Server.Ping > 0 && App.meterState.Server.Ping < 10000)
+                    {
+                        currentPing = App.meterState.Server.Ping;
+                    }
+                    else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
+                    {
+                        currentPing = App.meterState.IcmpPing;
+                    }
+                    
+                    // Получаем ticktime из буфера
+                    if (App.meterState.tickTimeBuffer != null && App.meterState.tickTimeBuffer.Count > 0)
+                    {
+                        currentTicktime = App.meterState.tickTimeBuffer[App.meterState.tickTimeBuffer.Count - 1];
+                    }
+                    
+                    // Передаем данные в анализатор
+                    if (currentPing > 0 || currentTickrate > 0)
+                    {
+                        Classes.NetworkQualityAnalyzer.AddNetworkData(currentPing, currentTickrate, currentTicktime, currentPacketLoss);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.Print($"[GUI] Network quality analysis error: {ex.Message}");
+                }
+            }
+            
             // Обновляем состояние мигания спайков
             _spikeBlinkCounter++;
             if (_spikeBlinkCounter >= 5) // Каждые 5 циклов меняем состояние мигания

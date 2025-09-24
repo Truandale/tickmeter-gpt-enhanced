@@ -50,6 +50,10 @@ namespace tickMeter.Classes
             // Инициализируем детектор спайков
             Classes.SpikeDetection.SpikeDetectionManager.InitializeDetector();
             Debug.Print("[App.Init] Spike detection system initialized");
+            
+            // Инициализируем анализатор качества сети
+            Classes.NetworkQualityAnalyzer.Initialize();
+            Debug.Print("[App.Init] Network quality analyzer initialized");
         }
 
         public static List<LivePacketDevice> GetAdapters()
