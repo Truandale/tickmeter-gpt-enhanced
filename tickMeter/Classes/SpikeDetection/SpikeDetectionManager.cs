@@ -156,45 +156,69 @@ namespace tickMeter.Classes.SpikeDetection
                 }
 
                 // Основные настройки
-                settings.Enabled = settingsManager.GetBool("spike_detection_enabled", true);
+                settings.Enabled = settingsManager.GetOption("spikes.enable", "True", "ADVANCED") == "True";
 
-                // Загружаем включенные метрики
+                // Загружаем включенные метрики из новой настройки Stage 4
                 settings.EnabledMetrics.Clear();
-                if (settingsManager.GetBool("spike_detect_ping", true))
+                var metrics = settingsManager.GetOption("spikes.metrics", "ping,tickrate", "ADVANCED").ToLowerInvariant();
+                if (metrics.Contains("ping"))
                     settings.EnabledMetrics.Add(MetricKind.Ping);
-                if (settingsManager.GetBool("spike_detect_tickrate", false))
+                if (metrics.Contains("tickrate"))
                     settings.EnabledMetrics.Add(MetricKind.Tickrate);
-                if (settingsManager.GetBool("spike_detect_ticktime", false))
+                if (metrics.Contains("ticktime"))
                     settings.EnabledMetrics.Add(MetricKind.Ticktime);
 
-                // Параметры чувствительности
-                string sensitivityStr = settingsManager.GetOption("spike_sensitivity", "Medium", "ADVANCED");
-                switch (sensitivityStr?.ToLower())
+                // Используем расширенные настройки Stage 4 напрямую, если они есть
+                var useAdvancedSettings = settingsManager.GetOption("spikes.ema_alpha", "", "ADVANCED");
+                
+                if (!string.IsNullOrEmpty(useAdvancedSettings))
                 {
-                    case "low":
-                        settings.SensitivityMultiplier = 3.0;
-                        settings.EmaAlpha = 0.05;
-                        settings.EwSigmaAlpha = 0.02;
-                        break;
-                    case "high":
-                        settings.SensitivityMultiplier = 1.5;
-                        settings.EmaAlpha = 0.2;
-                        settings.EwSigmaAlpha = 0.1;
-                        break;
-                    case "medium":
-                    default:
-                        settings.SensitivityMultiplier = 2.0;
-                        settings.EmaAlpha = 0.1;
-                        settings.EwSigmaAlpha = 0.05;
-                        break;
+                    // Stage 4: используем точные значения из расширенных настроек
+                    settings.EmaAlpha = settingsManager.GetDouble("spikes.ema_alpha", 0.1, "ADVANCED");
+                    settings.EwSigmaAlpha = settingsManager.GetDouble("spikes.ew_sigma_alpha", 0.05, "ADVANCED");
+                    settings.SensitivityMultiplier = settingsManager.GetDouble("spikes.sensitivity_multiplier", 2.0, "ADVANCED");
+                    settings.HysteresisRatio = settingsManager.GetDouble("spikes.hysteresis_ratio", 0.8, "ADVANCED");
+                    settings.RefractoryPeriodMs = settingsManager.GetInt("spikes.refractory_period_ms", 1000, "ADVANCED");
+                    settings.MinEnergyThreshold = settingsManager.GetDouble("spikes.min_energy_threshold", 1.0, "ADVANCED");
+                    settings.InitWindowSize = settingsManager.GetInt("spikes.init_window_size", 20, "ADVANCED");
+                }
+                else
+                {
+                    // Fallback: используем старый метод через sensitivity preset
+                    string sensitivityStr = settingsManager.GetOption("spikes.sensitivity", "medium", "ADVANCED");
+                    switch (sensitivityStr?.ToLower())
+                    {
+                        case "low":
+                            settings.SensitivityMultiplier = 3.0;
+                            settings.EmaAlpha = 0.05;
+                            settings.EwSigmaAlpha = 0.02;
+                            settings.HysteresisRatio = 0.7;
+                            settings.RefractoryPeriodMs = 2000;
+                            settings.MinEnergyThreshold = 2.0;
+                            break;
+                        case "high":
+                            settings.SensitivityMultiplier = 1.5;
+                            settings.EmaAlpha = 0.2;
+                            settings.EwSigmaAlpha = 0.1;
+                            settings.HysteresisRatio = 0.9;
+                            settings.RefractoryPeriodMs = 500;
+                            settings.MinEnergyThreshold = 0.5;
+                            break;
+                        case "medium":
+                        default:
+                            settings.SensitivityMultiplier = 2.0;
+                            settings.EmaAlpha = 0.1;
+                            settings.EwSigmaAlpha = 0.05;
+                            settings.HysteresisRatio = 0.8;
+                            settings.RefractoryPeriodMs = 1000;
+                            settings.MinEnergyThreshold = 1.0;
+                            break;
+                    }
+                    settings.InitWindowSize = 20;
                 }
 
-                // Дополнительные параметры из Advanced секции
-                settings.HysteresisRatio = settingsManager.GetDouble("spike_hysteresis_ratio", 0.8, "ADVANCED");
-                settings.RefractoryPeriodMs = settingsManager.GetInt("spike_refractory_ms", 1000, "ADVANCED");
-                settings.MinEnergyThreshold = settingsManager.GetDouble("spike_min_energy", 1.0, "ADVANCED");
-                settings.MinSpikeDurationMs = settingsManager.GetInt("spike_min_duration_ms", 100, "ADVANCED");
-                settings.InitWindowSize = settingsManager.GetInt("spike_init_window", 20, "ADVANCED");
+                // Минимальная длительность спайка
+                settings.MinSpikeDurationMs = settingsManager.GetInt("spikes.min_hold_ms", 120, "ADVANCED");
             }
             catch (Exception ex)
             {

@@ -61,6 +61,7 @@ namespace tickMeter.Forms
                 // Spike Detection настройки
                 InitSpikeDetectionCombos();
                 LoadSpikeDetectionSettings();
+                LoadAdvancedSpikeSettings();
                 
                 // VPN bypass настройки
                 chkVpnBypassBasic.Checked = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
@@ -157,6 +158,7 @@ namespace tickMeter.Forms
                 
                 // Spike Detection настройки
                 SaveSpikeDetectionSettings();
+                SaveAdvancedSpikeSettings();
                 
                 // Применяем новые настройки интервала overlay
                 App.gui?.ApplyOverlayIntervalFromSettings();
@@ -390,5 +392,225 @@ namespace tickMeter.Forms
         {
             return int.TryParse(s, out var v) ? v : def;
         }
+
+        #region Stage 4: Advanced Spike Detection Settings
+
+        /// <summary>
+        /// Загружает расширенные настройки детекции спайков (Stage 4)
+        /// </summary>
+        private void LoadAdvancedSpikeSettings()
+        {
+            try
+            {
+                // EMA параметры
+                numEmaAlpha.Value = SafeDecimal(App.settingsManager.GetOption("spikes.ema_alpha", "0.1", "ADVANCED"), 0.1m);
+                
+                // EW-Sigma параметры
+                numEwSigmaAlpha.Value = SafeDecimal(App.settingsManager.GetOption("spikes.ew_sigma_alpha", "0.05", "ADVANCED"), 0.05m);
+                
+                // Множитель чувствительности
+                numSensitivityMultiplier.Value = SafeDecimal(App.settingsManager.GetOption("spikes.sensitivity_multiplier", "2.0", "ADVANCED"), 2.0m);
+                
+                // Гистерезис
+                numHysteresisRatio.Value = SafeDecimal(App.settingsManager.GetOption("spikes.hysteresis_ratio", "0.8", "ADVANCED"), 0.8m);
+                
+                // Рефракторный период
+                numRefractoryPeriod.Value = SafeDecimal(App.settingsManager.GetOption("spikes.refractory_period_ms", "1000", "ADVANCED"), 1000m);
+                
+                // Минимальная энергия спайка
+                numMinEnergyThreshold.Value = SafeDecimal(App.settingsManager.GetOption("spikes.min_energy_threshold", "1.0", "ADVANCED"), 1.0m);
+                
+                // Размер окна инициализации
+                numInitWindowSize.Value = SafeDecimal(App.settingsManager.GetOption("spikes.init_window_size", "20", "ADVANCED"), 20m);
+
+                // Подключаем обработчики кнопок пресетов
+                WireAdvancedSpikeButtons();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки расширенных настроек спайк-детекции: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        /// <summary>
+        /// Сохраняет расширенные настройки детекции спайков (Stage 4)
+        /// </summary>
+        private void SaveAdvancedSpikeSettings()
+        {
+            try
+            {
+                // EMA параметры
+                App.settingsManager.SetOption("spikes.ema_alpha", numEmaAlpha.Value.ToString("F3"), "ADVANCED");
+                
+                // EW-Sigma параметры
+                App.settingsManager.SetOption("spikes.ew_sigma_alpha", numEwSigmaAlpha.Value.ToString("F3"), "ADVANCED");
+                
+                // Множитель чувствительности
+                App.settingsManager.SetOption("spikes.sensitivity_multiplier", numSensitivityMultiplier.Value.ToString("F1"), "ADVANCED");
+                
+                // Гистерезис
+                App.settingsManager.SetOption("spikes.hysteresis_ratio", numHysteresisRatio.Value.ToString("F2"), "ADVANCED");
+                
+                // Рефракторный период
+                App.settingsManager.SetOption("spikes.refractory_period_ms", ((int)numRefractoryPeriod.Value).ToString(), "ADVANCED");
+                
+                // Минимальная энергия спайка
+                App.settingsManager.SetOption("spikes.min_energy_threshold", numMinEnergyThreshold.Value.ToString("F1"), "ADVANCED");
+                
+                // Размер окна инициализации
+                App.settingsManager.SetOption("spikes.init_window_size", ((int)numInitWindowSize.Value).ToString(), "ADVANCED");
+
+                // Уведомляем SpikeDetectionManager об изменении настроек
+                Classes.SpikeDetection.SpikeDetectionManager.UpdateSettings();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка сохранения расширенных настроек спайк-детекции: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Подключает обработчики событий кнопок для расширенных настроек спайков
+        /// </summary>
+        private void WireAdvancedSpikeButtons()
+        {
+            try
+            {
+                // Сброс к значениям по умолчанию
+                if (btnResetSpikeDefaults != null)
+                {
+                    btnResetSpikeDefaults.Click -= btnResetSpikeDefaults_Click;
+                    btnResetSpikeDefaults.Click += btnResetSpikeDefaults_Click;
+                }
+
+                // Пресеты
+                if (btnSpikePresetsSensitive != null)
+                {
+                    btnSpikePresetsSensitive.Click -= btnSpikePresetsSensitive_Click;
+                    btnSpikePresetsSensitive.Click += btnSpikePresetsSensitive_Click;
+                }
+
+                if (btnSpikePresetsBalanced != null)
+                {
+                    btnSpikePresetsBalanced.Click -= btnSpikePresetsBalanced_Click;
+                    btnSpikePresetsBalanced.Click += btnSpikePresetsBalanced_Click;
+                }
+
+                if (btnSpikePresetsConservative != null)
+                {
+                    btnSpikePresetsConservative.Click -= btnSpikePresetsConservative_Click;
+                    btnSpikePresetsConservative.Click += btnSpikePresetsConservative_Click;
+                }
+            }
+            catch
+            {
+                // Игнорируем ошибки подключения обработчиков
+            }
+        }
+
+        /// <summary>
+        /// Обработчик кнопки сброса настроек спайков к значениям по умолчанию
+        /// </summary>
+        private void btnResetSpikeDefaults_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                numEmaAlpha.Value = 0.1m;
+                numEwSigmaAlpha.Value = 0.05m;
+                numSensitivityMultiplier.Value = 2.0m;
+                numHysteresisRatio.Value = 0.8m;
+                numRefractoryPeriod.Value = 1000m;
+                numMinEnergyThreshold.Value = 1.0m;
+                numInitWindowSize.Value = 20m;
+                
+                MessageBox.Show("Настройки сброшены к значениям по умолчанию", "Сброс настроек", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка сброса настроек: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Обработчик кнопки применения чувствительного пресета
+        /// </summary>
+        private void btnSpikePresetsSensitive_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Чувствительный режим: быстрая реакция, низкие пороги
+                numEmaAlpha.Value = 0.2m;              // Быстрая адаптация базовой линии
+                numEwSigmaAlpha.Value = 0.1m;          // Быстрая адаптация стандартного отклонения
+                numSensitivityMultiplier.Value = 1.5m; // Низкий порог детекции
+                numHysteresisRatio.Value = 0.9m;       // Небольшой гистерезис
+                numRefractoryPeriod.Value = 500m;      // Короткий период тишины
+                numMinEnergyThreshold.Value = 0.5m;    // Низкая минимальная энергия
+                numInitWindowSize.Value = 15m;         // Небольшое окно инициализации
+
+                MessageBox.Show("Применен чувствительный пресет - быстрая реакция на спайки", "Пресет применен", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка применения пресета: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Обработчик кнопки применения сбалансированного пресета
+        /// </summary>
+        private void btnSpikePresetsBalanced_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Сбалансированный режим: значения по умолчанию с небольшими корректировками
+                numEmaAlpha.Value = 0.1m;              // Умеренная адаптация базовой линии
+                numEwSigmaAlpha.Value = 0.05m;         // Умеренная адаптация стандартного отклонения
+                numSensitivityMultiplier.Value = 2.0m; // Средний порог детекции
+                numHysteresisRatio.Value = 0.8m;       // Умеренный гистерезис
+                numRefractoryPeriod.Value = 1000m;     // Средний период тишины
+                numMinEnergyThreshold.Value = 1.0m;    // Средняя минимальная энергия
+                numInitWindowSize.Value = 20m;         // Стандартное окно инициализации
+
+                MessageBox.Show("Применен сбалансированный пресет - оптимальный баланс", "Пресет применен", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка применения пресета: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Обработчик кнопки применения консервативного пресета
+        /// </summary>
+        private void btnSpikePresetsConservative_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Консервативный режим: медленная реакция, высокие пороги
+                numEmaAlpha.Value = 0.05m;             // Медленная адаптация базовой линии
+                numEwSigmaAlpha.Value = 0.02m;         // Медленная адаптация стандартного отклонения
+                numSensitivityMultiplier.Value = 3.0m; // Высокий порог детекции
+                numHysteresisRatio.Value = 0.7m;       // Большой гистерезис
+                numRefractoryPeriod.Value = 2000m;     // Длинный период тишины
+                numMinEnergyThreshold.Value = 2.0m;    // Высокая минимальная энергия
+                numInitWindowSize.Value = 30m;         // Большое окно инициализации
+
+                MessageBox.Show("Применен консервативный пресет - минимум ложных срабатываний", "Пресет применен", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка применения пресета: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Безопасное преобразование строки в decimal с fallback значением
+        /// </summary>
+        private static decimal SafeDecimal(string s, decimal def)
+        {
+            return decimal.TryParse(s, out var v) ? v : def;
+        }
+
+        #endregion Stage 4: Advanced Spike Detection Settings
     }
 }

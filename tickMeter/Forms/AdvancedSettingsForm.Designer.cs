@@ -68,6 +68,25 @@ namespace tickMeter.Forms
             this.lblSpikeHistory = new System.Windows.Forms.Label();
             this.numSpikeHistorySize = new System.Windows.Forms.NumericUpDown();
             this.chkSpikeAutoCalibration = new System.Windows.Forms.CheckBox();
+            this.groupBoxSpikeAdvanced = new System.Windows.Forms.GroupBox();
+            this.lblEmaAlpha = new System.Windows.Forms.Label();
+            this.numEmaAlpha = new System.Windows.Forms.NumericUpDown();
+            this.lblEwSigmaAlpha = new System.Windows.Forms.Label();
+            this.numEwSigmaAlpha = new System.Windows.Forms.NumericUpDown();
+            this.lblSensitivityMultiplier = new System.Windows.Forms.Label();
+            this.numSensitivityMultiplier = new System.Windows.Forms.NumericUpDown();
+            this.lblHysteresisRatio = new System.Windows.Forms.Label();
+            this.numHysteresisRatio = new System.Windows.Forms.NumericUpDown();
+            this.lblRefractoryPeriod = new System.Windows.Forms.Label();
+            this.numRefractoryPeriod = new System.Windows.Forms.NumericUpDown();
+            this.lblMinEnergyThreshold = new System.Windows.Forms.Label();
+            this.numMinEnergyThreshold = new System.Windows.Forms.NumericUpDown();
+            this.lblInitWindowSize = new System.Windows.Forms.Label();
+            this.numInitWindowSize = new System.Windows.Forms.NumericUpDown();
+            this.btnResetSpikeDefaults = new System.Windows.Forms.Button();
+            this.btnSpikePresetsSensitive = new System.Windows.Forms.Button();
+            this.btnSpikePresetsBalanced = new System.Windows.Forms.Button();
+            this.btnSpikePresetsConservative = new System.Windows.Forms.Button();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.chkStunEnable = new System.Windows.Forms.CheckBox();
             this.chkShowPingSpikes = new System.Windows.Forms.CheckBox();
@@ -123,6 +142,14 @@ namespace tickMeter.Forms
             this.groupBoxSpikeDetection.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numSpikeMinDuration)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numSpikeHistorySize)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numEmaAlpha)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numEwSigmaAlpha)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numSensitivityMultiplier)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numHysteresisRatio)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numRefractoryPeriod)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numMinEnergyThreshold)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numInitWindowSize)).BeginInit();
+            this.groupBoxSpikeAdvanced.SuspendLayout();
             this.groupBox5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPingSpikeThreshold)).BeginInit();
             this.groupBox4.SuspendLayout();
@@ -142,6 +169,7 @@ namespace tickMeter.Forms
             this.panel1.Controls.Add(this.groupBoxPhase2);
             this.panel1.Controls.Add(this.groupBoxPhase1);
             this.panel1.Controls.Add(this.groupBoxSpikeDetection);
+            this.panel1.Controls.Add(this.groupBoxSpikeAdvanced);
             this.panel1.Controls.Add(this.groupBox5);
             this.panel1.Controls.Add(this.groupBox4);
             this.panel1.Controls.Add(this.groupBox3);
@@ -702,6 +730,342 @@ namespace tickMeter.Forms
             this.chkSpikeAutoCalibration.Text = "Автоматическая калибровка";
             this.chkSpikeAutoCalibration.UseVisualStyleBackColor = true;
             // 
+            // groupBoxSpikeAdvanced
+            // 
+            this.groupBoxSpikeAdvanced.Controls.Add(this.lblEmaAlpha);
+            this.groupBoxSpikeAdvanced.Controls.Add(this.numEmaAlpha);
+            this.groupBoxSpikeAdvanced.Controls.Add(this.lblEwSigmaAlpha);
+            this.groupBoxSpikeAdvanced.Controls.Add(this.numEwSigmaAlpha);
+            this.groupBoxSpikeAdvanced.Controls.Add(this.lblSensitivityMultiplier);
+            this.groupBoxSpikeAdvanced.Controls.Add(this.numSensitivityMultiplier);
+            this.groupBoxSpikeAdvanced.Controls.Add(this.lblHysteresisRatio);
+            this.groupBoxSpikeAdvanced.Controls.Add(this.numHysteresisRatio);
+            this.groupBoxSpikeAdvanced.Controls.Add(this.lblRefractoryPeriod);
+            this.groupBoxSpikeAdvanced.Controls.Add(this.numRefractoryPeriod);
+            this.groupBoxSpikeAdvanced.Controls.Add(this.lblMinEnergyThreshold);
+            this.groupBoxSpikeAdvanced.Controls.Add(this.numMinEnergyThreshold);
+            this.groupBoxSpikeAdvanced.Controls.Add(this.lblInitWindowSize);
+            this.groupBoxSpikeAdvanced.Controls.Add(this.numInitWindowSize);
+            this.groupBoxSpikeAdvanced.Controls.Add(this.btnResetSpikeDefaults);
+            this.groupBoxSpikeAdvanced.Controls.Add(this.btnSpikePresetsSensitive);
+            this.groupBoxSpikeAdvanced.Controls.Add(this.btnSpikePresetsBalanced);
+            this.groupBoxSpikeAdvanced.Controls.Add(this.btnSpikePresetsConservative);
+            this.groupBoxSpikeAdvanced.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBoxSpikeAdvanced.Location = new System.Drawing.Point(13, 974);
+            this.groupBoxSpikeAdvanced.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBoxSpikeAdvanced.Name = "groupBoxSpikeAdvanced";
+            this.groupBoxSpikeAdvanced.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBoxSpikeAdvanced.Size = new System.Drawing.Size(757, 280);
+            this.groupBoxSpikeAdvanced.TabIndex = 6;
+            this.groupBoxSpikeAdvanced.TabStop = false;
+            this.groupBoxSpikeAdvanced.Text = "Расширенные настройки детекции спайков (Stage 4)";
+            // 
+            // lblEmaAlpha
+            // 
+            this.lblEmaAlpha.AutoSize = true;
+            this.lblEmaAlpha.Location = new System.Drawing.Point(20, 30);
+            this.lblEmaAlpha.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblEmaAlpha.Name = "lblEmaAlpha";
+            this.lblEmaAlpha.Size = new System.Drawing.Size(77, 16);
+            this.lblEmaAlpha.TabIndex = 0;
+            this.lblEmaAlpha.Text = "EMA Alpha:";
+            // 
+            // numEmaAlpha
+            // 
+            this.numEmaAlpha.DecimalPlaces = 3;
+            this.numEmaAlpha.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            196608});
+            this.numEmaAlpha.Location = new System.Drawing.Point(120, 28);
+            this.numEmaAlpha.Margin = new System.Windows.Forms.Padding(4);
+            this.numEmaAlpha.Maximum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.numEmaAlpha.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            131072});
+            this.numEmaAlpha.Name = "numEmaAlpha";
+            this.numEmaAlpha.Size = new System.Drawing.Size(80, 22);
+            this.numEmaAlpha.TabIndex = 1;
+            this.numEmaAlpha.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            65536});
+            // 
+            // lblEwSigmaAlpha
+            // 
+            this.lblEwSigmaAlpha.AutoSize = true;
+            this.lblEwSigmaAlpha.Location = new System.Drawing.Point(220, 30);
+            this.lblEwSigmaAlpha.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblEwSigmaAlpha.Name = "lblEwSigmaAlpha";
+            this.lblEwSigmaAlpha.Size = new System.Drawing.Size(109, 16);
+            this.lblEwSigmaAlpha.TabIndex = 2;
+            this.lblEwSigmaAlpha.Text = "EW-Sigma Alpha:";
+            // 
+            // numEwSigmaAlpha
+            // 
+            this.numEwSigmaAlpha.DecimalPlaces = 3;
+            this.numEwSigmaAlpha.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            196608});
+            this.numEwSigmaAlpha.Location = new System.Drawing.Point(350, 28);
+            this.numEwSigmaAlpha.Margin = new System.Windows.Forms.Padding(4);
+            this.numEwSigmaAlpha.Maximum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.numEwSigmaAlpha.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            196608});
+            this.numEwSigmaAlpha.Name = "numEwSigmaAlpha";
+            this.numEwSigmaAlpha.Size = new System.Drawing.Size(80, 22);
+            this.numEwSigmaAlpha.TabIndex = 3;
+            this.numEwSigmaAlpha.Value = new decimal(new int[] {
+            5,
+            0,
+            0,
+            131072});
+            // 
+            // lblSensitivityMultiplier
+            // 
+            this.lblSensitivityMultiplier.AutoSize = true;
+            this.lblSensitivityMultiplier.Location = new System.Drawing.Point(450, 30);
+            this.lblSensitivityMultiplier.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblSensitivityMultiplier.Name = "lblSensitivityMultiplier";
+            this.lblSensitivityMultiplier.Size = new System.Drawing.Size(139, 16);
+            this.lblSensitivityMultiplier.TabIndex = 4;
+            this.lblSensitivityMultiplier.Text = "Множитель порога:";
+            // 
+            // numSensitivityMultiplier
+            // 
+            this.numSensitivityMultiplier.DecimalPlaces = 1;
+            this.numSensitivityMultiplier.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            65536});
+            this.numSensitivityMultiplier.Location = new System.Drawing.Point(600, 28);
+            this.numSensitivityMultiplier.Margin = new System.Windows.Forms.Padding(4);
+            this.numSensitivityMultiplier.Maximum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.numSensitivityMultiplier.Minimum = new decimal(new int[] {
+            5,
+            0,
+            0,
+            65536});
+            this.numSensitivityMultiplier.Name = "numSensitivityMultiplier";
+            this.numSensitivityMultiplier.Size = new System.Drawing.Size(80, 22);
+            this.numSensitivityMultiplier.TabIndex = 5;
+            this.numSensitivityMultiplier.Value = new decimal(new int[] {
+            2,
+            0,
+            0,
+            0});
+            // 
+            // lblHysteresisRatio
+            // 
+            this.lblHysteresisRatio.AutoSize = true;
+            this.lblHysteresisRatio.Location = new System.Drawing.Point(20, 65);
+            this.lblHysteresisRatio.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblHysteresisRatio.Name = "lblHysteresisRatio";
+            this.lblHysteresisRatio.Size = new System.Drawing.Size(84, 16);
+            this.lblHysteresisRatio.TabIndex = 6;
+            this.lblHysteresisRatio.Text = "Гистерезис:";
+            // 
+            // numHysteresisRatio
+            // 
+            this.numHysteresisRatio.DecimalPlaces = 2;
+            this.numHysteresisRatio.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            131072});
+            this.numHysteresisRatio.Location = new System.Drawing.Point(120, 63);
+            this.numHysteresisRatio.Margin = new System.Windows.Forms.Padding(4);
+            this.numHysteresisRatio.Maximum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.numHysteresisRatio.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            65536});
+            this.numHysteresisRatio.Name = "numHysteresisRatio";
+            this.numHysteresisRatio.Size = new System.Drawing.Size(80, 22);
+            this.numHysteresisRatio.TabIndex = 7;
+            this.numHysteresisRatio.Value = new decimal(new int[] {
+            8,
+            0,
+            0,
+            65536});
+            // 
+            // lblRefractoryPeriod
+            // 
+            this.lblRefractoryPeriod.AutoSize = true;
+            this.lblRefractoryPeriod.Location = new System.Drawing.Point(220, 65);
+            this.lblRefractoryPeriod.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblRefractoryPeriod.Name = "lblRefractoryPeriod";
+            this.lblRefractoryPeriod.Size = new System.Drawing.Size(122, 16);
+            this.lblRefractoryPeriod.TabIndex = 8;
+            this.lblRefractoryPeriod.Text = "Период тишины (мс):";
+            // 
+            // numRefractoryPeriod
+            // 
+            this.numRefractoryPeriod.Increment = new decimal(new int[] {
+            100,
+            0,
+            0,
+            0});
+            this.numRefractoryPeriod.Location = new System.Drawing.Point(350, 63);
+            this.numRefractoryPeriod.Margin = new System.Windows.Forms.Padding(4);
+            this.numRefractoryPeriod.Maximum = new decimal(new int[] {
+            10000,
+            0,
+            0,
+            0});
+            this.numRefractoryPeriod.Minimum = new decimal(new int[] {
+            100,
+            0,
+            0,
+            0});
+            this.numRefractoryPeriod.Name = "numRefractoryPeriod";
+            this.numRefractoryPeriod.Size = new System.Drawing.Size(80, 22);
+            this.numRefractoryPeriod.TabIndex = 9;
+            this.numRefractoryPeriod.Value = new decimal(new int[] {
+            1000,
+            0,
+            0,
+            0});
+            // 
+            // lblMinEnergyThreshold
+            // 
+            this.lblMinEnergyThreshold.AutoSize = true;
+            this.lblMinEnergyThreshold.Location = new System.Drawing.Point(450, 65);
+            this.lblMinEnergyThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblMinEnergyThreshold.Name = "lblMinEnergyThreshold";
+            this.lblMinEnergyThreshold.Size = new System.Drawing.Size(130, 16);
+            this.lblMinEnergyThreshold.TabIndex = 10;
+            this.lblMinEnergyThreshold.Text = "Мин. энергия спайка:";
+            // 
+            // numMinEnergyThreshold
+            // 
+            this.numMinEnergyThreshold.DecimalPlaces = 1;
+            this.numMinEnergyThreshold.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            65536});
+            this.numMinEnergyThreshold.Location = new System.Drawing.Point(600, 63);
+            this.numMinEnergyThreshold.Margin = new System.Windows.Forms.Padding(4);
+            this.numMinEnergyThreshold.Maximum = new decimal(new int[] {
+            100,
+            0,
+            0,
+            0});
+            this.numMinEnergyThreshold.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            65536});
+            this.numMinEnergyThreshold.Name = "numMinEnergyThreshold";
+            this.numMinEnergyThreshold.Size = new System.Drawing.Size(80, 22);
+            this.numMinEnergyThreshold.TabIndex = 11;
+            this.numMinEnergyThreshold.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            // 
+            // lblInitWindowSize
+            // 
+            this.lblInitWindowSize.AutoSize = true;
+            this.lblInitWindowSize.Location = new System.Drawing.Point(20, 100);
+            this.lblInitWindowSize.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblInitWindowSize.Name = "lblInitWindowSize";
+            this.lblInitWindowSize.Size = new System.Drawing.Size(110, 16);
+            this.lblInitWindowSize.TabIndex = 12;
+            this.lblInitWindowSize.Text = "Размер выборки:";
+            // 
+            // numInitWindowSize
+            // 
+            this.numInitWindowSize.Location = new System.Drawing.Point(120, 98);
+            this.numInitWindowSize.Margin = new System.Windows.Forms.Padding(4);
+            this.numInitWindowSize.Maximum = new decimal(new int[] {
+            100,
+            0,
+            0,
+            0});
+            this.numInitWindowSize.Minimum = new decimal(new int[] {
+            5,
+            0,
+            0,
+            0});
+            this.numInitWindowSize.Name = "numInitWindowSize";
+            this.numInitWindowSize.Size = new System.Drawing.Size(80, 22);
+            this.numInitWindowSize.TabIndex = 13;
+            this.numInitWindowSize.Value = new decimal(new int[] {
+            20,
+            0,
+            0,
+            0});
+            // 
+            // btnResetSpikeDefaults
+            // 
+            this.btnResetSpikeDefaults.Location = new System.Drawing.Point(20, 135);
+            this.btnResetSpikeDefaults.Margin = new System.Windows.Forms.Padding(4);
+            this.btnResetSpikeDefaults.Name = "btnResetSpikeDefaults";
+            this.btnResetSpikeDefaults.Size = new System.Drawing.Size(120, 30);
+            this.btnResetSpikeDefaults.TabIndex = 14;
+            this.btnResetSpikeDefaults.Text = "По умолчанию";
+            this.btnResetSpikeDefaults.UseVisualStyleBackColor = true;
+            // 
+            // btnSpikePresetsSensitive
+            // 
+            this.btnSpikePresetsSensitive.Location = new System.Drawing.Point(160, 135);
+            this.btnSpikePresetsSensitive.Margin = new System.Windows.Forms.Padding(4);
+            this.btnSpikePresetsSensitive.Name = "btnSpikePresetsSensitive";
+            this.btnSpikePresetsSensitive.Size = new System.Drawing.Size(120, 30);
+            this.btnSpikePresetsSensitive.TabIndex = 15;
+            this.btnSpikePresetsSensitive.Text = "Чувствительный";
+            this.btnSpikePresetsSensitive.UseVisualStyleBackColor = true;
+            // 
+            // btnSpikePresetsBalanced
+            // 
+            this.btnSpikePresetsBalanced.Location = new System.Drawing.Point(300, 135);
+            this.btnSpikePresetsBalanced.Margin = new System.Windows.Forms.Padding(4);
+            this.btnSpikePresetsBalanced.Name = "btnSpikePresetsBalanced";
+            this.btnSpikePresetsBalanced.Size = new System.Drawing.Size(120, 30);
+            this.btnSpikePresetsBalanced.TabIndex = 16;
+            this.btnSpikePresetsBalanced.Text = "Сбалансированный";
+            this.btnSpikePresetsBalanced.UseVisualStyleBackColor = true;
+            // 
+            // btnSpikePresetsConservative
+            // 
+            this.btnSpikePresetsConservative.Location = new System.Drawing.Point(440, 135);
+            this.btnSpikePresetsConservative.Margin = new System.Windows.Forms.Padding(4);
+            this.btnSpikePresetsConservative.Name = "btnSpikePresetsConservative";
+            this.btnSpikePresetsConservative.Size = new System.Drawing.Size(120, 30);
+            this.btnSpikePresetsConservative.TabIndex = 17;
+            this.btnSpikePresetsConservative.Text = "Консервативный";
+            this.btnSpikePresetsConservative.UseVisualStyleBackColor = true;
+            // 
             // groupBox5
             // 
             this.groupBox5.Controls.Add(this.chkStunEnable);
@@ -1261,6 +1625,15 @@ namespace tickMeter.Forms
             ((System.ComponentModel.ISupportInitialize)(this.numPcapMinToCopy)).EndInit();
             this.groupBoxSpikeDetection.ResumeLayout(false);
             this.groupBoxSpikeDetection.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numEmaAlpha)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numEwSigmaAlpha)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numSensitivityMultiplier)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numHysteresisRatio)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numRefractoryPeriod)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numMinEnergyThreshold)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numInitWindowSize)).EndInit();
+            this.groupBoxSpikeAdvanced.ResumeLayout(false);
+            this.groupBoxSpikeAdvanced.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numSpikeMinDuration)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numSpikeHistorySize)).EndInit();
             this.groupBox5.ResumeLayout(false);
@@ -1364,6 +1737,25 @@ namespace tickMeter.Forms
         private System.Windows.Forms.Label lblSpikeHistory;
         private System.Windows.Forms.NumericUpDown numSpikeHistorySize;
         private System.Windows.Forms.CheckBox chkSpikeAutoCalibration;
+        private System.Windows.Forms.GroupBox groupBoxSpikeAdvanced;
+        private System.Windows.Forms.Label lblEmaAlpha;
+        private System.Windows.Forms.NumericUpDown numEmaAlpha;
+        private System.Windows.Forms.Label lblEwSigmaAlpha;
+        private System.Windows.Forms.NumericUpDown numEwSigmaAlpha;
+        private System.Windows.Forms.Label lblSensitivityMultiplier;
+        private System.Windows.Forms.NumericUpDown numSensitivityMultiplier;
+        private System.Windows.Forms.Label lblHysteresisRatio;
+        private System.Windows.Forms.NumericUpDown numHysteresisRatio;
+        private System.Windows.Forms.Label lblRefractoryPeriod;
+        private System.Windows.Forms.NumericUpDown numRefractoryPeriod;
+        private System.Windows.Forms.Label lblMinEnergyThreshold;
+        private System.Windows.Forms.NumericUpDown numMinEnergyThreshold;
+        private System.Windows.Forms.Label lblInitWindowSize;
+        private System.Windows.Forms.NumericUpDown numInitWindowSize;
+        private System.Windows.Forms.Button btnResetSpikeDefaults;
+        private System.Windows.Forms.Button btnSpikePresetsSensitive;
+        private System.Windows.Forms.Button btnSpikePresetsBalanced;
+        private System.Windows.Forms.Button btnSpikePresetsConservative;
         
         private System.Windows.Forms.Panel panelButtons;
         private System.Windows.Forms.Button btnOK;
