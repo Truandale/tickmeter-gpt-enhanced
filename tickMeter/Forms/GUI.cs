@@ -66,6 +66,16 @@ namespace tickMeter.Forms
         public string targetKey = "";
         private int _gcCounter = 0; // Счётчик для периодической сборки мусора
         
+        // Spike animation управление
+        private int _spikeBlinkCounter = 0;
+        private bool _spikeBlinkState = false;
+        
+        // Spike notifications управление
+        private DateTime _lastPingSpikeNotification = DateTime.MinValue;
+        private DateTime _lastTickrateSpikeNotification = DateTime.MinValue;
+        private DateTime _lastTicktimeSpikeNotification = DateTime.MinValue;
+        private const int SPIKE_NOTIFICATION_COOLDOWN_SECONDS = 10; // Минимальный интервал между уведомлениями
+        
         // Оптимизация главного цикла
         private int _tickBusy = 0; // Защита от реэнтерабельности
         private readonly Stopwatch _rtssSw = Stopwatch.StartNew(); // Троттлинг RTSS
@@ -555,10 +565,13 @@ namespace tickMeter.Forms
                                 if (showSpikeIndicator && server.HasPingSpike)
                                 {
                                     pingText += " (!)";
+                                    // Мигающий эффект для ping спайка
+                                    ping_val.ForeColor = _spikeBlinkState ? Color.Red : Color.Orange;
                                     Debug.Print($"[GUI] Spike indicator added to display: {pingText}");
                                 }
                                 else if (showSpikeIndicator && !server.HasPingSpike)
                                 {
+                                    ping_val.ForeColor = SystemColors.ControlText; // Обычный цвет
                                     Debug.Print($"[GUI] No spike detected, indicator removed from display: {pingText}");
                                 }
                                 
@@ -571,8 +584,21 @@ namespace tickMeter.Forms
                         {
                             // Phase 3: Single Consumer Pattern - queue UI updates
                             QueueUIUpdate(() => {
-                                tickrate_val.Text = App.meterState.OutputTickRate.ToString();
-                                tickrate_val.ForeColor = TickRateColor;
+                                string tickrateText = App.meterState.OutputTickRate.ToString();
+                                Color finalTickRateColor = TickRateColor;
+                                
+                                // Добавляем индикатор спайка для tickrate если включена соответствующая настройка
+                                bool showTickrateSpikes = App.settingsManager?.GetOption("show_tickrate_spikes", "True", "ADVANCED") == "True";
+                                if (showTickrateSpikes && App.meterState.HasTickRateSpike)
+                                {
+                                    tickrateText += " (!)";
+                                    // Мигающий эффект для tickrate спайка
+                                    finalTickRateColor = _spikeBlinkState ? Color.Red : Color.Orange;
+                                    Debug.Print($"[GUI] Tickrate spike indicator added to display: {tickrateText}");
+                                }
+                                
+                                tickrate_val.Text = tickrateText;
+                                tickrate_val.ForeColor = finalTickRateColor;
                             });
                             
                             //update tickrate chart
@@ -610,6 +636,14 @@ namespace tickMeter.Forms
                             }
                         }
                     });
+            
+            // Обновляем состояние мигания спайков
+            _spikeBlinkCounter++;
+            if (_spikeBlinkCounter >= 5) // Каждые 5 циклов меняем состояние мигания
+            {
+                _spikeBlinkCounter = 0;
+                _spikeBlinkState = !_spikeBlinkState;
+            }
             
             // Периодическая сборка мусора для предотвращения утечек памяти
             _gcCounter++;
@@ -1759,6 +1793,7 @@ namespace tickMeter.Forms
                         {
                             App.meterState.Server.SetPingSpike(true);
                         }
+                        ShowSpikeNotification("Ping", spikeEvent.Value, "ms", ref _lastPingSpikeNotification);
                         break;
                         
                     case Classes.SpikeDetection.MetricKind.Tickrate:
@@ -1766,6 +1801,7 @@ namespace tickMeter.Forms
                         {
                             App.meterState.Server.SetTickRateSpike(true);
                         }
+                        ShowSpikeNotification("Tickrate", spikeEvent.Value, "Hz", ref _lastTickrateSpikeNotification);
                         System.Diagnostics.Debug.Print($"[OnSpikeDetected] Tickrate spike detected: {spikeEvent.Value:F1}");
                         break;
                         
@@ -1774,6 +1810,7 @@ namespace tickMeter.Forms
                         {
                             App.meterState.Server.SetTickTimeSpike(true);
                         }
+                        ShowSpikeNotification("Ticktime", spikeEvent.Value, "ms", ref _lastTicktimeSpikeNotification);
                         System.Diagnostics.Debug.Print($"[OnSpikeDetected] Ticktime spike detected: {spikeEvent.Value:F1}ms");
                         break;
                 }
@@ -1781,6 +1818,55 @@ namespace tickMeter.Forms
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.Print($"[OnSpikeDetected] Error processing spike event: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Показывает уведомление о спайке с ограничением частоты
+        /// </summary>
+        private void ShowSpikeNotification(string metricName, double value, string unit, ref DateTime lastNotification)
+        {
+            try
+            {
+                // Проверяем настройку уведомлений
+                bool notificationsEnabled = App.settingsManager?.GetOption("spike_notifications", "False", "ADVANCED") == "True";
+                if (!notificationsEnabled) return;
+                
+                // Проверяем cooldown
+                var now = DateTime.Now;
+                if ((now - lastNotification).TotalSeconds < SPIKE_NOTIFICATION_COOLDOWN_SECONDS)
+                {
+                    return; // Слишком рано для следующего уведомления
+                }
+                
+                lastNotification = now;
+                
+                // Показываем balloon tip
+                var notifyIcon = new NotifyIcon();
+                notifyIcon.Icon = SystemIcons.Warning;
+                notifyIcon.Visible = true;
+                notifyIcon.BalloonTipTitle = "Network Spike Detected";
+                notifyIcon.BalloonTipText = $"{metricName} spike: {value:F1}{unit}";
+                notifyIcon.BalloonTipIcon = ToolTipIcon.Warning;
+                notifyIcon.ShowBalloonTip(3000);
+                
+                // Автоматически скрываем иконку через несколько секунд
+                System.Threading.Timer hideTimer = null;
+                hideTimer = new System.Threading.Timer(_ => {
+                    try
+                    {
+                        notifyIcon.Visible = false;
+                        notifyIcon.Dispose();
+                        hideTimer?.Dispose();
+                    }
+                    catch { }
+                }, null, 5000, System.Threading.Timeout.Infinite);
+                
+                System.Diagnostics.Debug.Print($"[ShowSpikeNotification] Notification shown for {metricName}: {value:F1}{unit}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[ShowSpikeNotification] Error showing notification: {ex.Message}");
             }
         }
         

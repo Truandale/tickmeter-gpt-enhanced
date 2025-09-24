@@ -191,6 +191,14 @@ namespace tickMeter.Classes
             {
                 tickRateStr += "<C3>" + displayTickrate.ToString();
             }
+            
+            // Добавляем индикатор спайка для tickrate
+            bool showTickrateSpikes = App.settingsManager?.GetOption("show_tickrate_spikes", "True", "ADVANCED") == "True";
+            if (showTickrateSpikes && App.meterState.HasTickRateSpike)
+            {
+                tickRateStr += " (!)";
+            }
+            
             string output = tickRateStr + Environment.NewLine;
             return output;
         }
@@ -344,7 +352,15 @@ namespace tickMeter.Classes
                 else
                     tickrateColor = "<C3>";
 
-                output += "<S0><C4>Tickrate" + Environment.NewLine;
+                // Добавляем индикатор спайка для tickrate chart
+                string tickrateChartLabel = "Tickrate";
+                bool showTickrateSpikes = App.settingsManager?.GetOption("show_tickrate_spikes", "True", "ADVANCED") == "True";
+                if (showTickrateSpikes && App.meterState.HasTickRateSpike)
+                {
+                    tickrateChartLabel += " (!)";
+                }
+                
+                output += "<S0><C4>" + tickrateChartLabel + Environment.NewLine;
                 
                 // Применяем сглаживание графика тикрейта, если включено
                 float[] tickrateGraphData = Classes.SmoothingManager.SmoothSeries(
@@ -378,7 +394,15 @@ namespace tickMeter.Classes
                     else
                         ticktimeColor = "<C1>"; // красный
                 }
-                output += Environment.NewLine + "<S0><C4>Ticktime" + Environment.NewLine;
+                // Добавляем индикатор спайка для ticktime
+                string ticktimeLabel = "Ticktime";
+                bool showTicktimeSpikes = App.settingsManager?.GetOption("show_ticktime_spikes", "True", "ADVANCED") == "True";
+                if (showTicktimeSpikes && App.meterState.HasTickTimeSpike)
+                {
+                    ticktimeLabel += " (!)";
+                }
+                
+                output += Environment.NewLine + "<S0><C4>" + ticktimeLabel + Environment.NewLine;
                 
                 // Применяем сглаживание графика тиктайма, если включено
                 float[] ticktimeGraphData = Classes.SmoothingManager.SmoothSeries(
