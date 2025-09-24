@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows.Forms;
 using tickMeter.Classes;
 
@@ -56,6 +57,10 @@ namespace tickMeter.Forms
                 
                 // Настройки порогов для спайков пинга
                 numPingSpikeThreshold.Value = decimal.Parse(App.settingsManager.GetOption("ping_spike_threshold", "150", "ADVANCED"));
+                
+                // Spike Detection настройки
+                InitSpikeDetectionCombos();
+                LoadSpikeDetectionSettings();
                 
                 // VPN bypass настройки
                 chkVpnBypassBasic.Checked = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
@@ -149,6 +154,9 @@ namespace tickMeter.Forms
                 App.settingsManager.SetOption("single_consumer_pattern", chkSingleConsumerPattern.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("ui_processing_rate", numUiProcessingRate.Value.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("ui_batch_size", numUiBatchSize.Value.ToString(), "ADVANCED");
+                
+                // Spike Detection настройки
+                SaveSpikeDetectionSettings();
                 
                 // Применяем новые настройки интервала overlay
                 App.gui?.ApplyOverlayIntervalFromSettings();
@@ -288,6 +296,99 @@ namespace tickMeter.Forms
             chkSingleConsumerPattern.Checked = false; // Пока экспериментальное
             numUiProcessingRate.Value = 60;           // 60 FPS UI
             numUiBatchSize.Value = 10;                // Оптимальный batch размер
+        }
+
+        private void InitSpikeDetectionCombos()
+        {
+            // Инициализация ComboBox для чувствительности
+            cmbSpikeSensitivity.Items.Clear();
+            cmbSpikeSensitivity.Items.AddRange(new object[] { "low", "medium", "high", "auto" });
+            
+            // Инициализация ComboBox для режима отображения
+            cmbSpikeDisplayMode.Items.Clear();
+            cmbSpikeDisplayMode.Items.AddRange(new object[] { "off", "value", "bar", "both" });
+        }
+
+        private void LoadSpikeDetectionSettings()
+        {
+            try
+            {
+                // Основные настройки
+                chkSpikeDetectionEnable.Checked = App.settingsManager.GetOption("spikes.enable", "True", "ADVANCED") == "True";
+
+                // Метрики
+                var metrics = App.settingsManager.GetOption("spikes.metrics", "ping,tickrate", "ADVANCED").ToLowerInvariant();
+                chkSpikeMetricPing.Checked = metrics.Contains("ping");
+                chkSpikeMetricTickrate.Checked = metrics.Contains("tickrate");
+                chkSpikeMetricTicktime.Checked = metrics.Contains("ticktime");
+
+                // Режим отображения
+                var display = App.settingsManager.GetOption("spikes.display", "both", "ADVANCED");
+                cmbSpikeDisplayMode.SelectedItem = cmbSpikeDisplayMode.Items.Cast<string>().Contains(display) ? display : "both";
+
+                // Чувствительность
+                var sensitivity = App.settingsManager.GetOption("spikes.sensitivity", "medium", "ADVANCED");
+                cmbSpikeSensitivity.SelectedItem = cmbSpikeSensitivity.Items.Cast<string>().Contains(sensitivity) ? sensitivity : "medium";
+
+                // Минимальная длительность
+                int minDuration = SafeInt(App.settingsManager.GetOption("spikes.min_hold_ms", "120", "ADVANCED"), 120);
+                numSpikeMinDuration.Value = Math.Max(numSpikeMinDuration.Minimum, Math.Min(numSpikeMinDuration.Maximum, minDuration));
+
+                // Размер истории
+                int historySize = SafeInt(App.settingsManager.GetOption("spikes.history_size", "1000", "ADVANCED"), 1000);
+                numSpikeHistorySize.Value = Math.Max(numSpikeHistorySize.Minimum, Math.Min(numSpikeHistorySize.Maximum, historySize));
+
+                // Автокалибровка
+                chkSpikeAutoCalibration.Checked = App.settingsManager.GetOption("spikes.auto.enable", "True", "ADVANCED") == "True";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки настроек спайк-детекции: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void SaveSpikeDetectionSettings()
+        {
+            try
+            {
+                // Основные настройки
+                App.settingsManager.SetOption("spikes.enable", chkSpikeDetectionEnable.Checked.ToString(), "ADVANCED");
+
+                // Метрики
+                var metrics = string.Join(",", new[] {
+                    chkSpikeMetricPing.Checked ? "ping" : null,
+                    chkSpikeMetricTickrate.Checked ? "tickrate" : null,
+                    chkSpikeMetricTicktime.Checked ? "ticktime" : null
+                }.Where(x => x != null));
+                if (string.IsNullOrEmpty(metrics)) metrics = "ping"; // На всякий случай
+                App.settingsManager.SetOption("spikes.metrics", metrics, "ADVANCED");
+
+                // Режим отображения
+                var display = (cmbSpikeDisplayMode.SelectedItem as string) ?? "both";
+                App.settingsManager.SetOption("spikes.display", display, "ADVANCED");
+
+                // Чувствительность
+                var sensitivity = (cmbSpikeSensitivity.SelectedItem as string) ?? "medium";
+                App.settingsManager.SetOption("spikes.sensitivity", sensitivity, "ADVANCED");
+
+                // Минимальная длительность
+                App.settingsManager.SetOption("spikes.min_hold_ms", ((int)numSpikeMinDuration.Value).ToString(), "ADVANCED");
+
+                // Размер истории
+                App.settingsManager.SetOption("spikes.history_size", ((int)numSpikeHistorySize.Value).ToString(), "ADVANCED");
+
+                // Автокалибровка
+                App.settingsManager.SetOption("spikes.auto.enable", chkSpikeAutoCalibration.Checked.ToString(), "ADVANCED");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка сохранения настроек спайк-детекции: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private static int SafeInt(string s, int def)
+        {
+            return int.TryParse(s, out var v) ? v : def;
         }
     }
 }
