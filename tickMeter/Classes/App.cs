@@ -46,6 +46,10 @@ namespace tickMeter.Classes
             
             // Инициализируем VPN bypass компоненты
             connectionTracker = new ConnectionTracker();
+            
+            // Инициализируем детектор спайков
+            Classes.SpikeDetection.SpikeDetectionManager.InitializeDetector();
+            Debug.Print("[App.Init] Spike detection system initialized");
         }
 
         public static List<LivePacketDevice> GetAdapters()

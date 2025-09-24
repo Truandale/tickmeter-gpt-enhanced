@@ -220,6 +220,23 @@ namespace tickMeter
             }
         }
 
+        // Forward spike detection flags from GameServer
+        public bool HasTickRateSpike
+        {
+            get
+            {
+                return Server != null && Server.HasActiveTickRateSpike;
+            }
+        }
+
+        public bool HasTickTimeSpike
+        {
+            get
+            {
+                return Server != null && Server.HasActiveTickTimeSpike;
+            }
+        }
+
         // Forward UDP ping string from GameServer
         public string GetUdpPingString()
         {
@@ -473,6 +490,10 @@ namespace tickMeter
             private double _timeSinceSpike = 1000; // большое значение для начала
             private double _spikePeak = 0;
 
+            // Spike detection flags for new system
+            private bool _inTickRateSpike = false;
+            private bool _inTickTimeSpike = false;
+
             /// <summary>
             /// Продвинутая детекция спайков с EMA, EW-стандартным отклонением и гистерезисом
             /// </summary>
@@ -592,6 +613,40 @@ namespace tickMeter
             /// Определяет, есть ли сейчас активный спайк пинга (для UI)
             /// </summary>
             public bool HasActivePingSpike => _inPingSpike;
+
+            /// <summary>
+            /// Определяет, есть ли сейчас активный спайк тикрейта (для UI)
+            /// </summary>
+            public bool HasActiveTickRateSpike => _inTickRateSpike;
+
+            /// <summary>
+            /// Определяет, есть ли сейчас активный спайк тиктайма (для UI)
+            /// </summary>
+            public bool HasActiveTickTimeSpike => _inTickTimeSpike;
+
+            /// <summary>
+            /// Устанавливает флаг спайка пинга (для внешних детекторов)
+            /// </summary>
+            public void SetPingSpike(bool hasSpike)
+            {
+                _inPingSpike = hasSpike;
+            }
+
+            /// <summary>
+            /// Устанавливает флаг спайка тикрейта (для внешних детекторов)
+            /// </summary>
+            public void SetTickRateSpike(bool hasSpike)
+            {
+                _inTickRateSpike = hasSpike;
+            }
+
+            /// <summary>
+            /// Устанавливает флаг спайка тиктайма (для внешних детекторов)
+            /// </summary>
+            public void SetTickTimeSpike(bool hasSpike)
+            {
+                _inTickTimeSpike = hasSpike;
+            }
 
             /// <summary>
             /// Классическая система детекции спайков (для совместимости)

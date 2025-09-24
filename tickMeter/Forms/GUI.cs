@@ -158,6 +158,9 @@ namespace tickMeter.Forms
             
             // Phase 3: Инициализация Single Consumer UI Processing
             _uiProcessingTimer = new System.Threading.Timer(ProcessUIUpdates, null, 16, 16); // 60 FPS
+            
+            // Подписываемся на события детекции спайков
+            Classes.SpikeDetection.SpikeDetectionManager.SpikeDetected += OnSpikeDetected;
         }
 
         static void MyHandler(object sender, UnhandledExceptionEventArgs args)
@@ -798,11 +801,46 @@ namespace tickMeter.Forms
                         }
                         ProcessNetworkStats procStats = ActiveWindowTracker.connections[targetKey];
                         App.meterState.tickTimeBuffer = procStats.tickTimeBuffer;
+                        
+                        // Добавляем ticktime данные в детектор спайков
+                        try
+                        {
+                            if (procStats.tickTimeBuffer != null && procStats.tickTimeBuffer.Count > 0)
+                            {
+                                // Берем последнее значение из буфера как текущий ticktime
+                                float lastTickTime = procStats.tickTimeBuffer[procStats.tickTimeBuffer.Count - 1];
+                                Classes.SpikeDetection.SpikeDetectionManager.AddValue(
+                                    Classes.SpikeDetection.MetricKind.Ticktime, 
+                                    lastTickTime
+                                );
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.Print($"[updateMetherStateFromActiveWindow] Error adding ticktime to spike detector: {ex.Message}");
+                        }
                         App.meterState.CurrentTimestamp = DateTime.Now;
                         App.meterState.Game = procStats.name;
                         App.meterState.Server.Ip = procStats.remoteIp.ToString();
                         App.meterState.DownloadTraffic = procStats.downloaded;
-                        App.meterState.TickRate = procStats.getTicksIn();
+                        
+                        // Обновляем TickRate и добавляем в детектор спайков
+                        int currentTickRate = procStats.getTicksIn();
+                        App.meterState.TickRate = currentTickRate;
+                        
+                        // Добавляем данные tickrate в детектор спайков
+                        try
+                        {
+                            Classes.SpikeDetection.SpikeDetectionManager.AddValue(
+                                Classes.SpikeDetection.MetricKind.Tickrate, 
+                                currentTickRate
+                            );
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.Print($"[updateMetherStateFromActiveWindow] Error adding tickrate to spike detector: {ex.Message}");
+                        }
+                        
                         App.meterState.Server.PingPort = (int)procStats.remotePort;
                         App.meterState.SessionStart = procStats.startTrack;
                         App.meterState.IsTracking = true;
@@ -1686,8 +1724,63 @@ namespace tickMeter.Forms
                 // Обновляем только текущее значение ping
                 App.meterState.Server.Ping = (int)e.Result.RoundTripTime;
                 
+                // Добавляем данные ping в детектор спайков
+                try
+                {
+                    Classes.SpikeDetection.SpikeDetectionManager.AddValue(
+                        Classes.SpikeDetection.MetricKind.Ping, 
+                        e.Result.RoundTripTime
+                    );
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.Print($"[OnPingResultReceived] Error adding ping to spike detector: {ex.Message}");
+                }
+                
                 // pingBuffer будет обновляться через CurrentTimestamp как раньше
                 // Не добавляем данные сюда, чтобы избежать слишком частых обновлений графика
+            }
+        }
+        
+        /// <summary>
+        /// Обработчик событий детекции спайков
+        /// </summary>
+        private void OnSpikeDetected(Classes.SpikeDetection.SpikeEvent spikeEvent)
+        {
+            try
+            {
+                System.Diagnostics.Debug.Print($"[OnSpikeDetected] Spike detected: {spikeEvent.Metric} at {spikeEvent.Timestamp:HH:mm:ss.fff}");
+                
+                // Обновляем флаги спайков в зависимости от типа метрики
+                switch (spikeEvent.Metric)
+                {
+                    case Classes.SpikeDetection.MetricKind.Ping:
+                        if (App.meterState?.Server != null)
+                        {
+                            App.meterState.Server.SetPingSpike(true);
+                        }
+                        break;
+                        
+                    case Classes.SpikeDetection.MetricKind.Tickrate:
+                        if (App.meterState?.Server != null)
+                        {
+                            App.meterState.Server.SetTickRateSpike(true);
+                        }
+                        System.Diagnostics.Debug.Print($"[OnSpikeDetected] Tickrate spike detected: {spikeEvent.Value:F1}");
+                        break;
+                        
+                    case Classes.SpikeDetection.MetricKind.Ticktime:
+                        if (App.meterState?.Server != null)
+                        {
+                            App.meterState.Server.SetTickTimeSpike(true);
+                        }
+                        System.Diagnostics.Debug.Print($"[OnSpikeDetected] Ticktime spike detected: {spikeEvent.Value:F1}ms");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[OnSpikeDetected] Error processing spike event: {ex.Message}");
             }
         }
         
