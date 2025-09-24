@@ -66,6 +66,9 @@ namespace tickMeter.Forms
         public string targetKey = "";
         private int _gcCounter = 0; // Счётчик для периодической сборки мусора
         
+        // Stage 5: Analytics form
+        private SpikeAnalyticsForm _spikeAnalyticsForm;
+        
         // Spike animation управление
         private int _spikeBlinkCounter = 0;
         private bool _spikeBlinkState = false;
@@ -206,7 +209,8 @@ namespace tickMeter.Forms
             gameProfilesButton.Visible =
             drops_lbl.Visible = 
             drops_lbl_val.Visible = 
-            packetStatsBtn.Visible = true;
+            packetStatsBtn.Visible = 
+            spikeAnalyticsBtn.Visible = true;
         }
 
         [PermissionSet(SecurityAction.Demand, Name = "FullTrust")]
@@ -242,7 +246,8 @@ namespace tickMeter.Forms
                 SettingsButton.Visible =
                 gameProfilesButton.Visible =
                 webStatsButton.Visible =
-                packetStatsBtn.Visible = false;
+                packetStatsBtn.Visible = 
+                spikeAnalyticsBtn.Visible = false;
                 TopMost = true;
                 if (App.settingsForm.settings_rtss_output.Checked)
                 {
@@ -2091,5 +2096,39 @@ namespace tickMeter.Forms
         }
         
         #endregion Phase 3: Thread Priority & Single Consumer Methods
+        
+        #region Stage 5: Spike Analytics
+        
+        /// <summary>
+        /// Обработчик клика на кнопку аналитики спайков
+        /// </summary>
+        private void spikeAnalyticsBtn_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_spikeAnalyticsForm == null || _spikeAnalyticsForm.IsDisposed)
+                {
+                    _spikeAnalyticsForm = new SpikeAnalyticsForm();
+                }
+                
+                if (_spikeAnalyticsForm.Visible)
+                {
+                    _spikeAnalyticsForm.BringToFront();
+                    _spikeAnalyticsForm.Focus();
+                }
+                else
+                {
+                    _spikeAnalyticsForm.Show();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при открытии аналитики спайков: {ex.Message}", 
+                    "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                DebugLogger.log(ex);
+            }
+        }
+        
+        #endregion Stage 5: Spike Analytics
     }
 }

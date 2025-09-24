@@ -300,6 +300,12 @@
     <Compile Include="Forms\AdvancedSettingsForm.Designer.cs">
       <DependentUpon>AdvancedSettingsForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\SpikeAnalyticsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\SpikeAnalyticsForm.Designer.cs">
+      <DependentUpon>SpikeAnalyticsForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\SettingsForm.cs">
       <SubType>Form</SubType>
     </Compile>
