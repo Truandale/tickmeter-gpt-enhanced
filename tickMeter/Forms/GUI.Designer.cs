@@ -250,8 +250,8 @@
             this.webStatsButton.Cursor = System.Windows.Forms.Cursors.Hand;
             this.webStatsButton.Enabled = false;
             this.webStatsButton.Image = global::tickMeter.Properties.Resources.bar;
-            this.webStatsButton.Location = new System.Drawing.Point(301, 2);
-            this.webStatsButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.webStatsButton.Location = new System.Drawing.Point(478, 182);
+            this.webStatsButton.Margin = new System.Windows.Forms.Padding(4);
             this.webStatsButton.Name = "webStatsButton";
             this.webStatsButton.Size = new System.Drawing.Size(64, 59);
             this.webStatsButton.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -264,8 +264,8 @@
             // 
             this.gameProfilesButton.Cursor = System.Windows.Forms.Cursors.Hand;
             this.gameProfilesButton.Image = global::tickMeter.Properties.Resources.Board_Games_red;
-            this.gameProfilesButton.Location = new System.Drawing.Point(369, 2);
-            this.gameProfilesButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.gameProfilesButton.Location = new System.Drawing.Point(317, 2);
+            this.gameProfilesButton.Margin = new System.Windows.Forms.Padding(4);
             this.gameProfilesButton.Name = "gameProfilesButton";
             this.gameProfilesButton.Size = new System.Drawing.Size(64, 59);
             this.gameProfilesButton.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -277,8 +277,8 @@
             // 
             this.packetStatsBtn.Cursor = System.Windows.Forms.Cursors.Hand;
             this.packetStatsBtn.Image = global::tickMeter.Properties.Resources._switch;
-            this.packetStatsBtn.Location = new System.Drawing.Point(437, 2);
-            this.packetStatsBtn.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.packetStatsBtn.Location = new System.Drawing.Point(380, 2);
+            this.packetStatsBtn.Margin = new System.Windows.Forms.Padding(4);
             this.packetStatsBtn.Name = "packetStatsBtn";
             this.packetStatsBtn.Size = new System.Drawing.Size(64, 59);
             this.packetStatsBtn.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -289,9 +289,9 @@
             // spikeAnalyticsBtn
             // 
             this.spikeAnalyticsBtn.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.spikeAnalyticsBtn.Image = global::tickMeter.Properties.Resources._switch;
-            this.spikeAnalyticsBtn.Location = new System.Drawing.Point(509, 2);
-            this.spikeAnalyticsBtn.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.spikeAnalyticsBtn.Image = global::tickMeter.Properties.Resources.bar;
+            this.spikeAnalyticsBtn.Location = new System.Drawing.Point(442, 1);
+            this.spikeAnalyticsBtn.Margin = new System.Windows.Forms.Padding(4);
             this.spikeAnalyticsBtn.Name = "spikeAnalyticsBtn";
             this.spikeAnalyticsBtn.Size = new System.Drawing.Size(64, 59);
             this.spikeAnalyticsBtn.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -303,8 +303,8 @@
             // 
             this.SettingsButton.Cursor = System.Windows.Forms.Cursors.Hand;
             this.SettingsButton.Image = global::tickMeter.Properties.Resources.settings;
-            this.SettingsButton.Location = new System.Drawing.Point(639, 2);
-            this.SettingsButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.SettingsButton.Location = new System.Drawing.Point(502, 1);
+            this.SettingsButton.Margin = new System.Windows.Forms.Padding(4);
             this.SettingsButton.Name = "SettingsButton";
             this.SettingsButton.Size = new System.Drawing.Size(64, 59);
             this.SettingsButton.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -319,7 +319,7 @@
             this.graph.Image = global::tickMeter.Properties.Resources.grid;
             this.graph.InitialImage = global::tickMeter.Properties.Resources.grid;
             this.graph.Location = new System.Drawing.Point(8, 318);
-            this.graph.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.graph.Margin = new System.Windows.Forms.Padding(4);
             this.graph.Name = "graph";
             this.graph.Size = new System.Drawing.Size(416, 175);
             this.graph.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
@@ -409,7 +409,7 @@
             this.ForeColor = System.Drawing.SystemColors.ControlText;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Fixed3D;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.MaximumSize = new System.Drawing.Size(599, 591);
             this.MinimumSize = new System.Drawing.Size(599, 529);
             this.Name = "GUI";
