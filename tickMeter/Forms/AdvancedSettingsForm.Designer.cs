@@ -158,6 +158,17 @@ namespace tickMeter.Forms
             this.btnResetQualityAnalyzer = new System.Windows.Forms.Button();
             this.lblCurrentQuality = new System.Windows.Forms.Label();
             this.lblQualityRating = new System.Windows.Forms.Label();
+            this.groupBoxNetworkOptimizer = new System.Windows.Forms.GroupBox();
+            this.chkNetworkOptimizationEnabled = new System.Windows.Forms.CheckBox();
+            this.lblOptimizationThreshold = new System.Windows.Forms.Label();
+            this.numOptimizationThreshold = new System.Windows.Forms.NumericUpDown();
+            this.lblOptimizationInterval = new System.Windows.Forms.Label();
+            this.numOptimizationInterval = new System.Windows.Forms.NumericUpDown();
+            this.chkAggressiveOptimization = new System.Windows.Forms.CheckBox();
+            this.btnManualOptimization = new System.Windows.Forms.Button();
+            this.lblLastOptimization = new System.Windows.Forms.Label();
+            this.lblOptimizationStats = new System.Windows.Forms.Label();
+            this.btnClearOptimizationHistory = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.groupBoxVpnBypass.SuspendLayout();
             this.groupBoxPhase3.SuspendLayout();
@@ -193,6 +204,9 @@ namespace tickMeter.Forms
             this.groupBoxAlertSounds.SuspendLayout();
             this.groupBoxNetworkQuality.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numQualityHistorySize)).BeginInit();
+            this.groupBoxNetworkOptimizer.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numOptimizationThreshold)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numOptimizationInterval)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numStabilityThreshold)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numQualityThreshold)).BeginInit();
             this.panelButtons.SuspendLayout();
@@ -209,6 +223,7 @@ namespace tickMeter.Forms
             this.panel1.Controls.Add(this.groupBoxSpikeAdvanced);
             this.panel1.Controls.Add(this.groupBoxAlerts);
             this.panel1.Controls.Add(this.groupBoxAlertSounds);
+            this.panel1.Controls.Add(this.groupBoxNetworkOptimizer);
             this.panel1.Controls.Add(this.groupBoxNetworkQuality);
             this.panel1.Controls.Add(this.groupBox5);
             this.panel1.Controls.Add(this.groupBox4);
@@ -1696,6 +1711,134 @@ namespace tickMeter.Forms
             this.lblQualityRating.TabIndex = 9;
             this.lblQualityRating.Text = "Рейтинг: Excellent";
             // 
+            // groupBoxNetworkOptimizer
+            // 
+            this.groupBoxNetworkOptimizer.Controls.Add(this.chkNetworkOptimizationEnabled);
+            this.groupBoxNetworkOptimizer.Controls.Add(this.lblOptimizationThreshold);
+            this.groupBoxNetworkOptimizer.Controls.Add(this.numOptimizationThreshold);
+            this.groupBoxNetworkOptimizer.Controls.Add(this.lblOptimizationInterval);
+            this.groupBoxNetworkOptimizer.Controls.Add(this.numOptimizationInterval);
+            this.groupBoxNetworkOptimizer.Controls.Add(this.chkAggressiveOptimization);
+            this.groupBoxNetworkOptimizer.Controls.Add(this.btnManualOptimization);
+            this.groupBoxNetworkOptimizer.Controls.Add(this.lblLastOptimization);
+            this.groupBoxNetworkOptimizer.Controls.Add(this.lblOptimizationStats);
+            this.groupBoxNetworkOptimizer.Controls.Add(this.btnClearOptimizationHistory);
+            this.groupBoxNetworkOptimizer.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBoxNetworkOptimizer.Location = new System.Drawing.Point(13, 486);
+            this.groupBoxNetworkOptimizer.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBoxNetworkOptimizer.Name = "groupBoxNetworkOptimizer";
+            this.groupBoxNetworkOptimizer.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBoxNetworkOptimizer.Size = new System.Drawing.Size(800, 280);
+            this.groupBoxNetworkOptimizer.TabIndex = 15;
+            this.groupBoxNetworkOptimizer.TabStop = false;
+            this.groupBoxNetworkOptimizer.Text = "Этап 7: Интеллектуальная оптимизация сети";
+            // 
+            // chkNetworkOptimizationEnabled
+            // 
+            this.chkNetworkOptimizationEnabled.AutoSize = true;
+            this.chkNetworkOptimizationEnabled.Location = new System.Drawing.Point(8, 25);
+            this.chkNetworkOptimizationEnabled.Margin = new System.Windows.Forms.Padding(4);
+            this.chkNetworkOptimizationEnabled.Name = "chkNetworkOptimizationEnabled";
+            this.chkNetworkOptimizationEnabled.Size = new System.Drawing.Size(185, 21);
+            this.chkNetworkOptimizationEnabled.TabIndex = 0;
+            this.chkNetworkOptimizationEnabled.Text = "Включить оптимизацию";
+            this.chkNetworkOptimizationEnabled.UseVisualStyleBackColor = true;
+            // 
+            // lblOptimizationThreshold
+            // 
+            this.lblOptimizationThreshold.AutoSize = true;
+            this.lblOptimizationThreshold.Location = new System.Drawing.Point(8, 55);
+            this.lblOptimizationThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblOptimizationThreshold.Name = "lblOptimizationThreshold";
+            this.lblOptimizationThreshold.Size = new System.Drawing.Size(200, 17);
+            this.lblOptimizationThreshold.TabIndex = 1;
+            this.lblOptimizationThreshold.Text = "Порог качества для оптимизации:";
+            // 
+            // numOptimizationThreshold
+            // 
+            this.numOptimizationThreshold.DecimalPlaces = 1;
+            this.numOptimizationThreshold.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
+            this.numOptimizationThreshold.Location = new System.Drawing.Point(220, 53);
+            this.numOptimizationThreshold.Margin = new System.Windows.Forms.Padding(4);
+            this.numOptimizationThreshold.Maximum = new decimal(new int[] { 100, 0, 0, 0 });
+            this.numOptimizationThreshold.Minimum = new decimal(new int[] { 0, 0, 0, 0 });
+            this.numOptimizationThreshold.Name = "numOptimizationThreshold";
+            this.numOptimizationThreshold.Size = new System.Drawing.Size(80, 22);
+            this.numOptimizationThreshold.TabIndex = 2;
+            this.numOptimizationThreshold.Value = new decimal(new int[] { 70, 0, 0, 0 });
+            // 
+            // lblOptimizationInterval
+            // 
+            this.lblOptimizationInterval.AutoSize = true;
+            this.lblOptimizationInterval.Location = new System.Drawing.Point(8, 85);
+            this.lblOptimizationInterval.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblOptimizationInterval.Name = "lblOptimizationInterval";
+            this.lblOptimizationInterval.Size = new System.Drawing.Size(180, 17);
+            this.lblOptimizationInterval.TabIndex = 3;
+            this.lblOptimizationInterval.Text = "Интервал проверки (мин):";
+            // 
+            // numOptimizationInterval
+            // 
+            this.numOptimizationInterval.Location = new System.Drawing.Point(220, 83);
+            this.numOptimizationInterval.Margin = new System.Windows.Forms.Padding(4);
+            this.numOptimizationInterval.Maximum = new decimal(new int[] { 60, 0, 0, 0 });
+            this.numOptimizationInterval.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            this.numOptimizationInterval.Name = "numOptimizationInterval";
+            this.numOptimizationInterval.Size = new System.Drawing.Size(80, 22);
+            this.numOptimizationInterval.TabIndex = 4;
+            this.numOptimizationInterval.Value = new decimal(new int[] { 5, 0, 0, 0 });
+            // 
+            // chkAggressiveOptimization
+            // 
+            this.chkAggressiveOptimization.AutoSize = true;
+            this.chkAggressiveOptimization.Location = new System.Drawing.Point(8, 115);
+            this.chkAggressiveOptimization.Margin = new System.Windows.Forms.Padding(4);
+            this.chkAggressiveOptimization.Name = "chkAggressiveOptimization";
+            this.chkAggressiveOptimization.Size = new System.Drawing.Size(210, 21);
+            this.chkAggressiveOptimization.TabIndex = 5;
+            this.chkAggressiveOptimization.Text = "Агрессивная оптимизация";
+            this.chkAggressiveOptimization.UseVisualStyleBackColor = true;
+            // 
+            // btnManualOptimization
+            // 
+            this.btnManualOptimization.Location = new System.Drawing.Point(8, 145);
+            this.btnManualOptimization.Margin = new System.Windows.Forms.Padding(4);
+            this.btnManualOptimization.Name = "btnManualOptimization";
+            this.btnManualOptimization.Size = new System.Drawing.Size(150, 28);
+            this.btnManualOptimization.TabIndex = 6;
+            this.btnManualOptimization.Text = "Запустить оптимизацию";
+            this.btnManualOptimization.UseVisualStyleBackColor = true;
+            // 
+            // lblLastOptimization
+            // 
+            this.lblLastOptimization.AutoSize = true;
+            this.lblLastOptimization.Location = new System.Drawing.Point(8, 185);
+            this.lblLastOptimization.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblLastOptimization.Name = "lblLastOptimization";
+            this.lblLastOptimization.Size = new System.Drawing.Size(160, 17);
+            this.lblLastOptimization.TabIndex = 7;
+            this.lblLastOptimization.Text = "Последняя оптимизация: Никогда";
+            // 
+            // lblOptimizationStats
+            // 
+            this.lblOptimizationStats.AutoSize = true;
+            this.lblOptimizationStats.Location = new System.Drawing.Point(8, 215);
+            this.lblOptimizationStats.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblOptimizationStats.Name = "lblOptimizationStats";
+            this.lblOptimizationStats.Size = new System.Drawing.Size(200, 17);
+            this.lblOptimizationStats.TabIndex = 8;
+            this.lblOptimizationStats.Text = "Всего оптимизаций: 0, Успешных: 0";
+            // 
+            // btnClearOptimizationHistory
+            // 
+            this.btnClearOptimizationHistory.Location = new System.Drawing.Point(8, 245);
+            this.btnClearOptimizationHistory.Margin = new System.Windows.Forms.Padding(4);
+            this.btnClearOptimizationHistory.Name = "btnClearOptimizationHistory";
+            this.btnClearOptimizationHistory.Size = new System.Drawing.Size(150, 28);
+            this.btnClearOptimizationHistory.TabIndex = 9;
+            this.btnClearOptimizationHistory.Text = "Очистить историю";
+            this.btnClearOptimizationHistory.UseVisualStyleBackColor = true;
+            // 
             // groupBox4
             // 
             this.groupBox4.Controls.Add(this.chkIgnoreVirtualAdapters);
@@ -2028,6 +2171,10 @@ namespace tickMeter.Forms
             ((System.ComponentModel.ISupportInitialize)(this.numQualityThreshold)).EndInit();
             this.groupBoxNetworkQuality.ResumeLayout(false);
             this.groupBoxNetworkQuality.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numOptimizationThreshold)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numOptimizationInterval)).EndInit();
+            this.groupBoxNetworkOptimizer.ResumeLayout(false);
+            this.groupBoxNetworkOptimizer.PerformLayout();
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
             this.groupBox3.ResumeLayout(false);
@@ -2182,5 +2329,16 @@ namespace tickMeter.Forms
         private System.Windows.Forms.Button btnResetQualityAnalyzer;
         private System.Windows.Forms.Label lblCurrentQuality;
         private System.Windows.Forms.Label lblQualityRating;
+        private System.Windows.Forms.GroupBox groupBoxNetworkOptimizer;
+        private System.Windows.Forms.CheckBox chkNetworkOptimizationEnabled;
+        private System.Windows.Forms.Label lblOptimizationThreshold;
+        private System.Windows.Forms.NumericUpDown numOptimizationThreshold;
+        private System.Windows.Forms.Label lblOptimizationInterval;
+        private System.Windows.Forms.NumericUpDown numOptimizationInterval;
+        private System.Windows.Forms.CheckBox chkAggressiveOptimization;
+        private System.Windows.Forms.Button btnManualOptimization;
+        private System.Windows.Forms.Label lblLastOptimization;
+        private System.Windows.Forms.Label lblOptimizationStats;
+        private System.Windows.Forms.Button btnClearOptimizationHistory;
     }
 }

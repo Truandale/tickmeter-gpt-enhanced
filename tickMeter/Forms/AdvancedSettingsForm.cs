@@ -89,6 +89,9 @@ namespace tickMeter.Forms
                 
                 // Stage 6: Network Quality Analysis настройки
                 LoadNetworkQualitySettings();
+                
+                // Stage 7: Network Optimizer настройки
+                LoadNetworkOptimizerSettings();
             }
             catch (Exception ex)
             {
@@ -171,6 +174,9 @@ namespace tickMeter.Forms
                 
                 // Stage 6: Network Quality Analysis настройки
                 SaveNetworkQualitySettings();
+                
+                // Stage 7: Network Optimizer настройки
+                SaveNetworkOptimizerSettings();
                 
                 // Применяем новые настройки интервала overlay
                 App.gui?.ApplyOverlayIntervalFromSettings();
@@ -989,5 +995,156 @@ namespace tickMeter.Forms
         }
         
         #endregion Stage 6: Network Quality Analysis
+
+        #region Stage 7: Network Optimizer
+
+        private void LoadNetworkOptimizerSettings()
+        {
+            try
+            {
+                chkNetworkOptimizationEnabled.Checked = App.settingsManager.GetOption("network_optimization_enabled", "False", "ADVANCED") == "True";
+                numOptimizationThreshold.Value = decimal.Parse(App.settingsManager.GetOption("optimization_threshold", "70", "ADVANCED"));
+                numOptimizationInterval.Value = decimal.Parse(App.settingsManager.GetOption("optimization_interval", "5", "ADVANCED"));
+                chkAggressiveOptimization.Checked = App.settingsManager.GetOption("aggressive_optimization", "False", "ADVANCED") == "True";
+                
+                // Подписываемся на события
+                btnManualOptimization.Click += BtnManualOptimization_Click;
+                btnClearOptimizationHistory.Click += BtnClearOptimizationHistory_Click;
+                chkNetworkOptimizationEnabled.CheckedChanged += ChkNetworkOptimizationEnabled_CheckedChanged;
+                
+                // Обновляем статус
+                UpdateOptimizerStatus();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[LoadNetworkOptimizerSettings] Error: {ex.Message}");
+            }
+        }
+
+        private void SaveNetworkOptimizerSettings()
+        {
+            try
+            {
+                App.settingsManager.SetOption("network_optimization_enabled", chkNetworkOptimizationEnabled.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("optimization_threshold", numOptimizationThreshold.Value.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("optimization_interval", numOptimizationInterval.Value.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("aggressive_optimization", chkAggressiveOptimization.Checked.ToString(), "ADVANCED");
+                
+                // Применяем настройки к оптимизатору
+                if (App.networkOptimizer != null)
+                {
+                    App.networkOptimizer.SetEnabled(chkNetworkOptimizationEnabled.Checked);
+                    App.networkOptimizer.SetQualityThreshold((float)(numOptimizationThreshold.Value / 100));
+                    App.networkOptimizer.SetOptimizationInterval((int)numOptimizationInterval.Value);
+                    App.networkOptimizer.SetAggressiveMode(chkAggressiveOptimization.Checked);
+                    
+                    System.Diagnostics.Debug.Print($"[SaveNetworkOptimizerSettings] Applied settings to optimizer");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[SaveNetworkOptimizerSettings] Error: {ex.Message}");
+            }
+        }
+
+        private void BtnManualOptimization_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (App.networkOptimizer != null)
+                {
+                    var task = System.Threading.Tasks.Task.Run(() => App.networkOptimizer.PerformOptimization());
+                    btnManualOptimization.Text = "Оптимизация...";
+                    btnManualOptimization.Enabled = false;
+                    
+                    task.ContinueWith(t => 
+                    {
+                        if (InvokeRequired)
+                        {
+                            Invoke(new Action(() => 
+                            {
+                                btnManualOptimization.Text = "Запустить оптимизацию";
+                                btnManualOptimization.Enabled = true;
+                                UpdateOptimizerStatus();
+                            }));
+                        }
+                    });
+                }
+                else
+                {
+                    MessageBox.Show("Оптимизатор не инициализирован", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка запуска оптимизации: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                btnManualOptimization.Text = "Запустить оптимизацию";
+                btnManualOptimization.Enabled = true;
+            }
+        }
+
+        private void BtnClearOptimizationHistory_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (App.networkOptimizer != null)
+                {
+                    App.networkOptimizer.ClearHistory();
+                    UpdateOptimizerStatus();
+                    MessageBox.Show("История оптимизации очищена", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка очистки истории: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void ChkNetworkOptimizationEnabled_CheckedChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                if (App.networkOptimizer != null)
+                {
+                    App.networkOptimizer.SetEnabled(chkNetworkOptimizationEnabled.Checked);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[ChkNetworkOptimizationEnabled_CheckedChanged] Error: {ex.Message}");
+            }
+        }
+
+        private void UpdateOptimizerStatus()
+        {
+            try
+            {
+                if (App.networkOptimizer != null)
+                {
+                    if (InvokeRequired)
+                    {
+                        Invoke(new Action(UpdateOptimizerStatus));
+                        return;
+                    }
+                    
+                    var stats = App.networkOptimizer.GetStats();
+                    lblOptimizationStats.Text = $"Всего оптимизаций: {stats.total}, Успешных: {stats.successful}";
+                    if (stats.lastOptimization == DateTime.MinValue)
+                    {
+                        lblLastOptimization.Text = "Последняя оптимизация: Никогда";
+                    }
+                    else
+                    {
+                        lblLastOptimization.Text = $"Последняя оптимизация: {stats.lastOptimization:HH:mm:ss dd.MM.yyyy}";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[UpdateOptimizerStatus] Error: {ex.Message}");
+            }
+        }
+
+        #endregion Stage 7: Network Optimizer
     }
 }

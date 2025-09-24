@@ -26,6 +26,7 @@ namespace tickMeter.Classes
         public static PingManager pingManager;
         public static ConnectionTracker connectionTracker;
         public static Classes.CaptureService Capture;
+        public static Classes.NetworkOptimizer networkOptimizer;
         static List<LivePacketDevice> AdaptersList;
 
         public static void Init()
@@ -54,6 +55,11 @@ namespace tickMeter.Classes
             // Инициализируем анализатор качества сети
             Classes.NetworkQualityAnalyzer.Initialize();
             Debug.Print("[App.Init] Network quality analyzer initialized");
+            
+            // Инициализируем оптимизатор сети
+            networkOptimizer = new NetworkOptimizer();
+            networkOptimizer.Initialize();
+            Debug.Print("[App.Init] Network optimizer initialized");
         }
 
         public static List<LivePacketDevice> GetAdapters()
