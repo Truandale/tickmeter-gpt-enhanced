@@ -89,6 +89,18 @@ namespace tickMeter
         {
             return GetOption(optionName, defaultValue, scope);
         }
+        
+        public double GetDouble(string optionName, double defaultValue, string scope = "SETTINGS")
+        {
+            string value = GetOption(optionName, scope);
+            if (string.IsNullOrEmpty(value))
+                return defaultValue;
+            
+            if (double.TryParse(value, out double result))
+                return result;
+            
+            return defaultValue;
+        }
 
         public void SaveConfig()
         {
