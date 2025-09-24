@@ -83,6 +83,9 @@ namespace tickMeter.Forms
                 chkSingleConsumerPattern.Checked = App.settingsManager.GetOption("single_consumer_pattern", "True", "ADVANCED") == "True";
                 numUiProcessingRate.Value = decimal.Parse(App.settingsManager.GetOption("ui_processing_rate", "60", "ADVANCED"));
                 numUiBatchSize.Value = decimal.Parse(App.settingsManager.GetOption("ui_batch_size", "10", "ADVANCED"));
+                
+                // Загружаем настройки алертов
+                LoadAlertSettings();
             }
             catch (Exception ex)
             {
@@ -159,6 +162,9 @@ namespace tickMeter.Forms
                 // Spike Detection настройки
                 SaveSpikeDetectionSettings();
                 SaveAdvancedSpikeSettings();
+                
+                // Alert Settings
+                SaveAlertSettings();
                 
                 // Применяем новые настройки интервала overlay
                 App.gui?.ApplyOverlayIntervalFromSettings();
@@ -612,5 +618,192 @@ namespace tickMeter.Forms
         }
 
         #endregion Stage 4: Advanced Spike Detection Settings
+        
+        #region Stage 8: Advanced Alerting System
+        
+        /// <summary>
+        /// Загружает настройки алертов
+        /// </summary>
+        private void LoadAlertSettings()
+        {
+            try
+            {
+                // Основные настройки алертов
+                chkAlertSoundEnabled.Checked = App.settingsManager.GetOption("alert_sound_enabled", "False", "ADVANCED") == "True";
+                chkAlertDiscordEnabled.Checked = App.settingsManager.GetOption("alert_discord_enabled", "False", "ADVANCED") == "True";
+                txtAlertDiscordWebhook.Text = App.settingsManager.GetOption("alert_discord_webhook", "", "ADVANCED");
+                numAlertCooldown.Value = decimal.Parse(App.settingsManager.GetOption("alert_cooldown_seconds", "30", "ADVANCED"));
+                
+                // Пути к звуковым файлам
+                txtAlertPingSoundPath.Text = App.settingsManager.GetOption("alert_sound_pingspike_path", "", "ADVANCED");
+                txtAlertTickrateSoundPath.Text = App.settingsManager.GetOption("alert_sound_tickratespike_path", "", "ADVANCED");
+                txtAlertTicktimeSoundPath.Text = App.settingsManager.GetOption("alert_sound_ticktimespike_path", "", "ADVANCED");
+                
+                // Подписываемся на события кнопок
+                btnTestDiscordAlert.Click += BtnTestDiscordAlert_Click;
+                btnTestSoundAlert.Click += BtnTestSoundAlert_Click;
+                btnBrowsePingSound.Click += BtnBrowsePingSound_Click;
+                btnBrowseTickrateSound.Click += BtnBrowseTickrateSound_Click;
+                btnBrowseTicktimeSound.Click += BtnBrowseTicktimeSound_Click;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[LoadAlertSettings] Error: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Сохраняет настройки алертов
+        /// </summary>
+        private void SaveAlertSettings()
+        {
+            try
+            {
+                // Основные настройки алертов
+                App.settingsManager.SetOption("alert_sound_enabled", chkAlertSoundEnabled.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("alert_discord_enabled", chkAlertDiscordEnabled.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("alert_discord_webhook", txtAlertDiscordWebhook.Text, "ADVANCED");
+                App.settingsManager.SetOption("alert_cooldown_seconds", numAlertCooldown.Value.ToString(), "ADVANCED");
+                
+                // Пути к звуковым файлам
+                App.settingsManager.SetOption("alert_sound_pingspike_path", txtAlertPingSoundPath.Text, "ADVANCED");
+                App.settingsManager.SetOption("alert_sound_tickratespike_path", txtAlertTickrateSoundPath.Text, "ADVANCED");
+                App.settingsManager.SetOption("alert_sound_ticktimespike_path", txtAlertTicktimeSoundPath.Text, "ADVANCED");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[SaveAlertSettings] Error: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Тестирует Discord алерт
+        /// </summary>
+        private async void BtnTestDiscordAlert_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                btnTestDiscordAlert.Enabled = false;
+                btnTestDiscordAlert.Text = "Отправка...";
+                
+                // Временно сохраняем настройки для теста
+                var oldWebhook = App.settingsManager.GetOption("alert_discord_webhook", "", "ADVANCED");
+                var oldEnabled = App.settingsManager.GetOption("alert_discord_enabled", "False", "ADVANCED");
+                
+                App.settingsManager.SetOption("alert_discord_webhook", txtAlertDiscordWebhook.Text, "ADVANCED");
+                App.settingsManager.SetOption("alert_discord_enabled", "True", "ADVANCED");
+                
+                await Classes.AlertManager.TestAlert(Classes.AlertManager.AlertType.PingSpike);
+                
+                // Восстанавливаем настройки
+                App.settingsManager.SetOption("alert_discord_webhook", oldWebhook, "ADVANCED");
+                App.settingsManager.SetOption("alert_discord_enabled", oldEnabled, "ADVANCED");
+                
+                MessageBox.Show("Тестовое Discord уведомление отправлено!", "Тест", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка отправки Discord алерта: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                btnTestDiscordAlert.Enabled = true;
+                btnTestDiscordAlert.Text = "Тест Discord";
+            }
+        }
+        
+        /// <summary>
+        /// Тестирует звуковой алерт
+        /// </summary>
+        private async void BtnTestSoundAlert_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                btnTestSoundAlert.Enabled = false;
+                btnTestSoundAlert.Text = "Тест...";
+                
+                // Временно сохраняем настройки для теста
+                var oldEnabled = App.settingsManager.GetOption("alert_sound_enabled", "False", "ADVANCED");
+                var oldPath = App.settingsManager.GetOption("alert_sound_pingspike_path", "", "ADVANCED");
+                
+                App.settingsManager.SetOption("alert_sound_enabled", "True", "ADVANCED");
+                App.settingsManager.SetOption("alert_sound_pingspike_path", txtAlertPingSoundPath.Text, "ADVANCED");
+                
+                await Classes.AlertManager.TestAlert(Classes.AlertManager.AlertType.PingSpike);
+                
+                // Восстанавливаем настройки
+                App.settingsManager.SetOption("alert_sound_enabled", oldEnabled, "ADVANCED");
+                App.settingsManager.SetOption("alert_sound_pingspike_path", oldPath, "ADVANCED");
+                
+                MessageBox.Show("Тестовый звуковой алерт воспроизведен!", "Тест", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка воспроизведения звукового алерта: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                btnTestSoundAlert.Enabled = true;
+                btnTestSoundAlert.Text = "Тест звука";
+            }
+        }
+        
+        /// <summary>
+        /// Обзор звукового файла для ping спайков
+        /// </summary>
+        private void BtnBrowsePingSound_Click(object sender, EventArgs e)
+        {
+            BrowseSoundFile(txtAlertPingSoundPath);
+        }
+        
+        /// <summary>
+        /// Обзор звукового файла для tickrate спайков
+        /// </summary>
+        private void BtnBrowseTickrateSound_Click(object sender, EventArgs e)
+        {
+            BrowseSoundFile(txtAlertTickrateSoundPath);
+        }
+        
+        /// <summary>
+        /// Обзор звукового файла для ticktime спайков
+        /// </summary>
+        private void BtnBrowseTicktimeSound_Click(object sender, EventArgs e)
+        {
+            BrowseSoundFile(txtAlertTicktimeSoundPath);
+        }
+        
+        /// <summary>
+        /// Универсальный метод для обзора звуковых файлов
+        /// </summary>
+        private void BrowseSoundFile(TextBox targetTextBox)
+        {
+            try
+            {
+                using (var openFileDialog = new OpenFileDialog())
+                {
+                    openFileDialog.Title = "Выберите звуковой файл";
+                    openFileDialog.Filter = "Звуковые файлы (*.wav;*.mp3)|*.wav;*.mp3|Все файлы (*.*)|*.*";
+                    openFileDialog.FilterIndex = 1;
+                    openFileDialog.RestoreDirectory = true;
+                    
+                    if (!string.IsNullOrEmpty(targetTextBox.Text) && System.IO.File.Exists(targetTextBox.Text))
+                    {
+                        openFileDialog.InitialDirectory = System.IO.Path.GetDirectoryName(targetTextBox.Text);
+                        openFileDialog.FileName = System.IO.Path.GetFileName(targetTextBox.Text);
+                    }
+                    
+                    if (openFileDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        targetTextBox.Text = openFileDialog.FileName;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка выбора файла: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        
+        #endregion Stage 8: Advanced Alerting System
     }
 }

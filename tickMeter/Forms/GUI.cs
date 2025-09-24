@@ -1573,7 +1573,16 @@ namespace tickMeter.Forms
 
         private void GUI_FormClosed(object sender, FormClosedEventArgs e)
         {
-
+            try
+            {
+                // Освобождаем ресурсы AlertManager
+                Classes.AlertManager.Dispose();
+                System.Diagnostics.Debug.Print("[GUI_FormClosed] AlertManager disposed successfully");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[GUI_FormClosed] Error disposing AlertManager: {ex.Message}");
+            }
         }
 
         private void ServerLbl_Click(object sender, EventArgs e)

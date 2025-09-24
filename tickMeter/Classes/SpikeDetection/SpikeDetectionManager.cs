@@ -243,10 +243,53 @@ namespace tickMeter.Classes.SpikeDetection
 
                 // Вызываем глобальное событие
                 SpikeDetected?.Invoke(spikeEvent);
+                
+                // Отправляем алерт (Этап 8: Advanced Alerting System)
+                SendSpikeAlert(spikeEvent);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.Print($"[SpikeDetectionManager] Error in spike event handler: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Отправляет алерт о спайке (Этап 8: Advanced Alerting System)
+        /// </summary>
+        /// <param name="spikeEvent">Событие спайка</param>
+        private static async void SendSpikeAlert(SpikeEvent spikeEvent)
+        {
+            try
+            {
+                // Определяем тип алерта на основе метрики
+                AlertManager.AlertType alertType;
+                switch (spikeEvent.Metric)
+                {
+                    case MetricKind.Ping:
+                        alertType = AlertManager.AlertType.PingSpike;
+                        break;
+                    case MetricKind.Tickrate:
+                        alertType = AlertManager.AlertType.TickrateSpike;
+                        break;
+                    case MetricKind.Ticktime:
+                        alertType = AlertManager.AlertType.TicktimeSpike;
+                        break;
+                    default:
+                        alertType = AlertManager.AlertType.CriticalSpike;
+                        break;
+                }
+                
+                // Отправляем алерт
+                await AlertManager.SendAlert(
+                    alertType,
+                    spikeEvent.Metric.ToString(),
+                    spikeEvent.Value,
+                    spikeEvent.Threshold
+                );
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[SpikeDetectionManager] Error sending spike alert: {ex.Message}");
             }
         }
     }

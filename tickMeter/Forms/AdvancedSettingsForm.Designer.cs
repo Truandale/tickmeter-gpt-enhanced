@@ -128,6 +128,25 @@ namespace tickMeter.Forms
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnReset = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
+            this.groupBoxAlerts = new System.Windows.Forms.GroupBox();
+            this.chkAlertSoundEnabled = new System.Windows.Forms.CheckBox();
+            this.chkAlertDiscordEnabled = new System.Windows.Forms.CheckBox();
+            this.lblAlertDiscordWebhook = new System.Windows.Forms.Label();
+            this.txtAlertDiscordWebhook = new System.Windows.Forms.TextBox();
+            this.lblAlertCooldown = new System.Windows.Forms.Label();
+            this.numAlertCooldown = new System.Windows.Forms.NumericUpDown();
+            this.btnTestDiscordAlert = new System.Windows.Forms.Button();
+            this.btnTestSoundAlert = new System.Windows.Forms.Button();
+            this.groupBoxAlertSounds = new System.Windows.Forms.GroupBox();
+            this.lblAlertPingSoundPath = new System.Windows.Forms.Label();
+            this.txtAlertPingSoundPath = new System.Windows.Forms.TextBox();
+            this.btnBrowsePingSound = new System.Windows.Forms.Button();
+            this.lblAlertTickrateSoundPath = new System.Windows.Forms.Label();
+            this.txtAlertTickrateSoundPath = new System.Windows.Forms.TextBox();
+            this.btnBrowseTickrateSound = new System.Windows.Forms.Button();
+            this.lblAlertTicktimeSoundPath = new System.Windows.Forms.Label();
+            this.txtAlertTicktimeSoundPath = new System.Windows.Forms.TextBox();
+            this.btnBrowseTicktimeSound = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.groupBoxVpnBypass.SuspendLayout();
             this.groupBoxPhase3.SuspendLayout();
@@ -158,6 +177,9 @@ namespace tickMeter.Forms
             ((System.ComponentModel.ISupportInitialize)(this.overlayFpsNumeric)).BeginInit();
             this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.liveMaxRowsNumeric)).BeginInit();
+            this.groupBoxAlerts.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numAlertCooldown)).BeginInit();
+            this.groupBoxAlertSounds.SuspendLayout();
             this.panelButtons.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -170,6 +192,8 @@ namespace tickMeter.Forms
             this.panel1.Controls.Add(this.groupBoxPhase1);
             this.panel1.Controls.Add(this.groupBoxSpikeDetection);
             this.panel1.Controls.Add(this.groupBoxSpikeAdvanced);
+            this.panel1.Controls.Add(this.groupBoxAlerts);
+            this.panel1.Controls.Add(this.groupBoxAlertSounds);
             this.panel1.Controls.Add(this.groupBox5);
             this.panel1.Controls.Add(this.groupBox4);
             this.panel1.Controls.Add(this.groupBox3);
@@ -1317,6 +1341,212 @@ namespace tickMeter.Forms
             this.chkPingBindToInterface.Text = "Пинг привязывать к активному интерфейсу";
             this.chkPingBindToInterface.UseVisualStyleBackColor = true;
             // 
+            // groupBoxAlerts
+            // 
+            this.groupBoxAlerts.Controls.Add(this.chkAlertSoundEnabled);
+            this.groupBoxAlerts.Controls.Add(this.chkAlertDiscordEnabled);
+            this.groupBoxAlerts.Controls.Add(this.lblAlertDiscordWebhook);
+            this.groupBoxAlerts.Controls.Add(this.txtAlertDiscordWebhook);
+            this.groupBoxAlerts.Controls.Add(this.lblAlertCooldown);
+            this.groupBoxAlerts.Controls.Add(this.numAlertCooldown);
+            this.groupBoxAlerts.Controls.Add(this.btnTestDiscordAlert);
+            this.groupBoxAlerts.Controls.Add(this.btnTestSoundAlert);
+            this.groupBoxAlerts.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBoxAlerts.Location = new System.Drawing.Point(13, 856);
+            this.groupBoxAlerts.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBoxAlerts.Name = "groupBoxAlerts";
+            this.groupBoxAlerts.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBoxAlerts.Size = new System.Drawing.Size(757, 180);
+            this.groupBoxAlerts.TabIndex = 6;
+            this.groupBoxAlerts.TabStop = false;
+            this.groupBoxAlerts.Text = "Stage 8: Advanced Alerting System";
+            // 
+            // chkAlertSoundEnabled
+            // 
+            this.chkAlertSoundEnabled.AutoSize = true;
+            this.chkAlertSoundEnabled.Location = new System.Drawing.Point(8, 28);
+            this.chkAlertSoundEnabled.Margin = new System.Windows.Forms.Padding(4);
+            this.chkAlertSoundEnabled.Name = "chkAlertSoundEnabled";
+            this.chkAlertSoundEnabled.Size = new System.Drawing.Size(160, 20);
+            this.chkAlertSoundEnabled.TabIndex = 0;
+            this.chkAlertSoundEnabled.Text = "Включить звуковые алерты";
+            this.chkAlertSoundEnabled.UseVisualStyleBackColor = true;
+            // 
+            // chkAlertDiscordEnabled
+            // 
+            this.chkAlertDiscordEnabled.AutoSize = true;
+            this.chkAlertDiscordEnabled.Location = new System.Drawing.Point(200, 28);
+            this.chkAlertDiscordEnabled.Margin = new System.Windows.Forms.Padding(4);
+            this.chkAlertDiscordEnabled.Name = "chkAlertDiscordEnabled";
+            this.chkAlertDiscordEnabled.Size = new System.Drawing.Size(150, 20);
+            this.chkAlertDiscordEnabled.TabIndex = 1;
+            this.chkAlertDiscordEnabled.Text = "Включить Discord алерты";
+            this.chkAlertDiscordEnabled.UseVisualStyleBackColor = true;
+            // 
+            // lblAlertDiscordWebhook
+            // 
+            this.lblAlertDiscordWebhook.AutoSize = true;
+            this.lblAlertDiscordWebhook.Location = new System.Drawing.Point(8, 58);
+            this.lblAlertDiscordWebhook.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblAlertDiscordWebhook.Name = "lblAlertDiscordWebhook";
+            this.lblAlertDiscordWebhook.Size = new System.Drawing.Size(120, 16);
+            this.lblAlertDiscordWebhook.TabIndex = 2;
+            this.lblAlertDiscordWebhook.Text = "Discord Webhook URL:";
+            // 
+            // txtAlertDiscordWebhook
+            // 
+            this.txtAlertDiscordWebhook.Location = new System.Drawing.Point(140, 55);
+            this.txtAlertDiscordWebhook.Margin = new System.Windows.Forms.Padding(4);
+            this.txtAlertDiscordWebhook.Name = "txtAlertDiscordWebhook";
+            this.txtAlertDiscordWebhook.Size = new System.Drawing.Size(400, 22);
+            this.txtAlertDiscordWebhook.TabIndex = 3;
+            // 
+            // lblAlertCooldown
+            // 
+            this.lblAlertCooldown.AutoSize = true;
+            this.lblAlertCooldown.Location = new System.Drawing.Point(8, 88);
+            this.lblAlertCooldown.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblAlertCooldown.Name = "lblAlertCooldown";
+            this.lblAlertCooldown.Size = new System.Drawing.Size(120, 16);
+            this.lblAlertCooldown.TabIndex = 4;
+            this.lblAlertCooldown.Text = "Cooldown (секунды):";
+            // 
+            // numAlertCooldown
+            // 
+            this.numAlertCooldown.Location = new System.Drawing.Point(140, 85);
+            this.numAlertCooldown.Margin = new System.Windows.Forms.Padding(4);
+            this.numAlertCooldown.Maximum = new decimal(new int[] { 300, 0, 0, 0 });
+            this.numAlertCooldown.Minimum = new decimal(new int[] { 5, 0, 0, 0 });
+            this.numAlertCooldown.Name = "numAlertCooldown";
+            this.numAlertCooldown.Size = new System.Drawing.Size(80, 22);
+            this.numAlertCooldown.TabIndex = 5;
+            this.numAlertCooldown.Value = new decimal(new int[] { 30, 0, 0, 0 });
+            // 
+            // btnTestDiscordAlert
+            // 
+            this.btnTestDiscordAlert.Location = new System.Drawing.Point(8, 120);
+            this.btnTestDiscordAlert.Margin = new System.Windows.Forms.Padding(4);
+            this.btnTestDiscordAlert.Name = "btnTestDiscordAlert";
+            this.btnTestDiscordAlert.Size = new System.Drawing.Size(120, 28);
+            this.btnTestDiscordAlert.TabIndex = 6;
+            this.btnTestDiscordAlert.Text = "Тест Discord";
+            this.btnTestDiscordAlert.UseVisualStyleBackColor = true;
+            // 
+            // btnTestSoundAlert
+            // 
+            this.btnTestSoundAlert.Location = new System.Drawing.Point(140, 120);
+            this.btnTestSoundAlert.Margin = new System.Windows.Forms.Padding(4);
+            this.btnTestSoundAlert.Name = "btnTestSoundAlert";
+            this.btnTestSoundAlert.Size = new System.Drawing.Size(120, 28);
+            this.btnTestSoundAlert.TabIndex = 7;
+            this.btnTestSoundAlert.Text = "Тест звука";
+            this.btnTestSoundAlert.UseVisualStyleBackColor = true;
+            // 
+            // groupBoxAlertSounds
+            // 
+            this.groupBoxAlertSounds.Controls.Add(this.lblAlertPingSoundPath);
+            this.groupBoxAlertSounds.Controls.Add(this.txtAlertPingSoundPath);
+            this.groupBoxAlertSounds.Controls.Add(this.btnBrowsePingSound);
+            this.groupBoxAlertSounds.Controls.Add(this.lblAlertTickrateSoundPath);
+            this.groupBoxAlertSounds.Controls.Add(this.txtAlertTickrateSoundPath);
+            this.groupBoxAlertSounds.Controls.Add(this.btnBrowseTickrateSound);
+            this.groupBoxAlertSounds.Controls.Add(this.lblAlertTicktimeSoundPath);
+            this.groupBoxAlertSounds.Controls.Add(this.txtAlertTicktimeSoundPath);
+            this.groupBoxAlertSounds.Controls.Add(this.btnBrowseTicktimeSound);
+            this.groupBoxAlertSounds.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBoxAlertSounds.Location = new System.Drawing.Point(13, 1036);
+            this.groupBoxAlertSounds.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBoxAlertSounds.Name = "groupBoxAlertSounds";
+            this.groupBoxAlertSounds.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBoxAlertSounds.Size = new System.Drawing.Size(757, 140);
+            this.groupBoxAlertSounds.TabIndex = 7;
+            this.groupBoxAlertSounds.TabStop = false;
+            this.groupBoxAlertSounds.Text = "Настройка звуков алертов";
+            // 
+            // lblAlertPingSoundPath
+            // 
+            this.lblAlertPingSoundPath.AutoSize = true;
+            this.lblAlertPingSoundPath.Location = new System.Drawing.Point(8, 28);
+            this.lblAlertPingSoundPath.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblAlertPingSoundPath.Name = "lblAlertPingSoundPath";
+            this.lblAlertPingSoundPath.Size = new System.Drawing.Size(75, 16);
+            this.lblAlertPingSoundPath.TabIndex = 0;
+            this.lblAlertPingSoundPath.Text = "Ping спайк:";
+            // 
+            // txtAlertPingSoundPath
+            // 
+            this.txtAlertPingSoundPath.Location = new System.Drawing.Point(90, 25);
+            this.txtAlertPingSoundPath.Margin = new System.Windows.Forms.Padding(4);
+            this.txtAlertPingSoundPath.Name = "txtAlertPingSoundPath";
+            this.txtAlertPingSoundPath.Size = new System.Drawing.Size(500, 22);
+            this.txtAlertPingSoundPath.TabIndex = 1;
+            // 
+            // btnBrowsePingSound
+            // 
+            this.btnBrowsePingSound.Location = new System.Drawing.Point(600, 23);
+            this.btnBrowsePingSound.Margin = new System.Windows.Forms.Padding(4);
+            this.btnBrowsePingSound.Name = "btnBrowsePingSound";
+            this.btnBrowsePingSound.Size = new System.Drawing.Size(50, 28);
+            this.btnBrowsePingSound.TabIndex = 2;
+            this.btnBrowsePingSound.Text = "...";
+            this.btnBrowsePingSound.UseVisualStyleBackColor = true;
+            // 
+            // lblAlertTickrateSoundPath
+            // 
+            this.lblAlertTickrateSoundPath.AutoSize = true;
+            this.lblAlertTickrateSoundPath.Location = new System.Drawing.Point(8, 58);
+            this.lblAlertTickrateSoundPath.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblAlertTickrateSoundPath.Name = "lblAlertTickrateSoundPath";
+            this.lblAlertTickrateSoundPath.Size = new System.Drawing.Size(95, 16);
+            this.lblAlertTickrateSoundPath.TabIndex = 3;
+            this.lblAlertTickrateSoundPath.Text = "Tickrate спайк:";
+            // 
+            // txtAlertTickrateSoundPath
+            // 
+            this.txtAlertTickrateSoundPath.Location = new System.Drawing.Point(110, 55);
+            this.txtAlertTickrateSoundPath.Margin = new System.Windows.Forms.Padding(4);
+            this.txtAlertTickrateSoundPath.Name = "txtAlertTickrateSoundPath";
+            this.txtAlertTickrateSoundPath.Size = new System.Drawing.Size(480, 22);
+            this.txtAlertTickrateSoundPath.TabIndex = 4;
+            // 
+            // btnBrowseTickrateSound
+            // 
+            this.btnBrowseTickrateSound.Location = new System.Drawing.Point(600, 53);
+            this.btnBrowseTickrateSound.Margin = new System.Windows.Forms.Padding(4);
+            this.btnBrowseTickrateSound.Name = "btnBrowseTickrateSound";
+            this.btnBrowseTickrateSound.Size = new System.Drawing.Size(50, 28);
+            this.btnBrowseTickrateSound.TabIndex = 5;
+            this.btnBrowseTickrateSound.Text = "...";
+            this.btnBrowseTickrateSound.UseVisualStyleBackColor = true;
+            // 
+            // lblAlertTicktimeSoundPath
+            // 
+            this.lblAlertTicktimeSoundPath.AutoSize = true;
+            this.lblAlertTicktimeSoundPath.Location = new System.Drawing.Point(8, 88);
+            this.lblAlertTicktimeSoundPath.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblAlertTicktimeSoundPath.Name = "lblAlertTicktimeSoundPath";
+            this.lblAlertTicktimeSoundPath.Size = new System.Drawing.Size(95, 16);
+            this.lblAlertTicktimeSoundPath.TabIndex = 6;
+            this.lblAlertTicktimeSoundPath.Text = "Ticktime спайк:";
+            // 
+            // txtAlertTicktimeSoundPath
+            // 
+            this.txtAlertTicktimeSoundPath.Location = new System.Drawing.Point(110, 85);
+            this.txtAlertTicktimeSoundPath.Margin = new System.Windows.Forms.Padding(4);
+            this.txtAlertTicktimeSoundPath.Name = "txtAlertTicktimeSoundPath";
+            this.txtAlertTicktimeSoundPath.Size = new System.Drawing.Size(480, 22);
+            this.txtAlertTicktimeSoundPath.TabIndex = 7;
+            // 
+            // btnBrowseTicktimeSound
+            // 
+            this.btnBrowseTicktimeSound.Location = new System.Drawing.Point(600, 83);
+            this.btnBrowseTicktimeSound.Margin = new System.Windows.Forms.Padding(4);
+            this.btnBrowseTicktimeSound.Name = "btnBrowseTicktimeSound";
+            this.btnBrowseTicktimeSound.Size = new System.Drawing.Size(50, 28);
+            this.btnBrowseTicktimeSound.TabIndex = 8;
+            this.btnBrowseTicktimeSound.Text = "...";
+            this.btnBrowseTicktimeSound.UseVisualStyleBackColor = true;
+            // 
             // groupBox4
             // 
             this.groupBox4.Controls.Add(this.chkIgnoreVirtualAdapters);
@@ -1639,6 +1869,11 @@ namespace tickMeter.Forms
             this.groupBox5.ResumeLayout(false);
             this.groupBox5.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPingSpikeThreshold)).EndInit();
+            this.groupBoxAlerts.ResumeLayout(false);
+            this.groupBoxAlerts.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numAlertCooldown)).EndInit();
+            this.groupBoxAlertSounds.ResumeLayout(false);
+            this.groupBoxAlertSounds.PerformLayout();
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
             this.groupBox3.ResumeLayout(false);
@@ -1763,5 +1998,24 @@ namespace tickMeter.Forms
         private System.Windows.Forms.Button btnCancel;
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.Button btnReset;
+        private System.Windows.Forms.GroupBox groupBoxAlerts;
+        private System.Windows.Forms.CheckBox chkAlertSoundEnabled;
+        private System.Windows.Forms.CheckBox chkAlertDiscordEnabled;
+        private System.Windows.Forms.Label lblAlertDiscordWebhook;
+        private System.Windows.Forms.TextBox txtAlertDiscordWebhook;
+        private System.Windows.Forms.Label lblAlertCooldown;
+        private System.Windows.Forms.NumericUpDown numAlertCooldown;
+        private System.Windows.Forms.Button btnTestDiscordAlert;
+        private System.Windows.Forms.Button btnTestSoundAlert;
+        private System.Windows.Forms.GroupBox groupBoxAlertSounds;
+        private System.Windows.Forms.Label lblAlertPingSoundPath;
+        private System.Windows.Forms.TextBox txtAlertPingSoundPath;
+        private System.Windows.Forms.Button btnBrowsePingSound;
+        private System.Windows.Forms.Label lblAlertTickrateSoundPath;
+        private System.Windows.Forms.TextBox txtAlertTickrateSoundPath;
+        private System.Windows.Forms.Button btnBrowseTickrateSound;
+        private System.Windows.Forms.Label lblAlertTicktimeSoundPath;
+        private System.Windows.Forms.TextBox txtAlertTicktimeSoundPath;
+        private System.Windows.Forms.Button btnBrowseTicktimeSound;
     }
 }
