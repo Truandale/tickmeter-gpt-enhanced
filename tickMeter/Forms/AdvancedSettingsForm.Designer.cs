@@ -54,6 +54,20 @@ namespace tickMeter.Forms
             this.numPcapKernelBufferMb = new System.Windows.Forms.NumericUpDown();
             this.lblPcapMinToCopy = new System.Windows.Forms.Label();
             this.numPcapMinToCopy = new System.Windows.Forms.NumericUpDown();
+            this.groupBoxSpikeDetection = new System.Windows.Forms.GroupBox();
+            this.chkSpikeDetectionEnable = new System.Windows.Forms.CheckBox();
+            this.chkSpikeMetricPing = new System.Windows.Forms.CheckBox();
+            this.chkSpikeMetricTickrate = new System.Windows.Forms.CheckBox();
+            this.chkSpikeMetricTicktime = new System.Windows.Forms.CheckBox();
+            this.lblSpikeSensitivity = new System.Windows.Forms.Label();
+            this.cmbSpikeSensitivity = new System.Windows.Forms.ComboBox();
+            this.lblSpikeDisplayMode = new System.Windows.Forms.Label();
+            this.cmbSpikeDisplayMode = new System.Windows.Forms.ComboBox();
+            this.lblSpikeMinDuration = new System.Windows.Forms.Label();
+            this.numSpikeMinDuration = new System.Windows.Forms.NumericUpDown();
+            this.lblSpikeHistory = new System.Windows.Forms.Label();
+            this.numSpikeHistorySize = new System.Windows.Forms.NumericUpDown();
+            this.chkSpikeAutoCalibration = new System.Windows.Forms.CheckBox();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.chkStunEnable = new System.Windows.Forms.CheckBox();
             this.chkShowPingSpikes = new System.Windows.Forms.CheckBox();
@@ -106,6 +120,9 @@ namespace tickMeter.Forms
             this.groupBoxPhase1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPcapKernelBufferMb)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numPcapMinToCopy)).BeginInit();
+            this.groupBoxSpikeDetection.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numSpikeMinDuration)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numSpikeHistorySize)).BeginInit();
             this.groupBox5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPingSpikeThreshold)).BeginInit();
             this.groupBox4.SuspendLayout();
@@ -124,6 +141,7 @@ namespace tickMeter.Forms
             this.panel1.Controls.Add(this.groupBoxPhase3);
             this.panel1.Controls.Add(this.groupBoxPhase2);
             this.panel1.Controls.Add(this.groupBoxPhase1);
+            this.panel1.Controls.Add(this.groupBoxSpikeDetection);
             this.panel1.Controls.Add(this.groupBox5);
             this.panel1.Controls.Add(this.groupBox4);
             this.panel1.Controls.Add(this.groupBox3);
@@ -142,7 +160,7 @@ namespace tickMeter.Forms
             this.groupBoxVpnBypass.Controls.Add(this.chkVpnBypassAdvanced);
             this.groupBoxVpnBypass.Controls.Add(this.chkVpnBypassBasic);
             this.groupBoxVpnBypass.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxVpnBypass.Location = new System.Drawing.Point(13, 1304);
+            this.groupBoxVpnBypass.Location = new System.Drawing.Point(13, 1504);
             this.groupBoxVpnBypass.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxVpnBypass.Name = "groupBoxVpnBypass";
             this.groupBoxVpnBypass.Padding = new System.Windows.Forms.Padding(4);
@@ -182,7 +200,7 @@ namespace tickMeter.Forms
             this.groupBoxPhase3.Controls.Add(this.lblUiBatchSize);
             this.groupBoxPhase3.Controls.Add(this.numUiBatchSize);
             this.groupBoxPhase3.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxPhase3.Location = new System.Drawing.Point(13, 1104);
+            this.groupBoxPhase3.Location = new System.Drawing.Point(13, 1304);
             this.groupBoxPhase3.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxPhase3.Name = "groupBoxPhase3";
             this.groupBoxPhase3.Padding = new System.Windows.Forms.Padding(4);
@@ -288,7 +306,7 @@ namespace tickMeter.Forms
             this.groupBoxPhase2.Controls.Add(this.numRingBufferSize);
             this.groupBoxPhase2.Controls.Add(this.chkShowVirtualModeStats);
             this.groupBoxPhase2.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxPhase2.Location = new System.Drawing.Point(13, 954);
+            this.groupBoxPhase2.Location = new System.Drawing.Point(13, 1154);
             this.groupBoxPhase2.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxPhase2.Name = "groupBoxPhase2";
             this.groupBoxPhase2.Padding = new System.Windows.Forms.Padding(4);
@@ -395,7 +413,7 @@ namespace tickMeter.Forms
             this.groupBoxPhase1.Controls.Add(this.lblPcapMinToCopy);
             this.groupBoxPhase1.Controls.Add(this.numPcapMinToCopy);
             this.groupBoxPhase1.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxPhase1.Location = new System.Drawing.Point(13, 804);
+            this.groupBoxPhase1.Location = new System.Drawing.Point(13, 1004);
             this.groupBoxPhase1.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxPhase1.Name = "groupBoxPhase1";
             this.groupBoxPhase1.Padding = new System.Windows.Forms.Padding(4);
@@ -497,6 +515,192 @@ namespace tickMeter.Forms
             0,
             0,
             0});
+            // 
+            // groupBoxSpikeDetection
+            // 
+            this.groupBoxSpikeDetection.Controls.Add(this.chkSpikeDetectionEnable);
+            this.groupBoxSpikeDetection.Controls.Add(this.chkSpikeMetricPing);
+            this.groupBoxSpikeDetection.Controls.Add(this.chkSpikeMetricTickrate);
+            this.groupBoxSpikeDetection.Controls.Add(this.chkSpikeMetricTicktime);
+            this.groupBoxSpikeDetection.Controls.Add(this.lblSpikeSensitivity);
+            this.groupBoxSpikeDetection.Controls.Add(this.cmbSpikeSensitivity);
+            this.groupBoxSpikeDetection.Controls.Add(this.lblSpikeDisplayMode);
+            this.groupBoxSpikeDetection.Controls.Add(this.cmbSpikeDisplayMode);
+            this.groupBoxSpikeDetection.Controls.Add(this.lblSpikeMinDuration);
+            this.groupBoxSpikeDetection.Controls.Add(this.numSpikeMinDuration);
+            this.groupBoxSpikeDetection.Controls.Add(this.lblSpikeHistory);
+            this.groupBoxSpikeDetection.Controls.Add(this.numSpikeHistorySize);
+            this.groupBoxSpikeDetection.Controls.Add(this.chkSpikeAutoCalibration);
+            this.groupBoxSpikeDetection.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBoxSpikeDetection.Location = new System.Drawing.Point(13, 804);
+            this.groupBoxSpikeDetection.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBoxSpikeDetection.Name = "groupBoxSpikeDetection";
+            this.groupBoxSpikeDetection.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBoxSpikeDetection.Size = new System.Drawing.Size(757, 200);
+            this.groupBoxSpikeDetection.TabIndex = 5;
+            this.groupBoxSpikeDetection.TabStop = false;
+            this.groupBoxSpikeDetection.Text = "Детекция спайков";
+            // 
+            // chkSpikeDetectionEnable
+            // 
+            this.chkSpikeDetectionEnable.AutoSize = true;
+            this.chkSpikeDetectionEnable.Location = new System.Drawing.Point(20, 30);
+            this.chkSpikeDetectionEnable.Margin = new System.Windows.Forms.Padding(4);
+            this.chkSpikeDetectionEnable.Name = "chkSpikeDetectionEnable";
+            this.chkSpikeDetectionEnable.Size = new System.Drawing.Size(214, 20);
+            this.chkSpikeDetectionEnable.TabIndex = 0;
+            this.chkSpikeDetectionEnable.Text = "Включить детекцию спайков";
+            this.chkSpikeDetectionEnable.UseVisualStyleBackColor = true;
+            // 
+            // chkSpikeMetricPing
+            // 
+            this.chkSpikeMetricPing.AutoSize = true;
+            this.chkSpikeMetricPing.Location = new System.Drawing.Point(250, 30);
+            this.chkSpikeMetricPing.Margin = new System.Windows.Forms.Padding(4);
+            this.chkSpikeMetricPing.Name = "chkSpikeMetricPing";
+            this.chkSpikeMetricPing.Size = new System.Drawing.Size(58, 20);
+            this.chkSpikeMetricPing.TabIndex = 1;
+            this.chkSpikeMetricPing.Text = "Пинг";
+            this.chkSpikeMetricPing.UseVisualStyleBackColor = true;
+            // 
+            // chkSpikeMetricTickrate
+            // 
+            this.chkSpikeMetricTickrate.AutoSize = true;
+            this.chkSpikeMetricTickrate.Location = new System.Drawing.Point(320, 30);
+            this.chkSpikeMetricTickrate.Margin = new System.Windows.Forms.Padding(4);
+            this.chkSpikeMetricTickrate.Name = "chkSpikeMetricTickrate";
+            this.chkSpikeMetricTickrate.Size = new System.Drawing.Size(81, 20);
+            this.chkSpikeMetricTickrate.TabIndex = 2;
+            this.chkSpikeMetricTickrate.Text = "Тикрейт";
+            this.chkSpikeMetricTickrate.UseVisualStyleBackColor = true;
+            // 
+            // chkSpikeMetricTicktime
+            // 
+            this.chkSpikeMetricTicktime.AutoSize = true;
+            this.chkSpikeMetricTicktime.Location = new System.Drawing.Point(410, 30);
+            this.chkSpikeMetricTicktime.Margin = new System.Windows.Forms.Padding(4);
+            this.chkSpikeMetricTicktime.Name = "chkSpikeMetricTicktime";
+            this.chkSpikeMetricTicktime.Size = new System.Drawing.Size(82, 20);
+            this.chkSpikeMetricTicktime.TabIndex = 3;
+            this.chkSpikeMetricTicktime.Text = "Тиктайм";
+            this.chkSpikeMetricTicktime.UseVisualStyleBackColor = true;
+            // 
+            // lblSpikeSensitivity
+            // 
+            this.lblSpikeSensitivity.AutoSize = true;
+            this.lblSpikeSensitivity.Location = new System.Drawing.Point(20, 65);
+            this.lblSpikeSensitivity.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblSpikeSensitivity.Name = "lblSpikeSensitivity";
+            this.lblSpikeSensitivity.Size = new System.Drawing.Size(132, 16);
+            this.lblSpikeSensitivity.TabIndex = 4;
+            this.lblSpikeSensitivity.Text = "Чувствительность:";
+            // 
+            // cmbSpikeSensitivity
+            // 
+            this.cmbSpikeSensitivity.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbSpikeSensitivity.FormattingEnabled = true;
+            this.cmbSpikeSensitivity.Location = new System.Drawing.Point(176, 62);
+            this.cmbSpikeSensitivity.Margin = new System.Windows.Forms.Padding(4);
+            this.cmbSpikeSensitivity.Name = "cmbSpikeSensitivity";
+            this.cmbSpikeSensitivity.Size = new System.Drawing.Size(120, 24);
+            this.cmbSpikeSensitivity.TabIndex = 5;
+            // 
+            // lblSpikeDisplayMode
+            // 
+            this.lblSpikeDisplayMode.AutoSize = true;
+            this.lblSpikeDisplayMode.Location = new System.Drawing.Point(326, 65);
+            this.lblSpikeDisplayMode.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblSpikeDisplayMode.Name = "lblSpikeDisplayMode";
+            this.lblSpikeDisplayMode.Size = new System.Drawing.Size(143, 16);
+            this.lblSpikeDisplayMode.TabIndex = 6;
+            this.lblSpikeDisplayMode.Text = "Режим отображения:";
+            // 
+            // cmbSpikeDisplayMode
+            // 
+            this.cmbSpikeDisplayMode.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbSpikeDisplayMode.FormattingEnabled = true;
+            this.cmbSpikeDisplayMode.Location = new System.Drawing.Point(499, 62);
+            this.cmbSpikeDisplayMode.Margin = new System.Windows.Forms.Padding(4);
+            this.cmbSpikeDisplayMode.Name = "cmbSpikeDisplayMode";
+            this.cmbSpikeDisplayMode.Size = new System.Drawing.Size(150, 24);
+            this.cmbSpikeDisplayMode.TabIndex = 7;
+            // 
+            // lblSpikeMinDuration
+            // 
+            this.lblSpikeMinDuration.AutoSize = true;
+            this.lblSpikeMinDuration.Location = new System.Drawing.Point(20, 105);
+            this.lblSpikeMinDuration.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblSpikeMinDuration.Name = "lblSpikeMinDuration";
+            this.lblSpikeMinDuration.Size = new System.Drawing.Size(161, 16);
+            this.lblSpikeMinDuration.TabIndex = 8;
+            this.lblSpikeMinDuration.Text = "Мин. длительность (мс):";
+            // 
+            // numSpikeMinDuration
+            // 
+            this.numSpikeMinDuration.Location = new System.Drawing.Point(206, 103);
+            this.numSpikeMinDuration.Margin = new System.Windows.Forms.Padding(4);
+            this.numSpikeMinDuration.Maximum = new decimal(new int[] {
+            5000,
+            0,
+            0,
+            0});
+            this.numSpikeMinDuration.Minimum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.numSpikeMinDuration.Name = "numSpikeMinDuration";
+            this.numSpikeMinDuration.Size = new System.Drawing.Size(80, 22);
+            this.numSpikeMinDuration.TabIndex = 9;
+            this.numSpikeMinDuration.Value = new decimal(new int[] {
+            100,
+            0,
+            0,
+            0});
+            // 
+            // lblSpikeHistory
+            // 
+            this.lblSpikeHistory.AutoSize = true;
+            this.lblSpikeHistory.Location = new System.Drawing.Point(326, 105);
+            this.lblSpikeHistory.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblSpikeHistory.Name = "lblSpikeHistory";
+            this.lblSpikeHistory.Size = new System.Drawing.Size(117, 16);
+            this.lblSpikeHistory.TabIndex = 10;
+            this.lblSpikeHistory.Text = "Размер истории:";
+            // 
+            // numSpikeHistorySize
+            // 
+            this.numSpikeHistorySize.Location = new System.Drawing.Point(468, 103);
+            this.numSpikeHistorySize.Margin = new System.Windows.Forms.Padding(4);
+            this.numSpikeHistorySize.Maximum = new decimal(new int[] {
+            10000,
+            0,
+            0,
+            0});
+            this.numSpikeHistorySize.Minimum = new decimal(new int[] {
+            100,
+            0,
+            0,
+            0});
+            this.numSpikeHistorySize.Name = "numSpikeHistorySize";
+            this.numSpikeHistorySize.Size = new System.Drawing.Size(80, 22);
+            this.numSpikeHistorySize.TabIndex = 11;
+            this.numSpikeHistorySize.Value = new decimal(new int[] {
+            1000,
+            0,
+            0,
+            0});
+            // 
+            // chkSpikeAutoCalibration
+            // 
+            this.chkSpikeAutoCalibration.AutoSize = true;
+            this.chkSpikeAutoCalibration.Location = new System.Drawing.Point(20, 140);
+            this.chkSpikeAutoCalibration.Margin = new System.Windows.Forms.Padding(4);
+            this.chkSpikeAutoCalibration.Name = "chkSpikeAutoCalibration";
+            this.chkSpikeAutoCalibration.Size = new System.Drawing.Size(216, 20);
+            this.chkSpikeAutoCalibration.TabIndex = 12;
+            this.chkSpikeAutoCalibration.Text = "Автоматическая калибровка";
+            this.chkSpikeAutoCalibration.UseVisualStyleBackColor = true;
             // 
             // groupBox5
             // 
@@ -1055,6 +1259,10 @@ namespace tickMeter.Forms
             this.groupBoxPhase1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPcapKernelBufferMb)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numPcapMinToCopy)).EndInit();
+            this.groupBoxSpikeDetection.ResumeLayout(false);
+            this.groupBoxSpikeDetection.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numSpikeMinDuration)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numSpikeHistorySize)).EndInit();
             this.groupBox5.ResumeLayout(false);
             this.groupBox5.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPingSpikeThreshold)).EndInit();
@@ -1111,6 +1319,7 @@ namespace tickMeter.Forms
     private System.Windows.Forms.CheckBox chkShowPingSpikes;
     private System.Windows.Forms.NumericUpDown numPingSpikeThreshold;
     private System.Windows.Forms.Label lblPingSpikeThreshold;
+
         private System.Windows.Forms.GroupBox groupBoxVpnBypass;
         private System.Windows.Forms.CheckBox chkVpnBypassBasic;
         private System.Windows.Forms.CheckBox chkVpnBypassAdvanced;
@@ -1140,6 +1349,21 @@ namespace tickMeter.Forms
         private System.Windows.Forms.NumericUpDown numUiProcessingRate;
         private System.Windows.Forms.Label lblUiBatchSize;
         private System.Windows.Forms.NumericUpDown numUiBatchSize;
+        
+        private System.Windows.Forms.GroupBox groupBoxSpikeDetection;
+        private System.Windows.Forms.CheckBox chkSpikeDetectionEnable;
+        private System.Windows.Forms.CheckBox chkSpikeMetricPing;
+        private System.Windows.Forms.CheckBox chkSpikeMetricTickrate;
+        private System.Windows.Forms.CheckBox chkSpikeMetricTicktime;
+        private System.Windows.Forms.Label lblSpikeSensitivity;
+        private System.Windows.Forms.ComboBox cmbSpikeSensitivity;
+        private System.Windows.Forms.Label lblSpikeDisplayMode;
+        private System.Windows.Forms.ComboBox cmbSpikeDisplayMode;
+        private System.Windows.Forms.Label lblSpikeMinDuration;
+        private System.Windows.Forms.NumericUpDown numSpikeMinDuration;
+        private System.Windows.Forms.Label lblSpikeHistory;
+        private System.Windows.Forms.NumericUpDown numSpikeHistorySize;
+        private System.Windows.Forms.CheckBox chkSpikeAutoCalibration;
         
         private System.Windows.Forms.Panel panelButtons;
         private System.Windows.Forms.Button btnOK;
