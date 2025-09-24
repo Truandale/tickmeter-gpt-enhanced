@@ -60,6 +60,8 @@ namespace tickMeter.Forms
             area.AxisX.Title = "Time";
             area.AxisY.Title = "Spikes per Minute";
             area.AxisX.LabelStyle.Format = "HH:mm";
+            area.AxisX.IntervalType = DateTimeIntervalType.Minutes; // Интервалы по минутам
+            area.AxisX.Interval = 15; // Метки каждые 15 минут
             area.BackColor = Color.FromArgb(245, 245, 245);
             chartSpikeFrequency.ChartAreas.Add(area);
             
@@ -69,6 +71,7 @@ namespace tickMeter.Forms
             series.BorderWidth = 2;
             series.MarkerStyle = MarkerStyle.Circle;
             series.MarkerSize = 4;
+            series.XValueType = ChartValueType.DateTime; // ИСПРАВЛЕНИЕ: указываем тип данных для X-оси
             chartSpikeFrequency.Series.Add(series);
             
             chartSpikeFrequency.Titles.Clear();
