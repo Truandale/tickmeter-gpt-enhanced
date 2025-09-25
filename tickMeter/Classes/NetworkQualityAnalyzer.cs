@@ -25,6 +25,14 @@ namespace tickMeter.Classes
         private static float _stabilityThreshold = 0.15f; // Порог стабильности (15%)
         private static float _qualityThreshold = 0.8f; // Порог качества сети (80%)
         
+        // ChatGPT Optimization Settings
+        private static float _targetTickrate = 128f; // Целевой тикрейт
+        private static float _pingGoodMs = 30f; // Хороший ping (мс)
+        private static float _pingBadMs = 80f; // Плохой ping (мс)
+        private static float _ticktimeGoodMs = 8f; // Хороший ticktime (мс)
+        private static float _ticktimeBadMs = 16f; // Плохой ticktime (мс)
+        private static float _emaAlpha = 0.15f; // Альфа для EMA сглаживания
+        
         // Блокировка для thread-safety
         private static readonly object _lockObject = new object();
         
@@ -37,6 +45,9 @@ namespace tickMeter.Classes
         public static string QualityRating { get; private set; } = "Excellent";
         public static bool IsPredictingIssues { get; private set; } = false;
         public static string PredictionDetails { get; private set; } = "";
+        
+        // EMA smoothing для общего качества
+        private static float _overallEma = -1f; // -1 означает неинициализировано
         
         // События для уведомлений
         public static event Action<float> QualityChanged;
@@ -69,7 +80,45 @@ namespace tickMeter.Classes
                     _qualityThreshold = quality;
                 }
                 
+                // Загружаем ChatGPT optimization settings
+                var targetTickrateStr = App.settingsManager?.GetOption("quality_target_tickrate", "128", "ADVANCED");
+                if (float.TryParse(targetTickrateStr, out float targetTickrate) && targetTickrate > 0)
+                {
+                    _targetTickrate = targetTickrate;
+                }
+                
+                var pingGoodStr = App.settingsManager?.GetOption("quality_ping_good_ms", "30", "ADVANCED");
+                if (float.TryParse(pingGoodStr, out float pingGood) && pingGood > 0)
+                {
+                    _pingGoodMs = pingGood;
+                }
+                
+                var pingBadStr = App.settingsManager?.GetOption("quality_ping_bad_ms", "80", "ADVANCED");
+                if (float.TryParse(pingBadStr, out float pingBad) && pingBad > _pingGoodMs)
+                {
+                    _pingBadMs = pingBad;
+                }
+                
+                var ticktimeGoodStr = App.settingsManager?.GetOption("quality_ticktime_good_ms", "8", "ADVANCED");
+                if (float.TryParse(ticktimeGoodStr, out float ticktimeGood) && ticktimeGood > 0)
+                {
+                    _ticktimeGoodMs = ticktimeGood;
+                }
+                
+                var ticktimeBadStr = App.settingsManager?.GetOption("quality_ticktime_bad_ms", "16", "ADVANCED");
+                if (float.TryParse(ticktimeBadStr, out float ticktimeBad) && ticktimeBad > _ticktimeGoodMs)
+                {
+                    _ticktimeBadMs = ticktimeBad;
+                }
+                
+                var emaAlphaStr = App.settingsManager?.GetOption("overall_quality_ema_alpha", "0.15", "ADVANCED");
+                if (float.TryParse(emaAlphaStr, out float emaAlpha) && emaAlpha > 0 && emaAlpha <= 1)
+                {
+                    _emaAlpha = emaAlpha;
+                }
+                
                 Debug.Print($"[NetworkQualityAnalyzer] Initialized: history={_historySize}, stability={_stabilityThreshold}, quality={_qualityThreshold}");
+                Debug.Print($"[NetworkQualityAnalyzer] ChatGPT Settings: targetTickrate={_targetTickrate}, pingGood={_pingGoodMs}, pingBad={_pingBadMs}, ticktimeGood={_ticktimeGoodMs}, ticktimeBad={_ticktimeBadMs}, emaAlpha={_emaAlpha}");
             }
             catch (Exception ex)
             {
@@ -211,45 +260,88 @@ namespace tickMeter.Classes
         }
         
         /// <summary>
-        /// Рассчитывает общее качество сети
+        /// Рассчитывает общее качество сети с ChatGPT улучшениями
         /// </summary>
         private static float CalculateOverallQuality()
         {
-            // Веса для разных метрик
-            float pingWeight = 0.3f;
-            float tickrateWeight = 0.3f;
-            float ticktimeWeight = 0.2f;
-            float jitterWeight = 0.1f;
-            float packetLossWeight = 0.1f;
+            // Веса для разных метрик (сохраняем исходные веса для стабильности)
+            float pingWeight = 0.30f;
+            float tickrateWeight = 0.30f;
+            float ticktimeWeight = 0.20f;
+            float jitterWeight = 0.10f;
+            float packetLossWeight = 0.10f;
+            
+            // Веса для level penalties (небольшие, чтобы не сломать базовую модель)
+            float pingLevelWeight = 0.05f;
+            float tickrateLevelWeight = 0.03f;
+            float ticktimeLevelWeight = 0.02f;
             
             float quality = 0;
             
-            // Ping стабильность
+            // === СТАБИЛЬНОСТЬ (как раньше) ===
             quality += PingStability * pingWeight;
-            
-            // Tickrate стабильность
             quality += TickrateStability * tickrateWeight;
-            
-            // Ticktime стабильность
             quality += TicktimeStability * ticktimeWeight;
             
-            // Jitter penalty (чем больше jitter, тем хуже)
-            float jitterPenalty = Math.Min(1.0f, AverageJitter / 50.0f); // Normalize to 50ms max
+            // === LEVEL PENALTIES (ChatGPT recommendation) ===
+            // Ping level penalty
+            float avgPing = _pingHistory.Count > 0 ? _pingHistory.Average() : 0f;
+            float pingLevelPenalty = 0f;
+            if (avgPing > _pingGoodMs)
+            {
+                pingLevelPenalty = Math.Min(1f, Math.Max(0f, (avgPing - _pingGoodMs) / (_pingBadMs - _pingGoodMs)));
+            }
+            quality += (1f - pingLevelPenalty) * pingLevelWeight;
+            
+            // Tickrate level penalty
+            float avgTickrate = _tickrateHistory.Count > 0 ? _tickrateHistory.Average() : 0f;
+            float tickrateLevelPenalty = 0f;
+            if (avgTickrate < _targetTickrate)
+            {
+                tickrateLevelPenalty = Math.Min(1f, Math.Max(0f, (_targetTickrate - avgTickrate) / _targetTickrate));
+            }
+            quality += (1f - tickrateLevelPenalty) * tickrateLevelWeight;
+            
+            // Ticktime level penalty
+            float avgTicktime = _ticktimeHistory.Count > 0 ? _ticktimeHistory.Average() : 0f;
+            float ticktimeLevelPenalty = 0f;
+            if (avgTicktime > _ticktimeGoodMs)
+            {
+                ticktimeLevelPenalty = Math.Min(1f, Math.Max(0f, (avgTicktime - _ticktimeGoodMs) / (_ticktimeBadMs - _ticktimeGoodMs)));
+            }
+            quality += (1f - ticktimeLevelPenalty) * ticktimeLevelWeight;
+            
+            // === JITTER И PACKET LOSS (как раньше) ===
+            // Jitter penalty
+            float jitterPenalty = Math.Min(1.0f, AverageJitter / 50.0f);
             quality += (1.0f - jitterPenalty) * jitterWeight;
             
             // Packet loss penalty
             if (_packetLossHistory.Count > 0)
             {
                 float avgPacketLoss = _packetLossHistory.Average();
-                float packetLossPenalty = Math.Min(1.0f, avgPacketLoss / 5.0f); // Normalize to 5% max
+                float packetLossPenalty = Math.Min(1.0f, avgPacketLoss / 5.0f);
                 quality += (1.0f - packetLossPenalty) * packetLossWeight;
             }
             else
             {
-                quality += packetLossWeight; // Assume no packet loss if no data
+                quality += packetLossWeight;
             }
             
-            return Math.Max(0, Math.Min(1.0f, quality));
+            // Ограничиваем результат перед применением EMA
+            quality = Math.Max(0f, Math.Min(1.0f, quality));
+            
+            // === EMA СГЛАЖИВАНИЕ (ChatGPT recommendation) ===
+            if (_overallEma < 0)
+            {
+                _overallEma = quality; // Первая инициализация
+            }
+            else 
+            {
+                _overallEma = _overallEma + _emaAlpha * (quality - _overallEma);
+            }
+            
+            return _overallEma;
         }
         
         /// <summary>
@@ -300,6 +392,29 @@ namespace tickMeter.Classes
             if (AverageJitter > 30.0f)
             {
                 issues.Add("High network jitter");
+            }
+            
+            // === ChatGPT: Дополнительные проверки ===
+            // Проверяем рост packet loss
+            if (_packetLossHistory.Count >= 20)
+            {
+                var recentLoss = _packetLossHistory.Skip(_packetLossHistory.Count - 10).Average();
+                var olderLoss = _packetLossHistory.Skip(_packetLossHistory.Count - 20).Take(10).Average();
+                
+                if (recentLoss > olderLoss + 1.0f) // Увеличение на 1%
+                {
+                    issues.Add("Packet loss increasing");
+                }
+            }
+            
+            // Проверяем падение среднего tickrate
+            if (_tickrateHistory.Count >= 10)
+            {
+                float avgTickrate = _tickrateHistory.Average();
+                if (avgTickrate < _targetTickrate * 0.9f) // Падение ниже 90% от цели
+                {
+                    issues.Add("Tickrate below target");
+                }
             }
             
             // Проверяем общее качество
@@ -358,6 +473,9 @@ namespace tickMeter.Classes
                 QualityRating = "Excellent";
                 IsPredictingIssues = false;
                 PredictionDetails = "";
+                
+                // Сбрасываем EMA
+                _overallEma = -1f;
             }
         }
     }
