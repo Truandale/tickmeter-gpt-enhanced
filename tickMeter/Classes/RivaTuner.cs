@@ -1,5 +1,6 @@
 ﻿using RTSS;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -491,8 +492,13 @@ namespace tickMeter.Classes
             PrintData(output, true);
         }
 
+        // Hysteresis для предотвращения дребезга рейтинга
+        private static double _lastQuality = 1.0;
+        private static DateTime _lastQualityChange = DateTime.MinValue;
+        private static string _lastQualityLevel = "excellent";
+
         /// <summary>
-        /// Форматирует рейтинг качества сети для RTSS оверлея
+        /// Форматирует рейтинг качества сети для RTSS оверлея с анти-дребезгом и компактным форматом
         /// </summary>
         public static string FormatNetworkQuality()
         {
@@ -500,52 +506,128 @@ namespace tickMeter.Classes
             {
                 // Получаем статистику качества сети
                 var qualityStats = Classes.NetworkQualityAnalyzer.GetDetailedStats();
+                var currentQuality = qualityStats.OverallQuality;
                 
-                // Определяем цвет на основе рейтинга качества
-                string qualityColor = "<C3>"; // Зеленый по умолчанию
-                string ratingText = qualityStats.QualityRating;
+                // Применяем hysteresis для стабильного отображения
+                var (level, color, icon) = GetQualityLevelWithHysteresis(currentQuality);
                 
-                switch (qualityStats.QualityRating.ToLower())
-                {
-                    case "excellent":
-                        qualityColor = "<C3>"; // Зеленый
-                        ratingText = "Excellent";
-                        break;
-                    case "good":
-                        qualityColor = "<C3>"; // Зеленый
-                        ratingText = "Good";
-                        break;
-                    case "fair":
-                        qualityColor = "<C2>"; // Оранжевый
-                        ratingText = "Fair";
-                        break;
-                    case "poor":
-                        qualityColor = "<C1>"; // Красный
-                        ratingText = "Poor";
-                        break;
-                    case "critical":
-                        qualityColor = "<C1>"; // Красный
-                        ratingText = "Critical";
-                        break;
-                }
+                // Формируем компактную строку для RTSS
+                int qualityPercent = (int)Math.Round(currentQuality * 100);
                 
-                // Добавляем процентное значение качества
-                int qualityPercent = (int)(qualityStats.OverallQuality * 100);
+                // Собираем дополнительную информацию компактно
+                var extras = new List<string>();
                 
-                // Добавляем предупреждение о проблемах если есть
-                string issueIndicator = "";
+                // Спайки за последнее время (если есть)
                 if (qualityStats.IsPredictingIssues)
                 {
-                    issueIndicator = " <C1>(!)<C0>";
+                    extras.Add("!");
                 }
                 
-                return $"<S><C0>Network: {qualityColor}{ratingText} ({qualityPercent}%)<C0>{issueIndicator}" + Environment.NewLine;
+                // Джиттер если высокий
+                if (qualityStats.AverageJitter > 20)
+                {
+                    extras.Add($"jit{qualityStats.AverageJitter:F0}");
+                }
+                
+                // Формируем финальную строку (максимум 60 символов для RTSS)
+                var result = $"<S><C0>NET: {color}{icon} {qualityPercent}%";
+                
+                if (extras.Count > 0)
+                {
+                    var extrasText = string.Join(" ", extras);
+                    result += $" | {extrasText}";
+                }
+                
+                result += "<C0>" + Environment.NewLine;
+                
+                // Обрезаем если слишком длинно
+                if (result.Length > 80) // учитываем RTSS теги
+                {
+                    result = $"<S><C0>NET: {color}{icon} {qualityPercent}%<C0>" + Environment.NewLine;
+                }
+                
+                return result;
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.Print($"[FormatNetworkQuality] Error: {ex.Message}");
-                return "<S><C0>Network: <C2>Unknown" + Environment.NewLine;
+                return "<S><C0>NET: <C2>Unknown<C0>" + Environment.NewLine;
             }
+        }
+        
+        /// <summary>
+        /// Определяет уровень качества с hysteresis для предотвращения дребезга
+        /// </summary>
+        private static (string level, string color, string icon) GetQualityLevelWithHysteresis(double quality)
+        {
+            const double EXCELLENT_IN = 0.90, EXCELLENT_OUT = 0.85;
+            const double GOOD_IN = 0.75, GOOD_OUT = 0.70;
+            const double FAIR_IN = 0.50, FAIR_OUT = 0.45;
+            const double HOLD_TIME_SECONDS = 3.0; // Минимальное время удержания уровня
+            
+            var now = DateTime.Now;
+            bool shouldHold = (now - _lastQualityChange).TotalSeconds < HOLD_TIME_SECONDS;
+            
+            string newLevel;
+            
+            if (shouldHold)
+            {
+                // Применяем выходные пороги для текущего уровня
+                switch (_lastQualityLevel)
+                {
+                    case "excellent":
+                        newLevel = quality < EXCELLENT_OUT ? GetQualityLevel(quality, GOOD_IN, FAIR_IN) : "excellent";
+                        break;
+                    case "good":
+                        newLevel = quality >= EXCELLENT_IN ? "excellent" : 
+                                  quality < GOOD_OUT ? GetQualityLevel(quality, GOOD_IN, FAIR_IN) : "good";
+                        break;
+                    case "fair":
+                        newLevel = quality >= GOOD_IN ? GetQualityLevel(quality, GOOD_IN, FAIR_IN) : 
+                                  quality < FAIR_OUT ? "poor" : "fair";
+                        break;
+                    default: // poor
+                        newLevel = quality >= FAIR_IN ? GetQualityLevel(quality, GOOD_IN, FAIR_IN) : "poor";
+                        break;
+                }
+            }
+            else
+            {
+                // Применяем входные пороги
+                newLevel = GetQualityLevel(quality, GOOD_IN, FAIR_IN);
+            }
+            
+            // Обновляем состояние если изменился уровень
+            if (newLevel != _lastQualityLevel)
+            {
+                _lastQuality = quality;
+                _lastQualityChange = now;
+                _lastQualityLevel = newLevel;
+            }
+            
+            // Возвращаем параметры отображения
+            switch (newLevel)
+            {
+                case "excellent":
+                    return ("Excellent", "<C3>", "EXC");
+                case "good":
+                    return ("Good", "<C3>", "GOOD");
+                case "fair":
+                    return ("Fair", "<C2>", "FAIR");
+                default:
+                    return ("Poor", "<C1>", "POOR");
+            }
+        }
+        
+        /// <summary>
+        /// Определяет базовый уровень качества по входным порогам
+        /// </summary>
+        private static string GetQualityLevel(double quality, double goodThreshold, double fairThreshold)
+        {
+            if (quality >= 0.90) return "excellent";
+            if (quality >= goodThreshold) return "good";
+            if (quality >= fairThreshold) return "fair";
+            return "poor";
         }
 
         public static void PrintData(string text, bool RunRivaFlag = false)
