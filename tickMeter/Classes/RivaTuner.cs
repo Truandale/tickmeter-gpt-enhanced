@@ -340,6 +340,13 @@ namespace tickMeter.Classes
             {
                 output += FormatDrops();
             }
+            
+            // Добавляем рейтинг качества сети если включена соответствующая галка
+            bool showNetworkQuality = App.settingsManager?.GetOption("network_quality_overlay", "False", "SETTINGS") == "True";
+            if (showNetworkQuality)
+            {
+                output += FormatNetworkQuality();
+            }
             if (App.settingsForm.settings_chart_checkbox.Checked)
             {
                 // --- Tickrate chart value and color ---
@@ -483,6 +490,64 @@ namespace tickMeter.Classes
             } catch (InvalidOperationException) { }
             PrintData(output, true);
         }
+
+        /// <summary>
+        /// Форматирует рейтинг качества сети для RTSS оверлея
+        /// </summary>
+        public static string FormatNetworkQuality()
+        {
+            try
+            {
+                // Получаем статистику качества сети
+                var qualityStats = Classes.NetworkQualityAnalyzer.GetDetailedStats();
+                
+                // Определяем цвет на основе рейтинга качества
+                string qualityColor = "<C3>"; // Зеленый по умолчанию
+                string ratingText = qualityStats.QualityRating;
+                
+                switch (qualityStats.QualityRating.ToLower())
+                {
+                    case "excellent":
+                        qualityColor = "<C3>"; // Зеленый
+                        ratingText = "Excellent";
+                        break;
+                    case "good":
+                        qualityColor = "<C3>"; // Зеленый
+                        ratingText = "Good";
+                        break;
+                    case "fair":
+                        qualityColor = "<C2>"; // Оранжевый
+                        ratingText = "Fair";
+                        break;
+                    case "poor":
+                        qualityColor = "<C1>"; // Красный
+                        ratingText = "Poor";
+                        break;
+                    case "critical":
+                        qualityColor = "<C1>"; // Красный
+                        ratingText = "Critical";
+                        break;
+                }
+                
+                // Добавляем процентное значение качества
+                int qualityPercent = (int)(qualityStats.OverallQuality * 100);
+                
+                // Добавляем предупреждение о проблемах если есть
+                string issueIndicator = "";
+                if (qualityStats.IsPredictingIssues)
+                {
+                    issueIndicator = " <C1>(!)<C0>";
+                }
+                
+                return $"<S><C0>Network: {qualityColor}{ratingText} ({qualityPercent}%)<C0>{issueIndicator}" + Environment.NewLine;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[FormatNetworkQuality] Error: {ex.Message}");
+                return "<S><C0>Network: <C2>Unknown" + Environment.NewLine;
+            }
+        }
+
         public static void PrintData(string text, bool RunRivaFlag = false)
         {
             if ((!IsRivaRunning() && !RunRivaFlag) || !VerifyRiva()) return;

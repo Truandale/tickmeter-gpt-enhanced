@@ -126,11 +126,7 @@
     <value>Tahoma, 11.25pt</value>
   </data>
   <data name="settings_log_checkbox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>23, 410</value>
-  </data>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="settings_log_checkbox.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>17, 386</value>
   </data>
   <data name="settings_log_checkbox.Size" type="System.Drawing.Size, System.Drawing">
     <value>273, 27</value>
@@ -153,6 +149,7 @@
   <data name="&gt;&gt;settings_log_checkbox.ZOrder" xml:space="preserve">
     <value>16</value>
   </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="adapters_list.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>System</value>
   </data>
@@ -163,13 +160,13 @@
     <value>18</value>
   </data>
   <data name="adapters_list.Location" type="System.Drawing.Point, System.Drawing">
-    <value>12, 766</value>
+    <value>9, 622</value>
   </data>
   <data name="adapters_list.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>5, 5, 5, 5</value>
+    <value>4, 4, 4, 4</value>
   </data>
   <data name="adapters_list.Size" type="System.Drawing.Size, System.Drawing">
-    <value>872, 26</value>
+    <value>655, 26</value>
   </data>
   <data name="adapters_list.TabIndex" type="System.Int32, mscorlib">
     <value>43</value>
@@ -190,10 +187,13 @@
     <value>17, 17</value>
   </metadata>
   <data name="btnSaveSettings.Location" type="System.Drawing.Point, System.Drawing">
-    <value>784, 728</value>
+    <value>588, 592</value>
+  </data>
+  <data name="btnSaveSettings.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>2, 2, 2, 2</value>
   </data>
   <data name="btnSaveSettings.Size" type="System.Drawing.Size, System.Drawing">
-    <value>100, 30</value>
+    <value>75, 24</value>
   </data>
   <data name="btnSaveSettings.TabIndex" type="System.Int32, mscorlib">
     <value>99</value>
@@ -232,10 +232,7 @@
     <value>NoControl</value>
   </data>
   <data name="settings_data_send.Location" type="System.Drawing.Point, System.Drawing">
-    <value>25, 486</value>
-  </data>
-  <data name="settings_data_send.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>17, 452</value>
   </data>
   <data name="settings_data_send.Size" type="System.Drawing.Size, System.Drawing">
     <value>313, 27</value>
@@ -271,10 +268,10 @@
     <value>NoControl</value>
   </data>
   <data name="ColorChart.Location" type="System.Drawing.Point, System.Drawing">
-    <value>9, 169</value>
+    <value>7, 137</value>
   </data>
   <data name="ColorChart.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>5, 0, 5, 0</value>
+    <value>4, 0, 4, 0</value>
   </data>
   <data name="ColorChart.Size" type="System.Drawing.Size, System.Drawing">
     <value>220, 29</value>
@@ -307,10 +304,10 @@
     <value>NoControl</value>
   </data>
   <data name="ColorGood.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 134</value>
+    <value>6, 109</value>
   </data>
   <data name="ColorGood.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>5, 0, 5, 0</value>
+    <value>4, 0, 4, 0</value>
   </data>
   <data name="ColorGood.Size" type="System.Drawing.Size, System.Drawing">
     <value>346, 29</value>
@@ -343,10 +340,10 @@
     <value>NoControl</value>
   </data>
   <data name="ColorMid.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 100</value>
+    <value>6, 81</value>
   </data>
   <data name="ColorMid.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>5, 0, 5, 0</value>
+    <value>4, 0, 4, 0</value>
   </data>
   <data name="ColorMid.Size" type="System.Drawing.Size, System.Drawing">
     <value>338, 29</value>
@@ -379,10 +376,10 @@
     <value>NoControl</value>
   </data>
   <data name="ColorBad.Location" type="System.Drawing.Point, System.Drawing">
-    <value>9, 64</value>
+    <value>7, 52</value>
   </data>
   <data name="ColorBad.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>5, 0, 5, 0</value>
+    <value>4, 0, 4, 0</value>
   </data>
   <data name="ColorBad.Size" type="System.Drawing.Size, System.Drawing">
     <value>321, 29</value>
@@ -415,10 +412,10 @@
     <value>NoControl</value>
   </data>
   <data name="ColorLabel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>9, 28</value>
+    <value>7, 23</value>
   </data>
   <data name="ColorLabel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>5, 0, 5, 0</value>
+    <value>4, 0, 4, 0</value>
   </data>
   <data name="ColorLabel.Size" type="System.Drawing.Size, System.Drawing">
     <value>324, 29</value>
@@ -445,16 +442,10 @@
     <value>Microsoft Sans Serif, 11.25pt, style=Bold</value>
   </data>
   <data name="groupBox1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>459, 15</value>
-  </data>
-  <data name="groupBox1.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
-  </data>
-  <data name="groupBox1.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>344, 12</value>
   </data>
   <data name="groupBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>420, 227</value>
+    <value>315, 184</value>
   </data>
   <data name="groupBox1.TabIndex" type="System.Int32, mscorlib">
     <value>68</value>
@@ -474,6 +465,39 @@
   <data name="&gt;&gt;groupBox1.ZOrder" xml:space="preserve">
     <value>10</value>
   </data>
+  <data name="network_rate_overlay.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="network_rate_overlay.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Tahoma, 11.25pt</value>
+  </data>
+  <data name="network_rate_overlay.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="network_rate_overlay.Location" type="System.Drawing.Point, System.Drawing">
+    <value>4, 302</value>
+  </data>
+  <data name="network_rate_overlay.Size" type="System.Drawing.Size, System.Drawing">
+    <value>260, 27</value>
+  </data>
+  <data name="network_rate_overlay.TabIndex" type="System.Int32, mscorlib">
+    <value>76</value>
+  </data>
+  <data name="network_rate_overlay.Text" xml:space="preserve">
+    <value>Отображать рейтинг сети</value>
+  </data>
+  <data name="&gt;&gt;network_rate_overlay.Name" xml:space="preserve">
+    <value>network_rate_overlay</value>
+  </data>
+  <data name="&gt;&gt;network_rate_overlay.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;network_rate_overlay.Parent" xml:space="preserve">
+    <value>groupBox2</value>
+  </data>
+  <data name="&gt;&gt;network_rate_overlay.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
   <data name="packet_drops_checkbox.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
@@ -484,10 +508,7 @@
     <value>NoControl</value>
   </data>
   <data name="packet_drops_checkbox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 334</value>
-  </data>
-  <data name="packet_drops_checkbox.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>6, 271</value>
   </data>
   <data name="packet_drops_checkbox.Size" type="System.Drawing.Size, System.Drawing">
     <value>281, 27</value>
@@ -508,7 +529,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;packet_drops_checkbox.ZOrder" xml:space="preserve">
-    <value>0</value>
+    <value>1</value>
   </data>
   <data name="settings_ping_chart.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -520,10 +541,7 @@
     <value>NoControl</value>
   </data>
   <data name="settings_ping_chart.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 265</value>
-  </data>
-  <data name="settings_ping_chart.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>6, 215</value>
   </data>
   <data name="settings_ping_chart.Size" type="System.Drawing.Size, System.Drawing">
     <value>154, 27</value>
@@ -544,7 +562,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;settings_ping_chart.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>2</value>
   </data>
   <data name="settings_tickrate_show.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -556,10 +574,7 @@
     <value>NoControl</value>
   </data>
   <data name="settings_tickrate_show.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 62</value>
-  </data>
-  <data name="settings_tickrate_show.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>6, 50</value>
   </data>
   <data name="settings_tickrate_show.Size" type="System.Drawing.Size, System.Drawing">
     <value>210, 27</value>
@@ -580,7 +595,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;settings_tickrate_show.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>3</value>
   </data>
   <data name="settings_ticktime_chart.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -592,10 +607,7 @@
     <value>NoControl</value>
   </data>
   <data name="settings_ticktime_chart.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 231</value>
-  </data>
-  <data name="settings_ticktime_chart.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>6, 188</value>
   </data>
   <data name="settings_ticktime_chart.Size" type="System.Drawing.Size, System.Drawing">
     <value>243, 27</value>
@@ -616,7 +628,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;settings_ticktime_chart.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>4</value>
   </data>
   <data name="settings_session_time_checkbox.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -628,10 +640,7 @@
     <value>NoControl</value>
   </data>
   <data name="settings_session_time_checkbox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 299</value>
-  </data>
-  <data name="settings_session_time_checkbox.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>6, 243</value>
   </data>
   <data name="settings_session_time_checkbox.Size" type="System.Drawing.Size, System.Drawing">
     <value>321, 27</value>
@@ -652,7 +661,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;settings_session_time_checkbox.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>5</value>
   </data>
   <data name="settings_traffic_checkbox.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -664,10 +673,7 @@
     <value>NoControl</value>
   </data>
   <data name="settings_traffic_checkbox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 162</value>
-  </data>
-  <data name="settings_traffic_checkbox.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>6, 132</value>
   </data>
   <data name="settings_traffic_checkbox.Size" type="System.Drawing.Size, System.Drawing">
     <value>208, 27</value>
@@ -688,7 +694,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;settings_traffic_checkbox.ZOrder" xml:space="preserve">
-    <value>5</value>
+    <value>6</value>
   </data>
   <data name="settings_ping_checkbox.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -700,10 +706,7 @@
     <value>NoControl</value>
   </data>
   <data name="settings_ping_checkbox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 128</value>
-  </data>
-  <data name="settings_ping_checkbox.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>6, 104</value>
   </data>
   <data name="settings_ping_checkbox.Size" type="System.Drawing.Size, System.Drawing">
     <value>262, 27</value>
@@ -724,7 +727,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;settings_ping_checkbox.ZOrder" xml:space="preserve">
-    <value>6</value>
+    <value>7</value>
   </data>
   <data name="settings_ip_checkbox.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -736,10 +739,7 @@
     <value>NoControl</value>
   </data>
   <data name="settings_ip_checkbox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 94</value>
-  </data>
-  <data name="settings_ip_checkbox.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>6, 76</value>
   </data>
   <data name="settings_ip_checkbox.Size" type="System.Drawing.Size, System.Drawing">
     <value>161, 27</value>
@@ -760,7 +760,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;settings_ip_checkbox.ZOrder" xml:space="preserve">
-    <value>7</value>
+    <value>8</value>
   </data>
   <data name="settings_chart_checkbox.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -772,10 +772,7 @@
     <value>NoControl</value>
   </data>
   <data name="settings_chart_checkbox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 197</value>
-  </data>
-  <data name="settings_chart_checkbox.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>6, 160</value>
   </data>
   <data name="settings_chart_checkbox.Size" type="System.Drawing.Size, System.Drawing">
     <value>183, 27</value>
@@ -796,7 +793,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;settings_chart_checkbox.ZOrder" xml:space="preserve">
-    <value>8</value>
+    <value>9</value>
   </data>
   <data name="settings_rtss_output.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -808,10 +805,7 @@
     <value>NoControl</value>
   </data>
   <data name="settings_rtss_output.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 31</value>
-  </data>
-  <data name="settings_rtss_output.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>6, 25</value>
   </data>
   <data name="settings_rtss_output.Size" type="System.Drawing.Size, System.Drawing">
     <value>194, 27</value>
@@ -832,22 +826,16 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;settings_rtss_output.ZOrder" xml:space="preserve">
-    <value>9</value>
+    <value>10</value>
   </data>
   <data name="groupBox2.Font" type="System.Drawing.Font, System.Drawing">
     <value>Microsoft Sans Serif, 12pt, style=Bold</value>
   </data>
   <data name="groupBox2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>17, 15</value>
-  </data>
-  <data name="groupBox2.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
-  </data>
-  <data name="groupBox2.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>13, 12</value>
   </data>
   <data name="groupBox2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>393, 372</value>
+    <value>295, 335</value>
   </data>
   <data name="groupBox2.TabIndex" type="System.Int32, mscorlib">
     <value>69</value>
@@ -868,13 +856,10 @@
     <value>9</value>
   </data>
   <data name="ping_interval.Location" type="System.Drawing.Point, System.Drawing">
-    <value>645, 250</value>
-  </data>
-  <data name="ping_interval.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>484, 203</value>
   </data>
   <data name="ping_interval.Size" type="System.Drawing.Size, System.Drawing">
-    <value>233, 22</value>
+    <value>175, 20</value>
   </data>
   <data name="ping_interval.TabIndex" type="System.Int32, mscorlib">
     <value>70</value>
@@ -898,10 +883,7 @@
     <value>Tahoma, 11.25pt</value>
   </data>
   <data name="settings_ping_interval_lbl.Location" type="System.Drawing.Point, System.Drawing">
-    <value>460, 252</value>
-  </data>
-  <data name="settings_ping_interval_lbl.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>345, 205</value>
   </data>
   <data name="settings_ping_interval_lbl.Size" type="System.Drawing.Size, System.Drawing">
     <value>152, 23</value>
@@ -934,10 +916,7 @@
     <value>NoControl</value>
   </data>
   <data name="settings_ping_ports_lbl.Location" type="System.Drawing.Point, System.Drawing">
-    <value>459, 286</value>
-  </data>
-  <data name="settings_ping_ports_lbl.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>344, 232</value>
   </data>
   <data name="settings_ping_ports_lbl.Size" type="System.Drawing.Size, System.Drawing">
     <value>161, 23</value>
@@ -961,13 +940,10 @@
     <value>6</value>
   </data>
   <data name="ping_ports.Location" type="System.Drawing.Point, System.Drawing">
-    <value>643, 282</value>
-  </data>
-  <data name="ping_ports.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>482, 229</value>
   </data>
   <data name="ping_ports.Size" type="System.Drawing.Size, System.Drawing">
-    <value>235, 22</value>
+    <value>177, 20</value>
   </data>
   <data name="ping_ports.TabIndex" type="System.Int32, mscorlib">
     <value>73</value>
@@ -994,10 +970,7 @@
     <value>NoControl</value>
   </data>
   <data name="settings_autodetect_checkbox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>23, 376</value>
-  </data>
-  <data name="settings_autodetect_checkbox.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>19, 353</value>
   </data>
   <data name="settings_autodetect_checkbox.Size" type="System.Drawing.Size, System.Drawing">
     <value>361, 27</value>
@@ -1030,10 +1003,7 @@
     <value>NoControl</value>
   </data>
   <data name="run_minimized.Location" type="System.Drawing.Point, System.Drawing">
-    <value>24, 451</value>
-  </data>
-  <data name="run_minimized.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>17, 419</value>
   </data>
   <data name="run_minimized.Size" type="System.Drawing.Size, System.Drawing">
     <value>219, 27</value>
@@ -1066,10 +1036,7 @@
     <value>NoControl</value>
   </data>
   <data name="local_ip_lbl.Location" type="System.Drawing.Point, System.Drawing">
-    <value>460, 319</value>
-  </data>
-  <data name="local_ip_lbl.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>345, 259</value>
   </data>
   <data name="local_ip_lbl.Size" type="System.Drawing.Size, System.Drawing">
     <value>131, 23</value>
@@ -1093,13 +1060,10 @@
     <value>2</value>
   </data>
   <data name="local_ip_textbox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>643, 320</value>
-  </data>
-  <data name="local_ip_textbox.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>482, 260</value>
   </data>
   <data name="local_ip_textbox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>235, 22</value>
+    <value>177, 20</value>
   </data>
   <data name="local_ip_textbox.TabIndex" type="System.Int32, mscorlib">
     <value>77</value>
@@ -1126,10 +1090,10 @@
     <value>NoControl</value>
   </data>
   <data name="label8.Location" type="System.Drawing.Point, System.Drawing">
-    <value>641, 443</value>
+    <value>481, 360</value>
   </data>
   <data name="label8.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>5, 0, 5, 0</value>
+    <value>4, 0, 4, 0</value>
   </data>
   <data name="label8.Size" type="System.Drawing.Size, System.Drawing">
     <value>230, 23</value>
@@ -1162,10 +1126,10 @@
     <value>NoControl</value>
   </data>
   <data name="donate_lbl.Location" type="System.Drawing.Point, System.Drawing">
-    <value>752, 414</value>
+    <value>564, 336</value>
   </data>
   <data name="donate_lbl.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>5, 0, 5, 0</value>
+    <value>4, 0, 4, 0</value>
   </data>
   <data name="donate_lbl.Size" type="System.Drawing.Size, System.Drawing">
     <value>121, 23</value>
@@ -1198,10 +1162,10 @@
     <value>NoControl</value>
   </data>
   <data name="updateLbl.Location" type="System.Drawing.Point, System.Drawing">
-    <value>635, 380</value>
+    <value>476, 309</value>
   </data>
   <data name="updateLbl.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>5, 0, 5, 0</value>
+    <value>4, 0, 4, 0</value>
   </data>
   <data name="updateLbl.Size" type="System.Drawing.Size, System.Drawing">
     <value>233, 23</value>
@@ -1228,10 +1192,13 @@
     <value>13</value>
   </data>
   <data name="btnAdvancedSettings.Location" type="System.Drawing.Point, System.Drawing">
-    <value>23, 531</value>
+    <value>13, 508</value>
+  </data>
+  <data name="btnAdvancedSettings.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>2, 2, 2, 2</value>
   </data>
   <data name="btnAdvancedSettings.Size" type="System.Drawing.Size, System.Drawing">
-    <value>136, 69</value>
+    <value>102, 56</value>
   </data>
   <data name="btnAdvancedSettings.TabIndex" type="System.Int32, mscorlib">
     <value>100</value>
@@ -1255,13 +1222,10 @@
     <value>True</value>
   </metadata>
   <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
-    <value>8, 16</value>
+    <value>6, 13</value>
   </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
-    <value>888, 803</value>
-  </data>
-  <data name="$this.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>666, 652</value>
   </data>
   <data name="$this.StartPosition" type="System.Windows.Forms.FormStartPosition, System.Windows.Forms">
     <value>CenterScreen</value>

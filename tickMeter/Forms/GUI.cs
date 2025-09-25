@@ -174,6 +174,9 @@ namespace tickMeter.Forms
             
             // Подписываемся на события детекции спайков
             Classes.SpikeDetection.SpikeDetectionManager.SpikeDetected += OnSpikeDetected;
+            
+            // Инициализируем анализатор качества сети
+            Classes.NetworkQualityAnalyzer.Initialize();
         }
 
         static void MyHandler(object sender, UnhandledExceptionEventArgs args)
