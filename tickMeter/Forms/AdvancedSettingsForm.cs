@@ -825,6 +825,7 @@ namespace tickMeter.Forms
             try
             {
                 chkNetworkQualityEnabled.Checked = App.settingsManager.GetOption("network_quality_enabled", "True", "ADVANCED") == "True";
+                chkNetworkQualityOverlay.Checked = App.settingsManager.GetOption("network_quality_overlay", "False", "SETTINGS") == "True";
                 numQualityHistorySize.Value = decimal.Parse(App.settingsManager.GetOption("quality_history_size", "100", "ADVANCED"));
                 numStabilityThreshold.Value = decimal.Parse(App.settingsManager.GetOption("stability_threshold", "0.15", "ADVANCED"));
                 numQualityThreshold.Value = decimal.Parse(App.settingsManager.GetOption("quality_threshold", "0.8", "ADVANCED"));
@@ -842,6 +843,7 @@ namespace tickMeter.Forms
                 
                 // Устанавливаем обработчики событий
                 chkNetworkQualityEnabled.CheckedChanged += ChkNetworkQualityEnabled_CheckedChanged;
+                chkNetworkQualityOverlay.CheckedChanged += ChkNetworkQualityOverlay_CheckedChanged;
                 numQualityHistorySize.ValueChanged += NumQualityHistorySize_ValueChanged;
                 numStabilityThreshold.ValueChanged += NumStabilityThreshold_ValueChanged;
                 numQualityThreshold.ValueChanged += NumQualityThreshold_ValueChanged;
@@ -860,6 +862,7 @@ namespace tickMeter.Forms
             try
             {
                 App.settingsManager.SetOption("network_quality_enabled", chkNetworkQualityEnabled.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("network_quality_overlay", chkNetworkQualityOverlay.Checked.ToString(), "SETTINGS");
                 App.settingsManager.SetOption("quality_history_size", numQualityHistorySize.Value.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("stability_threshold", numStabilityThreshold.Value.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("quality_threshold", numQualityThreshold.Value.ToString(), "ADVANCED");
@@ -887,6 +890,11 @@ namespace tickMeter.Forms
                 NetworkQualityAnalyzer.Clear();
             }
             UpdateQualityDisplay();
+        }
+        
+        private void ChkNetworkQualityOverlay_CheckedChanged(object sender, EventArgs e)
+        {
+            SaveNetworkQualitySettings();
         }
         
         private void NumQualityHistorySize_ValueChanged(object sender, EventArgs e)
@@ -964,8 +972,11 @@ namespace tickMeter.Forms
                     lblQualityRating.Text = "";
                     lblCurrentQuality.ForeColor = System.Drawing.Color.Gray;
                     lblQualityRating.ForeColor = System.Drawing.Color.Gray;
+                    chkNetworkQualityOverlay.Enabled = false;
                     return;
                 }
+                
+                chkNetworkQualityOverlay.Enabled = true;
                 
                 var stats = NetworkQualityAnalyzer.GetDetailedStats();
                 

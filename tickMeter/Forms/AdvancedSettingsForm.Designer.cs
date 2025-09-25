@@ -149,6 +149,7 @@ namespace tickMeter.Forms
             this.btnBrowseTicktimeSound = new System.Windows.Forms.Button();
             this.groupBoxNetworkQuality = new System.Windows.Forms.GroupBox();
             this.chkNetworkQualityEnabled = new System.Windows.Forms.CheckBox();
+            this.chkNetworkQualityOverlay = new System.Windows.Forms.CheckBox();
             this.lblQualityHistorySize = new System.Windows.Forms.Label();
             this.numQualityHistorySize = new System.Windows.Forms.NumericUpDown();
             this.lblStabilityThreshold = new System.Windows.Forms.Label();
@@ -1581,6 +1582,7 @@ namespace tickMeter.Forms
             // groupBoxNetworkQuality
             // 
             this.groupBoxNetworkQuality.Controls.Add(this.chkNetworkQualityEnabled);
+            this.groupBoxNetworkQuality.Controls.Add(this.chkNetworkQualityOverlay);
             this.groupBoxNetworkQuality.Controls.Add(this.lblQualityHistorySize);
             this.groupBoxNetworkQuality.Controls.Add(this.numQualityHistorySize);
             this.groupBoxNetworkQuality.Controls.Add(this.lblStabilityThreshold);
@@ -1610,6 +1612,17 @@ namespace tickMeter.Forms
             this.chkNetworkQualityEnabled.TabIndex = 0;
             this.chkNetworkQualityEnabled.Text = "Включить анализ качества сети";
             this.chkNetworkQualityEnabled.UseVisualStyleBackColor = true;
+            // 
+            // chkNetworkQualityOverlay
+            // 
+            this.chkNetworkQualityOverlay.AutoSize = true;
+            this.chkNetworkQualityOverlay.Location = new System.Drawing.Point(250, 25);
+            this.chkNetworkQualityOverlay.Margin = new System.Windows.Forms.Padding(4);
+            this.chkNetworkQualityOverlay.Name = "chkNetworkQualityOverlay";
+            this.chkNetworkQualityOverlay.Size = new System.Drawing.Size(242, 20);
+            this.chkNetworkQualityOverlay.TabIndex = 10;
+            this.chkNetworkQualityOverlay.Text = "Показывать рейтинг качества в оверлее";
+            this.chkNetworkQualityOverlay.UseVisualStyleBackColor = true;
             // 
             // lblQualityHistorySize
             // 
@@ -2320,6 +2333,7 @@ namespace tickMeter.Forms
         private System.Windows.Forms.Button btnBrowseTicktimeSound;
         private System.Windows.Forms.GroupBox groupBoxNetworkQuality;
         private System.Windows.Forms.CheckBox chkNetworkQualityEnabled;
+        private System.Windows.Forms.CheckBox chkNetworkQualityOverlay;
         private System.Windows.Forms.Label lblQualityHistorySize;
         private System.Windows.Forms.NumericUpDown numQualityHistorySize;
         private System.Windows.Forms.Label lblStabilityThreshold;

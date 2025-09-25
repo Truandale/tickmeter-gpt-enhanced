@@ -66,7 +66,6 @@ namespace tickMeter.Forms
             this.donate_lbl = new System.Windows.Forms.Label();
             this.updateLbl = new System.Windows.Forms.Label();
             this.btnAdvancedSettings = new System.Windows.Forms.Button();
-            this.network_rate_overlay = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.ping_interval)).BeginInit();
@@ -168,7 +167,6 @@ namespace tickMeter.Forms
             // 
             // groupBox2
             // 
-            this.groupBox2.Controls.Add(this.network_rate_overlay);
             this.groupBox2.Controls.Add(this.packet_drops_checkbox);
             this.groupBox2.Controls.Add(this.settings_ping_chart);
             this.groupBox2.Controls.Add(this.settings_tickrate_show);
@@ -373,15 +371,6 @@ namespace tickMeter.Forms
             this.btnAdvancedSettings.Name = "btnAdvancedSettings";
             this.btnAdvancedSettings.UseVisualStyleBackColor = true;
             // 
-            // network_rate_overlay
-            // 
-            resources.ApplyResources(this.network_rate_overlay, "network_rate_overlay");
-            this.network_rate_overlay.Checked = true;
-            this.network_rate_overlay.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.network_rate_overlay.ForeColor = System.Drawing.Color.Black;
-            this.network_rate_overlay.Name = "network_rate_overlay";
-            this.network_rate_overlay.UseVisualStyleBackColor = true;
-            // 
             // SettingsForm
             // 
             resources.ApplyResources(this, "$this");
@@ -455,6 +444,5 @@ namespace tickMeter.Forms
         public Label donate_lbl;
         public Label updateLbl;
         private Button btnAdvancedSettings;
-        public CheckBox network_rate_overlay;
     }
 }

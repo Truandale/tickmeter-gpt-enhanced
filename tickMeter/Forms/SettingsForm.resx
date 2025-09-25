@@ -258,6 +258,93 @@
   <data name="&gt;&gt;settings_data_send.ZOrder" xml:space="preserve">
     <value>11</value>
   </data>
+  <data name="&gt;&gt;ColorChart.Name" xml:space="preserve">
+    <value>ColorChart</value>
+  </data>
+  <data name="&gt;&gt;ColorChart.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ColorChart.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;ColorChart.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;ColorGood.Name" xml:space="preserve">
+    <value>ColorGood</value>
+  </data>
+  <data name="&gt;&gt;ColorGood.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ColorGood.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;ColorGood.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;ColorMid.Name" xml:space="preserve">
+    <value>ColorMid</value>
+  </data>
+  <data name="&gt;&gt;ColorMid.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ColorMid.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;ColorMid.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;ColorBad.Name" xml:space="preserve">
+    <value>ColorBad</value>
+  </data>
+  <data name="&gt;&gt;ColorBad.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ColorBad.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;ColorBad.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;ColorLabel.Name" xml:space="preserve">
+    <value>ColorLabel</value>
+  </data>
+  <data name="&gt;&gt;ColorLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ColorLabel.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;ColorLabel.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="groupBox1.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 11.25pt, style=Bold</value>
+  </data>
+  <data name="groupBox1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>344, 12</value>
+  </data>
+  <data name="groupBox1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>315, 184</value>
+  </data>
+  <data name="groupBox1.TabIndex" type="System.Int32, mscorlib">
+    <value>68</value>
+  </data>
+  <data name="groupBox1.Text" xml:space="preserve">
+    <value>Colors</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.Name" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.ZOrder" xml:space="preserve">
+    <value>10</value>
+  </data>
   <data name="ColorChart.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
@@ -438,66 +525,6 @@
   <data name="&gt;&gt;ColorLabel.ZOrder" xml:space="preserve">
     <value>4</value>
   </data>
-  <data name="groupBox1.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Microsoft Sans Serif, 11.25pt, style=Bold</value>
-  </data>
-  <data name="groupBox1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>344, 12</value>
-  </data>
-  <data name="groupBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>315, 184</value>
-  </data>
-  <data name="groupBox1.TabIndex" type="System.Int32, mscorlib">
-    <value>68</value>
-  </data>
-  <data name="groupBox1.Text" xml:space="preserve">
-    <value>Colors</value>
-  </data>
-  <data name="&gt;&gt;groupBox1.Name" xml:space="preserve">
-    <value>groupBox1</value>
-  </data>
-  <data name="&gt;&gt;groupBox1.Type" xml:space="preserve">
-    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;groupBox1.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;groupBox1.ZOrder" xml:space="preserve">
-    <value>10</value>
-  </data>
-  <data name="network_rate_overlay.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="network_rate_overlay.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Tahoma, 11.25pt</value>
-  </data>
-  <data name="network_rate_overlay.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
-  </data>
-  <data name="network_rate_overlay.Location" type="System.Drawing.Point, System.Drawing">
-    <value>4, 302</value>
-  </data>
-  <data name="network_rate_overlay.Size" type="System.Drawing.Size, System.Drawing">
-    <value>260, 27</value>
-  </data>
-  <data name="network_rate_overlay.TabIndex" type="System.Int32, mscorlib">
-    <value>76</value>
-  </data>
-  <data name="network_rate_overlay.Text" xml:space="preserve">
-    <value>Отображать рейтинг сети</value>
-  </data>
-  <data name="&gt;&gt;network_rate_overlay.Name" xml:space="preserve">
-    <value>network_rate_overlay</value>
-  </data>
-  <data name="&gt;&gt;network_rate_overlay.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;network_rate_overlay.Parent" xml:space="preserve">
-    <value>groupBox2</value>
-  </data>
-  <data name="&gt;&gt;network_rate_overlay.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
   <data name="packet_drops_checkbox.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
@@ -529,7 +556,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;packet_drops_checkbox.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>0</value>
   </data>
   <data name="settings_ping_chart.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -562,7 +589,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;settings_ping_chart.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>1</value>
   </data>
   <data name="settings_tickrate_show.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -595,7 +622,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;settings_tickrate_show.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>2</value>
   </data>
   <data name="settings_ticktime_chart.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -628,7 +655,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;settings_ticktime_chart.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>3</value>
   </data>
   <data name="settings_session_time_checkbox.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -661,7 +688,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;settings_session_time_checkbox.ZOrder" xml:space="preserve">
-    <value>5</value>
+    <value>4</value>
   </data>
   <data name="settings_traffic_checkbox.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -694,7 +721,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;settings_traffic_checkbox.ZOrder" xml:space="preserve">
-    <value>6</value>
+    <value>5</value>
   </data>
   <data name="settings_ping_checkbox.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -727,7 +754,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;settings_ping_checkbox.ZOrder" xml:space="preserve">
-    <value>7</value>
+    <value>6</value>
   </data>
   <data name="settings_ip_checkbox.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -760,7 +787,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;settings_ip_checkbox.ZOrder" xml:space="preserve">
-    <value>8</value>
+    <value>7</value>
   </data>
   <data name="settings_chart_checkbox.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -793,7 +820,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;settings_chart_checkbox.ZOrder" xml:space="preserve">
-    <value>9</value>
+    <value>8</value>
   </data>
   <data name="settings_rtss_output.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -826,7 +853,7 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;settings_rtss_output.ZOrder" xml:space="preserve">
-    <value>10</value>
+    <value>9</value>
   </data>
   <data name="groupBox2.Font" type="System.Drawing.Font, System.Drawing">
     <value>Microsoft Sans Serif, 12pt, style=Bold</value>
