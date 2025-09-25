@@ -1038,12 +1038,17 @@ namespace tickMeter.Forms
             bool vpnBypassBasic = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
             bool vpnBypassAdvanced = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
             
-            var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
+            string captureAllSetting = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS");
+            var captureAll = captureAllSetting == "True";
+            Debug.Print($"[StartTracking] Settings debug - capture_all_adapters raw: '{captureAllSetting}', converted: {captureAll}");
+            Debug.Print($"[StartTracking] VPN bypass - basic: {vpnBypassBasic}, advanced: {vpnBypassAdvanced}");
+            
             var devices = App.GetAdapters();
             _allSelectedAdapters.Clear();
 
             if (captureAll || vpnBypassBasic || vpnBypassAdvanced)
             {
+                Debug.Print($"[StartTracking] MULTI-ADAPTER MODE - captureAll: {captureAll}, vpnBasic: {vpnBypassBasic}, vpnAdvanced: {vpnBypassAdvanced}");
                 // собрать все «реальные» адаптеры (пропускаем 0-й элемент дропдауна и виртуальные/loopback)
                 IEnumerable<LivePacketDevice> src = devices;
                 if (src.Count() == App.settingsForm.adapters_list.Items.Count && App.settingsForm.adapters_list.Items.Count > 0)
@@ -1108,13 +1113,27 @@ namespace tickMeter.Forms
             }
             else
             {
+                Debug.Print($"[StartTracking] SINGLE-ADAPTER MODE - captureAll: {captureAll}, vpnBasic: {vpnBypassBasic}, vpnAdvanced: {vpnBypassAdvanced}");
                 int deviceId = App.settingsForm.adapters_list.SelectedIndex;
+                Debug.Print($"[StartTracking] Single adapter mode - deviceId: {deviceId}, devices.Count: {devices.Count}");
+                
                 if (devices.Count > deviceId && deviceId > 0)
                 {
                     selectedAdapter = devices[deviceId];
+                    Debug.Print($"[StartTracking] Selected adapter: {selectedAdapter.Name} - {selectedAdapter.Description}");
                 }
                 else
                 {
+                    if (deviceId == 0)
+                    {
+                        Debug.Print("[StartTracking] ERROR: Please select a network adapter in settings (deviceId=0 means no adapter selected)");
+                        MessageBox.Show("Пожалуйста, выберите сетевой адаптер в настройках.\n\nОткройте Settings → Network Settings и выберите ваш основной сетевой адаптер.", 
+                                        "Сетевой адаптер не выбран", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                    else
+                    {
+                        Debug.Print($"[StartTracking] ERROR: Invalid deviceId {deviceId} for {devices.Count} devices");
+                    }
                     return;
                 }
             }
@@ -1300,7 +1319,7 @@ namespace tickMeter.Forms
             }
             
             // Проверяем режимы работы
-            var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
+            var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
             bool vpnBypassBasic = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
             bool vpnBypassAdvanced = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
             
@@ -1360,7 +1379,7 @@ namespace tickMeter.Forms
             SetHighPriorityThread(Thread.CurrentThread, "PCAP-BgWorker");
             
             // В мульти-режиме или VPN режиме этот метод не должен вызываться
-            var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False") == "True";
+            var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
             bool vpnBypassBasic = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
             bool vpnBypassAdvanced = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
             if (captureAll || vpnBypassBasic || vpnBypassAdvanced) return;
