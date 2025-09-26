@@ -954,12 +954,12 @@ namespace tickMeter.Forms
             this.numHysteresisRatio.Location = new System.Drawing.Point(120, 63);
             this.numHysteresisRatio.Margin = new System.Windows.Forms.Padding(4);
             this.numHysteresisRatio.Maximum = new decimal(new int[] {
-            1,
+            95,
             0,
             0,
-            0});
+            131072});
             this.numHysteresisRatio.Minimum = new decimal(new int[] {
-            1,
+            5,
             0,
             0,
             65536});
@@ -1016,9 +1016,9 @@ namespace tickMeter.Forms
             this.lblMinEnergyThreshold.Location = new System.Drawing.Point(450, 65);
             this.lblMinEnergyThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblMinEnergyThreshold.Name = "lblMinEnergyThreshold";
-            this.lblMinEnergyThreshold.Size = new System.Drawing.Size(130, 16);
+            this.lblMinEnergyThreshold.Size = new System.Drawing.Size(160, 16);
             this.lblMinEnergyThreshold.TabIndex = 10;
-            this.lblMinEnergyThreshold.Text = "Мин. энергия спайка:";
+            this.lblMinEnergyThreshold.Text = "Мин. энергия спайка (мс×амп):";
             // 
             // numMinEnergyThreshold
             // 

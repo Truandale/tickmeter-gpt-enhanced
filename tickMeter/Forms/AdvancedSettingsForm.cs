@@ -676,7 +676,7 @@ namespace tickMeter.Forms
                 App.settingsManager.SetOption("alert_sound_enabled", chkAlertSoundEnabled.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("alert_discord_enabled", chkAlertDiscordEnabled.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("alert_discord_webhook", txtAlertDiscordWebhook.Text, "ADVANCED");
-                App.settingsManager.SetOption("alert_cooldown_seconds", numAlertCooldown.Value.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("alert_cooldown_seconds", SettingsManager.ToInvariantString((int)numAlertCooldown.Value), "ADVANCED");
                 
                 // Пути к звуковым файлам
                 App.settingsManager.SetOption("alert_sound_pingspike_path", txtAlertPingSoundPath.Text, "ADVANCED");
@@ -864,9 +864,9 @@ namespace tickMeter.Forms
             {
                 App.settingsManager.SetOption("network_quality_enabled", chkNetworkQualityEnabled.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("network_quality_overlay", chkNetworkQualityOverlay.Checked.ToString(), "SETTINGS");
-                App.settingsManager.SetOption("quality_history_size", numQualityHistorySize.Value.ToString(), "ADVANCED");
-                App.settingsManager.SetOption("stability_threshold", numStabilityThreshold.Value.ToString(), "ADVANCED");
-                App.settingsManager.SetOption("quality_threshold", numQualityThreshold.Value.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("quality_history_size", SettingsManager.ToInvariantString((int)numQualityHistorySize.Value), "ADVANCED");
+                App.settingsManager.SetOption("stability_threshold", SettingsManager.ToInvariantString((float)numStabilityThreshold.Value), "ADVANCED");
+                App.settingsManager.SetOption("quality_threshold", SettingsManager.ToInvariantString((float)numQualityThreshold.Value), "ADVANCED");
             }
             catch (Exception ex)
             {
@@ -1038,8 +1038,8 @@ namespace tickMeter.Forms
             try
             {
                 App.settingsManager.SetOption("network_optimization_enabled", chkNetworkOptimizationEnabled.Checked.ToString(), "ADVANCED");
-                App.settingsManager.SetOption("optimization_threshold", numOptimizationThreshold.Value.ToString(), "ADVANCED");
-                App.settingsManager.SetOption("optimization_interval", numOptimizationInterval.Value.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("optimization_threshold", SettingsManager.ToInvariantString((float)numOptimizationThreshold.Value), "ADVANCED");
+                App.settingsManager.SetOption("optimization_interval", SettingsManager.ToInvariantString((int)numOptimizationInterval.Value), "ADVANCED");
                 App.settingsManager.SetOption("aggressive_optimization", chkAggressiveOptimization.Checked.ToString(), "ADVANCED");
                 
                 // Применяем настройки к оптимизатору
