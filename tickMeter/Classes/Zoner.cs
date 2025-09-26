@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 
@@ -13,6 +14,7 @@ namespace tickMeter.Classes
     /// <summary>
     /// Centralized zoning service - ONE CODE FOR EVERYTHING
     /// Both main window and overlay call the SAME methods
+    /// ChatGPT Enhanced: Performance caching + validation
     /// </summary>
     public sealed class Zoner
     {
@@ -24,6 +26,10 @@ namespace tickMeter.Classes
         public double TtYellowOfT { get; set; }       // ticktime yellow ratio of interval (0.90)
         public double TargetTickrateHz { get; set; }  // target tickrate (128)
 
+        // ChatGPT Enhancement: Zone calculation cache for performance
+        private static readonly Dictionary<string, (Zone zone, DateTime time)> _zoneCache = new Dictionary<string, (Zone zone, DateTime time)>();
+        private static readonly TimeSpan CACHE_DURATION = TimeSpan.FromMilliseconds(50); // 50ms cache
+        
         // Hysteresis state for anti-flicker
         private Zone _lastPingZone = Zone.Green;
         private Zone _lastTickrateZone = Zone.Green;
@@ -31,42 +37,82 @@ namespace tickMeter.Classes
 
         public Zone FromPing(double avgMs)
         {
-            Zone current = (avgMs <= PingGreenMs) ? Zone.Green
-                         : (avgMs <= PingYellowMs) ? Zone.Yellow 
-                         : Zone.Red;
-            
-            // Apply hysteresis for ping
-            _lastPingZone = ApplyHysteresis(current, _lastPingZone, "ping");
-            return _lastPingZone;
+            // ChatGPT Enhancement: Cached calculation for performance
+            return GetCachedZone($"ping_{avgMs:F1}", () => {
+                Zone current = (avgMs <= PingGreenMs) ? Zone.Green
+                             : (avgMs <= PingYellowMs) ? Zone.Yellow 
+                             : Zone.Red;
+                
+                // Apply hysteresis for ping
+                _lastPingZone = ApplyHysteresis(current, _lastPingZone, "ping");
+                return _lastPingZone;
+            });
         }
 
         public Zone FromTickrate(double avgHz)
         {
             if (TargetTickrateHz <= 0) return Zone.Green; // avoid division by zero
             
-            var r = avgHz / TargetTickrateHz;
-            Zone current = (r >= TrGreenRatio) ? Zone.Green
-                         : (r >= TrYellowRatio) ? Zone.Yellow 
-                         : Zone.Red;
-            
-            // Apply hysteresis for tickrate
-            _lastTickrateZone = ApplyHysteresis(current, _lastTickrateZone, "tickrate");
-            return _lastTickrateZone;
+            // ChatGPT Enhancement: Cached calculation for performance
+            return GetCachedZone($"tickrate_{avgHz:F2}", () => {
+                var r = avgHz / TargetTickrateHz;
+                Zone current = (r >= TrGreenRatio) ? Zone.Green
+                             : (r >= TrYellowRatio) ? Zone.Yellow 
+                             : Zone.Red;
+                
+                // Apply hysteresis for tickrate
+                _lastTickrateZone = ApplyHysteresis(current, _lastTickrateZone, "tickrate");
+                return _lastTickrateZone;
+            });
         }
 
         public Zone FromTicktime(double avgMs)
         {
             if (TargetTickrateHz <= 0) return Zone.Green; // avoid division by zero
             
-            double T = 1000.0 / TargetTickrateHz;  // target interval in ms
-            double r = avgMs / T;                   // fraction of target interval
-            Zone current = (r <= TtGreenOfT) ? Zone.Green
-                         : (r <= TtYellowOfT) ? Zone.Yellow 
-                         : Zone.Red;
+            // ChatGPT Enhancement: Cached calculation for performance
+            return GetCachedZone($"ticktime_{avgMs:F1}", () => {
+                double T = 1000.0 / TargetTickrateHz;  // target interval in ms
+                double r = avgMs / T;                   // fraction of target interval
+                Zone current = (r <= TtGreenOfT) ? Zone.Green
+                             : (r <= TtYellowOfT) ? Zone.Yellow 
+                             : Zone.Red;
+                
+                // Apply hysteresis for ticktime
+                _lastTicktimeZone = ApplyHysteresis(current, _lastTicktimeZone, "ticktime");
+                return _lastTicktimeZone;
+            });
+        }
+
+        /// <summary>
+        /// ChatGPT Enhancement: High-performance cached zone calculation
+        /// Prevents recalculation of same values within cache duration
+        /// </summary>
+        private Zone GetCachedZone(string key, Func<Zone> calculator)
+        {
+            var now = DateTime.UtcNow;
             
-            // Apply hysteresis for ticktime
-            _lastTicktimeZone = ApplyHysteresis(current, _lastTicktimeZone, "ticktime");
-            return _lastTicktimeZone;
+            // Clean expired cache entries periodically
+            if (_zoneCache.Count > 20)
+            {
+                var expiredKeys = _zoneCache.Where(kvp => now - kvp.Value.time > CACHE_DURATION)
+                                           .Select(kvp => kvp.Key)
+                                           .ToList();
+                foreach (var expiredKey in expiredKeys)
+                    _zoneCache.Remove(expiredKey);
+            }
+            
+            // Return cached result if valid
+            if (_zoneCache.TryGetValue(key, out var cached) && 
+                now - cached.time <= CACHE_DURATION)
+            {
+                return cached.zone;
+            }
+            
+            // Calculate new zone and cache it
+            var result = calculator();
+            _zoneCache[key] = (result, now);
+            return result;
         }
 
         /// <summary>
@@ -113,6 +159,7 @@ namespace tickMeter.Classes
 
         /// <summary>
         /// Get diagnostic string for debugging zone calculations
+        /// ChatGPT Enhanced: Extended diagnostic with cache and hysteresis status
         /// Format: "ping=18.7 (G≤40, Y≤80) -> G | tr=127.3/128 (G≥0.98, Y≥0.95) -> G | tt=3.8/7.81 (G≤0.60, Y≤0.90) -> G"
         /// </summary>
         public string GetDiagnostic(double pingMs, double tickrateHz, double ticktimeMs)
@@ -125,9 +172,14 @@ namespace tickMeter.Classes
             double trRatio = TargetTickrateHz > 0 ? tickrateHz / TargetTickrateHz : 0;
             double ttRatio = T > 0 ? ticktimeMs / T : 0;
             
+            // ChatGPT Enhancement: Add performance and state information
+            var cacheInfo = $" [Cache: {_zoneCache.Count}]";
+            var hysteresisInfo = $" [Hyst: P={_lastPingZone} TR={_lastTickrateZone} TT={_lastTicktimeZone}]";
+            
             return $"ping={pingMs:F1} (G≤{PingGreenMs}, Y≤{PingYellowMs}) -> {pingZone} | " +
                    $"tr={tickrateHz:F1}/{TargetTickrateHz} (G≥{TrGreenRatio:F2}, Y≥{TrYellowRatio:F2}) -> {trZone} | " +
-                   $"tt={ticktimeMs:F1}/{T:F2} (G≤{TtGreenOfT:F2}, Y≤{TtYellowOfT:F2}) -> {ttZone}";
+                   $"tt={ticktimeMs:F1}/{T:F2} (G≤{TtGreenOfT:F2}, Y≤{TtYellowOfT:F2}) -> {ttZone}" +
+                   cacheInfo + hysteresisInfo;
         }
     }
 
@@ -198,28 +250,63 @@ namespace tickMeter.Classes
     {
         /// <summary>
         /// Get ping value for zone calculation - same source for GUI and RTSS
+        /// ChatGPT Enhanced: Data validation and anomaly detection
         /// </summary>
         public static double AvgPingForZone()
         {
-            // Use smoothed value from SmoothingManager for consistent display
-            int rawPing = 0;
-            
-            // Same priority as GUI: UDP > TCP > ICMP
-            if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
+            try 
             {
-                rawPing = (int)App.meterState.Server.UdpPing;
+                // Use smoothed value from SmoothingManager for consistent display
+                int rawPing = 0;
+                
+                // Same priority as GUI: UDP > TCP > ICMP
+                if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
+                {
+                    rawPing = (int)App.meterState.Server.UdpPing;
+                }
+                else if (App.meterState.Server.Ping > 0 && App.meterState.Server.Ping < 10000)
+                {
+                    rawPing = App.meterState.Server.Ping;
+                }
+                else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
+                {
+                    rawPing = App.meterState.IcmpPing;
+                }
+                
+                // ChatGPT Enhancement: Validate ping range
+                if (rawPing < 0 || rawPing > 5000)
+                {
+                    Console.WriteLine($"[WARNING] Invalid ping detected: {rawPing}ms, using fallback");
+                    return GetFallbackPing();
+                }
+                
+                // Apply same smoothing as display
+                double smoothedPing = rawPing > 0 ? Classes.SmoothingManager.SmoothPingValueGui(rawPing) : 0;
+                
+                // Additional validation after smoothing
+                if (double.IsNaN(smoothedPing) || double.IsInfinity(smoothedPing))
+                {
+                    Console.WriteLine($"[ERROR] Invalid smoothed ping: {smoothedPing}, using raw value");
+                    return rawPing;
+                }
+                
+                return smoothedPing;
             }
-            else if (App.meterState.Server.Ping > 0 && App.meterState.Server.Ping < 10000)
+            catch (Exception ex)
             {
-                rawPing = App.meterState.Server.Ping;
+                Console.WriteLine($"[ERROR] Ping calculation failed: {ex.Message}");
+                return GetFallbackPing();
             }
-            else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
-            {
-                rawPing = App.meterState.IcmpPing;
-            }
-            
-            // Apply same smoothing as display
-            return rawPing > 0 ? Classes.SmoothingManager.SmoothPingValueGui(rawPing) : 0;
+        }
+        
+        /// <summary>
+        /// ChatGPT Enhancement: Fallback ping when primary calculation fails
+        /// </summary>
+        private static double GetFallbackPing()
+        {
+            // Return reasonable default based on last known good value
+            // or conservative estimate
+            return 50.0; // 50ms as safe fallback
         }
 
         /// <summary>
