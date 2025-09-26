@@ -115,29 +115,64 @@ namespace tickMeter
             return defaultValue;
         }
         
-        /// <summary>
-        /// Helper method for invariant culture float parsing
-        /// </summary>
-        public static bool TryParseInvariantFloat(string s, out float v) =>
-            float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out v);
+        // Cached InvariantCulture for micro-optimization
+        private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
         
         /// <summary>
-        /// Helper method for invariant culture double parsing
+        /// Helper method for invariant culture float parsing with NaN/Infinity protection
         /// </summary>
-        public static bool TryParseInvariantDouble(string s, out double v) =>
-            double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out v);
+        public static bool TryParseInvariantFloat(string s, out float v)
+        {
+            if (float.TryParse(s, NumberStyles.Float, Inv, out v))
+            {
+                return !float.IsNaN(v) && !float.IsInfinity(v);
+            }
+            v = 0f;
+            return false;
+        }
+        
+        /// <summary>
+        /// Helper method for invariant culture double parsing with NaN/Infinity protection
+        /// </summary>
+        public static bool TryParseInvariantDouble(string s, out double v)
+        {
+            if (double.TryParse(s, NumberStyles.Float, Inv, out v))
+            {
+                return !double.IsNaN(v) && !double.IsInfinity(v);
+            }
+            v = 0.0;
+            return false;
+        }
+        
+        /// <summary>
+        /// Unified helper for parsing percentages (handles "1.2%", " 1,2 % ", etc.)
+        /// </summary>
+        public static bool TryParsePercent(string s, out float v)
+        {
+            if (string.IsNullOrWhiteSpace(s)) 
+            { 
+                v = 0f; 
+                return false; 
+            }
+            
+            s = s.Trim();
+            if (s.EndsWith("%")) 
+                s = s.TrimEnd('%', ' ');
+            
+            return TryParseInvariantFloat(s, out v);
+        }
         
         /// <summary>
         /// Helper method for invariant culture formatting
         /// </summary>
         public static string ToInvariantString(float value) =>
-            value.ToString(CultureInfo.InvariantCulture);
+            value.ToString(Inv);
         
         /// <summary>
         /// Helper method for invariant culture formatting
         /// </summary>
         public static string ToInvariantString(double value) =>
-            value.ToString(CultureInfo.InvariantCulture);
+            value.ToString(Inv);
 
         public void SaveConfig()
         {

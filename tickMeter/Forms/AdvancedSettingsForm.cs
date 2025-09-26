@@ -458,22 +458,22 @@ namespace tickMeter.Forms
             try
             {
                 // EMA параметры
-                App.settingsManager.SetOption("spikes.ema_alpha", numEmaAlpha.Value.ToString("F3"), "ADVANCED");
+                App.settingsManager.SetOption("spikes.ema_alpha", SettingsManager.ToInvariantString((float)numEmaAlpha.Value), "ADVANCED");
                 
                 // EW-Sigma параметры
-                App.settingsManager.SetOption("spikes.ew_sigma_alpha", numEwSigmaAlpha.Value.ToString("F3"), "ADVANCED");
+                App.settingsManager.SetOption("spikes.ew_sigma_alpha", SettingsManager.ToInvariantString((float)numEwSigmaAlpha.Value), "ADVANCED");
                 
                 // Множитель чувствительности
-                App.settingsManager.SetOption("spikes.sensitivity_multiplier", numSensitivityMultiplier.Value.ToString("F1"), "ADVANCED");
+                App.settingsManager.SetOption("spikes.sensitivity_multiplier", SettingsManager.ToInvariantString((float)numSensitivityMultiplier.Value), "ADVANCED");
                 
                 // Гистерезис
-                App.settingsManager.SetOption("spikes.hysteresis_ratio", numHysteresisRatio.Value.ToString("F2"), "ADVANCED");
+                App.settingsManager.SetOption("spikes.hysteresis_ratio", SettingsManager.ToInvariantString((float)numHysteresisRatio.Value), "ADVANCED");
                 
                 // Рефракторный период
                 App.settingsManager.SetOption("spikes.refractory_period_ms", ((int)numRefractoryPeriod.Value).ToString(), "ADVANCED");
                 
                 // Минимальная энергия спайка
-                App.settingsManager.SetOption("spikes.min_energy_threshold", numMinEnergyThreshold.Value.ToString("F1"), "ADVANCED");
+                App.settingsManager.SetOption("spikes.min_energy_threshold", SettingsManager.ToInvariantString((float)numMinEnergyThreshold.Value), "ADVANCED");
                 
                 // Размер окна инициализации
                 App.settingsManager.SetOption("spikes.init_window_size", ((int)numInitWindowSize.Value).ToString(), "ADVANCED");
