@@ -29,7 +29,7 @@ namespace tickMeter.Classes
         {
             // Используем общий коэффициент из tickrate_smoothing_alpha, если задан
             string alphaStr = App.settingsManager?.GetString("tickrate_smoothing_alpha", "0.15");
-            if (double.TryParse(alphaStr, NumberStyles.Float, CultureInfo.InvariantCulture, out double a) && a > 0 && a <= 1) return a;
+            if (SettingsManager.TryParseInvariantDouble(alphaStr?.Trim(), out double a) && a > 0 && a <= 1) return a;
             return 0.15;
         }
 

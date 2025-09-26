@@ -97,11 +97,47 @@ namespace tickMeter
             if (string.IsNullOrEmpty(value))
                 return defaultValue;
             
-            if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double result))
+            if (TryParseInvariantDouble(value.Trim(), out double result))
                 return result;
             
             return defaultValue;
         }
+        
+        public float GetFloat(string optionName, float defaultValue, string scope = "SETTINGS")
+        {
+            string value = GetOption(optionName, scope);
+            if (string.IsNullOrEmpty(value))
+                return defaultValue;
+            
+            if (TryParseInvariantFloat(value.Trim(), out float result))
+                return result;
+            
+            return defaultValue;
+        }
+        
+        /// <summary>
+        /// Helper method for invariant culture float parsing
+        /// </summary>
+        public static bool TryParseInvariantFloat(string s, out float v) =>
+            float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out v);
+        
+        /// <summary>
+        /// Helper method for invariant culture double parsing
+        /// </summary>
+        public static bool TryParseInvariantDouble(string s, out double v) =>
+            double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out v);
+        
+        /// <summary>
+        /// Helper method for invariant culture formatting
+        /// </summary>
+        public static string ToInvariantString(float value) =>
+            value.ToString(CultureInfo.InvariantCulture);
+        
+        /// <summary>
+        /// Helper method for invariant culture formatting
+        /// </summary>
+        public static string ToInvariantString(double value) =>
+            value.ToString(CultureInfo.InvariantCulture);
 
         public void SaveConfig()
         {

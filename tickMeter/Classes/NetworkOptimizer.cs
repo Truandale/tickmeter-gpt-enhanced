@@ -318,7 +318,7 @@ namespace tickMeter.Classes
             {
                 _enabled = App.settingsManager?.GetOption("network_optimization_enabled", "False", "ADVANCED") == "True";
                 
-                if (float.TryParse(App.settingsManager?.GetOption("optimization_threshold", "70", "ADVANCED"), NumberStyles.Float, CultureInfo.InvariantCulture, out float threshold))
+                if (SettingsManager.TryParseInvariantFloat(App.settingsManager?.GetOption("optimization_threshold", "70", "ADVANCED")?.Trim(), out float threshold))
                 {
                     _qualityThreshold = threshold / 100.0f;
                 }

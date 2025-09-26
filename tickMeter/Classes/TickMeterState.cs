@@ -361,7 +361,7 @@ namespace tickMeter
                 get
                 {
                     string thresholdStr = App.settingsManager?.GetOption("ping_spike_threshold", "200", "ADVANCED");
-                    if (!string.IsNullOrEmpty(thresholdStr) && double.TryParse(thresholdStr, NumberStyles.Float, CultureInfo.InvariantCulture, out double threshold) && threshold > 0)
+                    if (!string.IsNullOrEmpty(thresholdStr) && SettingsManager.TryParseInvariantDouble(thresholdStr.Trim(), out double threshold) && threshold > 0)
                     {
                         return threshold;
                     }
@@ -377,7 +377,7 @@ namespace tickMeter
                 get
                 {
                     string percentStr = App.settingsManager?.GetOption("ping_spike_threshold_percent", "120", "ADVANCED"); // изменено с 80 на 120
-                    if (!string.IsNullOrEmpty(percentStr) && double.TryParse(percentStr, NumberStyles.Float, CultureInfo.InvariantCulture, out double percent) && percent > 0)
+                    if (!string.IsNullOrEmpty(percentStr) && SettingsManager.TryParseInvariantDouble(percentStr.Trim(), out double percent) && percent > 0)
                     {
                         return percent;
                     }

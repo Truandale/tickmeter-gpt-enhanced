@@ -70,50 +70,50 @@ namespace tickMeter.Classes
                 }
                 
                 var stabilityStr = App.settingsManager?.GetOption("stability_threshold", "0.15", "ADVANCED");
-                if (float.TryParse(stabilityStr, NumberStyles.Float, CultureInfo.InvariantCulture, out float stability) && stability > 0 && stability < 1)
+                if (SettingsManager.TryParseInvariantFloat(stabilityStr?.Trim(), out float stability) && stability > 0 && stability < 1)
                 {
                     _stabilityThreshold = stability;
                 }
                 
                 var qualityStr = App.settingsManager?.GetOption("quality_threshold", "0.8", "ADVANCED");
-                if (float.TryParse(qualityStr, NumberStyles.Float, CultureInfo.InvariantCulture, out float quality) && quality > 0 && quality <= 1)
+                if (SettingsManager.TryParseInvariantFloat(qualityStr?.Trim(), out float quality) && quality > 0 && quality <= 1)
                 {
                     _qualityThreshold = quality;
                 }
                 
                 // Загружаем ChatGPT optimization settings
                 var targetTickrateStr = App.settingsManager?.GetOption("quality_target_tickrate", "128", "ADVANCED");
-                if (float.TryParse(targetTickrateStr, NumberStyles.Float, CultureInfo.InvariantCulture, out float targetTickrate) && targetTickrate > 0)
+                if (SettingsManager.TryParseInvariantFloat(targetTickrateStr?.Trim(), out float targetTickrate) && targetTickrate > 0)
                 {
                     _targetTickrate = targetTickrate;
                 }
                 
                 var pingGoodStr = App.settingsManager?.GetOption("quality_ping_good_ms", "30", "ADVANCED");
-                if (float.TryParse(pingGoodStr, NumberStyles.Float, CultureInfo.InvariantCulture, out float pingGood) && pingGood > 0)
+                if (SettingsManager.TryParseInvariantFloat(pingGoodStr?.Trim(), out float pingGood) && pingGood > 0)
                 {
                     _pingGoodMs = pingGood;
                 }
                 
                 var pingBadStr = App.settingsManager?.GetOption("quality_ping_bad_ms", "80", "ADVANCED");
-                if (float.TryParse(pingBadStr, NumberStyles.Float, CultureInfo.InvariantCulture, out float pingBad) && pingBad > _pingGoodMs)
+                if (SettingsManager.TryParseInvariantFloat(pingBadStr?.Trim(), out float pingBad) && pingBad > _pingGoodMs)
                 {
                     _pingBadMs = pingBad;
                 }
                 
                 var ticktimeGoodStr = App.settingsManager?.GetOption("quality_ticktime_good_ms", "8", "ADVANCED");
-                if (float.TryParse(ticktimeGoodStr, NumberStyles.Float, CultureInfo.InvariantCulture, out float ticktimeGood) && ticktimeGood > 0)
+                if (SettingsManager.TryParseInvariantFloat(ticktimeGoodStr?.Trim(), out float ticktimeGood) && ticktimeGood > 0)
                 {
                     _ticktimeGoodMs = ticktimeGood;
                 }
                 
                 var ticktimeBadStr = App.settingsManager?.GetOption("quality_ticktime_bad_ms", "16", "ADVANCED");
-                if (float.TryParse(ticktimeBadStr, NumberStyles.Float, CultureInfo.InvariantCulture, out float ticktimeBad) && ticktimeBad > _ticktimeGoodMs)
+                if (SettingsManager.TryParseInvariantFloat(ticktimeBadStr?.Trim(), out float ticktimeBad) && ticktimeBad > _ticktimeGoodMs)
                 {
                     _ticktimeBadMs = ticktimeBad;
                 }
                 
                 var emaAlphaStr = App.settingsManager?.GetOption("overall_quality_ema_alpha", "0.15", "ADVANCED");
-                if (float.TryParse(emaAlphaStr, NumberStyles.Float, CultureInfo.InvariantCulture, out float emaAlpha) && emaAlpha > 0 && emaAlpha <= 1)
+                if (SettingsManager.TryParseInvariantFloat(emaAlphaStr?.Trim(), out float emaAlpha) && emaAlpha > 0 && emaAlpha <= 1)
                 {
                     _emaAlpha = emaAlpha;
                 }
