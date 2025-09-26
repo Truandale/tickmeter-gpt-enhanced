@@ -519,12 +519,27 @@ namespace tickMeter.Forms
             //form overlay isn't visible, but still update ping data for both GUI and RTSS
             bool skipGUIUpdate = !OnScreen;
 
-            //update tickrate using profile-based zones
-            Color TickRateColor = Classes.ColorZoneEvaluator.GetTickRateColor(App.meterState.OutputTickRate);
-
-            //update ping colors using profile-based zones
-            int basePing = App.meterState.TcpPing > 0 ? App.meterState.TcpPing : App.meterState.IcmpPing;
-            Color PingColor = Classes.ColorZoneEvaluator.GetPingColor(basePing);
+            // === UNIFIED ZONING SYSTEM ===
+            // Create single zoner instance from current profile - used by both GUI and RTSS
+            var profile = App.settingsManager.GetColorZoneProfile();
+            var zoner = Classes.Zoner.FromProfile(profile, 128.0); // TODO: get target tickrate from settings
+            
+            // Get unified data sources - SAME values for GUI and RTSS
+            double pingForZone = Classes.UnifiedDataSource.AvgPingForZone();
+            double tickrateForZone = Classes.UnifiedDataSource.AvgTickrateForZone();
+            double ticktimeForZone = Classes.UnifiedDataSource.AvgTicktimeForZone();
+            
+            // Calculate zones using SAME logic for GUI and RTSS
+            var pingZone = zoner.FromPing(pingForZone);
+            var tickrateZone = zoner.FromTickrate(tickrateForZone);
+            var ticktimeZone = zoner.FromTicktime(ticktimeForZone);
+            
+            // Convert zones to colors - SAME mapping for GUI and RTSS
+            Color PingColor = Classes.ZoneColors.ToColor(pingZone);
+            Color TickRateColor = Classes.ZoneColors.ToColor(tickrateZone);
+            
+            // Debug diagnostic output (remove in production)
+            System.Diagnostics.Debug.Print($"[ZONER] {zoner.GetDiagnostic(pingForZone, tickrateForZone, ticktimeForZone)}");
             
             await Task.Run(
                     () => {

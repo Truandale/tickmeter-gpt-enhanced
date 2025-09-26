@@ -250,42 +250,30 @@ namespace tickMeter.Classes
 
         public static string FormatPing()
         {
-            // UDP > TCP > ICMP, всегда числовое значение
-            string pingFont = "";
+            // === UNIFIED ZONING SYSTEM FOR RTSS FormatPing ===
+            // Use SAME logic as GUI and BuildRivaOutput for consistent colors
+            var profile = App.settingsManager.GetColorZoneProfile();
+            var zoner = Classes.Zoner.FromProfile(profile, 128.0);
+            
+            // Get SAME unified data source as GUI
+            double pingForZone = Classes.UnifiedDataSource.AvgPingForZone();
+            var pingZone = zoner.FromPing(pingForZone);
+            
+            // Use SAME color mapping as GUI but for RTSS format
+            string pingFont = Classes.ZoneColors.ToRtssLegacy(pingZone);
+            
             string pingValue = "";
             string geo = meterState.Server.Location;
-
-            if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
+            
+            // Format display value
+            if (pingForZone > 0)
             {
-                pingFont = "<C3>";
-                // Применяем сглаживание для overlay значений пинга, если включено
-                int displayPing = Classes.SmoothingManager.SmoothPingValueOverlay((int)App.meterState.Server.UdpPing);
-                pingValue = displayPing.ToString("0");
-            }
-            else if (meterState.Server.Ping > 0 && meterState.Server.Ping < 10000)
-            {
-                // Применяем сглаживание для overlay значений пинга, если включено
-                int displayPing = Classes.SmoothingManager.SmoothPingValueOverlay(meterState.Server.Ping);
-                
-                if (displayPing < 100)
-                    pingFont = "<C3>";
-                else if (displayPing < 150)
-                    pingFont = "<C2>";
-                else
-                    pingFont = "<C1>";
-                pingValue = displayPing.ToString();
-            }
-            else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
-            {
-                pingFont = "<C2>";
-                // Применяем сглаживание для overlay значений пинга, если включено
-                int displayPing = Classes.SmoothingManager.SmoothPingValueOverlay(App.meterState.IcmpPing);
-                pingValue = displayPing.ToString();
+                pingValue = ((int)pingForZone).ToString();
             }
             else
             {
-                pingFont = "<C1>";
                 pingValue = "n/a";
+                pingFont = "<C1>"; // Red for n/a
             }
             
             // Добавляем индикатор спайка если включена соответствующая настройка
@@ -431,39 +419,28 @@ namespace tickMeter.Classes
                 {
                     if (App.settingsForm.settings_ping_chart.Checked && App.meterState.pingBuffer.Count() > 1)
                     {
-                        // --- Ping chart label and color ---
-                        string pingValue = "";
-                        string pingColor = "<C1>";
-                        int displayPing = 0;
+                        // === UNIFIED ZONING SYSTEM FOR RTSS ===
+                        // Use SAME zoner instance as GUI for consistent colors
+                        var profile = App.settingsManager.GetColorZoneProfile();
+                        var zoner = Classes.Zoner.FromProfile(profile, 128.0);
                         
-                        // UDP > TCP > ICMP, всегда числовое значение с применением сглаживания
-                        if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
+                        // Get SAME unified data source as GUI
+                        double pingForZone = Classes.UnifiedDataSource.AvgPingForZone();
+                        var pingZone = zoner.FromPing(pingForZone);
+                        
+                        // Use SAME color mapping as GUI but for RTSS format
+                        string pingColor = Classes.ZoneColors.ToRtssLegacy(pingZone);
+                        
+                        // Format display value (same as before but cleaner)
+                        string pingValue = "";
+                        if (pingForZone > 0)
                         {
-                            displayPing = Classes.SmoothingManager.SmoothPingValueOverlay((int)App.meterState.Server.UdpPing);
-                            pingValue = displayPing.ToString("0");
-                            pingColor = "<C3>";
-                        }
-                        else if (meterState.Server.Ping > 0 && meterState.Server.Ping < 10000)
-                        {
-                            displayPing = Classes.SmoothingManager.SmoothPingValueOverlay(meterState.Server.Ping);
-                            pingValue = displayPing.ToString();
-                            if (displayPing < 100)
-                                pingColor = "<C3>";
-                            else if (displayPing < 150)
-                                pingColor = "<C2>";
-                            else
-                                pingColor = "<C1>";
-                        }
-                        else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
-                        {
-                            displayPing = Classes.SmoothingManager.SmoothPingValueOverlay(App.meterState.IcmpPing);
-                            pingValue = displayPing.ToString();
-                            pingColor = "<C2>";
+                            pingValue = ((int)pingForZone).ToString();
                         }
                         else
                         {
                             pingValue = "n/a";
-                            pingColor = "<C1>";
+                            pingColor = "<C1>"; // Red for n/a
                         }
                         
                         // Добавляем индикатор спайка если включена соответствующая настройка

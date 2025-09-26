@@ -83,11 +83,13 @@ namespace tickMeter.Classes
             return App.settingsForm.ColorGood.ForeColor;
         }
 
-        // New method for ping using profile-based zones
+        // Legacy method - now uses unified zoning system
         public static Color GetPingColor(float pingMs)
         {
-            var zone = EvaluatePingZone(pingMs);
-            return ZoneToColor(zone);
+            var profile = App.settingsManager.GetColorZoneProfile();
+            var zoner = Zoner.FromProfile(profile, 128.0);
+            var zone = zoner.FromPing(pingMs);
+            return ZoneColors.ToColor(zone);
         }
     }
 }

@@ -250,6 +250,7 @@
     <Compile Include="Classes\NetworkQualityAnalyzer.cs" />
     <Compile Include="Classes\NetworkOptimizer.cs" />
     <Compile Include="Classes\ColorZoneEvaluator.cs" />
+    <Compile Include="Classes\Zoner.cs" />
     <Compile Include="Classes\VpnBypass.cs" />
     <Compile Include="Classes\WebStatsManager.cs" />
     <Compile Include="Forms\GUI.cs">
