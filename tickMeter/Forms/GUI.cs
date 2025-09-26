@@ -519,16 +519,12 @@ namespace tickMeter.Forms
             //form overlay isn't visible, but still update ping data for both GUI and RTSS
             bool skipGUIUpdate = !OnScreen;
 
-            //update tickrate
-            Color TickRateColor = App.settingsForm.ColorGood.ForeColor;
-            if (App.meterState.OutputTickRate < 30)
-            {
-                TickRateColor = App.settingsForm.ColorBad.ForeColor;
-            }
-            else if (App.meterState.OutputTickRate < 50)
-            {
-                TickRateColor = App.settingsForm.ColorMid.ForeColor;
-            }
+            //update tickrate using profile-based zones
+            Color TickRateColor = Classes.ColorZoneEvaluator.GetTickRateColor(App.meterState.OutputTickRate);
+
+            //update ping colors using profile-based zones
+            int basePing = App.meterState.TcpPing > 0 ? App.meterState.TcpPing : App.meterState.IcmpPing;
+            Color PingColor = Classes.ColorZoneEvaluator.GetPingColor(basePing);
             
             await Task.Run(
                     () => {
@@ -567,21 +563,22 @@ namespace tickMeter.Forms
                                     pingText = "n/a ms";
                                 }
                                 
+                                // Применяем базовый цвет на основе качества пинга
+                                Color finalPingColor = PingColor;
+                                
                                 // Добавляем индикатор спайка если включена соответствующая настройка
                                 bool showSpikeIndicator = App.settingsManager?.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
                                 Debug.Print($"[GUI] Spike check: HasPingSpike={server.HasPingSpike}, ShowSetting={showSpikeIndicator}, OnScreen={OnScreen}");
                                 if (showSpikeIndicator && server.HasPingSpike)
                                 {
                                     pingText += " (!)";
-                                    // Мигающий эффект для ping спайка
-                                    ping_val.ForeColor = _spikeBlinkState ? Color.Red : Color.Orange;
+                                    // Мигающий эффект для ping спайка (перезаписывает базовый цвет)
+                                    finalPingColor = _spikeBlinkState ? Color.Red : Color.Orange;
                                     Debug.Print($"[GUI] Spike indicator added to display: {pingText}");
                                 }
-                                else if (showSpikeIndicator && !server.HasPingSpike)
-                                {
-                                    ping_val.ForeColor = SystemColors.ControlText; // Обычный цвет
-                                    Debug.Print($"[GUI] No spike detected, indicator removed from display: {pingText}");
-                                }
+                                
+                                // Применяем финальный цвет
+                                ping_val.ForeColor = finalPingColor;
                                 
                                 ping_val.Text = pingText;
                             });
@@ -650,7 +647,7 @@ namespace tickMeter.Forms
             {
                 try
                 {
-                    float currentPing = 0;
+                    float networkQualityPing = 0;
                     float currentTickrate = App.meterState.OutputTickRate;
                     float currentTicktime = 0;
                     float currentPacketLoss = 0;
@@ -663,15 +660,15 @@ namespace tickMeter.Forms
                     // Получаем ping из разных источников
                     if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
                     {
-                        currentPing = App.meterState.Server.UdpPing;
+                        networkQualityPing = App.meterState.Server.UdpPing;
                     }
                     else if (App.meterState.Server.Ping > 0 && App.meterState.Server.Ping < 10000)
                     {
-                        currentPing = App.meterState.Server.Ping;
+                        networkQualityPing = App.meterState.Server.Ping;
                     }
                     else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
                     {
-                        currentPing = App.meterState.IcmpPing;
+                        networkQualityPing = App.meterState.IcmpPing;
                     }
                     
                     // Получаем ticktime из буфера
@@ -681,9 +678,9 @@ namespace tickMeter.Forms
                     }
                     
                     // Передаем данные в анализатор
-                    if (currentPing > 0 || currentTickrate > 0)
+                    if (networkQualityPing > 0 || currentTickrate > 0)
                     {
-                        Classes.NetworkQualityAnalyzer.AddNetworkData(currentPing, currentTickrate, currentTicktime, currentPacketLoss);
+                        Classes.NetworkQualityAnalyzer.AddNetworkData(networkQualityPing, currentTickrate, currentTicktime, currentPacketLoss);
                     }
                 }
                 catch (Exception ex)

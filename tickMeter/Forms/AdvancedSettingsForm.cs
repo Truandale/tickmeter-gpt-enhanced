@@ -92,6 +92,9 @@ namespace tickMeter.Forms
                 
                 // Stage 7: Network Optimizer настройки
                 LoadNetworkOptimizerSettings();
+                
+                // Color Zone settings
+                LoadColorZoneSettings();
             }
             catch (Exception ex)
             {
@@ -177,6 +180,9 @@ namespace tickMeter.Forms
                 
                 // Stage 7: Network Optimizer настройки
                 SaveNetworkOptimizerSettings();
+                
+                // Color Zone settings
+                SaveColorZoneSettings();
                 
                 // Применяем новые настройки интервала overlay
                 App.gui?.ApplyOverlayIntervalFromSettings();
@@ -1158,5 +1164,127 @@ namespace tickMeter.Forms
         }
 
         #endregion Stage 7: Network Optimizer
+
+        #region Color Zone Settings Methods
+
+        private void LoadColorZoneSettings()
+        {
+            try
+            {
+                // Load current profile
+                var profile = App.settingsManager.GetColorZoneProfile();
+                cmbColorZoneProfile.SelectedItem = profile.Name;
+                
+                // Load values from profile
+                numPingGreen.Value = (decimal)profile.PingGreenMs;
+                numPingYellow.Value = (decimal)profile.PingYellowMs;
+                numTickrateGreen.Value = (decimal)profile.TickrateGreenRatio;
+                numTickrateYellow.Value = (decimal)profile.TickrateYellowRatio;
+                numTicktimeGreen.Value = (decimal)profile.TicktimeGreenRatio;
+                numTicktimeYellow.Value = (decimal)profile.TicktimeYellowRatio;
+                
+                // Enable/disable controls based on profile type
+                bool isCustom = profile.Name == "Custom";
+                numPingGreen.Enabled = isCustom;
+                numPingYellow.Enabled = isCustom;
+                numTickrateGreen.Enabled = isCustom;
+                numTickrateYellow.Enabled = isCustom;
+                numTicktimeGreen.Enabled = isCustom;
+                numTicktimeYellow.Enabled = isCustom;
+                
+                // Setup events
+                cmbColorZoneProfile.SelectedIndexChanged += CmbColorZoneProfile_SelectedIndexChanged;
+                btnResetColorZones.Click += BtnResetColorZones_Click;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[LoadColorZoneSettings] Error: {ex.Message}");
+            }
+        }
+
+        private void SaveColorZoneSettings()
+        {
+            try
+            {
+                string selectedProfile = cmbColorZoneProfile.SelectedItem?.ToString() ?? "Medium";
+                
+                if (selectedProfile == "Custom")
+                {
+                    // Save custom values
+                    App.settingsManager.SetCustomColorZones(
+                        (float)numPingGreen.Value,
+                        (float)numPingYellow.Value,
+                        (float)numTickrateGreen.Value,
+                        (float)numTickrateYellow.Value,
+                        (float)numTicktimeGreen.Value,
+                        (float)numTicktimeYellow.Value
+                    );
+                }
+                else
+                {
+                    // Save selected profile
+                    App.settingsManager.SetColorZoneProfile(selectedProfile);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[SaveColorZoneSettings] Error: {ex.Message}");
+            }
+        }
+
+        private void CmbColorZoneProfile_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                string selectedProfile = cmbColorZoneProfile.SelectedItem?.ToString() ?? "Medium";
+                var profile = ColorZoneProfile.GetProfile(selectedProfile);
+                
+                // Update numeric controls
+                numPingGreen.Value = (decimal)profile.PingGreenMs;
+                numPingYellow.Value = (decimal)profile.PingYellowMs;
+                numTickrateGreen.Value = (decimal)profile.TickrateGreenRatio;
+                numTickrateYellow.Value = (decimal)profile.TickrateYellowRatio;
+                numTicktimeGreen.Value = (decimal)profile.TicktimeGreenRatio;
+                numTicktimeYellow.Value = (decimal)profile.TicktimeYellowRatio;
+                
+                // Enable/disable controls
+                bool isCustom = selectedProfile == "Custom";
+                numPingGreen.Enabled = isCustom;
+                numPingYellow.Enabled = isCustom;
+                numTickrateGreen.Enabled = isCustom;
+                numTickrateYellow.Enabled = isCustom;
+                numTicktimeGreen.Enabled = isCustom;
+                numTicktimeYellow.Enabled = isCustom;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[CmbColorZoneProfile_SelectedIndexChanged] Error: {ex.Message}");
+            }
+        }
+
+        private void BtnResetColorZones_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                cmbColorZoneProfile.SelectedItem = "Medium";
+                var profile = ColorZoneProfile.GetProfile("Medium");
+                
+                numPingGreen.Value = (decimal)profile.PingGreenMs;
+                numPingYellow.Value = (decimal)profile.PingYellowMs;
+                numTickrateGreen.Value = (decimal)profile.TickrateGreenRatio;
+                numTickrateYellow.Value = (decimal)profile.TickrateYellowRatio;
+                numTicktimeGreen.Value = (decimal)profile.TicktimeGreenRatio;
+                numTicktimeYellow.Value = (decimal)profile.TicktimeYellowRatio;
+                
+                MessageBox.Show("Color zone settings reset to Medium profile defaults.", "Reset Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error resetting color zones: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        #endregion
+
     }
 }

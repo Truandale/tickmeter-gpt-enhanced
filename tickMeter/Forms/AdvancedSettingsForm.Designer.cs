@@ -147,6 +147,22 @@ namespace tickMeter.Forms
             this.lblAlertTicktimeSoundPath = new System.Windows.Forms.Label();
             this.txtAlertTicktimeSoundPath = new System.Windows.Forms.TextBox();
             this.btnBrowseTicktimeSound = new System.Windows.Forms.Button();
+            this.groupBoxColorZones = new System.Windows.Forms.GroupBox();
+            this.lblColorZoneProfile = new System.Windows.Forms.Label();
+            this.cmbColorZoneProfile = new System.Windows.Forms.ComboBox();
+            this.lblPingGreen = new System.Windows.Forms.Label();
+            this.numPingGreen = new System.Windows.Forms.NumericUpDown();
+            this.lblPingYellow = new System.Windows.Forms.Label();
+            this.numPingYellow = new System.Windows.Forms.NumericUpDown();
+            this.lblTickrateGreen = new System.Windows.Forms.Label();
+            this.numTickrateGreen = new System.Windows.Forms.NumericUpDown();
+            this.lblTickrateYellow = new System.Windows.Forms.Label();
+            this.numTickrateYellow = new System.Windows.Forms.NumericUpDown();
+            this.lblTicktimeGreen = new System.Windows.Forms.Label();
+            this.numTicktimeGreen = new System.Windows.Forms.NumericUpDown();
+            this.lblTicktimeYellow = new System.Windows.Forms.Label();
+            this.numTicktimeYellow = new System.Windows.Forms.NumericUpDown();
+            this.btnResetColorZones = new System.Windows.Forms.Button();
             this.groupBoxNetworkQuality = new System.Windows.Forms.GroupBox();
             this.chkNetworkQualityEnabled = new System.Windows.Forms.CheckBox();
             this.chkNetworkQualityOverlay = new System.Windows.Forms.CheckBox();
@@ -205,6 +221,13 @@ namespace tickMeter.Forms
             this.groupBoxAlertSounds.SuspendLayout();
             this.groupBoxNetworkQuality.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numQualityHistorySize)).BeginInit();
+            this.groupBoxColorZones.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numPingGreen)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numPingYellow)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numTickrateGreen)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numTickrateYellow)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numTicktimeGreen)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numTicktimeYellow)).BeginInit();
             this.groupBoxNetworkOptimizer.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numOptimizationThreshold)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numOptimizationInterval)).BeginInit();
@@ -225,6 +248,7 @@ namespace tickMeter.Forms
             this.panel1.Controls.Add(this.groupBoxAlerts);
             this.panel1.Controls.Add(this.groupBoxAlertSounds);
             this.panel1.Controls.Add(this.groupBoxNetworkOptimizer);
+            this.panel1.Controls.Add(this.groupBoxColorZones);
             this.panel1.Controls.Add(this.groupBoxNetworkQuality);
             this.panel1.Controls.Add(this.groupBox5);
             this.panel1.Controls.Add(this.groupBox4);
@@ -1602,6 +1626,185 @@ namespace tickMeter.Forms
             this.groupBoxNetworkQuality.TabStop = false;
             this.groupBoxNetworkQuality.Text = "Stage 6: Анализ качества сети";
             // 
+            // groupBoxColorZones
+            // 
+            this.groupBoxColorZones.Controls.Add(this.lblColorZoneProfile);
+            this.groupBoxColorZones.Controls.Add(this.cmbColorZoneProfile);
+            this.groupBoxColorZones.Controls.Add(this.lblPingGreen);
+            this.groupBoxColorZones.Controls.Add(this.numPingGreen);
+            this.groupBoxColorZones.Controls.Add(this.lblPingYellow);
+            this.groupBoxColorZones.Controls.Add(this.numPingYellow);
+            this.groupBoxColorZones.Controls.Add(this.lblTickrateGreen);
+            this.groupBoxColorZones.Controls.Add(this.numTickrateGreen);
+            this.groupBoxColorZones.Controls.Add(this.lblTickrateYellow);
+            this.groupBoxColorZones.Controls.Add(this.numTickrateYellow);
+            this.groupBoxColorZones.Controls.Add(this.lblTicktimeGreen);
+            this.groupBoxColorZones.Controls.Add(this.numTicktimeGreen);
+            this.groupBoxColorZones.Controls.Add(this.lblTicktimeYellow);
+            this.groupBoxColorZones.Controls.Add(this.numTicktimeYellow);
+            this.groupBoxColorZones.Controls.Add(this.btnResetColorZones);
+            this.groupBoxColorZones.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBoxColorZones.Location = new System.Drawing.Point(0, 1400);
+            this.groupBoxColorZones.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBoxColorZones.Name = "groupBoxColorZones";
+            this.groupBoxColorZones.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBoxColorZones.Size = new System.Drawing.Size(757, 220);
+            this.groupBoxColorZones.TabIndex = 9;
+            this.groupBoxColorZones.TabStop = false;
+            this.groupBoxColorZones.Text = "Color Zone Profiles (ChatGPT Recommended)";
+            // 
+            // lblColorZoneProfile
+            // 
+            this.lblColorZoneProfile.AutoSize = true;
+            this.lblColorZoneProfile.Location = new System.Drawing.Point(12, 25);
+            this.lblColorZoneProfile.Name = "lblColorZoneProfile";
+            this.lblColorZoneProfile.Size = new System.Drawing.Size(49, 17);
+            this.lblColorZoneProfile.TabIndex = 0;
+            this.lblColorZoneProfile.Text = "Profile:";
+            // 
+            // cmbColorZoneProfile
+            // 
+            this.cmbColorZoneProfile.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbColorZoneProfile.FormattingEnabled = true;
+            this.cmbColorZoneProfile.Items.AddRange(new object[] { "Low", "Medium", "High", "Custom" });
+            this.cmbColorZoneProfile.Location = new System.Drawing.Point(65, 22);
+            this.cmbColorZoneProfile.Name = "cmbColorZoneProfile";
+            this.cmbColorZoneProfile.Size = new System.Drawing.Size(100, 25);
+            this.cmbColorZoneProfile.TabIndex = 1;
+            // 
+            // lblPingGreen
+            //
+            this.lblPingGreen.AutoSize = true;
+            this.lblPingGreen.Location = new System.Drawing.Point(12, 60);
+            this.lblPingGreen.Name = "lblPingGreen";
+            this.lblPingGreen.Size = new System.Drawing.Size(90, 17);
+            this.lblPingGreen.TabIndex = 2;
+            this.lblPingGreen.Text = "Ping Green ≤:";
+            // 
+            // numPingGreen
+            // 
+            this.numPingGreen.DecimalPlaces = 0;
+            this.numPingGreen.Location = new System.Drawing.Point(110, 58);
+            this.numPingGreen.Maximum = new decimal(new int[] { 200, 0, 0, 0 });
+            this.numPingGreen.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            this.numPingGreen.Name = "numPingGreen";
+            this.numPingGreen.Size = new System.Drawing.Size(60, 23);
+            this.numPingGreen.TabIndex = 3;
+            this.numPingGreen.Value = new decimal(new int[] { 40, 0, 0, 0 });
+            // 
+            // lblPingYellow
+            //
+            this.lblPingYellow.AutoSize = true;
+            this.lblPingYellow.Location = new System.Drawing.Point(12, 88);
+            this.lblPingYellow.Name = "lblPingYellow";
+            this.lblPingYellow.Size = new System.Drawing.Size(95, 17);
+            this.lblPingYellow.TabIndex = 4;
+            this.lblPingYellow.Text = "Ping Yellow ≤:";
+            // 
+            // numPingYellow
+            // 
+            this.numPingYellow.DecimalPlaces = 0;
+            this.numPingYellow.Location = new System.Drawing.Point(110, 86);
+            this.numPingYellow.Maximum = new decimal(new int[] { 500, 0, 0, 0 });
+            this.numPingYellow.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            this.numPingYellow.Name = "numPingYellow";
+            this.numPingYellow.Size = new System.Drawing.Size(60, 23);
+            this.numPingYellow.TabIndex = 5;
+            this.numPingYellow.Value = new decimal(new int[] { 80, 0, 0, 0 });
+            // 
+            // lblTickrateGreen
+            //
+            this.lblTickrateGreen.AutoSize = true;
+            this.lblTickrateGreen.Location = new System.Drawing.Point(200, 60);
+            this.lblTickrateGreen.Name = "lblTickrateGreen";
+            this.lblTickrateGreen.Size = new System.Drawing.Size(110, 17);
+            this.lblTickrateGreen.TabIndex = 6;
+            this.lblTickrateGreen.Text = "Tickrate Green ≥:";
+            // 
+            // numTickrateGreen
+            // 
+            this.numTickrateGreen.DecimalPlaces = 2;
+            this.numTickrateGreen.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+            this.numTickrateGreen.Location = new System.Drawing.Point(320, 58);
+            this.numTickrateGreen.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+            this.numTickrateGreen.Minimum = new decimal(new int[] { 50, 0, 0, 131072 });
+            this.numTickrateGreen.Name = "numTickrateGreen";
+            this.numTickrateGreen.Size = new System.Drawing.Size(70, 23);
+            this.numTickrateGreen.TabIndex = 7;
+            this.numTickrateGreen.Value = new decimal(new int[] { 98, 0, 0, 131072 });
+            // 
+            // lblTickrateYellow
+            //
+            this.lblTickrateYellow.AutoSize = true;
+            this.lblTickrateYellow.Location = new System.Drawing.Point(200, 88);
+            this.lblTickrateYellow.Name = "lblTickrateYellow";
+            this.lblTickrateYellow.Size = new System.Drawing.Size(115, 17);
+            this.lblTickrateYellow.TabIndex = 8;
+            this.lblTickrateYellow.Text = "Tickrate Yellow ≥:";
+            // 
+            // numTickrateYellow
+            // 
+            this.numTickrateYellow.DecimalPlaces = 2;
+            this.numTickrateYellow.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+            this.numTickrateYellow.Location = new System.Drawing.Point(320, 86);
+            this.numTickrateYellow.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+            this.numTickrateYellow.Minimum = new decimal(new int[] { 50, 0, 0, 131072 });
+            this.numTickrateYellow.Name = "numTickrateYellow";
+            this.numTickrateYellow.Size = new System.Drawing.Size(70, 23);
+            this.numTickrateYellow.TabIndex = 9;
+            this.numTickrateYellow.Value = new decimal(new int[] { 95, 0, 0, 131072 });
+            // 
+            // lblTicktimeGreen
+            //
+            this.lblTicktimeGreen.AutoSize = true;
+            this.lblTicktimeGreen.Location = new System.Drawing.Point(420, 60);
+            this.lblTicktimeGreen.Name = "lblTicktimeGreen";
+            this.lblTicktimeGreen.Size = new System.Drawing.Size(108, 17);
+            this.lblTicktimeGreen.TabIndex = 10;
+            this.lblTicktimeGreen.Text = "Ticktime Green ≤:";
+            // 
+            // numTicktimeGreen
+            // 
+            this.numTicktimeGreen.DecimalPlaces = 2;
+            this.numTicktimeGreen.Increment = new decimal(new int[] { 5, 0, 0, 131072 });
+            this.numTicktimeGreen.Location = new System.Drawing.Point(540, 58);
+            this.numTicktimeGreen.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+            this.numTicktimeGreen.Minimum = new decimal(new int[] { 10, 0, 0, 131072 });
+            this.numTicktimeGreen.Name = "numTicktimeGreen";
+            this.numTicktimeGreen.Size = new System.Drawing.Size(70, 23);
+            this.numTicktimeGreen.TabIndex = 11;
+            this.numTicktimeGreen.Value = new decimal(new int[] { 60, 0, 0, 131072 });
+            // 
+            // lblTicktimeYellow
+            //
+            this.lblTicktimeYellow.AutoSize = true;
+            this.lblTicktimeYellow.Location = new System.Drawing.Point(420, 88);
+            this.lblTicktimeYellow.Name = "lblTicktimeYellow";
+            this.lblTicktimeYellow.Size = new System.Drawing.Size(113, 17);
+            this.lblTicktimeYellow.TabIndex = 12;
+            this.lblTicktimeYellow.Text = "Ticktime Yellow ≤:";
+            // 
+            // numTicktimeYellow
+            // 
+            this.numTicktimeYellow.DecimalPlaces = 2;
+            this.numTicktimeYellow.Increment = new decimal(new int[] { 5, 0, 0, 131072 });
+            this.numTicktimeYellow.Location = new System.Drawing.Point(540, 86);
+            this.numTicktimeYellow.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+            this.numTicktimeYellow.Minimum = new decimal(new int[] { 10, 0, 0, 131072 });
+            this.numTicktimeYellow.Name = "numTicktimeYellow";
+            this.numTicktimeYellow.Size = new System.Drawing.Size(70, 23);
+            this.numTicktimeYellow.TabIndex = 13;
+            this.numTicktimeYellow.Value = new decimal(new int[] { 90, 0, 0, 131072 });
+            // 
+            // btnResetColorZones
+            // 
+            this.btnResetColorZones.Location = new System.Drawing.Point(630, 22);
+            this.btnResetColorZones.Name = "btnResetColorZones";
+            this.btnResetColorZones.Size = new System.Drawing.Size(100, 25);
+            this.btnResetColorZones.TabIndex = 15;
+            this.btnResetColorZones.Text = "Reset to Default";
+            this.btnResetColorZones.UseVisualStyleBackColor = true;
+            // 
             // chkNetworkQualityEnabled
             // 
             this.chkNetworkQualityEnabled.AutoSize = true;
@@ -2186,6 +2389,14 @@ namespace tickMeter.Forms
             this.groupBoxNetworkQuality.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numOptimizationThreshold)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numOptimizationInterval)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numPingGreen)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numPingYellow)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numTickrateGreen)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numTickrateYellow)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numTicktimeGreen)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numTicktimeYellow)).EndInit();
+            this.groupBoxColorZones.ResumeLayout(false);
+            this.groupBoxColorZones.PerformLayout();
             this.groupBoxNetworkOptimizer.ResumeLayout(false);
             this.groupBoxNetworkOptimizer.PerformLayout();
             this.groupBox4.ResumeLayout(false);
@@ -2354,5 +2565,23 @@ namespace tickMeter.Forms
         private System.Windows.Forms.Label lblLastOptimization;
         private System.Windows.Forms.Label lblOptimizationStats;
         private System.Windows.Forms.Button btnClearOptimizationHistory;
+        
+        // Color Zones Settings
+        private System.Windows.Forms.GroupBox groupBoxColorZones;
+        private System.Windows.Forms.Label lblColorZoneProfile;
+        private System.Windows.Forms.ComboBox cmbColorZoneProfile;
+        private System.Windows.Forms.Label lblPingGreen;
+        private System.Windows.Forms.NumericUpDown numPingGreen;
+        private System.Windows.Forms.Label lblPingYellow;
+        private System.Windows.Forms.NumericUpDown numPingYellow;
+        private System.Windows.Forms.Label lblTickrateGreen;
+        private System.Windows.Forms.NumericUpDown numTickrateGreen;
+        private System.Windows.Forms.Label lblTickrateYellow;
+        private System.Windows.Forms.NumericUpDown numTickrateYellow;
+        private System.Windows.Forms.Label lblTicktimeGreen;
+        private System.Windows.Forms.NumericUpDown numTicktimeGreen;
+        private System.Windows.Forms.Label lblTicktimeYellow;
+        private System.Windows.Forms.NumericUpDown numTicktimeYellow;
+        private System.Windows.Forms.Button btnResetColorZones;
     }
 }

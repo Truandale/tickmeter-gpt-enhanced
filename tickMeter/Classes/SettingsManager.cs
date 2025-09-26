@@ -198,5 +198,102 @@ namespace tickMeter
                 MessageBox.Show("Не могу загрузить настройки."); 
             }
         }
+
+        // Color Zone Profile management
+        public ColorZoneProfile GetColorZoneProfile()
+        {
+            string profileName = GetOption("color_zone_profile", "Medium", "ZONES");
+            return ColorZoneProfile.GetProfile(profileName);
+        }
+
+        public void SetColorZoneProfile(string profileName)
+        {
+            SetOption("color_zone_profile", profileName, "ZONES");
+        }
+
+        public void SetCustomColorZones(float pingGreen, float pingYellow, float tickrateGreen, float tickrateYellow, float ticktimeGreen, float ticktimeYellow)
+        {
+            SetOption("ping_green_threshold", pingGreen.ToString(CultureInfo.InvariantCulture), "ZONES");
+            SetOption("ping_yellow_threshold", pingYellow.ToString(CultureInfo.InvariantCulture), "ZONES");
+            SetOption("tickrate_green_ratio", tickrateGreen.ToString(CultureInfo.InvariantCulture), "ZONES");
+            SetOption("tickrate_yellow_ratio", tickrateYellow.ToString(CultureInfo.InvariantCulture), "ZONES");
+            SetOption("ticktime_green_ratio", ticktimeGreen.ToString(CultureInfo.InvariantCulture), "ZONES");
+            SetOption("ticktime_yellow_ratio", ticktimeYellow.ToString(CultureInfo.InvariantCulture), "ZONES");
+            SetColorZoneProfile("Custom");
+        }
+    }
+
+    // Color Zone Profile system based on ChatGPT recommendations
+    public class ColorZoneProfile
+    {
+        public string Name { get; set; }
+        public float PingGreenMs { get; set; }
+        public float PingYellowMs { get; set; }
+        public float TickrateGreenRatio { get; set; }
+        public float TickrateYellowRatio { get; set; }
+        public float TicktimeGreenRatio { get; set; }
+        public float TicktimeYellowRatio { get; set; }
+
+        public static ColorZoneProfile GetProfile(string name)
+        {
+            switch (name.ToLower())
+            {
+                case "low":
+                    return new ColorZoneProfile
+                    {
+                        Name = "Low",
+                        PingGreenMs = 55f,
+                        PingYellowMs = 100f,
+                        TickrateGreenRatio = 0.97f,
+                        TickrateYellowRatio = 0.93f,
+                        TicktimeGreenRatio = 0.70f,
+                        TicktimeYellowRatio = 0.95f
+                    };
+                case "high":
+                    return new ColorZoneProfile
+                    {
+                        Name = "High",
+                        PingGreenMs = 30f,
+                        PingYellowMs = 60f,
+                        TickrateGreenRatio = 0.99f,
+                        TickrateYellowRatio = 0.97f,
+                        TicktimeGreenRatio = 0.50f,
+                        TicktimeYellowRatio = 0.85f
+                    };
+                case "custom":
+                    return LoadCustomProfile();
+                default: // Medium
+                    return new ColorZoneProfile
+                    {
+                        Name = "Medium",
+                        PingGreenMs = 40f,
+                        PingYellowMs = 80f,
+                        TickrateGreenRatio = 0.98f,
+                        TickrateYellowRatio = 0.95f,
+                        TicktimeGreenRatio = 0.60f,
+                        TicktimeYellowRatio = 0.90f
+                    };
+            }
+        }
+
+        private static ColorZoneProfile LoadCustomProfile()
+        {
+            // Return Medium profile as fallback - custom settings will be handled in the main app
+            return new ColorZoneProfile
+            {
+                Name = "Custom",
+                PingGreenMs = 40f,
+                PingYellowMs = 80f,
+                TickrateGreenRatio = 0.98f,
+                TickrateYellowRatio = 0.95f,
+                TicktimeGreenRatio = 0.60f,
+                TicktimeYellowRatio = 0.90f
+            };
+        }
+
+        public static string[] GetProfileNames()
+        {
+            return new string[] { "Low", "Medium", "High", "Custom" };
+        }
     }
 }
