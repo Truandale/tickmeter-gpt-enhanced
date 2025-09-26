@@ -529,7 +529,7 @@ namespace tickMeter.Classes
                 }
                 
                 // Формируем финальную строку (максимум 60 символов для RTSS)
-                var result = $"<S><C0>NET: {color}{icon} {qualityPercent}%";
+                var result = $"<S><C0>NET: {color}{icon} {qualityPercent}%<C>";
                 
                 if (extras.Count > 0)
                 {
@@ -537,12 +537,12 @@ namespace tickMeter.Classes
                     result += $" | {extrasText}";
                 }
                 
-                result += "<C0>" + Environment.NewLine;
+                result += Environment.NewLine;
                 
                 // Обрезаем если слишком длинно
                 if (result.Length > 80) // учитываем RTSS теги
                 {
-                    result = $"<S><C0>NET: {color}{icon} {qualityPercent}%<C0>" + Environment.NewLine;
+                    result = $"<S><C0>NET: {color}{icon} {qualityPercent}%<C>" + Environment.NewLine;
                 }
                 
                 return result;
@@ -550,7 +550,7 @@ namespace tickMeter.Classes
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.Print($"[FormatNetworkQuality] Error: {ex.Message}");
-                return "<S><C0>NET: <C2>Unknown<C0>" + Environment.NewLine;
+                return "<S><C0>NET: <C=FFFF00>Unknown<C>" + Environment.NewLine;
             }
         }
         
@@ -604,17 +604,17 @@ namespace tickMeter.Classes
                 _lastQualityLevel = newLevel;
             }
             
-            // Возвращаем параметры отображения
+            // Возвращаем параметры отображения с прямыми цветовыми кодами
             switch (newLevel)
             {
                 case "excellent":
-                    return ("Excellent", "<C3>", "EXC");
+                    return ("Excellent", "<C=00FF00>", "EXC");  // Прямой зеленый код
                 case "good":
-                    return ("Good", "<C3>", "GOOD");
+                    return ("Good", "<C=00FF00>", "GOOD");      // Прямой зеленый код
                 case "fair":
-                    return ("Fair", "<C2>", "FAIR");
+                    return ("Fair", "<C=FFFF00>", "FAIR");      // Прямой желтый код
                 default:
-                    return ("Poor", "<C1>", "POOR");
+                    return ("Poor", "<C=FF0000>", "POOR");      // Прямой красный код
             }
         }
         
