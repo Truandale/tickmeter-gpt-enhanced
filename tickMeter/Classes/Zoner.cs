@@ -239,19 +239,29 @@ namespace tickMeter.Classes
 
         /// <summary>
         /// Convert zone to legacy RTSS palette tags for compatibility
+        /// ChatGPT Enhanced: Use built-in RTSS colors for better compatibility
         /// </summary>
         public static string ToRtssLegacy(Zone zone)
         {
+            string result;
             switch (zone)
             {
                 case Zone.Green:
-                    return "<C3>";  // Good color
+                    // Use built-in RTSS green color instead of custom palette
+                    result = "<C=00FF00>";  // Bright green - bypasses palette issues
+                    break;
                 case Zone.Yellow:
-                    return "<C2>";  // Mid color
+                    result = "<C2>";  // Mid color  
+                    break;
                 case Zone.Red:
                 default:
-                    return "<C1>";  // Bad color
+                    result = "<C1>";  // Bad color
+                    break;
             }
+            
+            // ChatGPT Enhancement: Debug color mapping
+            Console.WriteLine($"[RTSS] Zone {zone} -> Color tag {result}");
+            return result;
         }
     }
 

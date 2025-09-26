@@ -170,6 +170,8 @@ namespace tickMeter.Classes
 
         public static string TextFormat()
         {
+            // ChatGPT Enhancement: Debug color values
+            Console.WriteLine($"[RTSS] Colors: Good={ColorGood}, Mid={ColorMid}, Bad={ColorBad}");
             return "<C0=" + LabelColor + "><C1=" + ColorBad+ "><C2=" + ColorMid + "><C3=" + ColorGood + "><C4="+ColorChart+"><S0=47><S1=65><S2=55><A0=-2><A1=2>";
         }
 
@@ -428,23 +430,23 @@ namespace tickMeter.Classes
                 {
                     if (App.settingsForm.settings_ping_chart.Checked && App.meterState.pingBuffer.Count() > 1)
                     {
-                        // === UNIFIED ZONING SYSTEM FOR RTSS ===
-                        // Use SAME zoner instance as GUI for consistent colors
+                        // === ChatGPT ENHANCED: Snapshot-based ping chart ===
+                        // Use SAME snapshot as FormatPing() for perfect consistency
+                        var snap = Classes.UnifiedDataSource.Snapshot();
                         var profile = App.settingsManager.GetColorZoneProfile();
-                        var zoner = Classes.Zoner.FromProfile(profile, 128.0);
+                        var zoner = Classes.Zoner.FromProfile(profile, snap.TargetHz);
                         
-                        // Get SAME unified data source as GUI
-                        double pingForZone = Classes.UnifiedDataSource.AvgPingForZone();
-                        var pingZone = zoner.FromPing(pingForZone);
+                        // Get zone from SAME snapshot data as FormatPing()
+                        var pingZone = zoner.FromPing(snap.PingAvgMs);
                         
-                        // Use SAME color mapping as GUI but for RTSS format
+                        // Use SAME color mapping as FormatPing() but for RTSS format
                         string pingColor = Classes.ZoneColors.ToRtssLegacy(pingZone);
                         
-                        // Format display value (same as before but cleaner)
+                        // Format display value from snapshot
                         string pingValue = "";
-                        if (pingForZone > 0)
+                        if (snap.PingAvgMs > 0)
                         {
-                            pingValue = ((int)pingForZone).ToString();
+                            pingValue = ((int)snap.PingAvgMs).ToString();
                         }
                         else
                         {
@@ -457,7 +459,16 @@ namespace tickMeter.Classes
                         if (showSpikeIndicator && meterState.Server.HasPingSpike)
                         {
                             pingValue += " (!)";
-                        }                    output += Environment.NewLine + "<S0><C4>Ping" + Environment.NewLine;
+                        }
+                        
+                        // ChatGPT Enhancement: Add diagnostic for ping chart (temporary)
+                        bool showDiagnostics = App.settingsManager?.GetOption("debug_zone_diagnostics", "False", "ADVANCED") == "True";
+                        if (showDiagnostics)
+                        {
+                            Console.WriteLine($"[RTSS CHART] {zoner.GetDiagnostic(snap)} | Color: {pingColor} | Value: {pingValue}");
+                        }
+                        
+                        output += Environment.NewLine + "<S0><C4>Ping" + Environment.NewLine;
                     
                     // Применяем сглаживание к графику пинга если включено
                     float[] pingGraphData = Classes.SmoothingManager.SmoothSeries(
