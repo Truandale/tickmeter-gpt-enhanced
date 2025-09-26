@@ -247,8 +247,8 @@ namespace tickMeter.Classes
             switch (zone)
             {
                 case Zone.Green:
-                    // Use built-in RTSS green color instead of custom palette
-                    result = "<C=00FF00>";  // Bright green - bypasses palette issues
+                    // Use ColorGood palette setting for user customization
+                    result = "<C3>";  // Good green - uses ColorGood setting
                     break;
                 case Zone.Yellow:
                     result = "<C2>";  // Mid color  

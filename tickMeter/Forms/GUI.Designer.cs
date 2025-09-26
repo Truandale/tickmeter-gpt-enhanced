@@ -73,7 +73,7 @@
             this.tickrate_lbl.Location = new System.Drawing.Point(16, 11);
             this.tickrate_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.tickrate_lbl.Name = "tickrate_lbl";
-            this.tickrate_lbl.Size = new System.Drawing.Size(162, 39);
+            this.tickrate_lbl.Size = new System.Drawing.Size(203, 48);
             this.tickrate_lbl.TabIndex = 18;
             this.tickrate_lbl.Text = "Tickrate:";
             this.tickrate_lbl.UseCompatibleTextRendering = true;
@@ -93,7 +93,7 @@
             this.tickrate_val.Location = new System.Drawing.Point(237, 7);
             this.tickrate_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.tickrate_val.Name = "tickrate_val";
-            this.tickrate_val.Size = new System.Drawing.Size(36, 53);
+            this.tickrate_val.Size = new System.Drawing.Size(45, 65);
             this.tickrate_val.TabIndex = 24;
             this.tickrate_val.Text = "0";
             this.tickrate_val.UseCompatibleTextRendering = true;
@@ -109,7 +109,7 @@
             this.ping_val.Location = new System.Drawing.Point(237, 113);
             this.ping_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.ping_val.Name = "ping_val";
-            this.ping_val.Size = new System.Drawing.Size(77, 39);
+            this.ping_val.Size = new System.Drawing.Size(97, 48);
             this.ping_val.TabIndex = 25;
             this.ping_val.Text = "0 ms";
             this.ping_val.UseCompatibleTextRendering = true;
@@ -125,7 +125,7 @@
             this.ping_lbl.Location = new System.Drawing.Point(16, 113);
             this.ping_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.ping_lbl.Name = "ping_lbl";
-            this.ping_lbl.Size = new System.Drawing.Size(111, 39);
+            this.ping_lbl.Size = new System.Drawing.Size(139, 48);
             this.ping_lbl.TabIndex = 26;
             this.ping_lbl.Text = "Ping :";
             this.ping_lbl.UseCompatibleTextRendering = true;
@@ -140,7 +140,7 @@
             this.ip_lbl.Location = new System.Drawing.Point(16, 65);
             this.ip_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.ip_lbl.Name = "ip_lbl";
-            this.ip_lbl.Size = new System.Drawing.Size(60, 39);
+            this.ip_lbl.Size = new System.Drawing.Size(75, 48);
             this.ip_lbl.TabIndex = 27;
             this.ip_lbl.Text = "IP:";
             this.ip_lbl.UseCompatibleTextRendering = true;
@@ -156,7 +156,7 @@
             this.ip_val.Location = new System.Drawing.Point(237, 65);
             this.ip_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.ip_val.Name = "ip_val";
-            this.ip_val.Size = new System.Drawing.Size(264, 39);
+            this.ip_val.Size = new System.Drawing.Size(330, 48);
             this.ip_val.TabIndex = 28;
             this.ip_val.Text = "000.000.000.000";
             this.ip_val.UseCompatibleTextRendering = true;
@@ -173,7 +173,7 @@
             this.countryLbl.Location = new System.Drawing.Point(331, 25);
             this.countryLbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.countryLbl.Name = "countryLbl";
-            this.countryLbl.Size = new System.Drawing.Size(0, 28);
+            this.countryLbl.Size = new System.Drawing.Size(0, 35);
             this.countryLbl.TabIndex = 29;
             this.countryLbl.UseCompatibleTextRendering = true;
             // 
@@ -193,7 +193,7 @@
             this.traffic_lbl.Location = new System.Drawing.Point(15, 161);
             this.traffic_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.traffic_lbl.Name = "traffic_lbl";
-            this.traffic_lbl.Size = new System.Drawing.Size(128, 39);
+            this.traffic_lbl.Size = new System.Drawing.Size(160, 48);
             this.traffic_lbl.TabIndex = 38;
             this.traffic_lbl.Text = "UP/DL :";
             this.traffic_lbl.UseCompatibleTextRendering = true;
@@ -208,7 +208,7 @@
             this.traffic_val.Location = new System.Drawing.Point(236, 161);
             this.traffic_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.traffic_val.Name = "traffic_val";
-            this.traffic_val.Size = new System.Drawing.Size(145, 39);
+            this.traffic_val.Size = new System.Drawing.Size(182, 48);
             this.traffic_val.TabIndex = 37;
             this.traffic_val.Text = "0 / 0 Mb";
             this.traffic_val.UseCompatibleTextRendering = true;
@@ -224,7 +224,7 @@
             this.time_lbl.Location = new System.Drawing.Point(16, 212);
             this.time_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.time_lbl.Name = "time_lbl";
-            this.time_lbl.Size = new System.Drawing.Size(111, 39);
+            this.time_lbl.Size = new System.Drawing.Size(139, 48);
             this.time_lbl.TabIndex = 42;
             this.time_lbl.Text = "Time :";
             this.time_lbl.UseCompatibleTextRendering = true;
@@ -239,7 +239,7 @@
             this.time_val.Location = new System.Drawing.Point(237, 212);
             this.time_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.time_val.Name = "time_val";
-            this.time_val.Size = new System.Drawing.Size(94, 39);
+            this.time_val.Size = new System.Drawing.Size(118, 48);
             this.time_val.TabIndex = 41;
             this.time_val.Text = "00:00";
             this.time_val.UseCompatibleTextRendering = true;
@@ -250,7 +250,7 @@
             this.webStatsButton.Cursor = System.Windows.Forms.Cursors.Hand;
             this.webStatsButton.Enabled = false;
             this.webStatsButton.Image = global::tickMeter.Properties.Resources.bar;
-            this.webStatsButton.Location = new System.Drawing.Point(478, 182);
+            this.webStatsButton.Location = new System.Drawing.Point(503, 0);
             this.webStatsButton.Margin = new System.Windows.Forms.Padding(4);
             this.webStatsButton.Name = "webStatsButton";
             this.webStatsButton.Size = new System.Drawing.Size(64, 59);
@@ -264,7 +264,7 @@
             // 
             this.gameProfilesButton.Cursor = System.Windows.Forms.Cursors.Hand;
             this.gameProfilesButton.Image = global::tickMeter.Properties.Resources.Board_Games_red;
-            this.gameProfilesButton.Location = new System.Drawing.Point(317, 2);
+            this.gameProfilesButton.Location = new System.Drawing.Point(503, 260);
             this.gameProfilesButton.Margin = new System.Windows.Forms.Padding(4);
             this.gameProfilesButton.Name = "gameProfilesButton";
             this.gameProfilesButton.Size = new System.Drawing.Size(64, 59);
@@ -277,7 +277,7 @@
             // 
             this.packetStatsBtn.Cursor = System.Windows.Forms.Cursors.Hand;
             this.packetStatsBtn.Image = global::tickMeter.Properties.Resources._switch;
-            this.packetStatsBtn.Location = new System.Drawing.Point(380, 2);
+            this.packetStatsBtn.Location = new System.Drawing.Point(503, 318);
             this.packetStatsBtn.Margin = new System.Windows.Forms.Padding(4);
             this.packetStatsBtn.Name = "packetStatsBtn";
             this.packetStatsBtn.Size = new System.Drawing.Size(64, 59);
@@ -290,7 +290,7 @@
             // 
             this.spikeAnalyticsBtn.Cursor = System.Windows.Forms.Cursors.Hand;
             this.spikeAnalyticsBtn.Image = global::tickMeter.Properties.Resources.bar;
-            this.spikeAnalyticsBtn.Location = new System.Drawing.Point(442, 1);
+            this.spikeAnalyticsBtn.Location = new System.Drawing.Point(503, 376);
             this.spikeAnalyticsBtn.Margin = new System.Windows.Forms.Padding(4);
             this.spikeAnalyticsBtn.Name = "spikeAnalyticsBtn";
             this.spikeAnalyticsBtn.Size = new System.Drawing.Size(64, 59);
@@ -303,13 +303,14 @@
             // 
             this.SettingsButton.Cursor = System.Windows.Forms.Cursors.Hand;
             this.SettingsButton.Image = global::tickMeter.Properties.Resources.settings;
-            this.SettingsButton.Location = new System.Drawing.Point(502, 1);
+            this.SettingsButton.Location = new System.Drawing.Point(503, 434);
             this.SettingsButton.Margin = new System.Windows.Forms.Padding(4);
             this.SettingsButton.Name = "SettingsButton";
             this.SettingsButton.Size = new System.Drawing.Size(64, 59);
             this.SettingsButton.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.SettingsButton.TabIndex = 39;
             this.SettingsButton.TabStop = false;
+            this.SettingsButton.Visible = false;
             this.SettingsButton.Click += new System.EventHandler(this.SettingsButton_Click);
             // 
             // graph
@@ -321,8 +322,7 @@
             this.graph.Location = new System.Drawing.Point(8, 318);
             this.graph.Margin = new System.Windows.Forms.Padding(4);
             this.graph.Name = "graph";
-            this.graph.Size = new System.Drawing.Size(416, 175);
-            this.graph.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
+            this.graph.Size = new System.Drawing.Size(487, 224);
             this.graph.TabIndex = 34;
             this.graph.TabStop = false;
             // 
@@ -336,10 +336,11 @@
             // 
             // icon_menu
             // 
+            this.icon_menu.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.icon_menu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.exit});
             this.icon_menu.Name = "icon_menu";
-            this.icon_menu.Size = new System.Drawing.Size(93, 26);
+            this.icon_menu.Size = new System.Drawing.Size(103, 28);
             this.icon_menu.Text = "TickMeter";
             this.icon_menu.Opening += new System.ComponentModel.CancelEventHandler(this.icon_menu_Opening);
             this.icon_menu.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.icon_menu_ItemClicked);
@@ -347,7 +348,7 @@
             // exit
             // 
             this.exit.Name = "exit";
-            this.exit.Size = new System.Drawing.Size(92, 22);
+            this.exit.Size = new System.Drawing.Size(102, 24);
             this.exit.Text = "Exit";
             // 
             // drops_lbl
@@ -360,7 +361,7 @@
             this.drops_lbl.Location = new System.Drawing.Point(16, 260);
             this.drops_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.drops_lbl.Name = "drops_lbl";
-            this.drops_lbl.Size = new System.Drawing.Size(111, 39);
+            this.drops_lbl.Size = new System.Drawing.Size(139, 48);
             this.drops_lbl.TabIndex = 45;
             this.drops_lbl.Text = "Drops:";
             this.drops_lbl.UseCompatibleTextRendering = true;
@@ -375,7 +376,7 @@
             this.drops_lbl_val.Location = new System.Drawing.Point(236, 260);
             this.drops_lbl_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.drops_lbl_val.Name = "drops_lbl_val";
-            this.drops_lbl_val.Size = new System.Drawing.Size(43, 39);
+            this.drops_lbl_val.Size = new System.Drawing.Size(54, 48);
             this.drops_lbl_val.TabIndex = 46;
             this.drops_lbl_val.Text = "0%";
             this.drops_lbl_val.UseCompatibleTextRendering = true;
@@ -386,7 +387,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Control;
-            this.ClientSize = new System.Drawing.Size(579, 548);
+            this.ClientSize = new System.Drawing.Size(577, 540);
             this.Controls.Add(this.drops_lbl_val);
             this.Controls.Add(this.drops_lbl);
             this.Controls.Add(this.webStatsButton);

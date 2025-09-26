@@ -240,8 +240,8 @@ namespace tickMeter.Classes
             }
             else
             {
-                // Good - use direct green color like ping to avoid black color issue
-                dropsColor = "<C=00FF00>";
+                // Good - use palette green color (ColorGood setting)
+                dropsColor = "<C3>";
             }
             
             dropsStr += dropsColor + meterState.GetDrops() + "%" + "<C>";
@@ -550,7 +550,7 @@ namespace tickMeter.Classes
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.Print($"[FormatNetworkQuality] Error: {ex.Message}");
-                return "<S><C0>NET: <C=FFFF00>Unknown<C>" + Environment.NewLine;
+                return "<S><C0>NET: <C2>Unknown<C>" + Environment.NewLine;
             }
         }
         
@@ -608,13 +608,13 @@ namespace tickMeter.Classes
             switch (newLevel)
             {
                 case "excellent":
-                    return ("Excellent", "<C=00FF00>", "EXC");  // Прямой зеленый код
+                    return ("Excellent", "<C3>", "EXC");  // Палитра зеленый (ColorGood)
                 case "good":
-                    return ("Good", "<C=00FF00>", "GOOD");      // Прямой зеленый код
+                    return ("Good", "<C3>", "GOOD");      // Палитра зеленый (ColorGood)
                 case "fair":
-                    return ("Fair", "<C=FFFF00>", "FAIR");      // Прямой желтый код
+                    return ("Fair", "<C2>", "FAIR");      // Палитра желтый (ColorMid)
                 default:
-                    return ("Poor", "<C=FF0000>", "POOR");      // Прямой красный код
+                    return ("Poor", "<C1>", "POOR");      // Палитра красный (ColorBad)
             }
         }
         
