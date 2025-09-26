@@ -287,7 +287,7 @@ namespace tickMeter.Classes
                 if (meterState.Server.HasPingSpike)
                 {
                     // Используем тот же цвет что и ping значение (сохраняем цвет зоны)
-                    spikeIndicator = $" {pingFont}(!)<C0>";
+                    spikeIndicator = $" {pingFont}(!)";
                     Debug.Print($"[RTSS] Spike indicator added to overlay with zone color");
                 }
             }
@@ -300,7 +300,7 @@ namespace tickMeter.Classes
                 diagnostic = Environment.NewLine + "<C0><S0>Diag RTSS: " + zoner.GetDiagnostic(snap) + "<C>";
             }
             
-            return "<S><C0>Ping: " + pingFont + pingValue + "<C><S0>ms" + spikeIndicator + " <C0>(" + geo + ")" + diagnostic + Environment.NewLine;
+            return "<S><C0>Ping: " + pingFont + pingValue + "<S0>ms" + spikeIndicator + "<C> <C0>(" + geo + ")" + diagnostic + Environment.NewLine;
         }
 
         public static void BuildRivaOutput()
