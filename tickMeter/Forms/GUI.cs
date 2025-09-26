@@ -519,27 +519,23 @@ namespace tickMeter.Forms
             //form overlay isn't visible, but still update ping data for both GUI and RTSS
             bool skipGUIUpdate = !OnScreen;
 
-            // === UNIFIED ZONING SYSTEM ===
-            // Create single zoner instance from current profile - used by both GUI and RTSS
+            // === ChatGPT ENHANCED: Snapshot-based unified zoning ===
+            // Use SAME snapshot as RTSS for perfect consistency
+            var snap = Classes.UnifiedDataSource.Snapshot();
             var profile = App.settingsManager.GetColorZoneProfile();
-            var zoner = Classes.Zoner.FromProfile(profile, 128.0); // TODO: get target tickrate from settings
+            var zoner = Classes.Zoner.FromProfile(profile, snap.TargetHz);
             
-            // Get unified data sources - SAME values for GUI and RTSS
-            double pingForZone = Classes.UnifiedDataSource.AvgPingForZone();
-            double tickrateForZone = Classes.UnifiedDataSource.AvgTickrateForZone();
-            double ticktimeForZone = Classes.UnifiedDataSource.AvgTicktimeForZone();
-            
-            // Calculate zones using SAME logic for GUI and RTSS
-            var pingZone = zoner.FromPing(pingForZone);
-            var tickrateZone = zoner.FromTickrate(tickrateForZone);
-            var ticktimeZone = zoner.FromTicktime(ticktimeForZone);
+            // Calculate zones using SAME snapshot data as RTSS
+            var pingZone = zoner.FromPing(snap.PingAvgMs);
+            var tickrateZone = zoner.FromTickrate(snap.TickrateAvgHz);
+            var ticktimeZone = zoner.FromTicktime(snap.TicktimeAvgMs);
             
             // Convert zones to colors - SAME mapping for GUI and RTSS
             Color PingColor = Classes.ZoneColors.ToColor(pingZone);
             Color TickRateColor = Classes.ZoneColors.ToColor(tickrateZone);
             
-            // Debug diagnostic output (remove in production)
-            System.Diagnostics.Debug.Print($"[ZONER] {zoner.GetDiagnostic(pingForZone, tickrateForZone, ticktimeForZone)}");
+            // ChatGPT Enhancement: Snapshot-based diagnostic for perfect consistency
+            System.Diagnostics.Debug.Print($"[ZONER GUI] {zoner.GetDiagnostic(snap)}");
             
             await Task.Run(
                     () => {

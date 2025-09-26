@@ -250,14 +250,14 @@ namespace tickMeter.Classes
 
         public static string FormatPing()
         {
-            // === UNIFIED ZONING SYSTEM FOR RTSS FormatPing ===
-            // Use SAME logic as GUI and BuildRivaOutput for consistent colors
-            var profile = App.settingsManager.GetColorZoneProfile();
-            var zoner = Classes.Zoner.FromProfile(profile, 128.0);
+            // === ChatGPT ENHANCED: Snapshot-based unified zoning ===
+            // Use SAME snapshot as GUI for perfect consistency
+            var snap = Classes.UnifiedDataSource.Snapshot();
+            var profile = App.settingsManager.GetColorZoneProfile(); 
+            var zoner = Classes.Zoner.FromProfile(profile, snap.TargetHz);
             
-            // Get SAME unified data source as GUI
-            double pingForZone = Classes.UnifiedDataSource.AvgPingForZone();
-            var pingZone = zoner.FromPing(pingForZone);
+            // Get zone from SAME snapshot data as GUI
+            var pingZone = zoner.FromPing(snap.PingAvgMs);
             
             // Use SAME color mapping as GUI but for RTSS format
             string pingFont = Classes.ZoneColors.ToRtssLegacy(pingZone);
@@ -265,10 +265,10 @@ namespace tickMeter.Classes
             string pingValue = "";
             string geo = meterState.Server.Location;
             
-            // Format display value
-            if (pingForZone > 0)
+            // Format display value from snapshot
+            if (snap.PingAvgMs > 0)
             {
-                pingValue = ((int)pingForZone).ToString();
+                pingValue = ((int)snap.PingAvgMs).ToString();
             }
             else
             {
@@ -290,7 +290,15 @@ namespace tickMeter.Classes
                 }
             }
             
-            return "<S><C0>Ping: " + pingFont + pingValue + "<S0>ms" + spikeIndicator + " <C0>(" + geo + ")" + Environment.NewLine;
+            // ChatGPT Enhancement: Add diagnostic line for testing (temporary)
+            string diagnostic = "";
+            bool showDiagnostics = App.settingsManager?.GetOption("debug_zone_diagnostics", "False", "ADVANCED") == "True";
+            if (showDiagnostics)
+            {
+                diagnostic = Environment.NewLine + "<C0><S0>Diag RTSS: " + zoner.GetDiagnostic(snap) + "<C>";
+            }
+            
+            return "<S><C0>Ping: " + pingFont + pingValue + "<C><S0>ms" + spikeIndicator + " <C0>(" + geo + ")" + diagnostic + Environment.NewLine;
         }
 
         public static void BuildRivaOutput()

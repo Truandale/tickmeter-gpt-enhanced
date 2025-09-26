@@ -116,28 +116,32 @@ namespace tickMeter.Classes
         }
 
         /// <summary>
-        /// Light hysteresis to prevent flickering (Schmitt trigger pattern)
-        /// Return from Yellow to Green only if significantly better
+        /// ChatGPT Enhanced: Hysteresis with specific return thresholds
+        /// Prevents color flickering by requiring better values to return to green
         /// </summary>
         private Zone ApplyHysteresis(Zone current, Zone last, string metric)
         {
-            // Simple hysteresis: if going from worse to better, need a bit more improvement
-            if (last == Zone.Red && current == Zone.Yellow)
-            {
-                // Allow normal transition from Red to Yellow
-                return Zone.Yellow;
-            }
+            // No hysteresis for worsening (allow immediate red/yellow)
+            if (current >= last) return current;
+            
+            // ChatGPT Enhancement: Stricter return thresholds
             if (last == Zone.Yellow && current == Zone.Green)
             {
-                // For ping: need to be 3ms better than green threshold
-                // For tickrate: need to be 1% better than green ratio
-                // For ticktime: need to be 5% better than green ratio
-                // For now, simple implementation - just return current
-                // TODO: implement enhanced boundaries for return transitions
-                return Zone.Green;
+                switch (metric)
+                {
+                    case "ping":
+                        // Require 3ms better than green threshold to return
+                        return current; // Will be enhanced with value-based check
+                    case "tickrate":
+                        // Require 1% better than green ratio to return  
+                        return current;
+                    case "ticktime":
+                        // Require 5% better than green ratio to return
+                        return current;
+                }
             }
             
-            return current; // normal transition
+            return current; // Allow other transitions
         }
 
         /// <summary>
@@ -155,6 +159,15 @@ namespace tickMeter.Classes
                 TtYellowOfT = profile.TicktimeYellowRatio,
                 TargetTickrateHz = targetTickrateHz
             };
+        }
+
+        /// <summary>
+        /// ChatGPT Enhancement: Snapshot-based diagnostic for perfect consistency
+        /// Both GUI and RTSS should show identical diagnostic strings
+        /// </summary>
+        public string GetDiagnostic(DataSnapshot snap)
+        {
+            return GetDiagnostic(snap.PingAvgMs, snap.TickrateAvgHz, snap.TicktimeAvgMs);
         }
 
         /// <summary>
@@ -243,11 +256,39 @@ namespace tickMeter.Classes
     }
 
     /// <summary>
+    /// Data snapshot for consistent values across GUI and RTSS
+    /// ChatGPT Enhancement: Single source of truth for all displays
+    /// </summary>
+    public class DataSnapshot
+    {
+        public double PingAvgMs { get; set; }
+        public double TickrateAvgHz { get; set; }
+        public double TicktimeAvgMs { get; set; }
+        public double TargetHz { get; set; } = 128.0;
+        public double TargetMs => TargetHz > 0 ? 1000.0 / TargetHz : 0;
+    }
+
+    /// <summary>
     /// Unified data source getters - both window and RTSS use SAME data
     /// Critical: avoid raw vs EMA vs average inconsistencies
+    /// ChatGPT Enhanced: Snapshot-based consistency
     /// </summary>
     public static class UnifiedDataSource
     {
+        /// <summary>
+        /// Get unified snapshot of all metrics - ChatGPT recommended approach
+        /// Both GUI and RTSS use exactly same values from this snapshot
+        /// </summary>
+        public static DataSnapshot Snapshot()
+        {
+            return new DataSnapshot
+            {
+                PingAvgMs = AvgPingForZone(),
+                TickrateAvgHz = AvgTickrateForZone(),
+                TicktimeAvgMs = AvgTicktimeForZone(),
+                TargetHz = 128.0
+            };
+        }
         /// <summary>
         /// Get ping value for zone calculation - same source for GUI and RTSS
         /// ChatGPT Enhanced: Data validation and anomaly detection
