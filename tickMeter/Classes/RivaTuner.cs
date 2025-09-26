@@ -179,30 +179,31 @@ namespace tickMeter.Classes
         {
             string tickRateStr = "<S><C0>Tickrate: ";
             
+            // === ChatGPT ENHANCED: Snapshot-based unified tickrate zoning ===
+            // Use SAME snapshot as FormatPing() for perfect consistency
+            var snap = Classes.UnifiedDataSource.Snapshot();
+            var profile = App.settingsManager.GetColorZoneProfile();
+            var zoner = Classes.Zoner.FromProfile(profile, snap.TargetHz);
+            
+            // Get zone from SAME snapshot data as GUI
+            var tickrateZone = zoner.FromTickrate(snap.TickrateAvgHz);
+            
+            // Use SAME color mapping as FormatPing() but for RTSS format
+            string tickrateColor = Classes.ZoneColors.ToRtssLegacy(tickrateZone);
+            
             // Применяем сглаживание для overlay значений тикрейта, если включено
             int displayTickrate = Classes.SmoothingManager.SmoothTickrateValueOverlay(meterState.OutputTickRate);
             
-            if (displayTickrate < 30)
-            {
-                tickRateStr += "<C1>" + displayTickrate.ToString();
-            }
-            else if (displayTickrate < 50)
-            {
-                tickRateStr += "<C2>" + displayTickrate.ToString();
-            }
-            else
-            {
-                tickRateStr += "<C3>" + displayTickrate.ToString();
-            }
+            tickRateStr += tickrateColor + displayTickrate.ToString();
             
             // Добавляем индикатор спайка для tickrate
             bool showTickrateSpikes = App.settingsManager?.GetOption("show_tickrate_spikes", "True", "ADVANCED") == "True";
             if (showTickrateSpikes && App.meterState.HasTickRateSpike)
             {
-                tickRateStr += " (!)";
+                tickRateStr += $" {tickrateColor}(!)";
             }
             
-            string output = tickRateStr + Environment.NewLine;
+            string output = tickRateStr + "<C>" + Environment.NewLine;
             return output;
         }
 
@@ -349,15 +350,14 @@ namespace tickMeter.Classes
             }
             if (App.settingsForm.settings_chart_checkbox.Checked)
             {
-                // --- Tickrate chart value and color ---
+                // === ChatGPT ENHANCED: Use unified zoning for tickrate chart ===
+                var snap = Classes.UnifiedDataSource.Snapshot();
+                var profile = App.settingsManager.GetColorZoneProfile();
+                var zoner = Classes.Zoner.FromProfile(profile, snap.TargetHz);
+                var tickrateZone = zoner.FromTickrate(snap.TickrateAvgHz);
+                string tickrateColor = Classes.ZoneColors.ToRtssLegacy(tickrateZone);
+                
                 float tickrateValue = App.meterState.OutputTickRate;
-                string tickrateColor = "<C3>";
-                if (tickrateValue < 30)
-                    tickrateColor = "<C1>";
-                else if (tickrateValue < 50)
-                    tickrateColor = "<C2>";
-                else
-                    tickrateColor = "<C3>";
 
                 // Добавляем индикатор спайка для tickrate chart
                 string tickrateChartLabel = "Tickrate";
@@ -386,20 +386,17 @@ namespace tickMeter.Classes
             }
             if (App.settingsForm.settings_ticktime_chart.Checked)
             {
-                // --- Ticktime chart label and color ---
+                // === ChatGPT ENHANCED: Use unified zoning for ticktime chart ===
+                var snap = Classes.UnifiedDataSource.Snapshot();
+                var profile = App.settingsManager.GetColorZoneProfile();
+                var zoner = Classes.Zoner.FromProfile(profile, snap.TargetHz);
+                var ticktimeZone = zoner.FromTicktime(snap.TicktimeAvgMs);
+                string ticktimeColor = Classes.ZoneColors.ToRtssLegacy(ticktimeZone);
+                
                 float ticktimeValue = 0;
-                string ticktimeColor = "<C3>"; // зелёный
                 if (App.meterState.tickTimeBuffer.Count > 0)
                 {
                     ticktimeValue = App.meterState.tickTimeBuffer.Last();
-                    if (ticktimeValue < 7.0f)
-                        ticktimeColor = "<C3>"; // зелёный
-                    else if (ticktimeValue < 13.0f)
-                        ticktimeColor = "<C2>"; // жёлтый
-                    else if (ticktimeValue <= 16.6f)
-                        ticktimeColor = "<C5>"; // оранжевый (или другой тег, если определён)
-                    else
-                        ticktimeColor = "<C1>"; // красный
                 }
                 // Добавляем индикатор спайка для ticktime
                 string ticktimeLabel = "Ticktime";
