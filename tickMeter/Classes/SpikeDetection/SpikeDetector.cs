@@ -15,6 +15,7 @@ namespace tickMeter.Classes.SpikeDetection
         public bool IsInSpike { get; set; } = false;
         public DateTime LastSpikeTime { get; set; } = DateTime.MinValue;
         public DateTime SpikeStartTime { get; set; } = DateTime.MinValue;
+        public DateTime LastUpdateTime { get; set; } = DateTime.MinValue; // Для расчета Δt
         public double SpikeEnergy { get; set; } = 0.0;
         public Queue<double> InitWindow { get; set; } = new Queue<double>();
         public bool IsInitialized { get; set; } = false;
@@ -63,14 +64,11 @@ namespace tickMeter.Classes.SpikeDetection
                     return;
                 }
 
-                // Обновляем EMA (экспоненциальное скользящее среднее)
-                UpdateEma(state, value);
+                // Обновляем EMA и EW-σ одновременно (исправленный алгоритм)
+                UpdateEmaAndSigma(state, value);
                 
-                // Обновляем EW-σ (экспоненциально взвешенное стандартное отклонение)
-                UpdateEwSigma(state, value);
-                
-                // Рассчитываем текущий порог с учетом чувствительности
-                double threshold = state.EmaValue + (_settings.SensitivityMultiplier * state.EwSigma);
+                // Рассчитываем текущий порог с учетом чувствительности и направленности
+                double threshold = CalculateThreshold(metric, state.EmaValue, state.EwSigma);
                 state.CurrentThreshold = threshold;
                 
                 // Проверяем детекцию спайка
@@ -97,28 +95,121 @@ namespace tickMeter.Classes.SpikeDetection
             }
         }
 
-        private void UpdateEma(MetricState state, double value)
+        private void UpdateEmaAndSigma(MetricState state, double value)
         {
+            // Критическое исправление #1: Правильный порядок обновления EMA и EW-σ
+            // по формуле Дж. Уэйнрайта для численной стабильности
+            
             if (double.IsNaN(state.EmaValue))
             {
+                // Первое значение
                 state.EmaValue = value;
+                state.EwSigma = 0.1; // Минимальная σ для избежания деления на ноль
+                return;
             }
-            else
+
+            // Определяем коэффициенты α и β в зависимости от состояния спайка
+            double alpha = _settings.EmaAlpha;
+            double beta = _settings.EwSigmaAlpha;
+            
+            // Критическое исправление #3: Заморозка базовой линии во время спайка
+            if (state.IsInSpike)
             {
-                state.EmaValue = _settings.EmaAlpha * value + (1 - _settings.EmaAlpha) * state.EmaValue;
+                alpha /= 10.0; // Сильно уменьшаем обновление среднего
+                beta /= 10.0;  // Сильно уменьшаем обновление σ
+            }
+
+            // Правильная формула обновления по Уэйнрайту:
+            double m_prev = state.EmaValue;
+            double m_new = m_prev + alpha * (value - m_prev);
+            
+            // EW-variance: используем разность к старому И новому среднему
+            double variance_update = beta * (value - m_prev) * (value - m_new);
+            double current_variance = Math.Max(0, state.EwSigma * state.EwSigma); // σ² -> variance
+            double new_variance = (1 - beta) * current_variance + variance_update;
+            
+            // Обновляем состояние
+            state.EmaValue = m_new;
+            state.EwSigma = Math.Sqrt(Math.Max(new_variance, 1e-6)); // Минимальная σ для стабильности
+        }
+
+        /// <summary>
+        /// Критическое исправление #1: Направленная детекция спайков
+        /// Ping, TickTime — спайк только "вверх": x > μ + k·σ
+        /// TickRate — спайк "вниз": x < μ - k·σ
+        /// </summary>
+        private bool IsSpikeOn(MetricKind metric, double value, double baseline, double sigma)
+        {
+            // Получаем специфичный коэффициент для метрики
+            double k = GetMetricSensitivityCoefficient(metric);
+            
+            switch (metric)
+            {
+                case MetricKind.Tickrate:
+                    // TickRate: спайк когда значение падает ниже нормы
+                    return value < (baseline - k * sigma);
+                
+                case MetricKind.Ping:
+                case MetricKind.Ticktime:
+                default:
+                    // Ping, TickTime: спайк когда значение растет выше нормы
+                    return value > (baseline + k * sigma);
             }
         }
 
-        private void UpdateEwSigma(MetricState state, double value)
+        /// <summary>
+        /// Направленная проверка выхода из спайка с гистерезисом
+        /// </summary>
+        private bool IsSpikeOff(MetricKind metric, double value, double baseline, double sigma)
         {
-            if (double.IsNaN(state.EwSigma))
+            // Получаем специфичный коэффициент для метрики с гистерезисом
+            double k_off = GetMetricSensitivityCoefficient(metric) * _settings.HysteresisRatio;
+            
+            switch (metric)
             {
-                state.EwSigma = Math.Abs(value - state.EmaValue);
+                case MetricKind.Tickrate:
+                    // TickRate: выходим из спайка когда значение поднимается выше порога выхода
+                    return value > (baseline - k_off * sigma);
+                
+                case MetricKind.Ping:
+                case MetricKind.Ticktime:
+                default:
+                    // Ping, TickTime: выходим из спайка когда значение падает ниже порога выхода
+                    return value < (baseline + k_off * sigma);
             }
-            else
+        }
+
+        /// <summary>
+        /// Получить коэффициент чувствительности для конкретной метрики
+        /// </summary>
+        private double GetMetricSensitivityCoefficient(MetricKind metric)
+        {
+            if (_settings.MetricSensitivityCoefficients != null && 
+                _settings.MetricSensitivityCoefficients.ContainsKey(metric))
             {
-                double deviation = Math.Abs(value - state.EmaValue);
-                state.EwSigma = _settings.EwSigmaAlpha * deviation + (1 - _settings.EwSigmaAlpha) * state.EwSigma;
+                return _settings.MetricSensitivityCoefficients[metric];
+            }
+            
+            // Fallback на общий множитель
+            return _settings.SensitivityMultiplier;
+        }
+
+        /// <summary>
+        /// Рассчитать порог для метрики с учетом направленности
+        /// </summary>
+        private double CalculateThreshold(MetricKind metric, double baseline, double sigma)
+        {
+            double k = GetMetricSensitivityCoefficient(metric);
+            
+            switch (metric)
+            {
+                case MetricKind.Tickrate:
+                    return baseline - k * sigma; // Порог снизу для TickRate
+                
+                case MetricKind.Ping:
+                case MetricKind.Ticktime:
+                default:
+                    return baseline + k * sigma; // Порог сверху для Ping, TickTime
             }
         }
 
@@ -127,27 +218,53 @@ namespace tickMeter.Classes.SpikeDetection
             // Проверяем рефракторный период
             bool inRefractoryPeriod = (timestamp - state.LastSpikeTime).TotalMilliseconds < _settings.RefractoryPeriodMs;
             
+            // Критическое исправление #4: Энергия по времени, а не по тикам
+            double deltaTime = 0.0;
+            if (state.LastUpdateTime != DateTime.MinValue)
+            {
+                deltaTime = (timestamp - state.LastUpdateTime).TotalSeconds;
+                deltaTime = Math.Max(0.001, Math.Min(deltaTime, 1.0)); // Ограничиваем разумными пределами
+            }
+            state.LastUpdateTime = timestamp;
+            
             if (state.IsInSpike)
             {
-                // Логика завершения спайка с гистерезисом
-                double exitThreshold = state.EmaValue + (_settings.HysteresisRatio * _settings.SensitivityMultiplier * state.EwSigma);
-                
-                if (value <= exitThreshold)
+                // Критическое исправление #1: Направленная логика завершения спайка с гистерезисом
+                if (IsSpikeOff(metric, value, state.EmaValue, state.EwSigma))
                 {
                     // Завершаем спайк
                     EndSpike(metric, state, timestamp);
                 }
                 else
                 {
-                    // Продолжаем накапливать энергию спайка
-                    double excessValue = Math.Max(0, value - state.EmaValue);
-                    state.SpikeEnergy += excessValue * excessValue; // Квадратичная энергия
+                    // Критическое исправление #4: Накапливаем энергию по времени
+                    double baseline = state.EmaValue;
+                    double threshold_on = GetMetricSensitivityCoefficient(metric) * state.EwSigma;
+                    
+                    double residual = 0.0;
+                    switch (metric)
+                    {
+                        case MetricKind.Tickrate:
+                            residual = Math.Max(0, baseline - value - threshold_on); // Спайк вниз
+                            break;
+                        case MetricKind.Ping:
+                        case MetricKind.Ticktime:
+                        default:
+                            residual = Math.Max(0, value - baseline - threshold_on); // Спайк вверх
+                            break;
+                    }
+                    
+                    // E += (residual - threshold_on) * Δt
+                    if (residual > 0 && deltaTime > 0)
+                    {
+                        state.SpikeEnergy += residual * deltaTime;
+                    }
                 }
             }
             else
             {
-                // Логика начала спайка
-                if (value > threshold && !inRefractoryPeriod)
+                // Критическое исправление #1: Направленная логика начала спайка
+                if (IsSpikeOn(metric, value, state.EmaValue, state.EwSigma) && !inRefractoryPeriod)
                 {
                     StartSpike(metric, state, value, timestamp, threshold);
                 }

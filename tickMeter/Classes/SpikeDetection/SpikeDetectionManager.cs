@@ -219,6 +219,9 @@ namespace tickMeter.Classes.SpikeDetection
 
                 // Минимальная длительность спайка
                 settings.MinSpikeDurationMs = settingsManager.GetInt("spikes.min_hold_ms", 120, "ADVANCED");
+
+                // Критическое исправление #8: Загружаем специфичные коэффициенты для метрик
+                LoadMetricSpecificCoefficients(settings, settingsManager);
             }
             catch (Exception ex)
             {
@@ -227,6 +230,31 @@ namespace tickMeter.Classes.SpikeDetection
             }
 
             return settings;
+        }
+
+        /// <summary>
+        /// Загружает специфичные для каждой метрики коэффициенты чувствительности
+        /// Критическое исправление #8 по рекомендации ChatGPT
+        /// </summary>
+        private static void LoadMetricSpecificCoefficients(SpikeDetectorSettings settings, SettingsManager settingsManager)
+        {
+            try
+            {
+                // Загружаем специфичные коэффициенты или используем значения по умолчанию
+                double pingCoeff = settingsManager.GetDouble("spikes.ping_sensitivity", 2.0, "ADVANCED");
+                double ticktimeCoeff = settingsManager.GetDouble("spikes.ticktime_sensitivity", 2.5, "ADVANCED");
+                double tickrateCoeff = settingsManager.GetDouble("spikes.tickrate_sensitivity", 2.0, "ADVANCED");
+
+                // Обновляем коэффициенты
+                settings.MetricSensitivityCoefficients[MetricKind.Ping] = pingCoeff;
+                settings.MetricSensitivityCoefficients[MetricKind.Ticktime] = ticktimeCoeff;
+                settings.MetricSensitivityCoefficients[MetricKind.Tickrate] = tickrateCoeff;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[SpikeDetectionManager] Error loading metric coefficients: {ex.Message}");
+                // Используем значения по умолчанию при ошибке - они уже установлены в конструкторе
+            }
         }
 
         /// <summary>

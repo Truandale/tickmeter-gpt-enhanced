@@ -120,9 +120,20 @@ namespace tickMeter.Classes.SpikeDetection
         // Размер окна для инициализации
         public int InitWindowSize { get; set; } = 20;
 
+        // Критическое исправление #8: Специфичные по метрикам коэффициенты чувствительности
+        public Dictionary<MetricKind, double> MetricSensitivityCoefficients { get; set; }
+
         public SpikeDetectorSettings()
         {
             EnabledMetrics = new List<MetricKind> { MetricKind.Ping };
+            
+            // Рекомендации ChatGPT: разные коэффициенты для разных метрик
+            MetricSensitivityCoefficients = new Dictionary<MetricKind, double>
+            {
+                { MetricKind.Ping, 2.0 },       // k_ping = 2.0
+                { MetricKind.Ticktime, 2.5 },   // k_ticktime = 2.5 (более чувствительно)
+                { MetricKind.Tickrate, 2.0 }    // k_tickrate = 2.0
+            };
         }
     }
 }
