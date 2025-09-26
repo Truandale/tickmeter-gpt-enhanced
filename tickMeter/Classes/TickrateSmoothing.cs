@@ -1,5 +1,6 @@
 using System;
 using tickMeter.Classes;
+using System.Globalization;
 
 namespace tickMeter.Classes
 {
@@ -111,7 +112,7 @@ namespace tickMeter.Classes
             {
                 // Коэффициент можно сделать настраиваемым через SettingsManager
                 double alpha = App.settingsManager?.GetString("tickrate_smoothing_alpha", "0.15") is string alphaStr
-                    && double.TryParse(alphaStr, out double parsedAlpha) ? parsedAlpha : 0.15;
+                    && double.TryParse(alphaStr, NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedAlpha) ? parsedAlpha : 0.15;
                 
                 _tickrateEMA = new ExponentialMovingAverage(alpha);
             }

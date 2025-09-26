@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows.Forms;
 using IniParser;
 using IniParser.Model;
+using System.Globalization;
 
 namespace tickMeter
 {
@@ -96,7 +97,7 @@ namespace tickMeter
             if (string.IsNullOrEmpty(value))
                 return defaultValue;
             
-            if (double.TryParse(value, out double result))
+            if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double result))
                 return result;
             
             return defaultValue;

@@ -654,7 +654,7 @@ namespace tickMeter.Forms
                     float currentTickrate = App.meterState.OutputTickRate;
                     float currentTicktime = 0;
                     float currentPacketLoss = 0;
-                    if (float.TryParse(App.meterState.GetDrops().Replace("%", ""), out float drops))
+                    if (float.TryParse(App.meterState.GetDrops().Replace("%", ""), NumberStyles.Float, CultureInfo.InvariantCulture, out float drops))
                     {
                         currentPacketLoss = drops;
                     }

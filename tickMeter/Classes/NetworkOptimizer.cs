@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using Microsoft.Win32;
+using System.Globalization;
 
 namespace tickMeter.Classes
 {
@@ -317,7 +318,7 @@ namespace tickMeter.Classes
             {
                 _enabled = App.settingsManager?.GetOption("network_optimization_enabled", "False", "ADVANCED") == "True";
                 
-                if (float.TryParse(App.settingsManager?.GetOption("optimization_threshold", "70", "ADVANCED"), out float threshold))
+                if (float.TryParse(App.settingsManager?.GetOption("optimization_threshold", "70", "ADVANCED"), NumberStyles.Float, CultureInfo.InvariantCulture, out float threshold))
                 {
                     _qualityThreshold = threshold / 100.0f;
                 }
