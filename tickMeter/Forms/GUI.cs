@@ -578,21 +578,21 @@ namespace tickMeter.Forms
                                     pingText = "n/a ms";
                                 }
                                 
-                                // Применяем базовый цвет на основе качества пинга
+                                // Применяем цвет на основе зоны (ПРИОРИТЕТ ЗОНЫ)
                                 Color finalPingColor = PingColor;
                                 
                                 // Добавляем индикатор спайка если включена соответствующая настройка
+                                // ВАЖНО: индикатор наследует цвет зоны, а не перезаписывает его
                                 bool showSpikeIndicator = App.settingsManager?.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
                                 Debug.Print($"[GUI] Spike check: HasPingSpike={server.HasPingSpike}, ShowSetting={showSpikeIndicator}, OnScreen={OnScreen}");
                                 if (showSpikeIndicator && server.HasPingSpike)
                                 {
                                     pingText += " (!)";
-                                    // Мигающий эффект для ping спайка (перезаписывает базовый цвет)
-                                    finalPingColor = _spikeBlinkState ? Color.Red : Color.Orange;
-                                    Debug.Print($"[GUI] Spike indicator added to display: {pingText}");
+                                    // Сохраняем цвет зоны - индикатор спайка того же цвета что и значение
+                                    Debug.Print($"[GUI] Spike indicator added with zone color: {pingText}");
                                 }
                                 
-                                // Применяем финальный цвет
+                                // Применяем финальный цвет (цвет зоны сохраняется)
                                 ping_val.ForeColor = finalPingColor;
                                 
                                 ping_val.Text = pingText;

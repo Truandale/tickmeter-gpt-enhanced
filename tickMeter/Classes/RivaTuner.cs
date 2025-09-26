@@ -284,8 +284,9 @@ namespace tickMeter.Classes
                 Debug.Print($"[RTSS] Spike check: HasPingSpike={meterState.Server.HasPingSpike}, ShowSetting={showSpikeIndicator}");
                 if (meterState.Server.HasPingSpike)
                 {
-                    spikeIndicator = " <C1>(!)<C0>";
-                    Debug.Print($"[RTSS] Spike indicator added to overlay");
+                    // Используем тот же цвет что и ping значение (сохраняем цвет зоны)
+                    spikeIndicator = $" {pingFont}(!)<C0>";
+                    Debug.Print($"[RTSS] Spike indicator added to overlay with zone color");
                 }
             }
             
