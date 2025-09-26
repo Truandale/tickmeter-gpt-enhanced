@@ -269,7 +269,7 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("ticktime", settings_ticktime_chart.Checked.ToString());
             App.settingsManager.SetOption("ping_chart", settings_ping_chart.Checked.ToString());
             App.settingsManager.SetOption("ping", settings_ping_checkbox.Checked.ToString());
-            App.settingsManager.SetOption("ping_interval", ping_interval.Value.ToString());
+            App.settingsManager.SetOption("ping_interval", SettingsManager.ToInvariantString((int)ping_interval.Value));
             App.settingsManager.SetOption("ping_ports", ping_ports.Text);
             App.settingsManager.SetOption("traffic", settings_traffic_checkbox.Checked.ToString());
             App.settingsManager.SetOption("color_label", HexConverter(ColorLabel.ForeColor));

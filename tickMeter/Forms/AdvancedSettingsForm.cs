@@ -105,11 +105,11 @@ namespace tickMeter.Forms
             {
                 // Live View настройки
                 App.settingsManager.SetOption("live_max_rows_enabled", chkLiveMaxRows.Checked.ToString(), "ADVANCED");
-                App.settingsManager.SetOption("live_max_rows", liveMaxRowsNumeric.Value.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("live_max_rows", SettingsManager.ToInvariantString((int)liveMaxRowsNumeric.Value), "ADVANCED");
                 
                 // RTSS настройки
                 App.settingsManager.SetOption("overlay_fps_enabled", chkOverlayFps.Checked.ToString(), "ADVANCED");
-                App.settingsManager.SetOption("overlay_fps", overlayFpsNumeric.Value.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("overlay_fps", SettingsManager.ToInvariantString((int)overlayFpsNumeric.Value), "ADVANCED");
                 
                 // BPF фильтр
                 App.settingsManager.SetOption("bpf_filter_enabled", chkBpfFilter.Checked.ToString(), "ADVANCED");
@@ -142,7 +142,7 @@ namespace tickMeter.Forms
                 // App.settingsManager.SetOption("advanced_spike_detection", chkAdvancedSpikeDetection.Checked.ToString(), "ADVANCED");
                 
                 // Настройки порогов для спайков пинга
-                App.settingsManager.SetOption("ping_spike_threshold", numPingSpikeThreshold.Value.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("ping_spike_threshold", SettingsManager.ToInvariantString((int)numPingSpikeThreshold.Value), "ADVANCED");
                 
                 // VPN bypass настройки
                 App.settingsManager.SetOption("vpn_bypass_basic", chkVpnBypassBasic.Checked.ToString(), "ADVANCED");
@@ -152,18 +152,18 @@ namespace tickMeter.Forms
                 App.settingsManager.SetOption("anti_reentrancy", chkAntiReentrancy.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("rtss_throttling", chkRtssThrottling.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("pcap_optimization", chkPcapOptimization.Checked.ToString(), "ADVANCED");
-                App.settingsManager.SetOption("pcap_kernel_buffer_mb", numPcapKernelBufferMb.Value.ToString(), "ADVANCED");
-                App.settingsManager.SetOption("pcap_min_to_copy", numPcapMinToCopy.Value.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("pcap_kernel_buffer_mb", SettingsManager.ToInvariantString((int)numPcapKernelBufferMb.Value), "ADVANCED");
+                App.settingsManager.SetOption("pcap_min_to_copy", SettingsManager.ToInvariantString((int)numPcapMinToCopy.Value), "ADVANCED");
                 
                 App.settingsManager.SetOption("virtual_mode_listview", chkVirtualModeListView.Checked.ToString(), "ADVANCED");
-                App.settingsManager.SetOption("virtual_mode_threshold", numVirtualModeThreshold.Value.ToString(), "ADVANCED");
-                App.settingsManager.SetOption("ring_buffer_size", numRingBufferSize.Value.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("virtual_mode_threshold", SettingsManager.ToInvariantString((int)numVirtualModeThreshold.Value), "ADVANCED");
+                App.settingsManager.SetOption("ring_buffer_size", SettingsManager.ToInvariantString((int)numRingBufferSize.Value), "ADVANCED");
                 App.settingsManager.SetOption("show_virtual_mode_stats", chkShowVirtualModeStats.Checked.ToString(), "ADVANCED");
                 
                 App.settingsManager.SetOption("high_priority_threads", chkHighPriorityThreads.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("single_consumer_pattern", chkSingleConsumerPattern.Checked.ToString(), "ADVANCED");
-                App.settingsManager.SetOption("ui_processing_rate", numUiProcessingRate.Value.ToString(), "ADVANCED");
-                App.settingsManager.SetOption("ui_batch_size", numUiBatchSize.Value.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("ui_processing_rate", SettingsManager.ToInvariantString((int)numUiProcessingRate.Value), "ADVANCED");
+                App.settingsManager.SetOption("ui_batch_size", SettingsManager.ToInvariantString((int)numUiBatchSize.Value), "ADVANCED");
                 
                 // Spike Detection настройки
                 SaveSpikeDetectionSettings();
@@ -466,17 +466,18 @@ namespace tickMeter.Forms
                 // Множитель чувствительности
                 App.settingsManager.SetOption("spikes.sensitivity_multiplier", SettingsManager.ToInvariantString((float)numSensitivityMultiplier.Value), "ADVANCED");
                 
-                // Гистерезис
-                App.settingsManager.SetOption("spikes.hysteresis_ratio", SettingsManager.ToInvariantString((float)numHysteresisRatio.Value), "ADVANCED");
+                // Гистерезис (зажимаем в разумные рамки 0.5-0.95)
+                float hysteresisValue = Math.Max(0.5f, Math.Min(0.95f, (float)numHysteresisRatio.Value));
+                App.settingsManager.SetOption("spikes.hysteresis_ratio", SettingsManager.ToInvariantString(hysteresisValue), "ADVANCED");
                 
                 // Рефракторный период
-                App.settingsManager.SetOption("spikes.refractory_period_ms", ((int)numRefractoryPeriod.Value).ToString(), "ADVANCED");
+                App.settingsManager.SetOption("spikes.refractory_period_ms", SettingsManager.ToInvariantString((int)numRefractoryPeriod.Value), "ADVANCED");
                 
                 // Минимальная энергия спайка
                 App.settingsManager.SetOption("spikes.min_energy_threshold", SettingsManager.ToInvariantString((float)numMinEnergyThreshold.Value), "ADVANCED");
                 
                 // Размер окна инициализации
-                App.settingsManager.SetOption("spikes.init_window_size", ((int)numInitWindowSize.Value).ToString(), "ADVANCED");
+                App.settingsManager.SetOption("spikes.init_window_size", SettingsManager.ToInvariantString((int)numInitWindowSize.Value), "ADVANCED");
 
                 // Уведомляем SpikeDetectionManager об изменении настроек
                 Classes.SpikeDetection.SpikeDetectionManager.UpdateSettings();

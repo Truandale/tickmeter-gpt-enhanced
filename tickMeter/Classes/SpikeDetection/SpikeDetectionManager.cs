@@ -177,7 +177,7 @@ namespace tickMeter.Classes.SpikeDetection
                     settings.EmaAlpha = settingsManager.GetDouble("spikes.ema_alpha", 0.1, "ADVANCED");
                     settings.EwSigmaAlpha = settingsManager.GetDouble("spikes.ew_sigma_alpha", 0.05, "ADVANCED");
                     settings.SensitivityMultiplier = settingsManager.GetDouble("spikes.sensitivity_multiplier", 2.0, "ADVANCED");
-                    settings.HysteresisRatio = settingsManager.GetDouble("spikes.hysteresis_ratio", 0.8, "ADVANCED");
+                    settings.HysteresisRatio = Math.Max(0.5, Math.Min(0.95, settingsManager.GetDouble("spikes.hysteresis_ratio", 0.8, "ADVANCED")));
                     settings.RefractoryPeriodMs = settingsManager.GetInt("spikes.refractory_period_ms", 1000, "ADVANCED");
                     settings.MinEnergyThreshold = settingsManager.GetDouble("spikes.min_energy_threshold", 1.0, "ADVANCED");
                     settings.InitWindowSize = settingsManager.GetInt("spikes.init_window_size", 20, "ADVANCED");

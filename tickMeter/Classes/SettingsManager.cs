@@ -173,6 +173,12 @@ namespace tickMeter
         /// </summary>
         public static string ToInvariantString(double value) =>
             value.ToString(Inv);
+        
+        /// <summary>
+        /// Helper method for invariant culture formatting (int overload)
+        /// </summary>
+        public static string ToInvariantString(int value) =>
+            value.ToString(Inv);
 
         public void SaveConfig()
         {
