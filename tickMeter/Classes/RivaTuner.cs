@@ -228,18 +228,23 @@ namespace tickMeter.Classes
         {
             string dropsStr = "<S><C0>Drops: ";
             float drops = meterState.GetDropsNumber();
+            string dropsColor;
+            
             if (drops > 5)
             {
-                dropsStr += "<C1>" + meterState.GetDrops();
+                dropsColor = "<C1>"; // Bad - use palette red
             }
             else if (drops > 1)
             {
-                dropsStr += "<C2>" + meterState.GetDrops();
+                dropsColor = "<C2>"; // Mid - use palette yellow
             }
             else
             {
-                dropsStr += "<C3>" + meterState.GetDrops();
+                // Good - use direct green color like ping to avoid black color issue
+                dropsColor = "<C=00FF00>";
             }
+            
+            dropsStr += dropsColor + meterState.GetDrops() + "<C>";
 
             return dropsStr + "%" + Environment.NewLine;
         }
