@@ -244,9 +244,9 @@ namespace tickMeter.Classes
                 dropsColor = "<C=00FF00>";
             }
             
-            dropsStr += dropsColor + meterState.GetDrops() + "<C>";
+            dropsStr += dropsColor + meterState.GetDrops() + "%" + "<C>";
 
-            return dropsStr + "%" + Environment.NewLine;
+            return dropsStr + Environment.NewLine;
         }
 
         public static string FormatTime()
