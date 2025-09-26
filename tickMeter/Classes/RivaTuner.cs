@@ -306,7 +306,7 @@ namespace tickMeter.Classes
                 diagnostic = Environment.NewLine + "<C0><S0>Diag RTSS: " + zoner.GetDiagnostic(snap) + "<C>";
             }
             
-            return "<S><C0>Ping: " + pingFont + pingValue + "<S0>ms" + spikeIndicator + "<C> <C0>(" + geo + ")" + diagnostic + Environment.NewLine;
+            return "<S><C0>Ping: " + pingFont + pingValue + " <S0>ms" + spikeIndicator + "<C> <C0>(" + geo + ")" + diagnostic + Environment.NewLine;
         }
 
         public static void BuildRivaOutput()
