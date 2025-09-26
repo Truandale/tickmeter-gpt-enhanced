@@ -608,9 +608,9 @@ namespace tickMeter.Forms
                                 if (showTickrateSpikes && App.meterState.HasTickRateSpike)
                                 {
                                     tickrateText += " (!)";
-                                    // Мигающий эффект для tickrate спайка
-                                    finalTickRateColor = _spikeBlinkState ? Color.Red : Color.Orange;
-                                    Debug.Print($"[GUI] Tickrate spike indicator added to display: {tickrateText}");
+                                    // Сохраняем цвет зоны - индикатор спайка того же цвета что и значение
+                                    // finalTickRateColor остается TickRateColor (цвет зоны)
+                                    Debug.Print($"[GUI] Tickrate spike indicator added with zone color: {tickrateText}");
                                 }
                                 
                                 tickrate_val.Text = tickrateText;
