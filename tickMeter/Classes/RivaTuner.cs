@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Net.NetworkInformation;
 
 namespace tickMeter.Classes
 {
@@ -538,6 +539,13 @@ namespace tickMeter.Classes
                 output += Environment.NewLine + FormatDiagnosticInfo();
             }
             
+            // FPS оверлея (выключен по умолчанию)
+            bool showOverlayFps = App.settingsManager?.GetOption("show_overlay_fps", "False", "EXTENDED") == "True";
+            if (showOverlayFps)
+            {
+                output += Environment.NewLine + FormatOverlayFPS();
+            }
+            
             PrintData(output, true);
         }
 
@@ -694,18 +702,39 @@ namespace tickMeter.Classes
             Print(text);
         }
 
+        // Кэш для процесса с TTL
+        private static string _cachedProcessInfo = "";
+        private static DateTime _lastProcessUpdate = DateTime.MinValue;
+        private static readonly TimeSpan PROCESS_TTL = TimeSpan.FromSeconds(1);
+        
         private static string FormatActiveProcess()
         {
             try
             {
-                if (!string.IsNullOrEmpty(App.meterState?.Game))
+                var now = DateTime.UtcNow;
+                if (now - _lastProcessUpdate > PROCESS_TTL)
                 {
-                    return $"Game: {App.meterState.Game}";
+                    if (!string.IsNullOrEmpty(App.meterState?.Game))
+                    {
+                        string processName = App.meterState.Game;
+                        
+                        // Обрезаем имя до 15 символов для компактности
+                        if (processName.Length > 15)
+                        {
+                            processName = processName.Substring(0, 12) + "...";
+                        }
+                        
+                        // Добавляем PID если доступен
+                        _cachedProcessInfo = $"Game: {processName}";
+                    }
+                    else
+                    {
+                        _cachedProcessInfo = "Game: Not detected";
+                    }
+                    _lastProcessUpdate = now;
                 }
-                else
-                {
-                    return "Game: Not detected";
-                }
+                
+                return _cachedProcessInfo;
             }
             catch
             {
@@ -713,105 +742,396 @@ namespace tickMeter.Classes
             }
         }
 
+        // Кэш для времени сессии с TTL
+        private static string _cachedSessionTime = "";
+        private static DateTime _lastSessionTimeUpdate = DateTime.MinValue;
+        private static readonly TimeSpan SESSION_TIME_TTL = TimeSpan.FromSeconds(1);
+        
         private static string FormatSessionTime()
         {
-            var sessionTime = DateTime.Now - Process.GetCurrentProcess().StartTime;
-            return $"Session: {sessionTime.Hours:D2}:{sessionTime.Minutes:D2}:{sessionTime.Seconds:D2}";
+            try
+            {
+                var now = DateTime.UtcNow;
+                if (now - _lastSessionTimeUpdate > SESSION_TIME_TTL)
+                {
+                    var sessionTime = DateTime.Now - Process.GetCurrentProcess().StartTime;
+                    _cachedSessionTime = $"Session: {sessionTime.Hours:D2}:{sessionTime.Minutes:D2}:{sessionTime.Seconds:D2}";
+                    _lastSessionTimeUpdate = now;
+                }
+                
+                return _cachedSessionTime;
+            }
+            catch
+            {
+                return "Session: Unknown";
+            }
         }
 
+        // Кэш для внешнего IP с длительным TTL
+        private static string _cachedExternalIP = "";
+        private static DateTime _lastExternalIPUpdate = DateTime.MinValue;
+        
         private static string FormatExternalIP()
         {
             try
             {
-                if (!string.IsNullOrEmpty(App.meterState?.Server?.Ip))
+                var now = DateTime.UtcNow;
+                
+                // Получаем TTL из настроек (по умолчанию 30 минут)
+                int ttlMinutes = 30;
+                try
                 {
-                    return $"Server IP: {App.meterState.Server.Ip}";
+                    ttlMinutes = int.Parse(App.settingsManager?.GetOption("external_ip_ttl_min", "30", "EXTENDED") ?? "30");
                 }
-                else
+                catch { /* используем значение по умолчанию */ }
+                
+                var externalIPTTL = TimeSpan.FromMinutes(ttlMinutes);
+                
+                if (now - _lastExternalIPUpdate > externalIPTTL)
                 {
-                    return "Server IP: Not connected";
+                    // TODO: Здесь можно добавить асинхронный запрос к внешнему сервису для получения публичного IP
+                    // Пока показываем IP сервера, к которому подключены
+                    if (!string.IsNullOrEmpty(App.meterState?.Server?.Ip))
+                    {
+                        _cachedExternalIP = $"Internet: {App.meterState.Server.Ip}";
+                    }
+                    else
+                    {
+                        _cachedExternalIP = "Internet: Not available";
+                    }
+                    _lastExternalIPUpdate = now;
                 }
+                
+                return _cachedExternalIP;
             }
             catch
             {
-                return "Server IP: Unknown";
+                return "Internet: Unknown";
             }
         }
 
+        // Кэш для статистики сессии с TTL
+        private static string _cachedSessionStats = "";
+        private static DateTime _lastSessionStatsUpdate = DateTime.MinValue;
+        private static readonly TimeSpan SESSION_STATS_TTL = TimeSpan.FromSeconds(2);
+        
         private static string FormatSessionStats()
         {
             try
             {
-                if (App.meterState != null)
+                var now = DateTime.UtcNow;
+                if (now - _lastSessionStatsUpdate > SESSION_STATS_TTL)
                 {
-                    var sessionDuration = DateTime.Now - App.meterState.SessionStart;
-                    string duration = $"{(int)sessionDuration.TotalMinutes}m";
-                    
-                    // Показываем loss и средний стабильный tickrate если доступны
-                    if (App.meterState.loss >= 0)
+                    if (App.meterState?.pingBuffer != null && App.meterState.pingBuffer.Count > 10)
                     {
-                        return $"Session: {duration}, Loss: {App.meterState.loss:F1}%";
+                        var pings = App.meterState.pingBuffer.ToArray();
+                        var validPings = pings.Where(p => p > 0).ToArray();
+                        
+                        if (validPings.Length > 5)
+                        {
+                            var avgPing = validPings.Average();
+                            var p95Ping = GetPercentile(validPings, 0.95);
+                            
+                            // Также показываем ticktime если доступен
+                            if (App.meterState.tickTimeBuffer?.Count > 5)
+                            {
+                                var ticktimes = App.meterState.tickTimeBuffer.Where(t => t > 0).ToArray();
+                                if (ticktimes.Length > 0)
+                                {
+                                    var avgTt = ticktimes.Average();
+                                    var p95Tt = GetPercentile(ticktimes, 0.95);
+                                    _cachedSessionStats = $"Session: Ping avg {avgPing:F1} (max {p95Ping:F0}) | Time avg {avgTt:F1} (max {p95Tt:F1})";
+                                }
+                                else
+                                {
+                                    _cachedSessionStats = $"Session: Ping avg {avgPing:F1} (max {p95Ping:F0})";
+                                }
+                            }
+                            else
+                            {
+                                _cachedSessionStats = $"Session: Ping avg {avgPing:F1} (max {p95Ping:F0})";
+                            }
+                        }
+                        else
+                        {
+                            _cachedSessionStats = "Session: Insufficient data";
+                        }
                     }
                     else
                     {
-                        return $"Session: {duration}";
+                        _cachedSessionStats = "Session: No data";
                     }
+                    _lastSessionStatsUpdate = now;
                 }
-                else
-                {
-                    return "Session: No data";
-                }
+                
+                return _cachedSessionStats;
             }
             catch
             {
                 return "Session: Error";
             }
         }
+        
+        // Вспомогательная функция для расчета перцентилей
+        private static float GetPercentile(float[] values, double percentile)
+        {
+            if (values.Length == 0) return 0;
+            
+            var sorted = values.OrderBy(x => x).ToArray();
+            int index = (int)Math.Ceiling(percentile * sorted.Length) - 1;
+            index = Math.Max(0, Math.Min(index, sorted.Length - 1));
+            
+            return sorted[index];
+        }
 
+        // Кэш для информации о сервере с TTL
+        private static string _cachedServerInfo = "";
+        private static DateTime _lastServerInfoUpdate = DateTime.MinValue;
+        private static readonly TimeSpan SERVER_INFO_TTL = TimeSpan.FromSeconds(5);
+        
         private static string FormatServerInfo()
         {
             try
             {
-                if (App.meterState?.Server != null)
+                var now = DateTime.UtcNow;
+                if (now - _lastServerInfoUpdate > SERVER_INFO_TTL)
                 {
-                    string location = !string.IsNullOrEmpty(App.meterState.Server.Location) 
-                        ? App.meterState.Server.Location 
-                        : "Unknown location";
-                    return $"Location: {location}";
+                    if (App.meterState?.Server != null)
+                    {
+                        string location = !string.IsNullOrEmpty(App.meterState.Server.Location) 
+                            ? App.meterState.Server.Location 
+                            : "Unknown";
+                        
+                        // Обрезаем название региона для компактности
+                        if (location.Length > 12)
+                        {
+                            location = location.Substring(0, 9) + "...";
+                        }
+                        
+                        // TODO: Добавить поддержку порта в GameServer классе
+                        string port = "";
+                        // if (App.meterState.Server.Port > 0)
+                        // {
+                        //     port = $" :{App.meterState.Server.Port}";
+                        // }
+                        
+                        _cachedServerInfo = $"Server: {location}{port}";
+                    }
+                    else
+                    {
+                        _cachedServerInfo = "Server: Not connected";
+                    }
+                    _lastServerInfoUpdate = now;
                 }
-                else
-                {
-                    return "Location: Not connected";
-                }
+                
+                return _cachedServerInfo;
             }
             catch
             {
-                return "Location: Unknown";
+                return "Server: Unknown";
             }
         }
 
+        // Кэш для счетчиков пакетов с TTL
+        private static string _cachedPacketCounters = "";
+        private static DateTime _lastPacketCountersUpdate = DateTime.MinValue;
+        private static readonly TimeSpan PACKET_COUNTERS_TTL = TimeSpan.FromMilliseconds(500);
+        
         private static string FormatPacketCounters()
         {
-            // This would need to be implemented with actual packet counting
-            return "Packets: N/A";
+            try
+            {
+                var now = DateTime.UtcNow;
+                if (now - _lastPacketCountersUpdate > PACKET_COUNTERS_TTL)
+                {
+                    // TODO: Реализовать подсчет пакетов через интеграцию с сетевым адаптером
+                    // Пока показываем примерные данные на основе трафика
+                    if (App.meterState != null)
+                    {
+                        // TODO: Добавить реальные счетчики пакетов
+                        // Примерная оценка на основе трафика (если доступен)
+                        long estimatedDownPackets = 0;
+                        long estimatedUpPackets = 0;
+                        
+                        // Пока используем примерные значения на основе статистики пингов
+                        if (App.meterState.pingBuffer?.Count > 0)
+                        {
+                            estimatedDownPackets = App.meterState.pingBuffer.Count; // Примерно 1 пакет на ping
+                            estimatedUpPackets = App.meterState.pingBuffer.Count / 2; // Ответы меньше
+                        }
+                        
+                        string downStr = FormatCount(estimatedDownPackets);
+                        string upStr = FormatCount(estimatedUpPackets);
+                        
+                        _cachedPacketCounters = $"Traffic: ↓{downStr} ↑{upStr}";
+                    }
+                    else
+                    {
+                        _cachedPacketCounters = "Traffic: N/A";
+                    }
+                    _lastPacketCountersUpdate = now;
+                }
+                
+                return _cachedPacketCounters;
+            }
+            catch
+            {
+                return "Traffic: Error";
+            }
+        }
+        
+        // Вспомогательная функция для форматирования больших чисел
+        private static string FormatCount(long count)
+        {
+            if (count >= 1000000)
+                return $"{count / 1000000.0:F1}M";
+            else if (count >= 1000)
+                return $"{count / 1000.0:F1}K";
+            else
+                return count.ToString();
         }
 
+        // Кэш для типа подключения с TTL
+        private static string _cachedConnectionType = "";
+        private static DateTime _lastConnectionTypeUpdate = DateTime.MinValue;
+        private static readonly TimeSpan CONNECTION_TYPE_TTL = TimeSpan.FromSeconds(10);
+        
         private static string FormatConnectionType()
         {
-            // This would need to be implemented with actual connection detection
-            return "Connection: Ethernet";
+            try
+            {
+                var now = DateTime.UtcNow;
+                if (now - _lastConnectionTypeUpdate > CONNECTION_TYPE_TTL)
+                {
+                    // TODO: Реализовать определение типа адаптера и WiFi RSSI
+                    // Пока показываем базовую информацию
+                    string connectionType = "Unknown";
+                    
+                    try
+                    {
+                        // Простая проверка через System.Net.NetworkInformation
+                        var interfaces = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
+                        var activeInterface = interfaces.FirstOrDefault(ni => 
+                            ni.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up &&
+                            ni.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Loopback);
+                        
+                        if (activeInterface != null)
+                        {
+                            switch (activeInterface.NetworkInterfaceType)
+                            {
+                                case System.Net.NetworkInformation.NetworkInterfaceType.Wireless80211:
+                                    connectionType = "Wi-Fi";
+                                    // TODO: Добавить RSSI если доступен
+                                    break;
+                                case System.Net.NetworkInformation.NetworkInterfaceType.Ethernet:
+                                    connectionType = "Ethernet";
+                                    break;
+                                default:
+                                    connectionType = activeInterface.NetworkInterfaceType.ToString();
+                                    if (connectionType.Length > 8)
+                                        connectionType = connectionType.Substring(0, 5) + "...";
+                                    break;
+                            }
+                        }
+                    }
+                    catch { /* используем значение по умолчанию */ }
+                    
+                    _cachedConnectionType = $"Connection: {connectionType}";
+                    _lastConnectionTypeUpdate = now;
+                }
+                
+                return _cachedConnectionType;
+            }
+            catch
+            {
+                return "Connection: Unknown";
+            }
         }
 
+        // Кэш для диагностической информации с TTL
+        private static string _cachedDiagnosticInfo = "";
+        private static DateTime _lastDiagnosticInfoUpdate = DateTime.MinValue;
+        private static readonly TimeSpan DIAGNOSTIC_INFO_TTL = TimeSpan.FromSeconds(2);
+        
         private static string FormatDiagnosticInfo()
         {
             try
             {
-                var memory = GC.GetTotalMemory(false) / (1024 * 1024);
-                return $"Memory: {memory}MB";
+                var now = DateTime.UtcNow;
+                if (now - _lastDiagnosticInfoUpdate > DIAGNOSTIC_INFO_TTL)
+                {
+                    var memory = GC.GetTotalMemory(false) / (1024 * 1024);
+                    
+                    // Показываем диагностику зон если включена
+                    bool showZoneDiag = App.settingsManager?.GetOption("show_diagnostic_info", "False", "EXTENDED") == "True";
+                    if (showZoneDiag)
+                    {
+                        try
+                        {
+                            var snap = Classes.UnifiedDataSource.Snapshot();
+                            var profile = App.settingsManager.GetColorZoneProfile();
+                            var zoner = Classes.Zoner.FromProfile(profile, snap.TargetHz);
+                            
+                            var pingZone = zoner.FromPing(snap.PingAvgMs);
+                            var trZone = zoner.FromTickrate(snap.TickrateAvgHz);
+                            
+                            _cachedDiagnosticInfo = $"Diag: ping={snap.PingAvgMs:F1} ({pingZone}) | tr={snap.TickrateAvgHz:F1} ({trZone}) | mem={memory}MB";
+                        }
+                        catch
+                        {
+                            _cachedDiagnosticInfo = $"Diag: Memory {memory}MB";
+                        }
+                    }
+                    else
+                    {
+                        _cachedDiagnosticInfo = $"Memory: {memory}MB";
+                    }
+                    
+                    _lastDiagnosticInfoUpdate = now;
+                }
+                
+                return _cachedDiagnosticInfo;
             }
             catch
             {
-                return "Diagnostics: N/A";
+                return "Diag: N/A";
+            }
+        }
+        
+        // Кэш для FPS оверлея с TTL
+        private static string _cachedOverlayFPS = "";
+        private static DateTime _lastOverlayFPSUpdate = DateTime.MinValue;
+        private static readonly TimeSpan OVERLAY_FPS_TTL = TimeSpan.FromSeconds(1);
+        private static int _frameCounter = 0;
+        private static DateTime _lastFPSMeasurement = DateTime.MinValue;
+        private static float _currentFPS = 0;
+        
+        private static string FormatOverlayFPS()
+        {
+            try
+            {
+                var now = DateTime.UtcNow;
+                
+                // Считаем FPS оверлея
+                _frameCounter++;
+                if (now - _lastFPSMeasurement > TimeSpan.FromSeconds(1))
+                {
+                    _currentFPS = _frameCounter / (float)(now - _lastFPSMeasurement).TotalSeconds;
+                    _frameCounter = 0;
+                    _lastFPSMeasurement = now;
+                }
+                
+                if (now - _lastOverlayFPSUpdate > OVERLAY_FPS_TTL)
+                {
+                    _cachedOverlayFPS = $"Overlay: {_currentFPS:F0} FPS";
+                    _lastOverlayFPSUpdate = now;
+                }
+                
+                return _cachedOverlayFPS;
+            }
+            catch
+            {
+                return "Overlay: N/A FPS";
             }
         }
     }

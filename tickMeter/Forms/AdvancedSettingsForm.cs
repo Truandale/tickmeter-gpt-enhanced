@@ -1314,14 +1314,32 @@ namespace tickMeter.Forms
             
             try
             {
-                chkShowActiveProcess.Checked = App.settingsManager.GetOption("show_active_process", "False", "EXTENDED") == "True";
-                chkShowSessionTime.Checked = App.settingsManager.GetOption("show_session_time", "False", "EXTENDED") == "True";
+                // Базовые настройки (включены по умолчанию для удобства)
+                chkShowActiveProcess.Checked = App.settingsManager.GetOption("show_active_process", "True", "EXTENDED") == "True";
+                chkShowSessionTime.Checked = App.settingsManager.GetOption("show_session_time", "True", "EXTENDED") == "True";
+                
+                // Расширенные настройки (выключены по умолчанию)
                 chkShowExternalIP.Checked = App.settingsManager.GetOption("show_external_ip", "False", "EXTENDED") == "True";
                 chkShowSessionStats.Checked = App.settingsManager.GetOption("show_session_stats", "False", "EXTENDED") == "True";
                 chkShowServerInfo.Checked = App.settingsManager.GetOption("show_server_info", "False", "EXTENDED") == "True";
                 chkShowPacketCounters.Checked = App.settingsManager.GetOption("show_packet_counters", "False", "EXTENDED") == "True";
                 chkShowConnectionType.Checked = App.settingsManager.GetOption("show_connection_type", "False", "EXTENDED") == "True";
+                
+                // Диагностика (выключена по умолчанию)
                 chkShowDiagnosticInfo.Checked = App.settingsManager.GetOption("show_diagnostic_info", "False", "EXTENDED") == "True";
+                
+                // TODO: Добавить контролы для TTL публичного IP и FPS оверлея в Designer
+                // TTL для публичного IP (30 минут по умолчанию) - будет добавлено позже
+                //if (numExternalIPTtl != null)
+                //{
+                //    numExternalIPTtl.Value = decimal.Parse(App.settingsManager.GetOption("external_ip_ttl_min", "30", "EXTENDED"));
+                //}
+                
+                // FPS оверлея (выключен по умолчанию) - будет добавлено позже
+                //if (chkShowOverlayFps != null)
+                //{
+                //    chkShowOverlayFps.Checked = App.settingsManager.GetOption("show_overlay_fps", "False", "EXTENDED") == "True";
+                //}
             }
             catch (Exception ex)
             {
@@ -1346,6 +1364,19 @@ namespace tickMeter.Forms
                 App.settingsManager.SetOption("show_packet_counters", chkShowPacketCounters.Checked ? "True" : "False", "EXTENDED");
                 App.settingsManager.SetOption("show_connection_type", chkShowConnectionType.Checked ? "True" : "False", "EXTENDED");
                 App.settingsManager.SetOption("show_diagnostic_info", chkShowDiagnosticInfo.Checked ? "True" : "False", "EXTENDED");
+                
+                // TODO: Добавить сохранение TTL и FPS после добавления контролов в Designer
+                // Сохраняем TTL для публичного IP - будет добавлено позже
+                //if (numExternalIPTtl != null)
+                //{
+                //    App.settingsManager.SetOption("external_ip_ttl_min", numExternalIPTtl.Value.ToString(), "EXTENDED");
+                //}
+                
+                // Сохраняем настройку FPS оверлея - будет добавлено позже
+                //if (chkShowOverlayFps != null)
+                //{
+                //    App.settingsManager.SetOption("show_overlay_fps", chkShowOverlayFps.Checked ? "True" : "False", "EXTENDED");
+                //}
             }
             catch (Exception ex)
             {
