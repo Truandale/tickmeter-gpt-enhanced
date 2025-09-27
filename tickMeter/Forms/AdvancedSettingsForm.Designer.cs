@@ -87,6 +87,64 @@ namespace tickMeter.Forms
             this.btnSpikePresetsSensitive = new System.Windows.Forms.Button();
             this.btnSpikePresetsBalanced = new System.Windows.Forms.Button();
             this.btnSpikePresetsConservative = new System.Windows.Forms.Button();
+            this.groupBoxAlerts = new System.Windows.Forms.GroupBox();
+            this.chkAlertSoundEnabled = new System.Windows.Forms.CheckBox();
+            this.chkAlertDiscordEnabled = new System.Windows.Forms.CheckBox();
+            this.lblAlertDiscordWebhook = new System.Windows.Forms.Label();
+            this.txtAlertDiscordWebhook = new System.Windows.Forms.TextBox();
+            this.lblAlertCooldown = new System.Windows.Forms.Label();
+            this.numAlertCooldown = new System.Windows.Forms.NumericUpDown();
+            this.btnTestDiscordAlert = new System.Windows.Forms.Button();
+            this.btnTestSoundAlert = new System.Windows.Forms.Button();
+            this.groupBoxAlertSounds = new System.Windows.Forms.GroupBox();
+            this.lblAlertPingSoundPath = new System.Windows.Forms.Label();
+            this.txtAlertPingSoundPath = new System.Windows.Forms.TextBox();
+            this.btnBrowsePingSound = new System.Windows.Forms.Button();
+            this.lblAlertTickrateSoundPath = new System.Windows.Forms.Label();
+            this.txtAlertTickrateSoundPath = new System.Windows.Forms.TextBox();
+            this.btnBrowseTickrateSound = new System.Windows.Forms.Button();
+            this.lblAlertTicktimeSoundPath = new System.Windows.Forms.Label();
+            this.txtAlertTicktimeSoundPath = new System.Windows.Forms.TextBox();
+            this.btnBrowseTicktimeSound = new System.Windows.Forms.Button();
+            this.groupBoxNetworkOptimizer = new System.Windows.Forms.GroupBox();
+            this.chkNetworkOptimizationEnabled = new System.Windows.Forms.CheckBox();
+            this.lblOptimizationThreshold = new System.Windows.Forms.Label();
+            this.numOptimizationThreshold = new System.Windows.Forms.NumericUpDown();
+            this.lblOptimizationInterval = new System.Windows.Forms.Label();
+            this.numOptimizationInterval = new System.Windows.Forms.NumericUpDown();
+            this.chkAggressiveOptimization = new System.Windows.Forms.CheckBox();
+            this.btnManualOptimization = new System.Windows.Forms.Button();
+            this.lblLastOptimization = new System.Windows.Forms.Label();
+            this.lblOptimizationStats = new System.Windows.Forms.Label();
+            this.btnClearOptimizationHistory = new System.Windows.Forms.Button();
+            this.groupBoxColorZones = new System.Windows.Forms.GroupBox();
+            this.lblColorZoneProfile = new System.Windows.Forms.Label();
+            this.cmbColorZoneProfile = new System.Windows.Forms.ComboBox();
+            this.lblPingGreen = new System.Windows.Forms.Label();
+            this.numPingGreen = new System.Windows.Forms.NumericUpDown();
+            this.lblPingYellow = new System.Windows.Forms.Label();
+            this.numPingYellow = new System.Windows.Forms.NumericUpDown();
+            this.lblTickrateGreen = new System.Windows.Forms.Label();
+            this.numTickrateGreen = new System.Windows.Forms.NumericUpDown();
+            this.lblTickrateYellow = new System.Windows.Forms.Label();
+            this.numTickrateYellow = new System.Windows.Forms.NumericUpDown();
+            this.lblTicktimeGreen = new System.Windows.Forms.Label();
+            this.numTicktimeGreen = new System.Windows.Forms.NumericUpDown();
+            this.lblTicktimeYellow = new System.Windows.Forms.Label();
+            this.numTicktimeYellow = new System.Windows.Forms.NumericUpDown();
+            this.btnResetColorZones = new System.Windows.Forms.Button();
+            this.groupBoxNetworkQuality = new System.Windows.Forms.GroupBox();
+            this.chkNetworkQualityEnabled = new System.Windows.Forms.CheckBox();
+            this.chkNetworkQualityOverlay = new System.Windows.Forms.CheckBox();
+            this.lblQualityHistorySize = new System.Windows.Forms.Label();
+            this.numQualityHistorySize = new System.Windows.Forms.NumericUpDown();
+            this.lblStabilityThreshold = new System.Windows.Forms.Label();
+            this.numStabilityThreshold = new System.Windows.Forms.NumericUpDown();
+            this.lblQualityThreshold = new System.Windows.Forms.Label();
+            this.numQualityThreshold = new System.Windows.Forms.NumericUpDown();
+            this.btnResetQualityAnalyzer = new System.Windows.Forms.Button();
+            this.lblCurrentQuality = new System.Windows.Forms.Label();
+            this.lblQualityRating = new System.Windows.Forms.Label();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.chkStunEnable = new System.Windows.Forms.CheckBox();
             this.chkShowPingSpikes = new System.Windows.Forms.CheckBox();
@@ -128,64 +186,6 @@ namespace tickMeter.Forms
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnReset = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
-            this.groupBoxAlerts = new System.Windows.Forms.GroupBox();
-            this.chkAlertSoundEnabled = new System.Windows.Forms.CheckBox();
-            this.chkAlertDiscordEnabled = new System.Windows.Forms.CheckBox();
-            this.lblAlertDiscordWebhook = new System.Windows.Forms.Label();
-            this.txtAlertDiscordWebhook = new System.Windows.Forms.TextBox();
-            this.lblAlertCooldown = new System.Windows.Forms.Label();
-            this.numAlertCooldown = new System.Windows.Forms.NumericUpDown();
-            this.btnTestDiscordAlert = new System.Windows.Forms.Button();
-            this.btnTestSoundAlert = new System.Windows.Forms.Button();
-            this.groupBoxAlertSounds = new System.Windows.Forms.GroupBox();
-            this.lblAlertPingSoundPath = new System.Windows.Forms.Label();
-            this.txtAlertPingSoundPath = new System.Windows.Forms.TextBox();
-            this.btnBrowsePingSound = new System.Windows.Forms.Button();
-            this.lblAlertTickrateSoundPath = new System.Windows.Forms.Label();
-            this.txtAlertTickrateSoundPath = new System.Windows.Forms.TextBox();
-            this.btnBrowseTickrateSound = new System.Windows.Forms.Button();
-            this.lblAlertTicktimeSoundPath = new System.Windows.Forms.Label();
-            this.txtAlertTicktimeSoundPath = new System.Windows.Forms.TextBox();
-            this.btnBrowseTicktimeSound = new System.Windows.Forms.Button();
-            this.groupBoxColorZones = new System.Windows.Forms.GroupBox();
-            this.lblColorZoneProfile = new System.Windows.Forms.Label();
-            this.cmbColorZoneProfile = new System.Windows.Forms.ComboBox();
-            this.lblPingGreen = new System.Windows.Forms.Label();
-            this.numPingGreen = new System.Windows.Forms.NumericUpDown();
-            this.lblPingYellow = new System.Windows.Forms.Label();
-            this.numPingYellow = new System.Windows.Forms.NumericUpDown();
-            this.lblTickrateGreen = new System.Windows.Forms.Label();
-            this.numTickrateGreen = new System.Windows.Forms.NumericUpDown();
-            this.lblTickrateYellow = new System.Windows.Forms.Label();
-            this.numTickrateYellow = new System.Windows.Forms.NumericUpDown();
-            this.lblTicktimeGreen = new System.Windows.Forms.Label();
-            this.numTicktimeGreen = new System.Windows.Forms.NumericUpDown();
-            this.lblTicktimeYellow = new System.Windows.Forms.Label();
-            this.numTicktimeYellow = new System.Windows.Forms.NumericUpDown();
-            this.btnResetColorZones = new System.Windows.Forms.Button();
-            this.groupBoxNetworkQuality = new System.Windows.Forms.GroupBox();
-            this.chkNetworkQualityEnabled = new System.Windows.Forms.CheckBox();
-            this.chkNetworkQualityOverlay = new System.Windows.Forms.CheckBox();
-            this.lblQualityHistorySize = new System.Windows.Forms.Label();
-            this.numQualityHistorySize = new System.Windows.Forms.NumericUpDown();
-            this.lblStabilityThreshold = new System.Windows.Forms.Label();
-            this.numStabilityThreshold = new System.Windows.Forms.NumericUpDown();
-            this.lblQualityThreshold = new System.Windows.Forms.Label();
-            this.numQualityThreshold = new System.Windows.Forms.NumericUpDown();
-            this.btnResetQualityAnalyzer = new System.Windows.Forms.Button();
-            this.lblCurrentQuality = new System.Windows.Forms.Label();
-            this.lblQualityRating = new System.Windows.Forms.Label();
-            this.groupBoxNetworkOptimizer = new System.Windows.Forms.GroupBox();
-            this.chkNetworkOptimizationEnabled = new System.Windows.Forms.CheckBox();
-            this.lblOptimizationThreshold = new System.Windows.Forms.Label();
-            this.numOptimizationThreshold = new System.Windows.Forms.NumericUpDown();
-            this.lblOptimizationInterval = new System.Windows.Forms.Label();
-            this.numOptimizationInterval = new System.Windows.Forms.NumericUpDown();
-            this.chkAggressiveOptimization = new System.Windows.Forms.CheckBox();
-            this.btnManualOptimization = new System.Windows.Forms.Button();
-            this.lblLastOptimization = new System.Windows.Forms.Label();
-            this.lblOptimizationStats = new System.Windows.Forms.Label();
-            this.btnClearOptimizationHistory = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.groupBoxVpnBypass.SuspendLayout();
             this.groupBoxPhase3.SuspendLayout();
@@ -200,6 +200,7 @@ namespace tickMeter.Forms
             this.groupBoxSpikeDetection.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numSpikeMinDuration)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numSpikeHistorySize)).BeginInit();
+            this.groupBoxSpikeAdvanced.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numEmaAlpha)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numEwSigmaAlpha)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numSensitivityMultiplier)).BeginInit();
@@ -207,7 +208,23 @@ namespace tickMeter.Forms
             ((System.ComponentModel.ISupportInitialize)(this.numRefractoryPeriod)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numMinEnergyThreshold)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numInitWindowSize)).BeginInit();
-            this.groupBoxSpikeAdvanced.SuspendLayout();
+            this.groupBoxAlerts.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numAlertCooldown)).BeginInit();
+            this.groupBoxAlertSounds.SuspendLayout();
+            this.groupBoxNetworkOptimizer.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numOptimizationThreshold)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numOptimizationInterval)).BeginInit();
+            this.groupBoxColorZones.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numPingGreen)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numPingYellow)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numTickrateGreen)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numTickrateYellow)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numTicktimeGreen)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numTicktimeYellow)).BeginInit();
+            this.groupBoxNetworkQuality.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numQualityHistorySize)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numStabilityThreshold)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numQualityThreshold)).BeginInit();
             this.groupBox5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPingSpikeThreshold)).BeginInit();
             this.groupBox4.SuspendLayout();
@@ -216,23 +233,6 @@ namespace tickMeter.Forms
             ((System.ComponentModel.ISupportInitialize)(this.overlayFpsNumeric)).BeginInit();
             this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.liveMaxRowsNumeric)).BeginInit();
-            this.groupBoxAlerts.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numAlertCooldown)).BeginInit();
-            this.groupBoxAlertSounds.SuspendLayout();
-            this.groupBoxNetworkQuality.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numQualityHistorySize)).BeginInit();
-            this.groupBoxColorZones.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numPingGreen)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numPingYellow)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numTickrateGreen)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numTickrateYellow)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numTicktimeGreen)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numTicktimeYellow)).BeginInit();
-            this.groupBoxNetworkOptimizer.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numOptimizationThreshold)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numOptimizationInterval)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numStabilityThreshold)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numQualityThreshold)).BeginInit();
             this.panelButtons.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -268,11 +268,11 @@ namespace tickMeter.Forms
             this.groupBoxVpnBypass.Controls.Add(this.chkVpnBypassAdvanced);
             this.groupBoxVpnBypass.Controls.Add(this.chkVpnBypassBasic);
             this.groupBoxVpnBypass.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxVpnBypass.Location = new System.Drawing.Point(13, 1504);
+            this.groupBoxVpnBypass.Location = new System.Drawing.Point(13, 2784);
             this.groupBoxVpnBypass.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxVpnBypass.Name = "groupBoxVpnBypass";
             this.groupBoxVpnBypass.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBoxVpnBypass.Size = new System.Drawing.Size(757, 98);
+            this.groupBoxVpnBypass.Size = new System.Drawing.Size(753, 98);
             this.groupBoxVpnBypass.TabIndex = 5;
             this.groupBoxVpnBypass.TabStop = false;
             this.groupBoxVpnBypass.Text = "VPN Bypass";
@@ -283,7 +283,7 @@ namespace tickMeter.Forms
             this.chkVpnBypassAdvanced.Location = new System.Drawing.Point(20, 59);
             this.chkVpnBypassAdvanced.Margin = new System.Windows.Forms.Padding(4);
             this.chkVpnBypassAdvanced.Name = "chkVpnBypassAdvanced";
-            this.chkVpnBypassAdvanced.Size = new System.Drawing.Size(396, 20);
+            this.chkVpnBypassAdvanced.Size = new System.Drawing.Size(399, 20);
             this.chkVpnBypassAdvanced.TabIndex = 1;
             this.chkVpnBypassAdvanced.Text = "Сложный VPN bypass (отслеживание через IP Helper API)";
             this.chkVpnBypassAdvanced.UseVisualStyleBackColor = true;
@@ -294,7 +294,7 @@ namespace tickMeter.Forms
             this.chkVpnBypassBasic.Location = new System.Drawing.Point(20, 31);
             this.chkVpnBypassBasic.Margin = new System.Windows.Forms.Padding(4);
             this.chkVpnBypassBasic.Name = "chkVpnBypassBasic";
-            this.chkVpnBypassBasic.Size = new System.Drawing.Size(315, 20);
+            this.chkVpnBypassBasic.Size = new System.Drawing.Size(318, 20);
             this.chkVpnBypassBasic.TabIndex = 0;
             this.chkVpnBypassBasic.Text = "Простой VPN bypass (показать реальный IP)";
             this.chkVpnBypassBasic.UseVisualStyleBackColor = true;
@@ -308,11 +308,11 @@ namespace tickMeter.Forms
             this.groupBoxPhase3.Controls.Add(this.lblUiBatchSize);
             this.groupBoxPhase3.Controls.Add(this.numUiBatchSize);
             this.groupBoxPhase3.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxPhase3.Location = new System.Drawing.Point(13, 1304);
+            this.groupBoxPhase3.Location = new System.Drawing.Point(13, 2584);
             this.groupBoxPhase3.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxPhase3.Name = "groupBoxPhase3";
             this.groupBoxPhase3.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBoxPhase3.Size = new System.Drawing.Size(757, 200);
+            this.groupBoxPhase3.Size = new System.Drawing.Size(753, 200);
             this.groupBoxPhase3.TabIndex = 6;
             this.groupBoxPhase3.TabStop = false;
             this.groupBoxPhase3.Text = "Phase 3: Thread Priority & Single Consumer";
@@ -323,7 +323,7 @@ namespace tickMeter.Forms
             this.chkHighPriorityThreads.Location = new System.Drawing.Point(20, 31);
             this.chkHighPriorityThreads.Margin = new System.Windows.Forms.Padding(4);
             this.chkHighPriorityThreads.Name = "chkHighPriorityThreads";
-            this.chkHighPriorityThreads.Size = new System.Drawing.Size(277, 20);
+            this.chkHighPriorityThreads.Size = new System.Drawing.Size(280, 20);
             this.chkHighPriorityThreads.TabIndex = 0;
             this.chkHighPriorityThreads.Text = "Высокий приоритет для PCAP потоков";
             this.chkHighPriorityThreads.UseVisualStyleBackColor = true;
@@ -334,7 +334,7 @@ namespace tickMeter.Forms
             this.chkSingleConsumerPattern.Location = new System.Drawing.Point(20, 59);
             this.chkSingleConsumerPattern.Margin = new System.Windows.Forms.Padding(4);
             this.chkSingleConsumerPattern.Name = "chkSingleConsumerPattern";
-            this.chkSingleConsumerPattern.Size = new System.Drawing.Size(298, 20);
+            this.chkSingleConsumerPattern.Size = new System.Drawing.Size(301, 20);
             this.chkSingleConsumerPattern.TabIndex = 1;
             this.chkSingleConsumerPattern.Text = "Single Consumer Pattern для UI обновлений";
             this.chkSingleConsumerPattern.UseVisualStyleBackColor = true;
@@ -414,11 +414,11 @@ namespace tickMeter.Forms
             this.groupBoxPhase2.Controls.Add(this.numRingBufferSize);
             this.groupBoxPhase2.Controls.Add(this.chkShowVirtualModeStats);
             this.groupBoxPhase2.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxPhase2.Location = new System.Drawing.Point(13, 1154);
+            this.groupBoxPhase2.Location = new System.Drawing.Point(13, 2434);
             this.groupBoxPhase2.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxPhase2.Name = "groupBoxPhase2";
             this.groupBoxPhase2.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBoxPhase2.Size = new System.Drawing.Size(757, 150);
+            this.groupBoxPhase2.Size = new System.Drawing.Size(753, 150);
             this.groupBoxPhase2.TabIndex = 7;
             this.groupBoxPhase2.TabStop = false;
             this.groupBoxPhase2.Text = "Phase 2: VirtualMode ListView";
@@ -429,7 +429,7 @@ namespace tickMeter.Forms
             this.chkVirtualModeListView.Location = new System.Drawing.Point(20, 31);
             this.chkVirtualModeListView.Margin = new System.Windows.Forms.Padding(4);
             this.chkVirtualModeListView.Name = "chkVirtualModeListView";
-            this.chkVirtualModeListView.Size = new System.Drawing.Size(289, 20);
+            this.chkVirtualModeListView.Size = new System.Drawing.Size(292, 20);
             this.chkVirtualModeListView.TabIndex = 0;
             this.chkVirtualModeListView.Text = "Автоматический VirtualMode для ListView";
             this.chkVirtualModeListView.UseVisualStyleBackColor = true;
@@ -506,7 +506,7 @@ namespace tickMeter.Forms
             this.chkShowVirtualModeStats.Location = new System.Drawing.Point(20, 95);
             this.chkShowVirtualModeStats.Margin = new System.Windows.Forms.Padding(4);
             this.chkShowVirtualModeStats.Name = "chkShowVirtualModeStats";
-            this.chkShowVirtualModeStats.Size = new System.Drawing.Size(267, 20);
+            this.chkShowVirtualModeStats.Size = new System.Drawing.Size(270, 20);
             this.chkShowVirtualModeStats.TabIndex = 5;
             this.chkShowVirtualModeStats.Text = "Показывать диагностику VirtualMode";
             this.chkShowVirtualModeStats.UseVisualStyleBackColor = true;
@@ -521,11 +521,11 @@ namespace tickMeter.Forms
             this.groupBoxPhase1.Controls.Add(this.lblPcapMinToCopy);
             this.groupBoxPhase1.Controls.Add(this.numPcapMinToCopy);
             this.groupBoxPhase1.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxPhase1.Location = new System.Drawing.Point(13, 1004);
+            this.groupBoxPhase1.Location = new System.Drawing.Point(13, 2284);
             this.groupBoxPhase1.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxPhase1.Name = "groupBoxPhase1";
             this.groupBoxPhase1.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBoxPhase1.Size = new System.Drawing.Size(757, 150);
+            this.groupBoxPhase1.Size = new System.Drawing.Size(753, 150);
             this.groupBoxPhase1.TabIndex = 8;
             this.groupBoxPhase1.TabStop = false;
             this.groupBoxPhase1.Text = "Phase 1: Anti-Reentrancy & PCAP Optimization";
@@ -536,7 +536,7 @@ namespace tickMeter.Forms
             this.chkAntiReentrancy.Location = new System.Drawing.Point(20, 31);
             this.chkAntiReentrancy.Margin = new System.Windows.Forms.Padding(4);
             this.chkAntiReentrancy.Name = "chkAntiReentrancy";
-            this.chkAntiReentrancy.Size = new System.Drawing.Size(228, 20);
+            this.chkAntiReentrancy.Size = new System.Drawing.Size(231, 20);
             this.chkAntiReentrancy.TabIndex = 0;
             this.chkAntiReentrancy.Text = "Защита от реэнтерабельности";
             this.chkAntiReentrancy.UseVisualStyleBackColor = true;
@@ -547,7 +547,7 @@ namespace tickMeter.Forms
             this.chkRtssThrottling.Location = new System.Drawing.Point(320, 31);
             this.chkRtssThrottling.Margin = new System.Windows.Forms.Padding(4);
             this.chkRtssThrottling.Name = "chkRtssThrottling";
-            this.chkRtssThrottling.Size = new System.Drawing.Size(218, 20);
+            this.chkRtssThrottling.Size = new System.Drawing.Size(221, 20);
             this.chkRtssThrottling.TabIndex = 1;
             this.chkRtssThrottling.Text = "Троттлинг RTSS обновлений";
             this.chkRtssThrottling.UseVisualStyleBackColor = true;
@@ -558,7 +558,7 @@ namespace tickMeter.Forms
             this.chkPcapOptimization.Location = new System.Drawing.Point(20, 59);
             this.chkPcapOptimization.Margin = new System.Windows.Forms.Padding(4);
             this.chkPcapOptimization.Name = "chkPcapOptimization";
-            this.chkPcapOptimization.Size = new System.Drawing.Size(216, 20);
+            this.chkPcapOptimization.Size = new System.Drawing.Size(219, 20);
             this.chkPcapOptimization.TabIndex = 2;
             this.chkPcapOptimization.Text = "Оптимизация PCAP буферов";
             this.chkPcapOptimization.UseVisualStyleBackColor = true;
@@ -640,11 +640,11 @@ namespace tickMeter.Forms
             this.groupBoxSpikeDetection.Controls.Add(this.numSpikeHistorySize);
             this.groupBoxSpikeDetection.Controls.Add(this.chkSpikeAutoCalibration);
             this.groupBoxSpikeDetection.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxSpikeDetection.Location = new System.Drawing.Point(13, 804);
+            this.groupBoxSpikeDetection.Location = new System.Drawing.Point(13, 2084);
             this.groupBoxSpikeDetection.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxSpikeDetection.Name = "groupBoxSpikeDetection";
             this.groupBoxSpikeDetection.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBoxSpikeDetection.Size = new System.Drawing.Size(757, 200);
+            this.groupBoxSpikeDetection.Size = new System.Drawing.Size(753, 200);
             this.groupBoxSpikeDetection.TabIndex = 5;
             this.groupBoxSpikeDetection.TabStop = false;
             this.groupBoxSpikeDetection.Text = "Детекция спайков";
@@ -655,7 +655,7 @@ namespace tickMeter.Forms
             this.chkSpikeDetectionEnable.Location = new System.Drawing.Point(20, 30);
             this.chkSpikeDetectionEnable.Margin = new System.Windows.Forms.Padding(4);
             this.chkSpikeDetectionEnable.Name = "chkSpikeDetectionEnable";
-            this.chkSpikeDetectionEnable.Size = new System.Drawing.Size(214, 20);
+            this.chkSpikeDetectionEnable.Size = new System.Drawing.Size(217, 20);
             this.chkSpikeDetectionEnable.TabIndex = 0;
             this.chkSpikeDetectionEnable.Text = "Включить детекцию спайков";
             this.chkSpikeDetectionEnable.UseVisualStyleBackColor = true;
@@ -666,7 +666,7 @@ namespace tickMeter.Forms
             this.chkSpikeMetricPing.Location = new System.Drawing.Point(250, 30);
             this.chkSpikeMetricPing.Margin = new System.Windows.Forms.Padding(4);
             this.chkSpikeMetricPing.Name = "chkSpikeMetricPing";
-            this.chkSpikeMetricPing.Size = new System.Drawing.Size(58, 20);
+            this.chkSpikeMetricPing.Size = new System.Drawing.Size(61, 20);
             this.chkSpikeMetricPing.TabIndex = 1;
             this.chkSpikeMetricPing.Text = "Пинг";
             this.chkSpikeMetricPing.UseVisualStyleBackColor = true;
@@ -677,7 +677,7 @@ namespace tickMeter.Forms
             this.chkSpikeMetricTickrate.Location = new System.Drawing.Point(320, 30);
             this.chkSpikeMetricTickrate.Margin = new System.Windows.Forms.Padding(4);
             this.chkSpikeMetricTickrate.Name = "chkSpikeMetricTickrate";
-            this.chkSpikeMetricTickrate.Size = new System.Drawing.Size(81, 20);
+            this.chkSpikeMetricTickrate.Size = new System.Drawing.Size(84, 20);
             this.chkSpikeMetricTickrate.TabIndex = 2;
             this.chkSpikeMetricTickrate.Text = "Тикрейт";
             this.chkSpikeMetricTickrate.UseVisualStyleBackColor = true;
@@ -688,7 +688,7 @@ namespace tickMeter.Forms
             this.chkSpikeMetricTicktime.Location = new System.Drawing.Point(410, 30);
             this.chkSpikeMetricTicktime.Margin = new System.Windows.Forms.Padding(4);
             this.chkSpikeMetricTicktime.Name = "chkSpikeMetricTicktime";
-            this.chkSpikeMetricTicktime.Size = new System.Drawing.Size(82, 20);
+            this.chkSpikeMetricTicktime.Size = new System.Drawing.Size(85, 20);
             this.chkSpikeMetricTicktime.TabIndex = 3;
             this.chkSpikeMetricTicktime.Text = "Тиктайм";
             this.chkSpikeMetricTicktime.UseVisualStyleBackColor = true;
@@ -805,7 +805,7 @@ namespace tickMeter.Forms
             this.chkSpikeAutoCalibration.Location = new System.Drawing.Point(20, 140);
             this.chkSpikeAutoCalibration.Margin = new System.Windows.Forms.Padding(4);
             this.chkSpikeAutoCalibration.Name = "chkSpikeAutoCalibration";
-            this.chkSpikeAutoCalibration.Size = new System.Drawing.Size(216, 20);
+            this.chkSpikeAutoCalibration.Size = new System.Drawing.Size(219, 20);
             this.chkSpikeAutoCalibration.TabIndex = 12;
             this.chkSpikeAutoCalibration.Text = "Автоматическая калибровка";
             this.chkSpikeAutoCalibration.UseVisualStyleBackColor = true;
@@ -831,11 +831,11 @@ namespace tickMeter.Forms
             this.groupBoxSpikeAdvanced.Controls.Add(this.btnSpikePresetsBalanced);
             this.groupBoxSpikeAdvanced.Controls.Add(this.btnSpikePresetsConservative);
             this.groupBoxSpikeAdvanced.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxSpikeAdvanced.Location = new System.Drawing.Point(13, 974);
+            this.groupBoxSpikeAdvanced.Location = new System.Drawing.Point(13, 1804);
             this.groupBoxSpikeAdvanced.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxSpikeAdvanced.Name = "groupBoxSpikeAdvanced";
             this.groupBoxSpikeAdvanced.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBoxSpikeAdvanced.Size = new System.Drawing.Size(757, 280);
+            this.groupBoxSpikeAdvanced.Size = new System.Drawing.Size(753, 280);
             this.groupBoxSpikeAdvanced.TabIndex = 6;
             this.groupBoxSpikeAdvanced.TabStop = false;
             this.groupBoxSpikeAdvanced.Text = "Расширенные настройки детекции спайков (Stage 4)";
@@ -858,7 +858,7 @@ namespace tickMeter.Forms
             0,
             0,
             196608});
-            this.numEmaAlpha.Location = new System.Drawing.Point(120, 28);
+            this.numEmaAlpha.Location = new System.Drawing.Point(157, 30);
             this.numEmaAlpha.Margin = new System.Windows.Forms.Padding(4);
             this.numEmaAlpha.Maximum = new decimal(new int[] {
             1,
@@ -882,10 +882,10 @@ namespace tickMeter.Forms
             // lblEwSigmaAlpha
             // 
             this.lblEwSigmaAlpha.AutoSize = true;
-            this.lblEwSigmaAlpha.Location = new System.Drawing.Point(220, 30);
+            this.lblEwSigmaAlpha.Location = new System.Drawing.Point(257, 32);
             this.lblEwSigmaAlpha.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblEwSigmaAlpha.Name = "lblEwSigmaAlpha";
-            this.lblEwSigmaAlpha.Size = new System.Drawing.Size(109, 16);
+            this.lblEwSigmaAlpha.Size = new System.Drawing.Size(113, 16);
             this.lblEwSigmaAlpha.TabIndex = 2;
             this.lblEwSigmaAlpha.Text = "EW-Sigma Alpha:";
             // 
@@ -897,7 +897,7 @@ namespace tickMeter.Forms
             0,
             0,
             196608});
-            this.numEwSigmaAlpha.Location = new System.Drawing.Point(350, 28);
+            this.numEwSigmaAlpha.Location = new System.Drawing.Point(410, 30);
             this.numEwSigmaAlpha.Margin = new System.Windows.Forms.Padding(4);
             this.numEwSigmaAlpha.Maximum = new decimal(new int[] {
             1,
@@ -921,10 +921,10 @@ namespace tickMeter.Forms
             // lblSensitivityMultiplier
             // 
             this.lblSensitivityMultiplier.AutoSize = true;
-            this.lblSensitivityMultiplier.Location = new System.Drawing.Point(450, 30);
+            this.lblSensitivityMultiplier.Location = new System.Drawing.Point(510, 32);
             this.lblSensitivityMultiplier.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblSensitivityMultiplier.Name = "lblSensitivityMultiplier";
-            this.lblSensitivityMultiplier.Size = new System.Drawing.Size(139, 16);
+            this.lblSensitivityMultiplier.Size = new System.Drawing.Size(133, 16);
             this.lblSensitivityMultiplier.TabIndex = 4;
             this.lblSensitivityMultiplier.Text = "Множитель порога:";
             // 
@@ -936,7 +936,7 @@ namespace tickMeter.Forms
             0,
             0,
             65536});
-            this.numSensitivityMultiplier.Location = new System.Drawing.Point(600, 28);
+            this.numSensitivityMultiplier.Location = new System.Drawing.Point(660, 30);
             this.numSensitivityMultiplier.Margin = new System.Windows.Forms.Padding(4);
             this.numSensitivityMultiplier.Maximum = new decimal(new int[] {
             10,
@@ -963,7 +963,7 @@ namespace tickMeter.Forms
             this.lblHysteresisRatio.Location = new System.Drawing.Point(20, 65);
             this.lblHysteresisRatio.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblHysteresisRatio.Name = "lblHysteresisRatio";
-            this.lblHysteresisRatio.Size = new System.Drawing.Size(84, 16);
+            this.lblHysteresisRatio.Size = new System.Drawing.Size(86, 16);
             this.lblHysteresisRatio.TabIndex = 6;
             this.lblHysteresisRatio.Text = "Гистерезис:";
             // 
@@ -975,7 +975,7 @@ namespace tickMeter.Forms
             0,
             0,
             131072});
-            this.numHysteresisRatio.Location = new System.Drawing.Point(120, 63);
+            this.numHysteresisRatio.Location = new System.Drawing.Point(157, 65);
             this.numHysteresisRatio.Margin = new System.Windows.Forms.Padding(4);
             this.numHysteresisRatio.Maximum = new decimal(new int[] {
             95,
@@ -999,10 +999,10 @@ namespace tickMeter.Forms
             // lblRefractoryPeriod
             // 
             this.lblRefractoryPeriod.AutoSize = true;
-            this.lblRefractoryPeriod.Location = new System.Drawing.Point(220, 65);
+            this.lblRefractoryPeriod.Location = new System.Drawing.Point(257, 67);
             this.lblRefractoryPeriod.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblRefractoryPeriod.Name = "lblRefractoryPeriod";
-            this.lblRefractoryPeriod.Size = new System.Drawing.Size(122, 16);
+            this.lblRefractoryPeriod.Size = new System.Drawing.Size(139, 16);
             this.lblRefractoryPeriod.TabIndex = 8;
             this.lblRefractoryPeriod.Text = "Период тишины (мс):";
             // 
@@ -1013,7 +1013,7 @@ namespace tickMeter.Forms
             0,
             0,
             0});
-            this.numRefractoryPeriod.Location = new System.Drawing.Point(350, 63);
+            this.numRefractoryPeriod.Location = new System.Drawing.Point(410, 65);
             this.numRefractoryPeriod.Margin = new System.Windows.Forms.Padding(4);
             this.numRefractoryPeriod.Maximum = new decimal(new int[] {
             10000,
@@ -1037,10 +1037,10 @@ namespace tickMeter.Forms
             // lblMinEnergyThreshold
             // 
             this.lblMinEnergyThreshold.AutoSize = true;
-            this.lblMinEnergyThreshold.Location = new System.Drawing.Point(450, 65);
+            this.lblMinEnergyThreshold.Location = new System.Drawing.Point(258, 100);
             this.lblMinEnergyThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblMinEnergyThreshold.Name = "lblMinEnergyThreshold";
-            this.lblMinEnergyThreshold.Size = new System.Drawing.Size(160, 16);
+            this.lblMinEnergyThreshold.Size = new System.Drawing.Size(204, 16);
             this.lblMinEnergyThreshold.TabIndex = 10;
             this.lblMinEnergyThreshold.Text = "Мин. энергия спайка (мс×амп):";
             // 
@@ -1052,13 +1052,8 @@ namespace tickMeter.Forms
             0,
             0,
             65536});
-            this.numMinEnergyThreshold.Location = new System.Drawing.Point(600, 63);
+            this.numMinEnergyThreshold.Location = new System.Drawing.Point(480, 98);
             this.numMinEnergyThreshold.Margin = new System.Windows.Forms.Padding(4);
-            this.numMinEnergyThreshold.Maximum = new decimal(new int[] {
-            100,
-            0,
-            0,
-            0});
             this.numMinEnergyThreshold.Minimum = new decimal(new int[] {
             1,
             0,
@@ -1079,19 +1074,14 @@ namespace tickMeter.Forms
             this.lblInitWindowSize.Location = new System.Drawing.Point(20, 100);
             this.lblInitWindowSize.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblInitWindowSize.Name = "lblInitWindowSize";
-            this.lblInitWindowSize.Size = new System.Drawing.Size(110, 16);
+            this.lblInitWindowSize.Size = new System.Drawing.Size(119, 16);
             this.lblInitWindowSize.TabIndex = 12;
             this.lblInitWindowSize.Text = "Размер выборки:";
             // 
             // numInitWindowSize
             // 
-            this.numInitWindowSize.Location = new System.Drawing.Point(120, 98);
+            this.numInitWindowSize.Location = new System.Drawing.Point(157, 100);
             this.numInitWindowSize.Margin = new System.Windows.Forms.Padding(4);
-            this.numInitWindowSize.Maximum = new decimal(new int[] {
-            100,
-            0,
-            0,
-            0});
             this.numInitWindowSize.Minimum = new decimal(new int[] {
             5,
             0,
@@ -1146,257 +1136,6 @@ namespace tickMeter.Forms
             this.btnSpikePresetsConservative.Text = "Консервативный";
             this.btnSpikePresetsConservative.UseVisualStyleBackColor = true;
             // 
-            // groupBox5
-            // 
-            this.groupBox5.Controls.Add(this.chkStunEnable);
-            this.groupBox5.Controls.Add(this.chkShowPingSpikes);
-            this.groupBox5.Controls.Add(this.lblPingSpikeThreshold);
-            this.groupBox5.Controls.Add(this.numPingSpikeThreshold);
-            this.groupBox5.Controls.Add(this.chkRtssOnlyActive);
-            this.groupBox5.Controls.Add(this.chkEnableIPv6);
-            this.groupBox5.Controls.Add(this.chkDedupMultiNic);
-            this.groupBox5.Controls.Add(this.chkTickrateSmoothing);
-            this.groupBox5.Controls.Add(this.chkPingGraphOverlaySmoothing);
-            this.groupBox5.Controls.Add(this.chkTickrateGraphOverlaySmoothing);
-            this.groupBox5.Controls.Add(this.chkTicktimeGraphOverlaySmoothing);
-            this.groupBox5.Controls.Add(this.chkPingValueOverlaySmoothing);
-            this.groupBox5.Controls.Add(this.chkPingValueGuiSmoothing);
-            this.groupBox5.Controls.Add(this.chkTickrateValueOverlaySmoothing);
-            this.groupBox5.Controls.Add(this.chkTrafficValueOverlaySmoothing);
-            this.groupBox5.Controls.Add(this.chkPingTargetActiveOnly);
-            this.groupBox5.Controls.Add(this.chkPingFallbackIcmp);
-            this.groupBox5.Controls.Add(this.chkPingTcpPrefer);
-            this.groupBox5.Controls.Add(this.chkPingBindToInterface);
-            this.groupBox5.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBox5.Location = new System.Drawing.Point(13, 404);
-            this.groupBox5.Margin = new System.Windows.Forms.Padding(4);
-            this.groupBox5.Name = "groupBox5";
-            this.groupBox5.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox5.Size = new System.Drawing.Size(757, 400);
-            this.groupBox5.TabIndex = 4;
-            this.groupBox5.TabStop = false;
-            this.groupBox5.Text = "Универсальные";
-            // 
-            // chkStunEnable
-            // 
-            this.chkStunEnable.AutoSize = true;
-            this.chkStunEnable.Location = new System.Drawing.Point(333, 59);
-            this.chkStunEnable.Margin = new System.Windows.Forms.Padding(4);
-            this.chkStunEnable.Name = "chkStunEnable";
-            this.chkStunEnable.Size = new System.Drawing.Size(321, 20);
-            this.chkStunEnable.TabIndex = 8;
-            this.chkStunEnable.Text = "Определять внешний IP через STUN (в фоне)";
-            this.chkStunEnable.UseVisualStyleBackColor = true;
-            // 
-            // chkShowPingSpikes
-            // 
-            this.chkShowPingSpikes.AutoSize = true;
-            this.chkShowPingSpikes.Location = new System.Drawing.Point(333, 87);
-            this.chkShowPingSpikes.Margin = new System.Windows.Forms.Padding(4);
-            this.chkShowPingSpikes.Name = "chkShowPingSpikes";
-            this.chkShowPingSpikes.Size = new System.Drawing.Size(316, 20);
-            this.chkShowPingSpikes.TabIndex = 9;
-            this.chkShowPingSpikes.Text = "Показывать индикатор (!) при спайках пинга";
-            this.chkShowPingSpikes.UseVisualStyleBackColor = true;
-            // 
-            // lblPingSpikeThreshold
-            // 
-            this.lblPingSpikeThreshold.AutoSize = true;
-            this.lblPingSpikeThreshold.Location = new System.Drawing.Point(333, 115);
-            this.lblPingSpikeThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblPingSpikeThreshold.Name = "lblPingSpikeThreshold";
-            this.lblPingSpikeThreshold.Size = new System.Drawing.Size(167, 16);
-            this.lblPingSpikeThreshold.TabIndex = 10;
-            this.lblPingSpikeThreshold.Text = "Порог спайка пинга (мс):";
-            // 
-            // numPingSpikeThreshold
-            // 
-            this.numPingSpikeThreshold.Location = new System.Drawing.Point(518, 113);
-            this.numPingSpikeThreshold.Margin = new System.Windows.Forms.Padding(4);
-            this.numPingSpikeThreshold.Maximum = new decimal(new int[] {
-            1000,
-            0,
-            0,
-            0});
-            this.numPingSpikeThreshold.Minimum = new decimal(new int[] {
-            10,
-            0,
-            0,
-            0});
-            this.numPingSpikeThreshold.Name = "numPingSpikeThreshold";
-            this.numPingSpikeThreshold.Size = new System.Drawing.Size(80, 22);
-            this.numPingSpikeThreshold.TabIndex = 11;
-            this.numPingSpikeThreshold.Value = new decimal(new int[] {
-            150,
-            0,
-            0,
-            0});
-            // 
-            // chkRtssOnlyActive
-            // 
-            this.chkRtssOnlyActive.AutoSize = true;
-            this.chkRtssOnlyActive.Location = new System.Drawing.Point(333, 31);
-            this.chkRtssOnlyActive.Margin = new System.Windows.Forms.Padding(4);
-            this.chkRtssOnlyActive.Name = "chkRtssOnlyActive";
-            this.chkRtssOnlyActive.Size = new System.Drawing.Size(303, 20);
-            this.chkRtssOnlyActive.TabIndex = 8;
-            this.chkRtssOnlyActive.Text = "RTSS: выводить только активный процесс";
-            this.chkRtssOnlyActive.UseVisualStyleBackColor = true;
-            // 
-            // chkEnableIPv6
-            // 
-            this.chkEnableIPv6.AutoSize = true;
-            this.chkEnableIPv6.Location = new System.Drawing.Point(20, 255);
-            this.chkEnableIPv6.Margin = new System.Windows.Forms.Padding(4);
-            this.chkEnableIPv6.Name = "chkEnableIPv6";
-            this.chkEnableIPv6.Size = new System.Drawing.Size(170, 20);
-            this.chkEnableIPv6.TabIndex = 7;
-            this.chkEnableIPv6.Text = "Включить анализ IPv6";
-            this.chkEnableIPv6.UseVisualStyleBackColor = true;
-            // 
-            // chkDedupMultiNic
-            // 
-            this.chkDedupMultiNic.AutoSize = true;
-            this.chkDedupMultiNic.Location = new System.Drawing.Point(20, 227);
-            this.chkDedupMultiNic.Margin = new System.Windows.Forms.Padding(4);
-            this.chkDedupMultiNic.Name = "chkDedupMultiNic";
-            this.chkDedupMultiNic.Size = new System.Drawing.Size(274, 20);
-            this.chkDedupMultiNic.TabIndex = 6;
-            this.chkDedupMultiNic.Text = "Анти-дубли пакетов в мульти-режиме";
-            this.chkDedupMultiNic.UseVisualStyleBackColor = true;
-            // 
-            // chkTickrateSmoothing
-            // 
-            this.chkTickrateSmoothing.AutoSize = true;
-            this.chkTickrateSmoothing.Location = new System.Drawing.Point(20, 115);
-            this.chkTickrateSmoothing.Margin = new System.Windows.Forms.Padding(4);
-            this.chkTickrateSmoothing.Name = "chkTickrateSmoothing";
-            this.chkTickrateSmoothing.Size = new System.Drawing.Size(277, 20);
-            this.chkTickrateSmoothing.TabIndex = 4;
-            this.chkTickrateSmoothing.Text = "Сглаживание графика тикрейта (EMA)";
-            this.chkTickrateSmoothing.UseVisualStyleBackColor = true;
-            // 
-            // chkPingGraphOverlaySmoothing
-            // 
-            this.chkPingGraphOverlaySmoothing.AutoSize = true;
-            this.chkPingGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 143);
-            this.chkPingGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
-            this.chkPingGraphOverlaySmoothing.Name = "chkPingGraphOverlaySmoothing";
-            this.chkPingGraphOverlaySmoothing.Size = new System.Drawing.Size(284, 20);
-            this.chkPingGraphOverlaySmoothing.TabIndex = 10;
-            this.chkPingGraphOverlaySmoothing.Text = "Сглаживание графика пинга в оверлее";
-            this.chkPingGraphOverlaySmoothing.UseVisualStyleBackColor = true;
-            // 
-            // chkTickrateGraphOverlaySmoothing
-            // 
-            this.chkTickrateGraphOverlaySmoothing.AutoSize = true;
-            this.chkTickrateGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 171);
-            this.chkTickrateGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
-            this.chkTickrateGraphOverlaySmoothing.Name = "chkTickrateGraphOverlaySmoothing";
-            this.chkTickrateGraphOverlaySmoothing.Size = new System.Drawing.Size(307, 20);
-            this.chkTickrateGraphOverlaySmoothing.TabIndex = 11;
-            this.chkTickrateGraphOverlaySmoothing.Text = "Сглаживание графика тикрейта в оверлее";
-            this.chkTickrateGraphOverlaySmoothing.UseVisualStyleBackColor = true;
-            // 
-            // chkTicktimeGraphOverlaySmoothing
-            // 
-            this.chkTicktimeGraphOverlaySmoothing.AutoSize = true;
-            this.chkTicktimeGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 199);
-            this.chkTicktimeGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
-            this.chkTicktimeGraphOverlaySmoothing.Name = "chkTicktimeGraphOverlaySmoothing";
-            this.chkTicktimeGraphOverlaySmoothing.Size = new System.Drawing.Size(308, 20);
-            this.chkTicktimeGraphOverlaySmoothing.TabIndex = 12;
-            this.chkTicktimeGraphOverlaySmoothing.Text = "Сглаживание графика тиктайма в оверлее";
-            this.chkTicktimeGraphOverlaySmoothing.UseVisualStyleBackColor = true;
-            // 
-            // chkPingValueOverlaySmoothing
-            // 
-            this.chkPingValueOverlaySmoothing.AutoSize = true;
-            this.chkPingValueOverlaySmoothing.Location = new System.Drawing.Point(20, 283);
-            this.chkPingValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
-            this.chkPingValueOverlaySmoothing.Name = "chkPingValueOverlaySmoothing";
-            this.chkPingValueOverlaySmoothing.Size = new System.Drawing.Size(292, 20);
-            this.chkPingValueOverlaySmoothing.TabIndex = 13;
-            this.chkPingValueOverlaySmoothing.Text = "Сглаживание значений пинга в оверлее";
-            this.chkPingValueOverlaySmoothing.UseVisualStyleBackColor = true;
-            // 
-            // chkPingValueGuiSmoothing
-            // 
-            this.chkPingValueGuiSmoothing.AutoSize = true;
-            this.chkPingValueGuiSmoothing.Location = new System.Drawing.Point(20, 311);
-            this.chkPingValueGuiSmoothing.Margin = new System.Windows.Forms.Padding(4);
-            this.chkPingValueGuiSmoothing.Name = "chkPingValueGuiSmoothing";
-            this.chkPingValueGuiSmoothing.Size = new System.Drawing.Size(259, 20);
-            this.chkPingValueGuiSmoothing.TabIndex = 14;
-            this.chkPingValueGuiSmoothing.Text = "Сглаживание значений пинга в GUI";
-            this.chkPingValueGuiSmoothing.UseVisualStyleBackColor = true;
-            // 
-            // chkTickrateValueOverlaySmoothing
-            // 
-            this.chkTickrateValueOverlaySmoothing.AutoSize = true;
-            this.chkTickrateValueOverlaySmoothing.Location = new System.Drawing.Point(20, 339);
-            this.chkTickrateValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
-            this.chkTickrateValueOverlaySmoothing.Name = "chkTickrateValueOverlaySmoothing";
-            this.chkTickrateValueOverlaySmoothing.Size = new System.Drawing.Size(315, 20);
-            this.chkTickrateValueOverlaySmoothing.TabIndex = 15;
-            this.chkTickrateValueOverlaySmoothing.Text = "Сглаживание значений тикрейта в оверлее";
-            this.chkTickrateValueOverlaySmoothing.UseVisualStyleBackColor = true;
-            // 
-            // chkTrafficValueOverlaySmoothing
-            // 
-            this.chkTrafficValueOverlaySmoothing.AutoSize = true;
-            this.chkTrafficValueOverlaySmoothing.Location = new System.Drawing.Point(20, 367);
-            this.chkTrafficValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
-            this.chkTrafficValueOverlaySmoothing.Name = "chkTrafficValueOverlaySmoothing";
-            this.chkTrafficValueOverlaySmoothing.Size = new System.Drawing.Size(311, 20);
-            this.chkTrafficValueOverlaySmoothing.TabIndex = 16;
-            this.chkTrafficValueOverlaySmoothing.Text = "Сглаживание значений трафика в оверлее";
-            this.chkTrafficValueOverlaySmoothing.UseVisualStyleBackColor = true;
-            // 
-            // chkPingTargetActiveOnly
-            // 
-            this.chkPingTargetActiveOnly.AutoSize = true;
-            this.chkPingTargetActiveOnly.Location = new System.Drawing.Point(333, 135);
-            this.chkPingTargetActiveOnly.Margin = new System.Windows.Forms.Padding(4);
-            this.chkPingTargetActiveOnly.Name = "chkPingTargetActiveOnly";
-            this.chkPingTargetActiveOnly.Size = new System.Drawing.Size(314, 20);
-            this.chkPingTargetActiveOnly.TabIndex = 3;
-            this.chkPingTargetActiveOnly.Text = "Пинговать только цель активного процесса";
-            this.chkPingTargetActiveOnly.UseVisualStyleBackColor = true;
-            // 
-            // chkPingFallbackIcmp
-            // 
-            this.chkPingFallbackIcmp.AutoSize = true;
-            this.chkPingFallbackIcmp.Location = new System.Drawing.Point(20, 87);
-            this.chkPingFallbackIcmp.Margin = new System.Windows.Forms.Padding(4);
-            this.chkPingFallbackIcmp.Name = "chkPingFallbackIcmp";
-            this.chkPingFallbackIcmp.Size = new System.Drawing.Size(295, 20);
-            this.chkPingFallbackIcmp.TabIndex = 2;
-            this.chkPingFallbackIcmp.Text = "Фолбэк на ICMP, если TCP заблокирован";
-            this.chkPingFallbackIcmp.UseVisualStyleBackColor = true;
-            // 
-            // chkPingTcpPrefer
-            // 
-            this.chkPingTcpPrefer.AutoSize = true;
-            this.chkPingTcpPrefer.Location = new System.Drawing.Point(20, 59);
-            this.chkPingTcpPrefer.Margin = new System.Windows.Forms.Padding(4);
-            this.chkPingTcpPrefer.Name = "chkPingTcpPrefer";
-            this.chkPingTcpPrefer.Size = new System.Drawing.Size(320, 20);
-            this.chkPingTcpPrefer.TabIndex = 1;
-            this.chkPingTcpPrefer.Text = "Предпочитать TCP-пинг по активному порту";
-            this.chkPingTcpPrefer.UseVisualStyleBackColor = true;
-            // 
-            // chkPingBindToInterface
-            // 
-            this.chkPingBindToInterface.AutoSize = true;
-            this.chkPingBindToInterface.Location = new System.Drawing.Point(20, 31);
-            this.chkPingBindToInterface.Margin = new System.Windows.Forms.Padding(4);
-            this.chkPingBindToInterface.Name = "chkPingBindToInterface";
-            this.chkPingBindToInterface.Size = new System.Drawing.Size(315, 20);
-            this.chkPingBindToInterface.TabIndex = 0;
-            this.chkPingBindToInterface.Text = "Пинг привязывать к активному интерфейсу";
-            this.chkPingBindToInterface.UseVisualStyleBackColor = true;
-            // 
             // groupBoxAlerts
             // 
             this.groupBoxAlerts.Controls.Add(this.chkAlertSoundEnabled);
@@ -1408,11 +1147,11 @@ namespace tickMeter.Forms
             this.groupBoxAlerts.Controls.Add(this.btnTestDiscordAlert);
             this.groupBoxAlerts.Controls.Add(this.btnTestSoundAlert);
             this.groupBoxAlerts.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxAlerts.Location = new System.Drawing.Point(13, 856);
+            this.groupBoxAlerts.Location = new System.Drawing.Point(13, 1624);
             this.groupBoxAlerts.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxAlerts.Name = "groupBoxAlerts";
             this.groupBoxAlerts.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBoxAlerts.Size = new System.Drawing.Size(757, 180);
+            this.groupBoxAlerts.Size = new System.Drawing.Size(753, 180);
             this.groupBoxAlerts.TabIndex = 6;
             this.groupBoxAlerts.TabStop = false;
             this.groupBoxAlerts.Text = "Stage 8: Advanced Alerting System";
@@ -1423,7 +1162,7 @@ namespace tickMeter.Forms
             this.chkAlertSoundEnabled.Location = new System.Drawing.Point(8, 28);
             this.chkAlertSoundEnabled.Margin = new System.Windows.Forms.Padding(4);
             this.chkAlertSoundEnabled.Name = "chkAlertSoundEnabled";
-            this.chkAlertSoundEnabled.Size = new System.Drawing.Size(160, 20);
+            this.chkAlertSoundEnabled.Size = new System.Drawing.Size(211, 20);
             this.chkAlertSoundEnabled.TabIndex = 0;
             this.chkAlertSoundEnabled.Text = "Включить звуковые алерты";
             this.chkAlertSoundEnabled.UseVisualStyleBackColor = true;
@@ -1434,7 +1173,7 @@ namespace tickMeter.Forms
             this.chkAlertDiscordEnabled.Location = new System.Drawing.Point(200, 28);
             this.chkAlertDiscordEnabled.Margin = new System.Windows.Forms.Padding(4);
             this.chkAlertDiscordEnabled.Name = "chkAlertDiscordEnabled";
-            this.chkAlertDiscordEnabled.Size = new System.Drawing.Size(150, 20);
+            this.chkAlertDiscordEnabled.Size = new System.Drawing.Size(194, 20);
             this.chkAlertDiscordEnabled.TabIndex = 1;
             this.chkAlertDiscordEnabled.Text = "Включить Discord алерты";
             this.chkAlertDiscordEnabled.UseVisualStyleBackColor = true;
@@ -1445,13 +1184,13 @@ namespace tickMeter.Forms
             this.lblAlertDiscordWebhook.Location = new System.Drawing.Point(8, 58);
             this.lblAlertDiscordWebhook.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblAlertDiscordWebhook.Name = "lblAlertDiscordWebhook";
-            this.lblAlertDiscordWebhook.Size = new System.Drawing.Size(120, 16);
+            this.lblAlertDiscordWebhook.Size = new System.Drawing.Size(149, 16);
             this.lblAlertDiscordWebhook.TabIndex = 2;
             this.lblAlertDiscordWebhook.Text = "Discord Webhook URL:";
             // 
             // txtAlertDiscordWebhook
             // 
-            this.txtAlertDiscordWebhook.Location = new System.Drawing.Point(140, 55);
+            this.txtAlertDiscordWebhook.Location = new System.Drawing.Point(175, 56);
             this.txtAlertDiscordWebhook.Margin = new System.Windows.Forms.Padding(4);
             this.txtAlertDiscordWebhook.Name = "txtAlertDiscordWebhook";
             this.txtAlertDiscordWebhook.Size = new System.Drawing.Size(400, 22);
@@ -1463,20 +1202,32 @@ namespace tickMeter.Forms
             this.lblAlertCooldown.Location = new System.Drawing.Point(8, 88);
             this.lblAlertCooldown.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblAlertCooldown.Name = "lblAlertCooldown";
-            this.lblAlertCooldown.Size = new System.Drawing.Size(120, 16);
+            this.lblAlertCooldown.Size = new System.Drawing.Size(136, 16);
             this.lblAlertCooldown.TabIndex = 4;
             this.lblAlertCooldown.Text = "Cooldown (секунды):";
             // 
             // numAlertCooldown
             // 
-            this.numAlertCooldown.Location = new System.Drawing.Point(140, 85);
+            this.numAlertCooldown.Location = new System.Drawing.Point(164, 86);
             this.numAlertCooldown.Margin = new System.Windows.Forms.Padding(4);
-            this.numAlertCooldown.Maximum = new decimal(new int[] { 300, 0, 0, 0 });
-            this.numAlertCooldown.Minimum = new decimal(new int[] { 5, 0, 0, 0 });
+            this.numAlertCooldown.Maximum = new decimal(new int[] {
+            300,
+            0,
+            0,
+            0});
+            this.numAlertCooldown.Minimum = new decimal(new int[] {
+            5,
+            0,
+            0,
+            0});
             this.numAlertCooldown.Name = "numAlertCooldown";
             this.numAlertCooldown.Size = new System.Drawing.Size(80, 22);
             this.numAlertCooldown.TabIndex = 5;
-            this.numAlertCooldown.Value = new decimal(new int[] { 30, 0, 0, 0 });
+            this.numAlertCooldown.Value = new decimal(new int[] {
+            30,
+            0,
+            0,
+            0});
             // 
             // btnTestDiscordAlert
             // 
@@ -1510,11 +1261,11 @@ namespace tickMeter.Forms
             this.groupBoxAlertSounds.Controls.Add(this.txtAlertTicktimeSoundPath);
             this.groupBoxAlertSounds.Controls.Add(this.btnBrowseTicktimeSound);
             this.groupBoxAlertSounds.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxAlertSounds.Location = new System.Drawing.Point(13, 1036);
+            this.groupBoxAlertSounds.Location = new System.Drawing.Point(13, 1484);
             this.groupBoxAlertSounds.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxAlertSounds.Name = "groupBoxAlertSounds";
             this.groupBoxAlertSounds.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBoxAlertSounds.Size = new System.Drawing.Size(757, 140);
+            this.groupBoxAlertSounds.Size = new System.Drawing.Size(753, 140);
             this.groupBoxAlertSounds.TabIndex = 7;
             this.groupBoxAlertSounds.TabStop = false;
             this.groupBoxAlertSounds.Text = "Настройка звуков алертов";
@@ -1525,13 +1276,13 @@ namespace tickMeter.Forms
             this.lblAlertPingSoundPath.Location = new System.Drawing.Point(8, 28);
             this.lblAlertPingSoundPath.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblAlertPingSoundPath.Name = "lblAlertPingSoundPath";
-            this.lblAlertPingSoundPath.Size = new System.Drawing.Size(75, 16);
+            this.lblAlertPingSoundPath.Size = new System.Drawing.Size(78, 16);
             this.lblAlertPingSoundPath.TabIndex = 0;
             this.lblAlertPingSoundPath.Text = "Ping спайк:";
             // 
             // txtAlertPingSoundPath
             // 
-            this.txtAlertPingSoundPath.Location = new System.Drawing.Point(90, 25);
+            this.txtAlertPingSoundPath.Location = new System.Drawing.Point(100, 25);
             this.txtAlertPingSoundPath.Margin = new System.Windows.Forms.Padding(4);
             this.txtAlertPingSoundPath.Name = "txtAlertPingSoundPath";
             this.txtAlertPingSoundPath.Size = new System.Drawing.Size(500, 22);
@@ -1539,7 +1290,7 @@ namespace tickMeter.Forms
             // 
             // btnBrowsePingSound
             // 
-            this.btnBrowsePingSound.Location = new System.Drawing.Point(600, 23);
+            this.btnBrowsePingSound.Location = new System.Drawing.Point(620, 23);
             this.btnBrowsePingSound.Margin = new System.Windows.Forms.Padding(4);
             this.btnBrowsePingSound.Name = "btnBrowsePingSound";
             this.btnBrowsePingSound.Size = new System.Drawing.Size(50, 28);
@@ -1553,13 +1304,13 @@ namespace tickMeter.Forms
             this.lblAlertTickrateSoundPath.Location = new System.Drawing.Point(8, 58);
             this.lblAlertTickrateSoundPath.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblAlertTickrateSoundPath.Name = "lblAlertTickrateSoundPath";
-            this.lblAlertTickrateSoundPath.Size = new System.Drawing.Size(95, 16);
+            this.lblAlertTickrateSoundPath.Size = new System.Drawing.Size(100, 16);
             this.lblAlertTickrateSoundPath.TabIndex = 3;
             this.lblAlertTickrateSoundPath.Text = "Tickrate спайк:";
             // 
             // txtAlertTickrateSoundPath
             // 
-            this.txtAlertTickrateSoundPath.Location = new System.Drawing.Point(110, 55);
+            this.txtAlertTickrateSoundPath.Location = new System.Drawing.Point(120, 55);
             this.txtAlertTickrateSoundPath.Margin = new System.Windows.Forms.Padding(4);
             this.txtAlertTickrateSoundPath.Name = "txtAlertTickrateSoundPath";
             this.txtAlertTickrateSoundPath.Size = new System.Drawing.Size(480, 22);
@@ -1567,7 +1318,7 @@ namespace tickMeter.Forms
             // 
             // btnBrowseTickrateSound
             // 
-            this.btnBrowseTickrateSound.Location = new System.Drawing.Point(600, 53);
+            this.btnBrowseTickrateSound.Location = new System.Drawing.Point(620, 53);
             this.btnBrowseTickrateSound.Margin = new System.Windows.Forms.Padding(4);
             this.btnBrowseTickrateSound.Name = "btnBrowseTickrateSound";
             this.btnBrowseTickrateSound.Size = new System.Drawing.Size(50, 28);
@@ -1581,13 +1332,13 @@ namespace tickMeter.Forms
             this.lblAlertTicktimeSoundPath.Location = new System.Drawing.Point(8, 88);
             this.lblAlertTicktimeSoundPath.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblAlertTicktimeSoundPath.Name = "lblAlertTicktimeSoundPath";
-            this.lblAlertTicktimeSoundPath.Size = new System.Drawing.Size(95, 16);
+            this.lblAlertTicktimeSoundPath.Size = new System.Drawing.Size(102, 16);
             this.lblAlertTicktimeSoundPath.TabIndex = 6;
             this.lblAlertTicktimeSoundPath.Text = "Ticktime спайк:";
             // 
             // txtAlertTicktimeSoundPath
             // 
-            this.txtAlertTicktimeSoundPath.Location = new System.Drawing.Point(110, 85);
+            this.txtAlertTicktimeSoundPath.Location = new System.Drawing.Point(120, 85);
             this.txtAlertTicktimeSoundPath.Margin = new System.Windows.Forms.Padding(4);
             this.txtAlertTicktimeSoundPath.Name = "txtAlertTicktimeSoundPath";
             this.txtAlertTicktimeSoundPath.Size = new System.Drawing.Size(480, 22);
@@ -1595,337 +1346,13 @@ namespace tickMeter.Forms
             // 
             // btnBrowseTicktimeSound
             // 
-            this.btnBrowseTicktimeSound.Location = new System.Drawing.Point(600, 83);
+            this.btnBrowseTicktimeSound.Location = new System.Drawing.Point(620, 83);
             this.btnBrowseTicktimeSound.Margin = new System.Windows.Forms.Padding(4);
             this.btnBrowseTicktimeSound.Name = "btnBrowseTicktimeSound";
             this.btnBrowseTicktimeSound.Size = new System.Drawing.Size(50, 28);
             this.btnBrowseTicktimeSound.TabIndex = 8;
             this.btnBrowseTicktimeSound.Text = "...";
             this.btnBrowseTicktimeSound.UseVisualStyleBackColor = true;
-            // 
-            // groupBoxNetworkQuality
-            // 
-            this.groupBoxNetworkQuality.Controls.Add(this.chkNetworkQualityEnabled);
-            this.groupBoxNetworkQuality.Controls.Add(this.chkNetworkQualityOverlay);
-            this.groupBoxNetworkQuality.Controls.Add(this.lblQualityHistorySize);
-            this.groupBoxNetworkQuality.Controls.Add(this.numQualityHistorySize);
-            this.groupBoxNetworkQuality.Controls.Add(this.lblStabilityThreshold);
-            this.groupBoxNetworkQuality.Controls.Add(this.numStabilityThreshold);
-            this.groupBoxNetworkQuality.Controls.Add(this.lblQualityThreshold);
-            this.groupBoxNetworkQuality.Controls.Add(this.numQualityThreshold);
-            this.groupBoxNetworkQuality.Controls.Add(this.btnResetQualityAnalyzer);
-            this.groupBoxNetworkQuality.Controls.Add(this.lblCurrentQuality);
-            this.groupBoxNetworkQuality.Controls.Add(this.lblQualityRating);
-            this.groupBoxNetworkQuality.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxNetworkQuality.Location = new System.Drawing.Point(0, 1220);
-            this.groupBoxNetworkQuality.Margin = new System.Windows.Forms.Padding(4);
-            this.groupBoxNetworkQuality.Name = "groupBoxNetworkQuality";
-            this.groupBoxNetworkQuality.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBoxNetworkQuality.Size = new System.Drawing.Size(757, 180);
-            this.groupBoxNetworkQuality.TabIndex = 8;
-            this.groupBoxNetworkQuality.TabStop = false;
-            this.groupBoxNetworkQuality.Text = "Stage 6: Анализ качества сети";
-            // 
-            // groupBoxColorZones
-            // 
-            this.groupBoxColorZones.Controls.Add(this.lblColorZoneProfile);
-            this.groupBoxColorZones.Controls.Add(this.cmbColorZoneProfile);
-            this.groupBoxColorZones.Controls.Add(this.lblPingGreen);
-            this.groupBoxColorZones.Controls.Add(this.numPingGreen);
-            this.groupBoxColorZones.Controls.Add(this.lblPingYellow);
-            this.groupBoxColorZones.Controls.Add(this.numPingYellow);
-            this.groupBoxColorZones.Controls.Add(this.lblTickrateGreen);
-            this.groupBoxColorZones.Controls.Add(this.numTickrateGreen);
-            this.groupBoxColorZones.Controls.Add(this.lblTickrateYellow);
-            this.groupBoxColorZones.Controls.Add(this.numTickrateYellow);
-            this.groupBoxColorZones.Controls.Add(this.lblTicktimeGreen);
-            this.groupBoxColorZones.Controls.Add(this.numTicktimeGreen);
-            this.groupBoxColorZones.Controls.Add(this.lblTicktimeYellow);
-            this.groupBoxColorZones.Controls.Add(this.numTicktimeYellow);
-            this.groupBoxColorZones.Controls.Add(this.btnResetColorZones);
-            this.groupBoxColorZones.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxColorZones.Location = new System.Drawing.Point(0, 1400);
-            this.groupBoxColorZones.Margin = new System.Windows.Forms.Padding(4);
-            this.groupBoxColorZones.Name = "groupBoxColorZones";
-            this.groupBoxColorZones.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBoxColorZones.Size = new System.Drawing.Size(757, 220);
-            this.groupBoxColorZones.TabIndex = 9;
-            this.groupBoxColorZones.TabStop = false;
-            this.groupBoxColorZones.Text = "Color Zone Profiles (ChatGPT Recommended)";
-            // 
-            // lblColorZoneProfile
-            // 
-            this.lblColorZoneProfile.AutoSize = true;
-            this.lblColorZoneProfile.Location = new System.Drawing.Point(12, 25);
-            this.lblColorZoneProfile.Name = "lblColorZoneProfile";
-            this.lblColorZoneProfile.Size = new System.Drawing.Size(49, 17);
-            this.lblColorZoneProfile.TabIndex = 0;
-            this.lblColorZoneProfile.Text = "Profile:";
-            // 
-            // cmbColorZoneProfile
-            // 
-            this.cmbColorZoneProfile.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cmbColorZoneProfile.FormattingEnabled = true;
-            this.cmbColorZoneProfile.Items.AddRange(new object[] { "Low", "Medium", "High", "Custom" });
-            this.cmbColorZoneProfile.Location = new System.Drawing.Point(65, 22);
-            this.cmbColorZoneProfile.Name = "cmbColorZoneProfile";
-            this.cmbColorZoneProfile.Size = new System.Drawing.Size(100, 25);
-            this.cmbColorZoneProfile.TabIndex = 1;
-            // 
-            // lblPingGreen
-            //
-            this.lblPingGreen.AutoSize = true;
-            this.lblPingGreen.Location = new System.Drawing.Point(12, 60);
-            this.lblPingGreen.Name = "lblPingGreen";
-            this.lblPingGreen.Size = new System.Drawing.Size(90, 17);
-            this.lblPingGreen.TabIndex = 2;
-            this.lblPingGreen.Text = "Ping Green ≤:";
-            // 
-            // numPingGreen
-            // 
-            this.numPingGreen.DecimalPlaces = 0;
-            this.numPingGreen.Location = new System.Drawing.Point(110, 58);
-            this.numPingGreen.Maximum = new decimal(new int[] { 200, 0, 0, 0 });
-            this.numPingGreen.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
-            this.numPingGreen.Name = "numPingGreen";
-            this.numPingGreen.Size = new System.Drawing.Size(60, 23);
-            this.numPingGreen.TabIndex = 3;
-            this.numPingGreen.Value = new decimal(new int[] { 40, 0, 0, 0 });
-            // 
-            // lblPingYellow
-            //
-            this.lblPingYellow.AutoSize = true;
-            this.lblPingYellow.Location = new System.Drawing.Point(12, 88);
-            this.lblPingYellow.Name = "lblPingYellow";
-            this.lblPingYellow.Size = new System.Drawing.Size(95, 17);
-            this.lblPingYellow.TabIndex = 4;
-            this.lblPingYellow.Text = "Ping Yellow ≤:";
-            // 
-            // numPingYellow
-            // 
-            this.numPingYellow.DecimalPlaces = 0;
-            this.numPingYellow.Location = new System.Drawing.Point(110, 86);
-            this.numPingYellow.Maximum = new decimal(new int[] { 500, 0, 0, 0 });
-            this.numPingYellow.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
-            this.numPingYellow.Name = "numPingYellow";
-            this.numPingYellow.Size = new System.Drawing.Size(60, 23);
-            this.numPingYellow.TabIndex = 5;
-            this.numPingYellow.Value = new decimal(new int[] { 80, 0, 0, 0 });
-            // 
-            // lblTickrateGreen
-            //
-            this.lblTickrateGreen.AutoSize = true;
-            this.lblTickrateGreen.Location = new System.Drawing.Point(200, 60);
-            this.lblTickrateGreen.Name = "lblTickrateGreen";
-            this.lblTickrateGreen.Size = new System.Drawing.Size(110, 17);
-            this.lblTickrateGreen.TabIndex = 6;
-            this.lblTickrateGreen.Text = "Tickrate Green ≥:";
-            // 
-            // numTickrateGreen
-            // 
-            this.numTickrateGreen.DecimalPlaces = 2;
-            this.numTickrateGreen.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-            this.numTickrateGreen.Location = new System.Drawing.Point(320, 58);
-            this.numTickrateGreen.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
-            this.numTickrateGreen.Minimum = new decimal(new int[] { 50, 0, 0, 131072 });
-            this.numTickrateGreen.Name = "numTickrateGreen";
-            this.numTickrateGreen.Size = new System.Drawing.Size(70, 23);
-            this.numTickrateGreen.TabIndex = 7;
-            this.numTickrateGreen.Value = new decimal(new int[] { 98, 0, 0, 131072 });
-            // 
-            // lblTickrateYellow
-            //
-            this.lblTickrateYellow.AutoSize = true;
-            this.lblTickrateYellow.Location = new System.Drawing.Point(200, 88);
-            this.lblTickrateYellow.Name = "lblTickrateYellow";
-            this.lblTickrateYellow.Size = new System.Drawing.Size(115, 17);
-            this.lblTickrateYellow.TabIndex = 8;
-            this.lblTickrateYellow.Text = "Tickrate Yellow ≥:";
-            // 
-            // numTickrateYellow
-            // 
-            this.numTickrateYellow.DecimalPlaces = 2;
-            this.numTickrateYellow.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-            this.numTickrateYellow.Location = new System.Drawing.Point(320, 86);
-            this.numTickrateYellow.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
-            this.numTickrateYellow.Minimum = new decimal(new int[] { 50, 0, 0, 131072 });
-            this.numTickrateYellow.Name = "numTickrateYellow";
-            this.numTickrateYellow.Size = new System.Drawing.Size(70, 23);
-            this.numTickrateYellow.TabIndex = 9;
-            this.numTickrateYellow.Value = new decimal(new int[] { 95, 0, 0, 131072 });
-            // 
-            // lblTicktimeGreen
-            //
-            this.lblTicktimeGreen.AutoSize = true;
-            this.lblTicktimeGreen.Location = new System.Drawing.Point(420, 60);
-            this.lblTicktimeGreen.Name = "lblTicktimeGreen";
-            this.lblTicktimeGreen.Size = new System.Drawing.Size(108, 17);
-            this.lblTicktimeGreen.TabIndex = 10;
-            this.lblTicktimeGreen.Text = "Ticktime Green ≤:";
-            // 
-            // numTicktimeGreen
-            // 
-            this.numTicktimeGreen.DecimalPlaces = 2;
-            this.numTicktimeGreen.Increment = new decimal(new int[] { 5, 0, 0, 131072 });
-            this.numTicktimeGreen.Location = new System.Drawing.Point(540, 58);
-            this.numTicktimeGreen.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
-            this.numTicktimeGreen.Minimum = new decimal(new int[] { 10, 0, 0, 131072 });
-            this.numTicktimeGreen.Name = "numTicktimeGreen";
-            this.numTicktimeGreen.Size = new System.Drawing.Size(70, 23);
-            this.numTicktimeGreen.TabIndex = 11;
-            this.numTicktimeGreen.Value = new decimal(new int[] { 60, 0, 0, 131072 });
-            // 
-            // lblTicktimeYellow
-            //
-            this.lblTicktimeYellow.AutoSize = true;
-            this.lblTicktimeYellow.Location = new System.Drawing.Point(420, 88);
-            this.lblTicktimeYellow.Name = "lblTicktimeYellow";
-            this.lblTicktimeYellow.Size = new System.Drawing.Size(113, 17);
-            this.lblTicktimeYellow.TabIndex = 12;
-            this.lblTicktimeYellow.Text = "Ticktime Yellow ≤:";
-            // 
-            // numTicktimeYellow
-            // 
-            this.numTicktimeYellow.DecimalPlaces = 2;
-            this.numTicktimeYellow.Increment = new decimal(new int[] { 5, 0, 0, 131072 });
-            this.numTicktimeYellow.Location = new System.Drawing.Point(540, 86);
-            this.numTicktimeYellow.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
-            this.numTicktimeYellow.Minimum = new decimal(new int[] { 10, 0, 0, 131072 });
-            this.numTicktimeYellow.Name = "numTicktimeYellow";
-            this.numTicktimeYellow.Size = new System.Drawing.Size(70, 23);
-            this.numTicktimeYellow.TabIndex = 13;
-            this.numTicktimeYellow.Value = new decimal(new int[] { 90, 0, 0, 131072 });
-            // 
-            // btnResetColorZones
-            // 
-            this.btnResetColorZones.Location = new System.Drawing.Point(630, 22);
-            this.btnResetColorZones.Name = "btnResetColorZones";
-            this.btnResetColorZones.Size = new System.Drawing.Size(100, 25);
-            this.btnResetColorZones.TabIndex = 15;
-            this.btnResetColorZones.Text = "Reset to Default";
-            this.btnResetColorZones.UseVisualStyleBackColor = true;
-            // 
-            // chkNetworkQualityEnabled
-            // 
-            this.chkNetworkQualityEnabled.AutoSize = true;
-            this.chkNetworkQualityEnabled.Location = new System.Drawing.Point(8, 25);
-            this.chkNetworkQualityEnabled.Margin = new System.Windows.Forms.Padding(4);
-            this.chkNetworkQualityEnabled.Name = "chkNetworkQualityEnabled";
-            this.chkNetworkQualityEnabled.Size = new System.Drawing.Size(204, 20);
-            this.chkNetworkQualityEnabled.TabIndex = 0;
-            this.chkNetworkQualityEnabled.Text = "Включить анализ качества сети";
-            this.chkNetworkQualityEnabled.UseVisualStyleBackColor = true;
-            // 
-            // chkNetworkQualityOverlay
-            // 
-            this.chkNetworkQualityOverlay.AutoSize = true;
-            this.chkNetworkQualityOverlay.Location = new System.Drawing.Point(250, 25);
-            this.chkNetworkQualityOverlay.Margin = new System.Windows.Forms.Padding(4);
-            this.chkNetworkQualityOverlay.Name = "chkNetworkQualityOverlay";
-            this.chkNetworkQualityOverlay.Size = new System.Drawing.Size(242, 20);
-            this.chkNetworkQualityOverlay.TabIndex = 10;
-            this.chkNetworkQualityOverlay.Text = "Показывать рейтинг качества в оверлее";
-            this.chkNetworkQualityOverlay.UseVisualStyleBackColor = true;
-            // 
-            // lblQualityHistorySize
-            // 
-            this.lblQualityHistorySize.AutoSize = true;
-            this.lblQualityHistorySize.Location = new System.Drawing.Point(8, 55);
-            this.lblQualityHistorySize.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblQualityHistorySize.Name = "lblQualityHistorySize";
-            this.lblQualityHistorySize.Size = new System.Drawing.Size(110, 16);
-            this.lblQualityHistorySize.TabIndex = 1;
-            this.lblQualityHistorySize.Text = "Размер буфера:";
-            // 
-            // numQualityHistorySize
-            // 
-            this.numQualityHistorySize.Location = new System.Drawing.Point(130, 53);
-            this.numQualityHistorySize.Margin = new System.Windows.Forms.Padding(4);
-            this.numQualityHistorySize.Maximum = new decimal(new int[] { 500, 0, 0, 0 });
-            this.numQualityHistorySize.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
-            this.numQualityHistorySize.Name = "numQualityHistorySize";
-            this.numQualityHistorySize.Size = new System.Drawing.Size(80, 22);
-            this.numQualityHistorySize.TabIndex = 2;
-            this.numQualityHistorySize.Value = new decimal(new int[] { 100, 0, 0, 0 });
-            // 
-            // lblStabilityThreshold
-            // 
-            this.lblStabilityThreshold.AutoSize = true;
-            this.lblStabilityThreshold.Location = new System.Drawing.Point(220, 55);
-            this.lblStabilityThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblStabilityThreshold.Name = "lblStabilityThreshold";
-            this.lblStabilityThreshold.Size = new System.Drawing.Size(120, 16);
-            this.lblStabilityThreshold.TabIndex = 3;
-            this.lblStabilityThreshold.Text = "Порог стабильности:";
-            // 
-            // numStabilityThreshold
-            // 
-            this.numStabilityThreshold.DecimalPlaces = 2;
-            this.numStabilityThreshold.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-            this.numStabilityThreshold.Location = new System.Drawing.Point(350, 53);
-            this.numStabilityThreshold.Margin = new System.Windows.Forms.Padding(4);
-            this.numStabilityThreshold.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
-            this.numStabilityThreshold.Minimum = new decimal(new int[] { 1, 0, 0, 131072 });
-            this.numStabilityThreshold.Name = "numStabilityThreshold";
-            this.numStabilityThreshold.Size = new System.Drawing.Size(80, 22);
-            this.numStabilityThreshold.TabIndex = 4;
-            this.numStabilityThreshold.Value = new decimal(new int[] { 15, 0, 0, 131072 });
-            // 
-            // lblQualityThreshold
-            // 
-            this.lblQualityThreshold.AutoSize = true;
-            this.lblQualityThreshold.Location = new System.Drawing.Point(8, 85);
-            this.lblQualityThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblQualityThreshold.Name = "lblQualityThreshold";
-            this.lblQualityThreshold.Size = new System.Drawing.Size(103, 16);
-            this.lblQualityThreshold.TabIndex = 5;
-            this.lblQualityThreshold.Text = "Порог качества:";
-            // 
-            // numQualityThreshold
-            // 
-            this.numQualityThreshold.DecimalPlaces = 2;
-            this.numQualityThreshold.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-            this.numQualityThreshold.Location = new System.Drawing.Point(130, 83);
-            this.numQualityThreshold.Margin = new System.Windows.Forms.Padding(4);
-            this.numQualityThreshold.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
-            this.numQualityThreshold.Minimum = new decimal(new int[] { 1, 0, 0, 131072 });
-            this.numQualityThreshold.Name = "numQualityThreshold";
-            this.numQualityThreshold.Size = new System.Drawing.Size(80, 22);
-            this.numQualityThreshold.TabIndex = 6;
-            this.numQualityThreshold.Value = new decimal(new int[] { 80, 0, 0, 131072 });
-            // 
-            // btnResetQualityAnalyzer
-            // 
-            this.btnResetQualityAnalyzer.Location = new System.Drawing.Point(220, 81);
-            this.btnResetQualityAnalyzer.Margin = new System.Windows.Forms.Padding(4);
-            this.btnResetQualityAnalyzer.Name = "btnResetQualityAnalyzer";
-            this.btnResetQualityAnalyzer.Size = new System.Drawing.Size(120, 28);
-            this.btnResetQualityAnalyzer.TabIndex = 7;
-            this.btnResetQualityAnalyzer.Text = "Сбросить анализ";
-            this.btnResetQualityAnalyzer.UseVisualStyleBackColor = true;
-            // 
-            // lblCurrentQuality
-            // 
-            this.lblCurrentQuality.AutoSize = true;
-            this.lblCurrentQuality.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.lblCurrentQuality.Location = new System.Drawing.Point(8, 120);
-            this.lblCurrentQuality.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblCurrentQuality.Name = "lblCurrentQuality";
-            this.lblCurrentQuality.Size = new System.Drawing.Size(150, 18);
-            this.lblCurrentQuality.TabIndex = 8;
-            this.lblCurrentQuality.Text = "Качество сети: 100%";
-            // 
-            // lblQualityRating
-            // 
-            this.lblQualityRating.AutoSize = true;
-            this.lblQualityRating.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.lblQualityRating.ForeColor = System.Drawing.Color.Green;
-            this.lblQualityRating.Location = new System.Drawing.Point(8, 145);
-            this.lblQualityRating.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblQualityRating.Name = "lblQualityRating";
-            this.lblQualityRating.Size = new System.Drawing.Size(120, 18);
-            this.lblQualityRating.TabIndex = 9;
-            this.lblQualityRating.Text = "Рейтинг: Excellent";
             // 
             // groupBoxNetworkOptimizer
             // 
@@ -1940,11 +1367,11 @@ namespace tickMeter.Forms
             this.groupBoxNetworkOptimizer.Controls.Add(this.lblOptimizationStats);
             this.groupBoxNetworkOptimizer.Controls.Add(this.btnClearOptimizationHistory);
             this.groupBoxNetworkOptimizer.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxNetworkOptimizer.Location = new System.Drawing.Point(13, 486);
+            this.groupBoxNetworkOptimizer.Location = new System.Drawing.Point(13, 1204);
             this.groupBoxNetworkOptimizer.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxNetworkOptimizer.Name = "groupBoxNetworkOptimizer";
             this.groupBoxNetworkOptimizer.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBoxNetworkOptimizer.Size = new System.Drawing.Size(800, 280);
+            this.groupBoxNetworkOptimizer.Size = new System.Drawing.Size(753, 280);
             this.groupBoxNetworkOptimizer.TabIndex = 15;
             this.groupBoxNetworkOptimizer.TabStop = false;
             this.groupBoxNetworkOptimizer.Text = "Этап 7: Интеллектуальная оптимизация сети";
@@ -1955,7 +1382,7 @@ namespace tickMeter.Forms
             this.chkNetworkOptimizationEnabled.Location = new System.Drawing.Point(8, 25);
             this.chkNetworkOptimizationEnabled.Margin = new System.Windows.Forms.Padding(4);
             this.chkNetworkOptimizationEnabled.Name = "chkNetworkOptimizationEnabled";
-            this.chkNetworkOptimizationEnabled.Size = new System.Drawing.Size(185, 21);
+            this.chkNetworkOptimizationEnabled.Size = new System.Drawing.Size(186, 20);
             this.chkNetworkOptimizationEnabled.TabIndex = 0;
             this.chkNetworkOptimizationEnabled.Text = "Включить оптимизацию";
             this.chkNetworkOptimizationEnabled.UseVisualStyleBackColor = true;
@@ -1966,22 +1393,28 @@ namespace tickMeter.Forms
             this.lblOptimizationThreshold.Location = new System.Drawing.Point(8, 55);
             this.lblOptimizationThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblOptimizationThreshold.Name = "lblOptimizationThreshold";
-            this.lblOptimizationThreshold.Size = new System.Drawing.Size(200, 17);
+            this.lblOptimizationThreshold.Size = new System.Drawing.Size(231, 16);
             this.lblOptimizationThreshold.TabIndex = 1;
             this.lblOptimizationThreshold.Text = "Порог качества для оптимизации:";
             // 
             // numOptimizationThreshold
             // 
             this.numOptimizationThreshold.DecimalPlaces = 1;
-            this.numOptimizationThreshold.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-            this.numOptimizationThreshold.Location = new System.Drawing.Point(220, 53);
+            this.numOptimizationThreshold.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            65536});
+            this.numOptimizationThreshold.Location = new System.Drawing.Point(261, 49);
             this.numOptimizationThreshold.Margin = new System.Windows.Forms.Padding(4);
-            this.numOptimizationThreshold.Maximum = new decimal(new int[] { 100, 0, 0, 0 });
-            this.numOptimizationThreshold.Minimum = new decimal(new int[] { 0, 0, 0, 0 });
             this.numOptimizationThreshold.Name = "numOptimizationThreshold";
             this.numOptimizationThreshold.Size = new System.Drawing.Size(80, 22);
             this.numOptimizationThreshold.TabIndex = 2;
-            this.numOptimizationThreshold.Value = new decimal(new int[] { 70, 0, 0, 0 });
+            this.numOptimizationThreshold.Value = new decimal(new int[] {
+            70,
+            0,
+            0,
+            0});
             // 
             // lblOptimizationInterval
             // 
@@ -1989,20 +1422,32 @@ namespace tickMeter.Forms
             this.lblOptimizationInterval.Location = new System.Drawing.Point(8, 85);
             this.lblOptimizationInterval.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblOptimizationInterval.Name = "lblOptimizationInterval";
-            this.lblOptimizationInterval.Size = new System.Drawing.Size(180, 17);
+            this.lblOptimizationInterval.Size = new System.Drawing.Size(177, 16);
             this.lblOptimizationInterval.TabIndex = 3;
             this.lblOptimizationInterval.Text = "Интервал проверки (мин):";
             // 
             // numOptimizationInterval
             // 
-            this.numOptimizationInterval.Location = new System.Drawing.Point(220, 83);
+            this.numOptimizationInterval.Location = new System.Drawing.Point(261, 79);
             this.numOptimizationInterval.Margin = new System.Windows.Forms.Padding(4);
-            this.numOptimizationInterval.Maximum = new decimal(new int[] { 60, 0, 0, 0 });
-            this.numOptimizationInterval.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            this.numOptimizationInterval.Maximum = new decimal(new int[] {
+            60,
+            0,
+            0,
+            0});
+            this.numOptimizationInterval.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
             this.numOptimizationInterval.Name = "numOptimizationInterval";
             this.numOptimizationInterval.Size = new System.Drawing.Size(80, 22);
             this.numOptimizationInterval.TabIndex = 4;
-            this.numOptimizationInterval.Value = new decimal(new int[] { 5, 0, 0, 0 });
+            this.numOptimizationInterval.Value = new decimal(new int[] {
+            5,
+            0,
+            0,
+            0});
             // 
             // chkAggressiveOptimization
             // 
@@ -2010,7 +1455,7 @@ namespace tickMeter.Forms
             this.chkAggressiveOptimization.Location = new System.Drawing.Point(8, 115);
             this.chkAggressiveOptimization.Margin = new System.Windows.Forms.Padding(4);
             this.chkAggressiveOptimization.Name = "chkAggressiveOptimization";
-            this.chkAggressiveOptimization.Size = new System.Drawing.Size(210, 21);
+            this.chkAggressiveOptimization.Size = new System.Drawing.Size(203, 20);
             this.chkAggressiveOptimization.TabIndex = 5;
             this.chkAggressiveOptimization.Text = "Агрессивная оптимизация";
             this.chkAggressiveOptimization.UseVisualStyleBackColor = true;
@@ -2031,7 +1476,7 @@ namespace tickMeter.Forms
             this.lblLastOptimization.Location = new System.Drawing.Point(8, 185);
             this.lblLastOptimization.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblLastOptimization.Name = "lblLastOptimization";
-            this.lblLastOptimization.Size = new System.Drawing.Size(160, 17);
+            this.lblLastOptimization.Size = new System.Drawing.Size(229, 16);
             this.lblLastOptimization.TabIndex = 7;
             this.lblLastOptimization.Text = "Последняя оптимизация: Никогда";
             // 
@@ -2041,7 +1486,7 @@ namespace tickMeter.Forms
             this.lblOptimizationStats.Location = new System.Drawing.Point(8, 215);
             this.lblOptimizationStats.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblOptimizationStats.Name = "lblOptimizationStats";
-            this.lblOptimizationStats.Size = new System.Drawing.Size(200, 17);
+            this.lblOptimizationStats.Size = new System.Drawing.Size(232, 16);
             this.lblOptimizationStats.TabIndex = 8;
             this.lblOptimizationStats.Text = "Всего оптимизаций: 0, Успешных: 0";
             // 
@@ -2055,6 +1500,715 @@ namespace tickMeter.Forms
             this.btnClearOptimizationHistory.Text = "Очистить историю";
             this.btnClearOptimizationHistory.UseVisualStyleBackColor = true;
             // 
+            // groupBoxColorZones
+            // 
+            this.groupBoxColorZones.Controls.Add(this.lblColorZoneProfile);
+            this.groupBoxColorZones.Controls.Add(this.cmbColorZoneProfile);
+            this.groupBoxColorZones.Controls.Add(this.lblPingGreen);
+            this.groupBoxColorZones.Controls.Add(this.numPingGreen);
+            this.groupBoxColorZones.Controls.Add(this.lblPingYellow);
+            this.groupBoxColorZones.Controls.Add(this.numPingYellow);
+            this.groupBoxColorZones.Controls.Add(this.lblTickrateGreen);
+            this.groupBoxColorZones.Controls.Add(this.numTickrateGreen);
+            this.groupBoxColorZones.Controls.Add(this.lblTickrateYellow);
+            this.groupBoxColorZones.Controls.Add(this.numTickrateYellow);
+            this.groupBoxColorZones.Controls.Add(this.lblTicktimeGreen);
+            this.groupBoxColorZones.Controls.Add(this.numTicktimeGreen);
+            this.groupBoxColorZones.Controls.Add(this.lblTicktimeYellow);
+            this.groupBoxColorZones.Controls.Add(this.numTicktimeYellow);
+            this.groupBoxColorZones.Controls.Add(this.btnResetColorZones);
+            this.groupBoxColorZones.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBoxColorZones.Location = new System.Drawing.Point(13, 984);
+            this.groupBoxColorZones.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBoxColorZones.Name = "groupBoxColorZones";
+            this.groupBoxColorZones.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBoxColorZones.Size = new System.Drawing.Size(753, 220);
+            this.groupBoxColorZones.TabIndex = 9;
+            this.groupBoxColorZones.TabStop = false;
+            this.groupBoxColorZones.Text = "Color Zone Profiles (ChatGPT Recommended)";
+            // 
+            // lblColorZoneProfile
+            // 
+            this.lblColorZoneProfile.AutoSize = true;
+            this.lblColorZoneProfile.Location = new System.Drawing.Point(12, 25);
+            this.lblColorZoneProfile.Name = "lblColorZoneProfile";
+            this.lblColorZoneProfile.Size = new System.Drawing.Size(48, 16);
+            this.lblColorZoneProfile.TabIndex = 0;
+            this.lblColorZoneProfile.Text = "Profile:";
+            // 
+            // cmbColorZoneProfile
+            // 
+            this.cmbColorZoneProfile.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbColorZoneProfile.FormattingEnabled = true;
+            this.cmbColorZoneProfile.Items.AddRange(new object[] {
+            "Low",
+            "Medium",
+            "High",
+            "Custom"});
+            this.cmbColorZoneProfile.Location = new System.Drawing.Point(65, 22);
+            this.cmbColorZoneProfile.Name = "cmbColorZoneProfile";
+            this.cmbColorZoneProfile.Size = new System.Drawing.Size(100, 24);
+            this.cmbColorZoneProfile.TabIndex = 1;
+            // 
+            // lblPingGreen
+            // 
+            this.lblPingGreen.AutoSize = true;
+            this.lblPingGreen.Location = new System.Drawing.Point(12, 60);
+            this.lblPingGreen.Name = "lblPingGreen";
+            this.lblPingGreen.Size = new System.Drawing.Size(87, 16);
+            this.lblPingGreen.TabIndex = 2;
+            this.lblPingGreen.Text = "Ping Green ≤:";
+            // 
+            // numPingGreen
+            // 
+            this.numPingGreen.Location = new System.Drawing.Point(110, 58);
+            this.numPingGreen.Maximum = new decimal(new int[] {
+            200,
+            0,
+            0,
+            0});
+            this.numPingGreen.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.numPingGreen.Name = "numPingGreen";
+            this.numPingGreen.Size = new System.Drawing.Size(60, 22);
+            this.numPingGreen.TabIndex = 3;
+            this.numPingGreen.Value = new decimal(new int[] {
+            40,
+            0,
+            0,
+            0});
+            // 
+            // lblPingYellow
+            // 
+            this.lblPingYellow.AutoSize = true;
+            this.lblPingYellow.Location = new System.Drawing.Point(12, 88);
+            this.lblPingYellow.Name = "lblPingYellow";
+            this.lblPingYellow.Size = new System.Drawing.Size(90, 16);
+            this.lblPingYellow.TabIndex = 4;
+            this.lblPingYellow.Text = "Ping Yellow ≤:";
+            // 
+            // numPingYellow
+            // 
+            this.numPingYellow.Location = new System.Drawing.Point(110, 86);
+            this.numPingYellow.Maximum = new decimal(new int[] {
+            500,
+            0,
+            0,
+            0});
+            this.numPingYellow.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.numPingYellow.Name = "numPingYellow";
+            this.numPingYellow.Size = new System.Drawing.Size(60, 22);
+            this.numPingYellow.TabIndex = 5;
+            this.numPingYellow.Value = new decimal(new int[] {
+            80,
+            0,
+            0,
+            0});
+            // 
+            // lblTickrateGreen
+            // 
+            this.lblTickrateGreen.AutoSize = true;
+            this.lblTickrateGreen.Location = new System.Drawing.Point(200, 60);
+            this.lblTickrateGreen.Name = "lblTickrateGreen";
+            this.lblTickrateGreen.Size = new System.Drawing.Size(109, 16);
+            this.lblTickrateGreen.TabIndex = 6;
+            this.lblTickrateGreen.Text = "Tickrate Green ≥:";
+            // 
+            // numTickrateGreen
+            // 
+            this.numTickrateGreen.DecimalPlaces = 2;
+            this.numTickrateGreen.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            131072});
+            this.numTickrateGreen.Location = new System.Drawing.Point(320, 58);
+            this.numTickrateGreen.Maximum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.numTickrateGreen.Minimum = new decimal(new int[] {
+            50,
+            0,
+            0,
+            131072});
+            this.numTickrateGreen.Name = "numTickrateGreen";
+            this.numTickrateGreen.Size = new System.Drawing.Size(70, 22);
+            this.numTickrateGreen.TabIndex = 7;
+            this.numTickrateGreen.Value = new decimal(new int[] {
+            98,
+            0,
+            0,
+            131072});
+            // 
+            // lblTickrateYellow
+            // 
+            this.lblTickrateYellow.AutoSize = true;
+            this.lblTickrateYellow.Location = new System.Drawing.Point(200, 88);
+            this.lblTickrateYellow.Name = "lblTickrateYellow";
+            this.lblTickrateYellow.Size = new System.Drawing.Size(112, 16);
+            this.lblTickrateYellow.TabIndex = 8;
+            this.lblTickrateYellow.Text = "Tickrate Yellow ≥:";
+            // 
+            // numTickrateYellow
+            // 
+            this.numTickrateYellow.DecimalPlaces = 2;
+            this.numTickrateYellow.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            131072});
+            this.numTickrateYellow.Location = new System.Drawing.Point(320, 86);
+            this.numTickrateYellow.Maximum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.numTickrateYellow.Minimum = new decimal(new int[] {
+            50,
+            0,
+            0,
+            131072});
+            this.numTickrateYellow.Name = "numTickrateYellow";
+            this.numTickrateYellow.Size = new System.Drawing.Size(70, 22);
+            this.numTickrateYellow.TabIndex = 9;
+            this.numTickrateYellow.Value = new decimal(new int[] {
+            95,
+            0,
+            0,
+            131072});
+            // 
+            // lblTicktimeGreen
+            // 
+            this.lblTicktimeGreen.AutoSize = true;
+            this.lblTicktimeGreen.Location = new System.Drawing.Point(420, 60);
+            this.lblTicktimeGreen.Name = "lblTicktimeGreen";
+            this.lblTicktimeGreen.Size = new System.Drawing.Size(111, 16);
+            this.lblTicktimeGreen.TabIndex = 10;
+            this.lblTicktimeGreen.Text = "Ticktime Green ≤:";
+            // 
+            // numTicktimeGreen
+            // 
+            this.numTicktimeGreen.DecimalPlaces = 2;
+            this.numTicktimeGreen.Increment = new decimal(new int[] {
+            5,
+            0,
+            0,
+            131072});
+            this.numTicktimeGreen.Location = new System.Drawing.Point(540, 58);
+            this.numTicktimeGreen.Maximum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.numTicktimeGreen.Minimum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            131072});
+            this.numTicktimeGreen.Name = "numTicktimeGreen";
+            this.numTicktimeGreen.Size = new System.Drawing.Size(70, 22);
+            this.numTicktimeGreen.TabIndex = 11;
+            this.numTicktimeGreen.Value = new decimal(new int[] {
+            60,
+            0,
+            0,
+            131072});
+            // 
+            // lblTicktimeYellow
+            // 
+            this.lblTicktimeYellow.AutoSize = true;
+            this.lblTicktimeYellow.Location = new System.Drawing.Point(420, 88);
+            this.lblTicktimeYellow.Name = "lblTicktimeYellow";
+            this.lblTicktimeYellow.Size = new System.Drawing.Size(114, 16);
+            this.lblTicktimeYellow.TabIndex = 12;
+            this.lblTicktimeYellow.Text = "Ticktime Yellow ≤:";
+            // 
+            // numTicktimeYellow
+            // 
+            this.numTicktimeYellow.DecimalPlaces = 2;
+            this.numTicktimeYellow.Increment = new decimal(new int[] {
+            5,
+            0,
+            0,
+            131072});
+            this.numTicktimeYellow.Location = new System.Drawing.Point(540, 86);
+            this.numTicktimeYellow.Maximum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.numTicktimeYellow.Minimum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            131072});
+            this.numTicktimeYellow.Name = "numTicktimeYellow";
+            this.numTicktimeYellow.Size = new System.Drawing.Size(70, 22);
+            this.numTicktimeYellow.TabIndex = 13;
+            this.numTicktimeYellow.Value = new decimal(new int[] {
+            90,
+            0,
+            0,
+            131072});
+            // 
+            // btnResetColorZones
+            // 
+            this.btnResetColorZones.Location = new System.Drawing.Point(630, 22);
+            this.btnResetColorZones.Name = "btnResetColorZones";
+            this.btnResetColorZones.Size = new System.Drawing.Size(100, 25);
+            this.btnResetColorZones.TabIndex = 15;
+            this.btnResetColorZones.Text = "Reset to Default";
+            this.btnResetColorZones.UseVisualStyleBackColor = true;
+            // 
+            // groupBoxNetworkQuality
+            // 
+            this.groupBoxNetworkQuality.Controls.Add(this.chkNetworkQualityEnabled);
+            this.groupBoxNetworkQuality.Controls.Add(this.chkNetworkQualityOverlay);
+            this.groupBoxNetworkQuality.Controls.Add(this.lblQualityHistorySize);
+            this.groupBoxNetworkQuality.Controls.Add(this.numQualityHistorySize);
+            this.groupBoxNetworkQuality.Controls.Add(this.lblStabilityThreshold);
+            this.groupBoxNetworkQuality.Controls.Add(this.numStabilityThreshold);
+            this.groupBoxNetworkQuality.Controls.Add(this.lblQualityThreshold);
+            this.groupBoxNetworkQuality.Controls.Add(this.numQualityThreshold);
+            this.groupBoxNetworkQuality.Controls.Add(this.btnResetQualityAnalyzer);
+            this.groupBoxNetworkQuality.Controls.Add(this.lblCurrentQuality);
+            this.groupBoxNetworkQuality.Controls.Add(this.lblQualityRating);
+            this.groupBoxNetworkQuality.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBoxNetworkQuality.Location = new System.Drawing.Point(13, 804);
+            this.groupBoxNetworkQuality.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBoxNetworkQuality.Name = "groupBoxNetworkQuality";
+            this.groupBoxNetworkQuality.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBoxNetworkQuality.Size = new System.Drawing.Size(753, 180);
+            this.groupBoxNetworkQuality.TabIndex = 8;
+            this.groupBoxNetworkQuality.TabStop = false;
+            this.groupBoxNetworkQuality.Text = "Stage 6: Анализ качества сети";
+            // 
+            // chkNetworkQualityEnabled
+            // 
+            this.chkNetworkQualityEnabled.AutoSize = true;
+            this.chkNetworkQualityEnabled.Location = new System.Drawing.Point(8, 25);
+            this.chkNetworkQualityEnabled.Margin = new System.Windows.Forms.Padding(4);
+            this.chkNetworkQualityEnabled.Name = "chkNetworkQualityEnabled";
+            this.chkNetworkQualityEnabled.Size = new System.Drawing.Size(241, 20);
+            this.chkNetworkQualityEnabled.TabIndex = 0;
+            this.chkNetworkQualityEnabled.Text = "Включить анализ качества сети";
+            this.chkNetworkQualityEnabled.UseVisualStyleBackColor = true;
+            // 
+            // chkNetworkQualityOverlay
+            // 
+            this.chkNetworkQualityOverlay.AutoSize = true;
+            this.chkNetworkQualityOverlay.Location = new System.Drawing.Point(267, 23);
+            this.chkNetworkQualityOverlay.Margin = new System.Windows.Forms.Padding(4);
+            this.chkNetworkQualityOverlay.Name = "chkNetworkQualityOverlay";
+            this.chkNetworkQualityOverlay.Size = new System.Drawing.Size(299, 20);
+            this.chkNetworkQualityOverlay.TabIndex = 10;
+            this.chkNetworkQualityOverlay.Text = "Показывать рейтинг качества в оверлее";
+            this.chkNetworkQualityOverlay.UseVisualStyleBackColor = true;
+            // 
+            // lblQualityHistorySize
+            // 
+            this.lblQualityHistorySize.AutoSize = true;
+            this.lblQualityHistorySize.Location = new System.Drawing.Point(8, 55);
+            this.lblQualityHistorySize.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblQualityHistorySize.Name = "lblQualityHistorySize";
+            this.lblQualityHistorySize.Size = new System.Drawing.Size(114, 16);
+            this.lblQualityHistorySize.TabIndex = 1;
+            this.lblQualityHistorySize.Text = "Размер буфера:";
+            // 
+            // numQualityHistorySize
+            // 
+            this.numQualityHistorySize.Location = new System.Drawing.Point(160, 53);
+            this.numQualityHistorySize.Margin = new System.Windows.Forms.Padding(4);
+            this.numQualityHistorySize.Maximum = new decimal(new int[] {
+            500,
+            0,
+            0,
+            0});
+            this.numQualityHistorySize.Minimum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.numQualityHistorySize.Name = "numQualityHistorySize";
+            this.numQualityHistorySize.Size = new System.Drawing.Size(80, 22);
+            this.numQualityHistorySize.TabIndex = 2;
+            this.numQualityHistorySize.Value = new decimal(new int[] {
+            100,
+            0,
+            0,
+            0});
+            // 
+            // lblStabilityThreshold
+            // 
+            this.lblStabilityThreshold.AutoSize = true;
+            this.lblStabilityThreshold.Location = new System.Drawing.Point(250, 55);
+            this.lblStabilityThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblStabilityThreshold.Name = "lblStabilityThreshold";
+            this.lblStabilityThreshold.Size = new System.Drawing.Size(144, 16);
+            this.lblStabilityThreshold.TabIndex = 3;
+            this.lblStabilityThreshold.Text = "Порог стабильности:";
+            // 
+            // numStabilityThreshold
+            // 
+            this.numStabilityThreshold.DecimalPlaces = 2;
+            this.numStabilityThreshold.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            131072});
+            this.numStabilityThreshold.Location = new System.Drawing.Point(412, 53);
+            this.numStabilityThreshold.Margin = new System.Windows.Forms.Padding(4);
+            this.numStabilityThreshold.Maximum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.numStabilityThreshold.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            131072});
+            this.numStabilityThreshold.Name = "numStabilityThreshold";
+            this.numStabilityThreshold.Size = new System.Drawing.Size(80, 22);
+            this.numStabilityThreshold.TabIndex = 4;
+            this.numStabilityThreshold.Value = new decimal(new int[] {
+            15,
+            0,
+            0,
+            131072});
+            // 
+            // lblQualityThreshold
+            // 
+            this.lblQualityThreshold.AutoSize = true;
+            this.lblQualityThreshold.Location = new System.Drawing.Point(8, 85);
+            this.lblQualityThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblQualityThreshold.Name = "lblQualityThreshold";
+            this.lblQualityThreshold.Size = new System.Drawing.Size(114, 16);
+            this.lblQualityThreshold.TabIndex = 5;
+            this.lblQualityThreshold.Text = "Порог качества:";
+            // 
+            // numQualityThreshold
+            // 
+            this.numQualityThreshold.DecimalPlaces = 2;
+            this.numQualityThreshold.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            131072});
+            this.numQualityThreshold.Location = new System.Drawing.Point(160, 83);
+            this.numQualityThreshold.Margin = new System.Windows.Forms.Padding(4);
+            this.numQualityThreshold.Maximum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.numQualityThreshold.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            131072});
+            this.numQualityThreshold.Name = "numQualityThreshold";
+            this.numQualityThreshold.Size = new System.Drawing.Size(80, 22);
+            this.numQualityThreshold.TabIndex = 6;
+            this.numQualityThreshold.Value = new decimal(new int[] {
+            80,
+            0,
+            0,
+            131072});
+            // 
+            // btnResetQualityAnalyzer
+            // 
+            this.btnResetQualityAnalyzer.Location = new System.Drawing.Point(250, 81);
+            this.btnResetQualityAnalyzer.Margin = new System.Windows.Forms.Padding(4);
+            this.btnResetQualityAnalyzer.Name = "btnResetQualityAnalyzer";
+            this.btnResetQualityAnalyzer.Size = new System.Drawing.Size(120, 28);
+            this.btnResetQualityAnalyzer.TabIndex = 7;
+            this.btnResetQualityAnalyzer.Text = "Сбросить анализ";
+            this.btnResetQualityAnalyzer.UseVisualStyleBackColor = true;
+            // 
+            // lblCurrentQuality
+            // 
+            this.lblCurrentQuality.AutoSize = true;
+            this.lblCurrentQuality.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.lblCurrentQuality.Location = new System.Drawing.Point(8, 120);
+            this.lblCurrentQuality.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblCurrentQuality.Name = "lblCurrentQuality";
+            this.lblCurrentQuality.Size = new System.Drawing.Size(173, 18);
+            this.lblCurrentQuality.TabIndex = 8;
+            this.lblCurrentQuality.Text = "Качество сети: 100%";
+            // 
+            // lblQualityRating
+            // 
+            this.lblQualityRating.AutoSize = true;
+            this.lblQualityRating.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.lblQualityRating.ForeColor = System.Drawing.Color.Green;
+            this.lblQualityRating.Location = new System.Drawing.Point(8, 145);
+            this.lblQualityRating.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblQualityRating.Name = "lblQualityRating";
+            this.lblQualityRating.Size = new System.Drawing.Size(148, 18);
+            this.lblQualityRating.TabIndex = 9;
+            this.lblQualityRating.Text = "Рейтинг: Excellent";
+            // 
+            // groupBox5
+            // 
+            this.groupBox5.Controls.Add(this.chkStunEnable);
+            this.groupBox5.Controls.Add(this.chkShowPingSpikes);
+            this.groupBox5.Controls.Add(this.lblPingSpikeThreshold);
+            this.groupBox5.Controls.Add(this.numPingSpikeThreshold);
+            this.groupBox5.Controls.Add(this.chkRtssOnlyActive);
+            this.groupBox5.Controls.Add(this.chkEnableIPv6);
+            this.groupBox5.Controls.Add(this.chkDedupMultiNic);
+            this.groupBox5.Controls.Add(this.chkTickrateSmoothing);
+            this.groupBox5.Controls.Add(this.chkPingGraphOverlaySmoothing);
+            this.groupBox5.Controls.Add(this.chkTickrateGraphOverlaySmoothing);
+            this.groupBox5.Controls.Add(this.chkTicktimeGraphOverlaySmoothing);
+            this.groupBox5.Controls.Add(this.chkPingValueOverlaySmoothing);
+            this.groupBox5.Controls.Add(this.chkPingValueGuiSmoothing);
+            this.groupBox5.Controls.Add(this.chkTickrateValueOverlaySmoothing);
+            this.groupBox5.Controls.Add(this.chkTrafficValueOverlaySmoothing);
+            this.groupBox5.Controls.Add(this.chkPingTargetActiveOnly);
+            this.groupBox5.Controls.Add(this.chkPingFallbackIcmp);
+            this.groupBox5.Controls.Add(this.chkPingTcpPrefer);
+            this.groupBox5.Controls.Add(this.chkPingBindToInterface);
+            this.groupBox5.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBox5.Location = new System.Drawing.Point(13, 404);
+            this.groupBox5.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBox5.Name = "groupBox5";
+            this.groupBox5.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBox5.Size = new System.Drawing.Size(753, 400);
+            this.groupBox5.TabIndex = 4;
+            this.groupBox5.TabStop = false;
+            this.groupBox5.Text = "Универсальные";
+            // 
+            // chkStunEnable
+            // 
+            this.chkStunEnable.AutoSize = true;
+            this.chkStunEnable.Location = new System.Drawing.Point(363, 56);
+            this.chkStunEnable.Margin = new System.Windows.Forms.Padding(4);
+            this.chkStunEnable.Name = "chkStunEnable";
+            this.chkStunEnable.Size = new System.Drawing.Size(324, 20);
+            this.chkStunEnable.TabIndex = 8;
+            this.chkStunEnable.Text = "Определять внешний IP через STUN (в фоне)";
+            this.chkStunEnable.UseVisualStyleBackColor = true;
+            // 
+            // chkShowPingSpikes
+            // 
+            this.chkShowPingSpikes.AutoSize = true;
+            this.chkShowPingSpikes.Location = new System.Drawing.Point(363, 84);
+            this.chkShowPingSpikes.Margin = new System.Windows.Forms.Padding(4);
+            this.chkShowPingSpikes.Name = "chkShowPingSpikes";
+            this.chkShowPingSpikes.Size = new System.Drawing.Size(319, 20);
+            this.chkShowPingSpikes.TabIndex = 9;
+            this.chkShowPingSpikes.Text = "Показывать индикатор (!) при спайках пинга";
+            this.chkShowPingSpikes.UseVisualStyleBackColor = true;
+            // 
+            // lblPingSpikeThreshold
+            // 
+            this.lblPingSpikeThreshold.AutoSize = true;
+            this.lblPingSpikeThreshold.Location = new System.Drawing.Point(360, 112);
+            this.lblPingSpikeThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblPingSpikeThreshold.Name = "lblPingSpikeThreshold";
+            this.lblPingSpikeThreshold.Size = new System.Drawing.Size(167, 16);
+            this.lblPingSpikeThreshold.TabIndex = 10;
+            this.lblPingSpikeThreshold.Text = "Порог спайка пинга (мс):";
+            // 
+            // numPingSpikeThreshold
+            // 
+            this.numPingSpikeThreshold.Location = new System.Drawing.Point(545, 110);
+            this.numPingSpikeThreshold.Margin = new System.Windows.Forms.Padding(4);
+            this.numPingSpikeThreshold.Maximum = new decimal(new int[] {
+            1000,
+            0,
+            0,
+            0});
+            this.numPingSpikeThreshold.Minimum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.numPingSpikeThreshold.Name = "numPingSpikeThreshold";
+            this.numPingSpikeThreshold.Size = new System.Drawing.Size(80, 22);
+            this.numPingSpikeThreshold.TabIndex = 11;
+            this.numPingSpikeThreshold.Value = new decimal(new int[] {
+            150,
+            0,
+            0,
+            0});
+            // 
+            // chkRtssOnlyActive
+            // 
+            this.chkRtssOnlyActive.AutoSize = true;
+            this.chkRtssOnlyActive.Location = new System.Drawing.Point(363, 28);
+            this.chkRtssOnlyActive.Margin = new System.Windows.Forms.Padding(4);
+            this.chkRtssOnlyActive.Name = "chkRtssOnlyActive";
+            this.chkRtssOnlyActive.Size = new System.Drawing.Size(306, 20);
+            this.chkRtssOnlyActive.TabIndex = 8;
+            this.chkRtssOnlyActive.Text = "RTSS: выводить только активный процесс";
+            this.chkRtssOnlyActive.UseVisualStyleBackColor = true;
+            // 
+            // chkEnableIPv6
+            // 
+            this.chkEnableIPv6.AutoSize = true;
+            this.chkEnableIPv6.Location = new System.Drawing.Point(20, 255);
+            this.chkEnableIPv6.Margin = new System.Windows.Forms.Padding(4);
+            this.chkEnableIPv6.Name = "chkEnableIPv6";
+            this.chkEnableIPv6.Size = new System.Drawing.Size(173, 20);
+            this.chkEnableIPv6.TabIndex = 7;
+            this.chkEnableIPv6.Text = "Включить анализ IPv6";
+            this.chkEnableIPv6.UseVisualStyleBackColor = true;
+            // 
+            // chkDedupMultiNic
+            // 
+            this.chkDedupMultiNic.AutoSize = true;
+            this.chkDedupMultiNic.Location = new System.Drawing.Point(20, 227);
+            this.chkDedupMultiNic.Margin = new System.Windows.Forms.Padding(4);
+            this.chkDedupMultiNic.Name = "chkDedupMultiNic";
+            this.chkDedupMultiNic.Size = new System.Drawing.Size(277, 20);
+            this.chkDedupMultiNic.TabIndex = 6;
+            this.chkDedupMultiNic.Text = "Анти-дубли пакетов в мульти-режиме";
+            this.chkDedupMultiNic.UseVisualStyleBackColor = true;
+            // 
+            // chkTickrateSmoothing
+            // 
+            this.chkTickrateSmoothing.AutoSize = true;
+            this.chkTickrateSmoothing.Location = new System.Drawing.Point(20, 115);
+            this.chkTickrateSmoothing.Margin = new System.Windows.Forms.Padding(4);
+            this.chkTickrateSmoothing.Name = "chkTickrateSmoothing";
+            this.chkTickrateSmoothing.Size = new System.Drawing.Size(280, 20);
+            this.chkTickrateSmoothing.TabIndex = 4;
+            this.chkTickrateSmoothing.Text = "Сглаживание графика тикрейта (EMA)";
+            this.chkTickrateSmoothing.UseVisualStyleBackColor = true;
+            // 
+            // chkPingGraphOverlaySmoothing
+            // 
+            this.chkPingGraphOverlaySmoothing.AutoSize = true;
+            this.chkPingGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 143);
+            this.chkPingGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
+            this.chkPingGraphOverlaySmoothing.Name = "chkPingGraphOverlaySmoothing";
+            this.chkPingGraphOverlaySmoothing.Size = new System.Drawing.Size(287, 20);
+            this.chkPingGraphOverlaySmoothing.TabIndex = 10;
+            this.chkPingGraphOverlaySmoothing.Text = "Сглаживание графика пинга в оверлее";
+            this.chkPingGraphOverlaySmoothing.UseVisualStyleBackColor = true;
+            // 
+            // chkTickrateGraphOverlaySmoothing
+            // 
+            this.chkTickrateGraphOverlaySmoothing.AutoSize = true;
+            this.chkTickrateGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 171);
+            this.chkTickrateGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
+            this.chkTickrateGraphOverlaySmoothing.Name = "chkTickrateGraphOverlaySmoothing";
+            this.chkTickrateGraphOverlaySmoothing.Size = new System.Drawing.Size(310, 20);
+            this.chkTickrateGraphOverlaySmoothing.TabIndex = 11;
+            this.chkTickrateGraphOverlaySmoothing.Text = "Сглаживание графика тикрейта в оверлее";
+            this.chkTickrateGraphOverlaySmoothing.UseVisualStyleBackColor = true;
+            // 
+            // chkTicktimeGraphOverlaySmoothing
+            // 
+            this.chkTicktimeGraphOverlaySmoothing.AutoSize = true;
+            this.chkTicktimeGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 199);
+            this.chkTicktimeGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
+            this.chkTicktimeGraphOverlaySmoothing.Name = "chkTicktimeGraphOverlaySmoothing";
+            this.chkTicktimeGraphOverlaySmoothing.Size = new System.Drawing.Size(311, 20);
+            this.chkTicktimeGraphOverlaySmoothing.TabIndex = 12;
+            this.chkTicktimeGraphOverlaySmoothing.Text = "Сглаживание графика тиктайма в оверлее";
+            this.chkTicktimeGraphOverlaySmoothing.UseVisualStyleBackColor = true;
+            // 
+            // chkPingValueOverlaySmoothing
+            // 
+            this.chkPingValueOverlaySmoothing.AutoSize = true;
+            this.chkPingValueOverlaySmoothing.Location = new System.Drawing.Point(20, 283);
+            this.chkPingValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
+            this.chkPingValueOverlaySmoothing.Name = "chkPingValueOverlaySmoothing";
+            this.chkPingValueOverlaySmoothing.Size = new System.Drawing.Size(295, 20);
+            this.chkPingValueOverlaySmoothing.TabIndex = 13;
+            this.chkPingValueOverlaySmoothing.Text = "Сглаживание значений пинга в оверлее";
+            this.chkPingValueOverlaySmoothing.UseVisualStyleBackColor = true;
+            // 
+            // chkPingValueGuiSmoothing
+            // 
+            this.chkPingValueGuiSmoothing.AutoSize = true;
+            this.chkPingValueGuiSmoothing.Location = new System.Drawing.Point(20, 311);
+            this.chkPingValueGuiSmoothing.Margin = new System.Windows.Forms.Padding(4);
+            this.chkPingValueGuiSmoothing.Name = "chkPingValueGuiSmoothing";
+            this.chkPingValueGuiSmoothing.Size = new System.Drawing.Size(262, 20);
+            this.chkPingValueGuiSmoothing.TabIndex = 14;
+            this.chkPingValueGuiSmoothing.Text = "Сглаживание значений пинга в GUI";
+            this.chkPingValueGuiSmoothing.UseVisualStyleBackColor = true;
+            // 
+            // chkTickrateValueOverlaySmoothing
+            // 
+            this.chkTickrateValueOverlaySmoothing.AutoSize = true;
+            this.chkTickrateValueOverlaySmoothing.Location = new System.Drawing.Point(20, 339);
+            this.chkTickrateValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
+            this.chkTickrateValueOverlaySmoothing.Name = "chkTickrateValueOverlaySmoothing";
+            this.chkTickrateValueOverlaySmoothing.Size = new System.Drawing.Size(318, 20);
+            this.chkTickrateValueOverlaySmoothing.TabIndex = 15;
+            this.chkTickrateValueOverlaySmoothing.Text = "Сглаживание значений тикрейта в оверлее";
+            this.chkTickrateValueOverlaySmoothing.UseVisualStyleBackColor = true;
+            // 
+            // chkTrafficValueOverlaySmoothing
+            // 
+            this.chkTrafficValueOverlaySmoothing.AutoSize = true;
+            this.chkTrafficValueOverlaySmoothing.Location = new System.Drawing.Point(20, 367);
+            this.chkTrafficValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
+            this.chkTrafficValueOverlaySmoothing.Name = "chkTrafficValueOverlaySmoothing";
+            this.chkTrafficValueOverlaySmoothing.Size = new System.Drawing.Size(314, 20);
+            this.chkTrafficValueOverlaySmoothing.TabIndex = 16;
+            this.chkTrafficValueOverlaySmoothing.Text = "Сглаживание значений трафика в оверлее";
+            this.chkTrafficValueOverlaySmoothing.UseVisualStyleBackColor = true;
+            // 
+            // chkPingTargetActiveOnly
+            // 
+            this.chkPingTargetActiveOnly.AutoSize = true;
+            this.chkPingTargetActiveOnly.Location = new System.Drawing.Point(363, 132);
+            this.chkPingTargetActiveOnly.Margin = new System.Windows.Forms.Padding(4);
+            this.chkPingTargetActiveOnly.Name = "chkPingTargetActiveOnly";
+            this.chkPingTargetActiveOnly.Size = new System.Drawing.Size(317, 20);
+            this.chkPingTargetActiveOnly.TabIndex = 3;
+            this.chkPingTargetActiveOnly.Text = "Пинговать только цель активного процесса";
+            this.chkPingTargetActiveOnly.UseVisualStyleBackColor = true;
+            // 
+            // chkPingFallbackIcmp
+            // 
+            this.chkPingFallbackIcmp.AutoSize = true;
+            this.chkPingFallbackIcmp.Location = new System.Drawing.Point(20, 87);
+            this.chkPingFallbackIcmp.Margin = new System.Windows.Forms.Padding(4);
+            this.chkPingFallbackIcmp.Name = "chkPingFallbackIcmp";
+            this.chkPingFallbackIcmp.Size = new System.Drawing.Size(298, 20);
+            this.chkPingFallbackIcmp.TabIndex = 2;
+            this.chkPingFallbackIcmp.Text = "Фолбэк на ICMP, если TCP заблокирован";
+            this.chkPingFallbackIcmp.UseVisualStyleBackColor = true;
+            // 
+            // chkPingTcpPrefer
+            // 
+            this.chkPingTcpPrefer.AutoSize = true;
+            this.chkPingTcpPrefer.Location = new System.Drawing.Point(20, 59);
+            this.chkPingTcpPrefer.Margin = new System.Windows.Forms.Padding(4);
+            this.chkPingTcpPrefer.Name = "chkPingTcpPrefer";
+            this.chkPingTcpPrefer.Size = new System.Drawing.Size(323, 20);
+            this.chkPingTcpPrefer.TabIndex = 1;
+            this.chkPingTcpPrefer.Text = "Предпочитать TCP-пинг по активному порту";
+            this.chkPingTcpPrefer.UseVisualStyleBackColor = true;
+            // 
+            // chkPingBindToInterface
+            // 
+            this.chkPingBindToInterface.AutoSize = true;
+            this.chkPingBindToInterface.Location = new System.Drawing.Point(20, 31);
+            this.chkPingBindToInterface.Margin = new System.Windows.Forms.Padding(4);
+            this.chkPingBindToInterface.Name = "chkPingBindToInterface";
+            this.chkPingBindToInterface.Size = new System.Drawing.Size(318, 20);
+            this.chkPingBindToInterface.TabIndex = 0;
+            this.chkPingBindToInterface.Text = "Пинг привязывать к активному интерфейсу";
+            this.chkPingBindToInterface.UseVisualStyleBackColor = true;
+            // 
             // groupBox4
             // 
             this.groupBox4.Controls.Add(this.chkIgnoreVirtualAdapters);
@@ -2064,7 +2218,7 @@ namespace tickMeter.Forms
             this.groupBox4.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox4.Size = new System.Drawing.Size(757, 98);
+            this.groupBox4.Size = new System.Drawing.Size(753, 98);
             this.groupBox4.TabIndex = 3;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Сетевые адаптеры";
@@ -2075,7 +2229,7 @@ namespace tickMeter.Forms
             this.chkIgnoreVirtualAdapters.Location = new System.Drawing.Point(20, 62);
             this.chkIgnoreVirtualAdapters.Margin = new System.Windows.Forms.Padding(4);
             this.chkIgnoreVirtualAdapters.Name = "chkIgnoreVirtualAdapters";
-            this.chkIgnoreVirtualAdapters.Size = new System.Drawing.Size(277, 20);
+            this.chkIgnoreVirtualAdapters.Size = new System.Drawing.Size(280, 20);
             this.chkIgnoreVirtualAdapters.TabIndex = 1;
             this.chkIgnoreVirtualAdapters.Text = "Игнорировать виртуальные адаптеры";
             this.chkIgnoreVirtualAdapters.UseVisualStyleBackColor = true;
@@ -2086,7 +2240,7 @@ namespace tickMeter.Forms
             this.chkCaptureAllAdapters.Location = new System.Drawing.Point(20, 31);
             this.chkCaptureAllAdapters.Margin = new System.Windows.Forms.Padding(4);
             this.chkCaptureAllAdapters.Name = "chkCaptureAllAdapters";
-            this.chkCaptureAllAdapters.Size = new System.Drawing.Size(235, 20);
+            this.chkCaptureAllAdapters.Size = new System.Drawing.Size(238, 20);
             this.chkCaptureAllAdapters.TabIndex = 0;
             this.chkCaptureAllAdapters.Text = "Захватывать со всех адаптеров";
             this.chkCaptureAllAdapters.UseVisualStyleBackColor = true;
@@ -2101,7 +2255,7 @@ namespace tickMeter.Forms
             this.groupBox3.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox3.Size = new System.Drawing.Size(757, 98);
+            this.groupBox3.Size = new System.Drawing.Size(753, 98);
             this.groupBox3.TabIndex = 2;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Фильтрация пакетов";
@@ -2119,7 +2273,7 @@ namespace tickMeter.Forms
             // captureFilterTextBox
             // 
             this.captureFilterTextBox.Enabled = false;
-            this.captureFilterTextBox.Location = new System.Drawing.Point(267, 62);
+            this.captureFilterTextBox.Location = new System.Drawing.Point(284, 62);
             this.captureFilterTextBox.Margin = new System.Windows.Forms.Padding(4);
             this.captureFilterTextBox.Name = "captureFilterTextBox";
             this.captureFilterTextBox.Size = new System.Drawing.Size(265, 22);
@@ -2132,7 +2286,7 @@ namespace tickMeter.Forms
             this.chkBpfFilter.Location = new System.Drawing.Point(20, 31);
             this.chkBpfFilter.Margin = new System.Windows.Forms.Padding(4);
             this.chkBpfFilter.Name = "chkBpfFilter";
-            this.chkBpfFilter.Size = new System.Drawing.Size(201, 20);
+            this.chkBpfFilter.Size = new System.Drawing.Size(204, 20);
             this.chkBpfFilter.TabIndex = 0;
             this.chkBpfFilter.Text = "Использовать BPF фильтр";
             this.chkBpfFilter.UseVisualStyleBackColor = true;
@@ -2148,7 +2302,7 @@ namespace tickMeter.Forms
             this.groupBox2.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox2.Size = new System.Drawing.Size(757, 98);
+            this.groupBox2.Size = new System.Drawing.Size(753, 98);
             this.groupBox2.TabIndex = 1;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "RTSS Overlay настройки";
@@ -2166,7 +2320,7 @@ namespace tickMeter.Forms
             // overlayFpsNumeric
             // 
             this.overlayFpsNumeric.Enabled = false;
-            this.overlayFpsNumeric.Location = new System.Drawing.Point(267, 62);
+            this.overlayFpsNumeric.Location = new System.Drawing.Point(182, 62);
             this.overlayFpsNumeric.Margin = new System.Windows.Forms.Padding(4);
             this.overlayFpsNumeric.Maximum = new decimal(new int[] {
             144,
@@ -2193,7 +2347,7 @@ namespace tickMeter.Forms
             this.chkOverlayFps.Location = new System.Drawing.Point(20, 31);
             this.chkOverlayFps.Margin = new System.Windows.Forms.Padding(4);
             this.chkOverlayFps.Name = "chkOverlayFps";
-            this.chkOverlayFps.Size = new System.Drawing.Size(191, 20);
+            this.chkOverlayFps.Size = new System.Drawing.Size(194, 20);
             this.chkOverlayFps.TabIndex = 0;
             this.chkOverlayFps.Text = "Ограничить FPS оверлея";
             this.chkOverlayFps.UseVisualStyleBackColor = true;
@@ -2209,7 +2363,7 @@ namespace tickMeter.Forms
             this.groupBox1.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox1.Size = new System.Drawing.Size(757, 98);
+            this.groupBox1.Size = new System.Drawing.Size(753, 98);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Live View настройки";
@@ -2227,7 +2381,7 @@ namespace tickMeter.Forms
             // liveMaxRowsNumeric
             // 
             this.liveMaxRowsNumeric.Enabled = false;
-            this.liveMaxRowsNumeric.Location = new System.Drawing.Point(267, 62);
+            this.liveMaxRowsNumeric.Location = new System.Drawing.Point(213, 62);
             this.liveMaxRowsNumeric.Margin = new System.Windows.Forms.Padding(4);
             this.liveMaxRowsNumeric.Maximum = new decimal(new int[] {
             5000,
@@ -2254,7 +2408,7 @@ namespace tickMeter.Forms
             this.chkLiveMaxRows.Location = new System.Drawing.Point(20, 31);
             this.chkLiveMaxRows.Margin = new System.Windows.Forms.Padding(4);
             this.chkLiveMaxRows.Name = "chkLiveMaxRows";
-            this.chkLiveMaxRows.Size = new System.Drawing.Size(221, 20);
+            this.chkLiveMaxRows.Size = new System.Drawing.Size(224, 20);
             this.chkLiveMaxRows.TabIndex = 0;
             this.chkLiveMaxRows.Text = "Ограничить строки в таблице";
             this.chkLiveMaxRows.UseVisualStyleBackColor = true;
@@ -2363,6 +2517,10 @@ namespace tickMeter.Forms
             ((System.ComponentModel.ISupportInitialize)(this.numPcapMinToCopy)).EndInit();
             this.groupBoxSpikeDetection.ResumeLayout(false);
             this.groupBoxSpikeDetection.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numSpikeMinDuration)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numSpikeHistorySize)).EndInit();
+            this.groupBoxSpikeAdvanced.ResumeLayout(false);
+            this.groupBoxSpikeAdvanced.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numEmaAlpha)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numEwSigmaAlpha)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numSensitivityMultiplier)).EndInit();
@@ -2370,35 +2528,31 @@ namespace tickMeter.Forms
             ((System.ComponentModel.ISupportInitialize)(this.numRefractoryPeriod)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numMinEnergyThreshold)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numInitWindowSize)).EndInit();
-            this.groupBoxSpikeAdvanced.ResumeLayout(false);
-            this.groupBoxSpikeAdvanced.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numSpikeMinDuration)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numSpikeHistorySize)).EndInit();
-            this.groupBox5.ResumeLayout(false);
-            this.groupBox5.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numPingSpikeThreshold)).EndInit();
             this.groupBoxAlerts.ResumeLayout(false);
             this.groupBoxAlerts.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numAlertCooldown)).EndInit();
             this.groupBoxAlertSounds.ResumeLayout(false);
             this.groupBoxAlertSounds.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numQualityHistorySize)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numStabilityThreshold)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numQualityThreshold)).EndInit();
-            this.groupBoxNetworkQuality.ResumeLayout(false);
-            this.groupBoxNetworkQuality.PerformLayout();
+            this.groupBoxNetworkOptimizer.ResumeLayout(false);
+            this.groupBoxNetworkOptimizer.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numOptimizationThreshold)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numOptimizationInterval)).EndInit();
+            this.groupBoxColorZones.ResumeLayout(false);
+            this.groupBoxColorZones.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPingGreen)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numPingYellow)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numTickrateGreen)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numTickrateYellow)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numTicktimeGreen)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numTicktimeYellow)).EndInit();
-            this.groupBoxColorZones.ResumeLayout(false);
-            this.groupBoxColorZones.PerformLayout();
-            this.groupBoxNetworkOptimizer.ResumeLayout(false);
-            this.groupBoxNetworkOptimizer.PerformLayout();
+            this.groupBoxNetworkQuality.ResumeLayout(false);
+            this.groupBoxNetworkQuality.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numQualityHistorySize)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numStabilityThreshold)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numQualityThreshold)).EndInit();
+            this.groupBox5.ResumeLayout(false);
+            this.groupBox5.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numPingSpikeThreshold)).EndInit();
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
             this.groupBox3.ResumeLayout(false);
