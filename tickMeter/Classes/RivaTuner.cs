@@ -488,6 +488,56 @@ namespace tickMeter.Classes
                     );
                 }
             } catch (InvalidOperationException) { }
+            
+            // Extended overlay information
+            bool showActiveProcess = App.settingsManager?.GetOption("show_active_process", "False", "EXTENDED") == "True";
+            if (showActiveProcess)
+            {
+                output += Environment.NewLine + FormatActiveProcess();
+            }
+            
+            bool showSessionTime = App.settingsManager?.GetOption("show_session_time", "False", "EXTENDED") == "True";
+            if (showSessionTime)
+            {
+                output += Environment.NewLine + FormatSessionTime();
+            }
+            
+            bool showExternalIP = App.settingsManager?.GetOption("show_external_ip", "False", "EXTENDED") == "True";
+            if (showExternalIP)
+            {
+                output += Environment.NewLine + FormatExternalIP();
+            }
+            
+            bool showSessionStats = App.settingsManager?.GetOption("show_session_stats", "False", "EXTENDED") == "True";
+            if (showSessionStats)
+            {
+                output += Environment.NewLine + FormatSessionStats();
+            }
+            
+            bool showServerInfo = App.settingsManager?.GetOption("show_server_info", "False", "EXTENDED") == "True";
+            if (showServerInfo)
+            {
+                output += Environment.NewLine + FormatServerInfo();
+            }
+            
+            bool showPacketCounters = App.settingsManager?.GetOption("show_packet_counters", "False", "EXTENDED") == "True";
+            if (showPacketCounters)
+            {
+                output += Environment.NewLine + FormatPacketCounters();
+            }
+            
+            bool showConnectionType = App.settingsManager?.GetOption("show_connection_type", "False", "EXTENDED") == "True";
+            if (showConnectionType)
+            {
+                output += Environment.NewLine + FormatConnectionType();
+            }
+            
+            bool showDiagnosticInfo = App.settingsManager?.GetOption("show_diagnostic_info", "False", "EXTENDED") == "True";
+            if (showDiagnosticInfo)
+            {
+                output += Environment.NewLine + FormatDiagnosticInfo();
+            }
+            
             PrintData(output, true);
         }
 
@@ -642,6 +692,127 @@ namespace tickMeter.Classes
                 text = TextFormat() + text;
             }
             Print(text);
+        }
+
+        private static string FormatActiveProcess()
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(App.meterState?.Game))
+                {
+                    return $"Game: {App.meterState.Game}";
+                }
+                else
+                {
+                    return "Game: Not detected";
+                }
+            }
+            catch
+            {
+                return "Game: Unknown";
+            }
+        }
+
+        private static string FormatSessionTime()
+        {
+            var sessionTime = DateTime.Now - Process.GetCurrentProcess().StartTime;
+            return $"Session: {sessionTime.Hours:D2}:{sessionTime.Minutes:D2}:{sessionTime.Seconds:D2}";
+        }
+
+        private static string FormatExternalIP()
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(App.meterState?.Server?.Ip))
+                {
+                    return $"Server IP: {App.meterState.Server.Ip}";
+                }
+                else
+                {
+                    return "Server IP: Not connected";
+                }
+            }
+            catch
+            {
+                return "Server IP: Unknown";
+            }
+        }
+
+        private static string FormatSessionStats()
+        {
+            try
+            {
+                if (App.meterState != null)
+                {
+                    var sessionDuration = DateTime.Now - App.meterState.SessionStart;
+                    string duration = $"{(int)sessionDuration.TotalMinutes}m";
+                    
+                    // Показываем loss и средний стабильный tickrate если доступны
+                    if (App.meterState.loss >= 0)
+                    {
+                        return $"Session: {duration}, Loss: {App.meterState.loss:F1}%";
+                    }
+                    else
+                    {
+                        return $"Session: {duration}";
+                    }
+                }
+                else
+                {
+                    return "Session: No data";
+                }
+            }
+            catch
+            {
+                return "Session: Error";
+            }
+        }
+
+        private static string FormatServerInfo()
+        {
+            try
+            {
+                if (App.meterState?.Server != null)
+                {
+                    string location = !string.IsNullOrEmpty(App.meterState.Server.Location) 
+                        ? App.meterState.Server.Location 
+                        : "Unknown location";
+                    return $"Location: {location}";
+                }
+                else
+                {
+                    return "Location: Not connected";
+                }
+            }
+            catch
+            {
+                return "Location: Unknown";
+            }
+        }
+
+        private static string FormatPacketCounters()
+        {
+            // This would need to be implemented with actual packet counting
+            return "Packets: N/A";
+        }
+
+        private static string FormatConnectionType()
+        {
+            // This would need to be implemented with actual connection detection
+            return "Connection: Ethernet";
+        }
+
+        private static string FormatDiagnosticInfo()
+        {
+            try
+            {
+                var memory = GC.GetTotalMemory(false) / (1024 * 1024);
+                return $"Memory: {memory}MB";
+            }
+            catch
+            {
+                return "Diagnostics: N/A";
+            }
         }
     }
 }

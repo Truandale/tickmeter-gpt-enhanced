@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using tickMeter.Classes;
@@ -10,6 +11,7 @@ namespace tickMeter.Forms
         public AdvancedSettingsForm()
         {
             InitializeComponent();
+            InitializeExtendedOverlayControls(); // Создаем контролы расширенной информации
             LoadSettings();
         }
 
@@ -95,6 +97,9 @@ namespace tickMeter.Forms
                 
                 // Color Zone settings
                 LoadColorZoneSettings();
+                
+                // Extended Overlay settings
+                LoadExtendedOverlaySettings();
             }
             catch (Exception ex)
             {
@@ -183,6 +188,9 @@ namespace tickMeter.Forms
                 
                 // Color Zone settings
                 SaveColorZoneSettings();
+                
+                // Extended Overlay settings  
+                SaveExtendedOverlaySettings();
                 
                 // Применяем новые настройки интервала overlay
                 App.gui?.ApplyOverlayIntervalFromSettings();
@@ -1284,6 +1292,67 @@ namespace tickMeter.Forms
             }
         }
 
+        #endregion
+
+        #region Extended Overlay Methods
+        
+        /// <summary>
+        /// Инициализирует блок расширенной информации для оверлея
+        /// </summary>
+        private void InitializeExtendedOverlayControls()
+        {
+            // Контролы теперь создаются в Designer.cs
+            // Метод оставлен для совместимости
+        }
+        
+        /// <summary>
+        /// Загружает настройки расширенной информации из конфига
+        /// </summary>
+        private void LoadExtendedOverlaySettings()
+        {
+            if (App.settingsManager == null) return;
+            
+            try
+            {
+                chkShowActiveProcess.Checked = App.settingsManager.GetOption("show_active_process", "False", "EXTENDED") == "True";
+                chkShowSessionTime.Checked = App.settingsManager.GetOption("show_session_time", "False", "EXTENDED") == "True";
+                chkShowExternalIP.Checked = App.settingsManager.GetOption("show_external_ip", "False", "EXTENDED") == "True";
+                chkShowSessionStats.Checked = App.settingsManager.GetOption("show_session_stats", "False", "EXTENDED") == "True";
+                chkShowServerInfo.Checked = App.settingsManager.GetOption("show_server_info", "False", "EXTENDED") == "True";
+                chkShowPacketCounters.Checked = App.settingsManager.GetOption("show_packet_counters", "False", "EXTENDED") == "True";
+                chkShowConnectionType.Checked = App.settingsManager.GetOption("show_connection_type", "False", "EXTENDED") == "True";
+                chkShowDiagnosticInfo.Checked = App.settingsManager.GetOption("show_diagnostic_info", "False", "EXTENDED") == "True";
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[AdvancedSettings] Error loading extended overlay settings: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Сохраняет настройки расширенной информации в конфиг
+        /// </summary>
+        private void SaveExtendedOverlaySettings()
+        {
+            if (App.settingsManager == null) return;
+            
+            try
+            {
+                App.settingsManager.SetOption("show_active_process", chkShowActiveProcess.Checked ? "True" : "False", "EXTENDED");
+                App.settingsManager.SetOption("show_session_time", chkShowSessionTime.Checked ? "True" : "False", "EXTENDED");
+                App.settingsManager.SetOption("show_external_ip", chkShowExternalIP.Checked ? "True" : "False", "EXTENDED");
+                App.settingsManager.SetOption("show_session_stats", chkShowSessionStats.Checked ? "True" : "False", "EXTENDED");
+                App.settingsManager.SetOption("show_server_info", chkShowServerInfo.Checked ? "True" : "False", "EXTENDED");
+                App.settingsManager.SetOption("show_packet_counters", chkShowPacketCounters.Checked ? "True" : "False", "EXTENDED");
+                App.settingsManager.SetOption("show_connection_type", chkShowConnectionType.Checked ? "True" : "False", "EXTENDED");
+                App.settingsManager.SetOption("show_diagnostic_info", chkShowDiagnosticInfo.Checked ? "True" : "False", "EXTENDED");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AdvancedSettings] Error saving extended overlay settings: {ex.Message}");
+            }
+        }
+        
         #endregion
 
     }

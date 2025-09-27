@@ -133,6 +133,15 @@ namespace tickMeter.Forms
             this.lblTicktimeYellow = new System.Windows.Forms.Label();
             this.numTicktimeYellow = new System.Windows.Forms.NumericUpDown();
             this.btnResetColorZones = new System.Windows.Forms.Button();
+            this.groupBoxExtendedOverlay = new System.Windows.Forms.GroupBox();
+            this.chkShowActiveProcess = new System.Windows.Forms.CheckBox();
+            this.chkShowSessionTime = new System.Windows.Forms.CheckBox();
+            this.chkShowExternalIP = new System.Windows.Forms.CheckBox();
+            this.chkShowSessionStats = new System.Windows.Forms.CheckBox();
+            this.chkShowServerInfo = new System.Windows.Forms.CheckBox();
+            this.chkShowPacketCounters = new System.Windows.Forms.CheckBox();
+            this.chkShowConnectionType = new System.Windows.Forms.CheckBox();
+            this.chkShowDiagnosticInfo = new System.Windows.Forms.CheckBox();
             this.groupBoxNetworkQuality = new System.Windows.Forms.GroupBox();
             this.chkNetworkQualityEnabled = new System.Windows.Forms.CheckBox();
             this.chkNetworkQualityOverlay = new System.Windows.Forms.CheckBox();
@@ -239,6 +248,7 @@ namespace tickMeter.Forms
             // panel1
             // 
             this.panel1.AutoScroll = true;
+            this.panel1.Controls.Add(this.groupBoxExtendedOverlay);
             this.panel1.Controls.Add(this.groupBoxVpnBypass);
             this.panel1.Controls.Add(this.groupBoxPhase3);
             this.panel1.Controls.Add(this.groupBoxPhase2);
@@ -1769,6 +1779,106 @@ namespace tickMeter.Forms
             this.btnResetColorZones.Text = "Reset to Default";
             this.btnResetColorZones.UseVisualStyleBackColor = true;
             // 
+            // groupBoxExtendedOverlay
+            // 
+            this.groupBoxExtendedOverlay.Controls.Add(this.chkShowActiveProcess);
+            this.groupBoxExtendedOverlay.Controls.Add(this.chkShowSessionTime);
+            this.groupBoxExtendedOverlay.Controls.Add(this.chkShowExternalIP);
+            this.groupBoxExtendedOverlay.Controls.Add(this.chkShowSessionStats);
+            this.groupBoxExtendedOverlay.Controls.Add(this.chkShowServerInfo);
+            this.groupBoxExtendedOverlay.Controls.Add(this.chkShowPacketCounters);
+            this.groupBoxExtendedOverlay.Controls.Add(this.chkShowConnectionType);
+            this.groupBoxExtendedOverlay.Controls.Add(this.chkShowDiagnosticInfo);
+            this.groupBoxExtendedOverlay.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBoxExtendedOverlay.Location = new System.Drawing.Point(13, 2904);
+            this.groupBoxExtendedOverlay.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBoxExtendedOverlay.Name = "groupBoxExtendedOverlay";
+            this.groupBoxExtendedOverlay.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBoxExtendedOverlay.Size = new System.Drawing.Size(753, 220);
+            this.groupBoxExtendedOverlay.TabIndex = 10;
+            this.groupBoxExtendedOverlay.TabStop = false;
+            this.groupBoxExtendedOverlay.Text = "Расширенная информация в оверлее";
+            // 
+            // chkShowActiveProcess
+            // 
+            this.chkShowActiveProcess.AutoSize = true;
+            this.chkShowActiveProcess.Location = new System.Drawing.Point(20, 25);
+            this.chkShowActiveProcess.Name = "chkShowActiveProcess";
+            this.chkShowActiveProcess.Size = new System.Drawing.Size(250, 20);
+            this.chkShowActiveProcess.TabIndex = 0;
+            this.chkShowActiveProcess.Text = "Показывать отслеживаемый процесс";
+            this.chkShowActiveProcess.UseVisualStyleBackColor = true;
+            // 
+            // chkShowSessionTime
+            // 
+            this.chkShowSessionTime.AutoSize = true;
+            this.chkShowSessionTime.Location = new System.Drawing.Point(20, 53);
+            this.chkShowSessionTime.Name = "chkShowSessionTime";
+            this.chkShowSessionTime.Size = new System.Drawing.Size(250, 20);
+            this.chkShowSessionTime.TabIndex = 1;
+            this.chkShowSessionTime.Text = "Показывать время текущей сессии";
+            this.chkShowSessionTime.UseVisualStyleBackColor = true;
+            // 
+            // chkShowExternalIP
+            // 
+            this.chkShowExternalIP.AutoSize = true;
+            this.chkShowExternalIP.Location = new System.Drawing.Point(20, 81);
+            this.chkShowExternalIP.Name = "chkShowExternalIP";
+            this.chkShowExternalIP.Size = new System.Drawing.Size(200, 20);
+            this.chkShowExternalIP.TabIndex = 2;
+            this.chkShowExternalIP.Text = "Показывать внешний IP адрес";
+            this.chkShowExternalIP.UseVisualStyleBackColor = true;
+            // 
+            // chkShowSessionStats
+            // 
+            this.chkShowSessionStats.AutoSize = true;
+            this.chkShowSessionStats.Location = new System.Drawing.Point(20, 109);
+            this.chkShowSessionStats.Name = "chkShowSessionStats";
+            this.chkShowSessionStats.Size = new System.Drawing.Size(300, 20);
+            this.chkShowSessionStats.TabIndex = 3;
+            this.chkShowSessionStats.Text = "Показывать статистику сессии (мин/макс/сред)";
+            this.chkShowSessionStats.UseVisualStyleBackColor = true;
+            // 
+            // chkShowServerInfo
+            // 
+            this.chkShowServerInfo.AutoSize = true;
+            this.chkShowServerInfo.Location = new System.Drawing.Point(380, 25);
+            this.chkShowServerInfo.Name = "chkShowServerInfo";
+            this.chkShowServerInfo.Size = new System.Drawing.Size(230, 20);
+            this.chkShowServerInfo.TabIndex = 4;
+            this.chkShowServerInfo.Text = "Показывать информацию о сервере";
+            this.chkShowServerInfo.UseVisualStyleBackColor = true;
+            // 
+            // chkShowPacketCounters
+            // 
+            this.chkShowPacketCounters.AutoSize = true;
+            this.chkShowPacketCounters.Location = new System.Drawing.Point(380, 53);
+            this.chkShowPacketCounters.Name = "chkShowPacketCounters";
+            this.chkShowPacketCounters.Size = new System.Drawing.Size(250, 20);
+            this.chkShowPacketCounters.TabIndex = 5;
+            this.chkShowPacketCounters.Text = "Показывать счетчики пакетов (TX/RX)";
+            this.chkShowPacketCounters.UseVisualStyleBackColor = true;
+            // 
+            // chkShowConnectionType
+            // 
+            this.chkShowConnectionType.AutoSize = true;
+            this.chkShowConnectionType.Location = new System.Drawing.Point(380, 81);
+            this.chkShowConnectionType.Name = "chkShowConnectionType";
+            this.chkShowConnectionType.Size = new System.Drawing.Size(280, 20);
+            this.chkShowConnectionType.TabIndex = 6;
+            this.chkShowConnectionType.Text = "Показывать тип подключения (WiFi/Ethernet)";
+            this.chkShowConnectionType.UseVisualStyleBackColor = true;
+            // 
+            // chkShowDiagnosticInfo
+            // 
+            this.chkShowDiagnosticInfo.AutoSize = true;
+            this.chkShowDiagnosticInfo.Location = new System.Drawing.Point(380, 109);
+            this.chkShowDiagnosticInfo.Name = "chkShowDiagnosticInfo";
+            this.chkShowDiagnosticInfo.Size = new System.Drawing.Size(250, 20);
+            this.chkShowDiagnosticInfo.TabIndex = 7;
+            this.chkShowDiagnosticInfo.Text = "Показывать диагностическую информацию";
+            this.chkShowDiagnosticInfo.UseVisualStyleBackColor = true;
+            // 
             // groupBoxNetworkQuality
             // 
             this.groupBoxNetworkQuality.Controls.Add(this.chkNetworkQualityEnabled);
@@ -2564,6 +2674,7 @@ namespace tickMeter.Forms
             this.groupBox1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.liveMaxRowsNumeric)).EndInit();
             this.panelButtons.ResumeLayout(false);
+            this.groupBoxExtendedOverlay.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -2737,5 +2848,16 @@ namespace tickMeter.Forms
         private System.Windows.Forms.Label lblTicktimeYellow;
         private System.Windows.Forms.NumericUpDown numTicktimeYellow;
         private System.Windows.Forms.Button btnResetColorZones;
+        
+        // Extended Overlay Information
+        private System.Windows.Forms.GroupBox groupBoxExtendedOverlay;
+        private System.Windows.Forms.CheckBox chkShowActiveProcess;
+        private System.Windows.Forms.CheckBox chkShowSessionTime;
+        private System.Windows.Forms.CheckBox chkShowExternalIP;
+        private System.Windows.Forms.CheckBox chkShowSessionStats;
+        private System.Windows.Forms.CheckBox chkShowServerInfo;
+        private System.Windows.Forms.CheckBox chkShowPacketCounters;
+        private System.Windows.Forms.CheckBox chkShowConnectionType;
+        private System.Windows.Forms.CheckBox chkShowDiagnosticInfo;
     }
 }
