@@ -249,7 +249,13 @@ namespace tickMeter.Forms
         {
             var result = MessageBox.Show(
                 "Установить оптимальные настройки для повседневного использования?\n\n" +
-                "Это изменит все параметры на рекомендуемые значения.",
+                "Это установит рекомендуемые значения для:\n" +
+                "• Основных настроек сети и захвата пакетов\n" +
+                "• Сглаживания показателей\n" +
+                "• Детекции спайков (ping, tickrate)\n" +
+                "• Расширенного оверлея (активный процесс, время сессии)\n" +
+                "• Оптимизации производительности\n\n" +
+                "Все параметры будут оптимизированы для стабильной работы.",
                 "Сброс к оптимальным настройкам",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question);
@@ -257,7 +263,17 @@ namespace tickMeter.Forms
             if (result == DialogResult.Yes)
             {
                 SetOptimalSettings();
-                MessageBox.Show("Оптимальные настройки установлены!", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(
+                    "Оптимальные настройки успешно установлены!\n\n" +
+                    "✓ Основные настройки: включены все рекомендуемые опции\n" +
+                    "✓ Сглаживание: активировано для стабильных показателей\n" +
+                    "✓ Детекция спайков: включена для ping и tickrate\n" +
+                    "✓ Расширенный оверлей: показывает ключевую информацию\n" +
+                    "✓ Производительность: оптимизирована для стабильной работы\n\n" +
+                    "Перезапустите программу для применения всех изменений.",
+                    "Настройки обновлены",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
             }
         }
 
@@ -330,6 +346,42 @@ namespace tickMeter.Forms
             chkSingleConsumerPattern.Checked = false; // Пока экспериментальное
             numUiProcessingRate.Value = 60;           // 60 FPS UI
             numUiBatchSize.Value = 10;                // Оптимальный batch размер
+            
+            // === РАСШИРЕННЫЕ НАСТРОЙКИ ДЕТЕКЦИИ СПАЙКОВ ===
+            chkSpikeDetectionEnable.Checked = true;   // Включаем детекцию спайков
+            chkSpikeMetricPing.Checked = true;        // Отслеживаем спайки пинга
+            chkSpikeMetricTickrate.Checked = true;    // Отслеживаем спайки тикрейта
+            chkSpikeMetricTicktime.Checked = false;   // Тиктайм обычно менее важен
+            chkSpikeAutoCalibration.Checked = true;   // Автокалибровка включена
+            
+            // Настройки комбобоксов для спайков
+            if (cmbSpikeSensitivity.Items.Contains("medium"))
+                cmbSpikeSensitivity.SelectedItem = "medium";  // Средняя чувствительность
+            if (cmbSpikeDisplayMode.Items.Contains("both"))
+                cmbSpikeDisplayMode.SelectedItem = "both";    // Показываем и значения и индикаторы
+                
+            // Численные параметры спайков
+            numSpikeMinDuration.Value = 120;          // 120мс минимальная длительность
+            numSpikeHistorySize.Value = 1000;         // 1000 значений в истории
+            
+            // === EXTENDED OVERLAY НАСТРОЙКИ (ОПТИМАЛЬНЫЕ ДЛЯ ГЕЙМЕРОВ) ===
+            chkShowActiveProcess.Checked = true;      // Показываем активный процесс
+            chkShowSessionTime.Checked = true;        // Показываем время сессии
+            chkShowExternalIP.Checked = false;        // Внешний IP обычно не нужен
+            chkShowSessionStats.Checked = false;      // Статистика сессии может загромождать
+            chkShowServerInfo.Checked = false;        // Информация о сервере не всегда нужна
+            chkShowPacketCounters.Checked = false;    // Счетчики пакетов для продвинутых пользователей
+            chkShowConnectionType.Checked = false;    // Тип подключения редко меняется
+            chkShowDiagnosticInfo.Checked = false;    // Диагностика только при проблемах
+            
+            // Применяем настройки Extended Overlay
+            SaveExtendedOverlaySettings();
+            
+            // Применяем настройки детекции спайков
+            SaveSpikeDetectionSettings();
+            
+            // Сохраняем основные настройки
+            SaveSettings();
         }
 
         private void InitSpikeDetectionCombos()
