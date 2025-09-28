@@ -378,15 +378,16 @@ namespace tickMeter.Classes
                 
                 float tickrateValue = App.meterState.OutputTickRate;
 
-                // Добавляем индикатор спайка для tickrate chart
-                string tickrateChartLabel = "Tickrate";
+                // Добавляем индикатор спайка рядом со значением (как у пинга)
+                string tickrateValueDisplay = tickrateValue > 0 ? tickrateValue.ToString("0") : "n/a";
                 bool showTickrateSpikes = App.settingsManager?.GetOption("show_tickrate_spikes", "True", "ADVANCED") == "True";
                 if (showTickrateSpikes && App.meterState.HasTickRateSpike)
                 {
-                    tickrateChartLabel += " (!)";
+                    // Используем тот же цвет что и значение тикрейта (сохраняем цвет зоны)
+                    tickrateValueDisplay += $" {tickrateColor}(!)";
                 }
                 
-                output += "<S0><C4>" + tickrateChartLabel + Environment.NewLine;
+                output += "<S0><C4>Tickrate" + Environment.NewLine;
                 
                 // Применяем сглаживание графика тикрейта, если включено
                 float[] tickrateGraphData = Classes.SmoothingManager.SmoothSeries(
@@ -399,7 +400,7 @@ namespace tickMeter.Classes
                     0,
                     0,
                     "Tickrate",
-                    tickrateValue > 0 ? tickrateValue.ToString("0") : "n/a",
+                    tickrateValueDisplay,
                     tickrateColor
                 ) + Environment.NewLine; // убрано дублирование <A0><S0>...
             }
@@ -417,15 +418,16 @@ namespace tickMeter.Classes
                 {
                     ticktimeValue = App.meterState.tickTimeBuffer.Last();
                 }
-                // Добавляем индикатор спайка для ticktime
-                string ticktimeLabel = "Ticktime";
+                // Добавляем индикатор спайка рядом со значением (как у пинга)
+                string ticktimeValueDisplay = ticktimeValue > 0 ? ticktimeValue.ToString("0.0") : "n/a";
                 bool showTicktimeSpikes = App.settingsManager?.GetOption("show_ticktime_spikes", "True", "ADVANCED") == "True";
                 if (showTicktimeSpikes && App.meterState.HasTickTimeSpike)
                 {
-                    ticktimeLabel += " (!)";
+                    // Используем тот же цвет что и значение тиктайма (сохраняем цвет зоны)
+                    ticktimeValueDisplay += $" {ticktimeColor}(!)";
                 }
                 
-                output += Environment.NewLine + "<S0><C4>" + ticktimeLabel + Environment.NewLine;
+                output += Environment.NewLine + "<S0><C4>Ticktime" + Environment.NewLine;
                 
                 // Применяем сглаживание графика тиктайма, если включено
                 float[] ticktimeGraphData = Classes.SmoothingManager.SmoothSeries(
@@ -438,7 +440,7 @@ namespace tickMeter.Classes
                     0,
                     100,
                     "Ticktime",
-                    ticktimeValue > 0 ? ticktimeValue.ToString("0.0") : "n/a",
+                    ticktimeValueDisplay,
                     ticktimeColor
                 );
             }
@@ -723,10 +725,10 @@ namespace tickMeter.Classes
             Print(text);
         }
 
-        // Кэш для процесса с TTL
+        // Кэш для процесса с TTL (уменьшен для быстрого отклика)
         private static string _cachedProcessInfo = "";
         private static DateTime _lastProcessUpdate = DateTime.MinValue;
-        private static readonly TimeSpan PROCESS_TTL = TimeSpan.FromSeconds(1);
+        private static readonly TimeSpan PROCESS_TTL = TimeSpan.FromMilliseconds(500); // 0.5 секунды
         
         private static string FormatActiveProcess()
         {
@@ -735,9 +737,12 @@ namespace tickMeter.Classes
                 var now = DateTime.UtcNow;
                 if (now - _lastProcessUpdate > PROCESS_TTL)
                 {
-                    if (!string.IsNullOrEmpty(App.meterState?.Game))
+                    // Получаем реальное активное окно в реальном времени
+                    string activeProcessName = Classes.AutoDetectMngr.GetActiveProcessName(true);
+                    
+                    if (!string.IsNullOrEmpty(activeProcessName))
                     {
-                        string processName = App.meterState.Game;
+                        string processName = activeProcessName;
                         
                         // Обрезаем имя до 15 символов для компактности
                         if (processName.Length > 15)
@@ -745,12 +750,11 @@ namespace tickMeter.Classes
                             processName = processName.Substring(0, 12) + "...";
                         }
                         
-                        // Добавляем PID если доступен
-                        _cachedProcessInfo = $"Game: {processName}";
+                        _cachedProcessInfo = $"Active: {processName}";
                     }
                     else
                     {
-                        _cachedProcessInfo = "Game: Not detected";
+                        _cachedProcessInfo = "Active: Unknown";
                     }
                     _lastProcessUpdate = now;
                 }

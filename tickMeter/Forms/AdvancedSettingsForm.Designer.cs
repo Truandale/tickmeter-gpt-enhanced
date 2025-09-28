@@ -1551,6 +1551,7 @@ namespace tickMeter.Forms
             this.cmbColorZoneProfile.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbColorZoneProfile.FormattingEnabled = true;
             this.cmbColorZoneProfile.Items.AddRange(new object[] {
+            "Very Low",
             "Low",
             "Medium",
             "High",

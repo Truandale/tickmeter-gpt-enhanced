@@ -238,6 +238,18 @@ namespace tickMeter
         {
             switch (name.ToLower())
             {
+                case "very low":
+                case "verylow":
+                    return new ColorZoneProfile
+                    {
+                        Name = "Very Low",
+                        PingGreenMs = 80f,          // 0-80ms = зеленый (отлично для VPN)
+                        PingYellowMs = 150f,        // 81-150ms = желтый (терпимо, без телепортов)
+                        TickrateGreenRatio = 0.95f, // Очень мягкие требования к серверу
+                        TickrateYellowRatio = 0.90f,
+                        TicktimeGreenRatio = 0.80f, // Толерантность к медленной обработке
+                        TicktimeYellowRatio = 1.20f  // Даже +20% от целевого времени = желтый
+                    };
                 case "low":
                     return new ColorZoneProfile
                     {
@@ -293,7 +305,7 @@ namespace tickMeter
 
         public static string[] GetProfileNames()
         {
-            return new string[] { "Low", "Medium", "High", "Custom" };
+            return new string[] { "Very Low", "Low", "Medium", "High", "Custom" };
         }
     }
 }
