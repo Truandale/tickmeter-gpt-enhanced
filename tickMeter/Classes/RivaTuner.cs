@@ -310,10 +310,23 @@ namespace tickMeter.Classes
             return "<S><C0>Ping: " + pingFont + pingValue + " <S0>ms" + spikeIndicator + "<C> <C0>(" + geo + ")" + diagnostic + Environment.NewLine;
         }
 
+        private static bool _buildRivaOutputInProgress = false;
+
         public static void BuildRivaOutput()
         {
-            string output = "";
-            if(App.meterState.TickRate == 0 && App.meterState.Game == "")
+            // Anti-reentrancy protection
+            bool antiReentrancy = App.settingsManager?.GetOption("anti_reentrancy", "True", "ADVANCED") == "True";
+            if (antiReentrancy && _buildRivaOutputInProgress)
+            {
+                return; // Предотвращаем повторный вход
+            }
+
+            try
+            {
+                if (antiReentrancy) _buildRivaOutputInProgress = true;
+                
+                string output = "";
+                if(App.meterState.TickRate == 0 && App.meterState.Game == "")
             {
                 PrintData(output, true);
                 return;
@@ -547,6 +560,14 @@ namespace tickMeter.Classes
             }
             
             PrintData(output, true);
+            }
+            finally
+            {
+                if (App.settingsManager?.GetOption("anti_reentrancy", "True", "ADVANCED") == "True") 
+                {
+                    _buildRivaOutputInProgress = false;
+                }
+            }
         }
 
         // Hysteresis для предотвращения дребезга рейтинга

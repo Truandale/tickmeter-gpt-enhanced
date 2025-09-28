@@ -194,7 +194,7 @@ namespace tickMeter.Classes
 
         public static bool IsEnabled()
         {
-            return false;//temporary disable this
+            return App.settingsManager.GetOption("autodetect") == "True";
         }
 
         public static void InitFilter(ProcessNetworkStats proc)

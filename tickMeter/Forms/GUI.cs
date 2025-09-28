@@ -500,7 +500,9 @@ namespace tickMeter.Forms
                 }
                 
                 // Троттлинг RTSS: обновляем не каждый тик, а по таймеру
-                if (App.settingsForm.settings_rtss_output.Checked && _rtssSw.ElapsedMilliseconds >= RtssPeriodMs)
+                bool rtssThrottlingEnabled = App.settingsManager.GetOption("rtss_throttling", "True", "ADVANCED") == "True";
+                int throttlePeriod = rtssThrottlingEnabled ? RtssPeriodMs : 50; // Если throttling отключен, обновляем чаще
+                if (App.settingsForm.settings_rtss_output.Checked && _rtssSw.ElapsedMilliseconds >= throttlePeriod)
                 {
                     await Task.Run(() => {
                         try { 

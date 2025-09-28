@@ -81,6 +81,9 @@ namespace tickMeter.Classes
 
         private static void TryApplyTunings(PacketCommunicator comm)
         {
+            // Pcap optimization settings
+            bool pcapOptimization = App.settingsManager?.GetOption("pcap_optimization", "True", "ADVANCED") == "True";
+            
             // безопасно: если методов нет — просто молчим
             try
             {
@@ -88,29 +91,35 @@ namespace tickMeter.Classes
                 using (var f = comm.CreateFilter(expr)) comm.SetFilter(f);
             } catch { }
 
-            try
+            if (pcapOptimization)
             {
-                var mi = comm.GetType().GetMethod("SetKernelBufferSize",
-                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
-                if (mi != null)
+                try
                 {
-                    int mb = 8;
-                    int.TryParse(App.settingsManager.GetOption("pcap.kernel_buffer_mb", "8"), out mb);
-                    mi.Invoke(comm, new object[] { Math.Max(1, mb) * 1024 * 1024 });
-                }
-            } catch { }
+                    var mi = comm.GetType().GetMethod("SetKernelBufferSize",
+                        System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+                    if (mi != null)
+                    {
+                        int mb = 8;
+                        int.TryParse(App.settingsManager.GetOption("pcap.kernel_buffer_mb", "8"), out mb);
+                        mi.Invoke(comm, new object[] { Math.Max(1, mb) * 1024 * 1024 });
+                    }
+                } catch { }
+            }
 
-            try
+            if (pcapOptimization)
             {
-                var mi = comm.GetType().GetMethod("SetMinToCopy",
-                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
-                if (mi != null)
+                try
                 {
-                    int v = 4096;
-                    int.TryParse(App.settingsManager.GetOption("pcap.min_to_copy", "4096"), out v);
-                    mi.Invoke(comm, new object[] { Math.Max(0, v) });
-                }
-            } catch { }
+                    var mi = comm.GetType().GetMethod("SetMinToCopy",
+                        System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+                    if (mi != null)
+                    {
+                        int v = 4096;
+                        int.TryParse(App.settingsManager.GetOption("pcap.min_to_copy", "4096"), out v);
+                        mi.Invoke(comm, new object[] { Math.Max(0, v) });
+                    }
+                } catch { }
+            }
         }
     }
 }
