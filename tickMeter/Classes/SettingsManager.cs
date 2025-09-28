@@ -243,8 +243,8 @@ namespace tickMeter
                     return new ColorZoneProfile
                     {
                         Name = "Very Low",
-                        PingGreenMs = 80f,          // 0-80ms = зеленый (отлично для VPN)
-                        PingYellowMs = 150f,        // 81-150ms = желтый (терпимо, без телепортов)
+                        PingGreenMs = 50f,          // 0-50ms = зеленый (идеально для VPN gaming)
+                        PingYellowMs = 150f,        // 50-150ms = желтый (терпимо для VPN)
                         TickrateGreenRatio = 0.95f, // Очень мягкие требования к серверу
                         TickrateYellowRatio = 0.90f,
                         TicktimeGreenRatio = 0.80f, // Толерантность к медленной обработке
