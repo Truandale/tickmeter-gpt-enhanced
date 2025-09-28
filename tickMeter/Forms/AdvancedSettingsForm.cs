@@ -1296,10 +1296,21 @@ namespace tickMeter.Forms
         {
             try
             {
+                // Защита от COM ошибок при работе с ComboBox
+                if (cmbColorZoneProfile.InvokeRequired)
+                {
+                    cmbColorZoneProfile.Invoke(new Action(() => CmbColorZoneProfile_SelectedIndexChanged(sender, e)));
+                    return;
+                }
+
                 string selectedProfile = cmbColorZoneProfile.SelectedItem?.ToString() ?? "Medium";
+                System.Diagnostics.Debug.Print($"[ColorZoneProfile] Selected: {selectedProfile}");
+                
                 var profile = ColorZoneProfile.GetProfile(selectedProfile);
                 
-                // Update numeric controls
+                // Update numeric controls с защитой от COM ошибок
+                Application.DoEvents(); // Обрабатываем pending UI events
+                
                 numPingGreen.Value = (decimal)profile.PingGreenMs;
                 numPingYellow.Value = (decimal)profile.PingYellowMs;
                 numTickrateGreen.Value = (decimal)profile.TickrateGreenRatio;
@@ -1315,6 +1326,13 @@ namespace tickMeter.Forms
                 numTickrateYellow.Enabled = isCustom;
                 numTicktimeGreen.Enabled = isCustom;
                 numTicktimeYellow.Enabled = isCustom;
+                
+                System.Diagnostics.Debug.Print($"[ColorZoneProfile] Updated UI for: {selectedProfile}");
+            }
+            catch (System.Runtime.InteropServices.COMException comEx)
+            {
+                System.Diagnostics.Debug.Print($"[CmbColorZoneProfile_SelectedIndexChanged] COM Error (ignored): {comEx.Message}");
+                // COM ошибки с ComboBox можно игнорировать - они не критичны
             }
             catch (Exception ex)
             {
