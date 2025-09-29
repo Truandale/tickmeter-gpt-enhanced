@@ -52,13 +52,10 @@ namespace tickMeter.Classes
                         avgStableTickrate /= 3;
                     }
 
-                    if(TrackingDelta() > 5)
-                    {
-                        avgStableTickrate = (int) Math.Round(avgStableTickrate / 5.0) * 5;
-                    }
                     int dropped = avgStableTickrate - ticksIn;
                     if(dropped < 0) { dropped = 0; }
                     loss += dropped;
+                    if (loss < 0) loss = 0;
                     ticksIn = 0;
                     ticksOut = 0;
                 }

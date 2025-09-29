@@ -163,12 +163,10 @@ namespace tickMeter
                     }
                     if (totalTicksCnt > 300)
                     {
-                        avgStableTickrate = (int)Math.Round(avgStableTickrate / 5.0) * 5;
                         int dropped = avgStableTickrate - OutputTickRate;
                         if (dropped < 0) { dropped = 0; }
-                        // Исправление: не допускаем loss > totalTicksCnt
                         loss += dropped;
-                        if (loss > totalTicksCnt) loss = totalTicksCnt;
+                        if (loss < 0) loss = 0;
                     }
 
                     TicksHistory.Add(OutputTickRate);
@@ -309,16 +307,28 @@ namespace tickMeter
         internal string GetDrops()
         {
             // Исправление: защита от деления на 0 и от аномалий
-            if (totalTicksCnt == 0) return "0.00";
-            float percent = Math.Min(100, (((float)loss / (float)totalTicksCnt) * 100));
-            if (percent < 0) percent = 0;
+            int deliveredTicks = totalTicksCnt;
+            int lostTicks = loss;
+            int totalSamples = deliveredTicks + lostTicks;
+
+            if (totalSamples <= 0)
+                return "0.00";
+
+            float percent = ((float)lostTicks / (float)totalSamples) * 100f;
+            percent = Math.Max(0f, Math.Min(100f, percent));
             return percent.ToString("n2");
         }
         internal float GetDropsNumber()
         {
-            if (totalTicksCnt == 0) return 0;
-            float percent = Math.Min(100, (((float)loss / (float)totalTicksCnt) * 100));
-            if (percent < 0) percent = 0;
+            int deliveredTicks = totalTicksCnt;
+            int lostTicks = loss;
+            int totalSamples = deliveredTicks + lostTicks;
+
+            if (totalSamples <= 0)
+                return 0f;
+
+            float percent = ((float)lostTicks / (float)totalSamples) * 100f;
+            percent = Math.Max(0f, Math.Min(100f, percent));
             return percent;
         }
 
