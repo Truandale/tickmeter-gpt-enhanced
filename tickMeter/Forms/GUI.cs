@@ -88,6 +88,11 @@ namespace tickMeter.Forms
         
         // Убираем chartBckg как поле класса - теперь создаётся локально в UpdateGraph()
 
+        private readonly Color _inactiveMetricColor = Color.FromArgb(0x44, 0x44, 0x44);
+        private readonly Color _trafficActiveColor;
+        private readonly Color _timeActiveColor;
+        private readonly Color _ipActiveColor;
+
         private const int WM_ACTIVATE = 0x0006;
         private const int WA_ACTIVE = 1;
         private const int WA_CLICKACTIVE = 2;
@@ -118,6 +123,9 @@ namespace tickMeter.Forms
             try
             {
                 InitializeComponent();
+                _trafficActiveColor = traffic_val.ForeColor;
+                _timeActiveColor = time_val.ForeColor;
+                _ipActiveColor = ip_val.ForeColor;
                 App.Init();
                 App.gui = this;
 
@@ -535,6 +543,9 @@ namespace tickMeter.Forms
             // Convert zones to colors - SAME mapping for GUI and RTSS
             Color PingColor = Classes.ZoneColors.ToColor(pingZone);
             Color TickRateColor = Classes.ZoneColors.ToColor(tickrateZone);
+            bool hasActiveSession = App.meterState.IsTracking &&
+                                    App.meterState.Server != null &&
+                                    !string.IsNullOrEmpty(App.meterState.Server.Ip);
             
             // ChatGPT Enhancement: Snapshot-based diagnostic for perfect consistency
             System.Diagnostics.Debug.Print($"[ZONER GUI] {zoner.GetDiagnostic(snap)}");
@@ -577,13 +588,13 @@ namespace tickMeter.Forms
                                 }
                                 
                                 // Применяем цвет на основе зоны (ПРИОРИТЕТ ЗОНЫ)
-                                Color finalPingColor = PingColor;
+                                Color finalPingColor = hasActiveSession ? PingColor : _inactiveMetricColor;
                                 
                                 // Добавляем индикатор спайка если включена соответствующая настройка
                                 // ВАЖНО: индикатор наследует цвет зоны, а не перезаписывает его
                                 bool showSpikeIndicator = App.settingsManager?.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
                                 Debug.Print($"[GUI] Spike check: HasPingSpike={server.HasPingSpike}, ShowSetting={showSpikeIndicator}, OnScreen={OnScreen}");
-                                if (showSpikeIndicator && server.HasPingSpike)
+                                if (hasActiveSession && showSpikeIndicator && server.HasPingSpike)
                                 {
                                     pingText += " (!)";
                                     // Сохраняем цвет зоны - индикатор спайка того же цвета что и значение
@@ -592,8 +603,7 @@ namespace tickMeter.Forms
                                 
                                 // Применяем финальный цвет (цвет зоны сохраняется)
                                 ping_val.ForeColor = finalPingColor;
-                                
-                                ping_val.Text = pingText;
+                                ping_val.Text = hasActiveSession ? pingText : "n/a ms";
                             });
                         }
                         
@@ -603,11 +613,13 @@ namespace tickMeter.Forms
                             // Phase 3: Single Consumer Pattern - queue UI updates
                             QueueUIUpdate(() => {
                                 string tickrateText = App.meterState.OutputTickRate.ToString();
-                                Color finalTickRateColor = TickRateColor;
+                                Color finalTickRateColor = hasActiveSession
+                                    ? TickRateColor
+                                    : _inactiveMetricColor;
                                 
                                 // Добавляем индикатор спайка для tickrate если включена соответствующая настройка
                                 bool showTickrateSpikes = App.settingsManager?.GetOption("show_tickrate_spikes", "True", "ADVANCED") == "True";
-                                if (showTickrateSpikes && App.meterState.HasTickRateSpike)
+                                if (hasActiveSession && showTickrateSpikes && App.meterState.HasTickRateSpike)
                                 {
                                     tickrateText += " (!)";
                                     // Сохраняем цвет зоны - индикатор спайка того же цвета что и значение
@@ -630,27 +642,71 @@ namespace tickMeter.Forms
                             {
                                 float formatedUpload = (float)App.meterState.UploadTraffic / (1024 * 1024);
                                 float formatedDownload = (float)App.meterState.DownloadTraffic / (1024 * 1024);
-                                QueueUIUpdate(() => traffic_val.Text = formatedUpload.ToString("N2") + " / " + formatedDownload.ToString("N2") + " mb");
+                                string activeTrafficText = formatedUpload.ToString("N2") + " / " + formatedDownload.ToString("N2") + " mb";
+                                QueueUIUpdate(() =>
+                                {
+                                    if (hasActiveSession)
+                                    {
+                                        traffic_val.Text = activeTrafficText;
+                                        traffic_val.ForeColor = _trafficActiveColor;
+                                    }
+                                    else
+                                    {
+                                        traffic_val.Text = 0f.ToString("N2") + " / " + 0f.ToString("N2") + " mb";
+                                        traffic_val.ForeColor = _inactiveMetricColor;
+                                    }
+                                });
                             }
                             
                             //update IP
                             if (App.settingsForm.settings_ip_checkbox.Checked)
                             {
-                                QueueUIUpdate(() => ip_val.Text = App.meterState.Server.Ip);
+                                QueueUIUpdate(() =>
+                                {
+                                    ip_val.Text = hasActiveSession ? App.meterState.Server.Ip : string.Empty;
+                                    ip_val.ForeColor = hasActiveSession ? _ipActiveColor : _inactiveMetricColor;
+                                });
                             }
                             
                             //update time
-                            if (App.settingsForm.settings_session_time_checkbox.Checked && App.meterState.Server.Ip != "")
+                            if (App.settingsForm.settings_session_time_checkbox.Checked)
                             {
-                                TimeSpan result = DateTime.Now.Subtract(App.meterState.SessionStart);
-                                string Duration = result.ToString("mm':'ss");
-                                QueueUIUpdate(() => time_val.Text = Duration);
+                                TimeSpan result = hasActiveSession
+                                    ? DateTime.Now.Subtract(App.meterState.SessionStart)
+                                    : TimeSpan.Zero;
+                                string duration = result.ToString("mm':'ss");
+                                QueueUIUpdate(() =>
+                                {
+                                    if (hasActiveSession && !string.IsNullOrEmpty(App.meterState.Server.Ip))
+                                    {
+                                        time_val.Text = duration;
+                                        time_val.ForeColor = _timeActiveColor;
+                                    }
+                                    else
+                                    {
+                                        time_val.Text = "00:00";
+                                        time_val.ForeColor = _inactiveMetricColor;
+                                    }
+                                });
                             }
                             
                             //update drops
-                            if (App.settingsForm.packet_drops_checkbox.Checked && App.meterState.Server.Ip != "")
+                            if (App.settingsForm.packet_drops_checkbox.Checked)
                             {
-                                QueueUIUpdate(() => drops_lbl_val.Text = App.meterState.GetDrops()+"%");
+                                QueueUIUpdate(() =>
+                                {
+                                    float dropsPercent = App.meterState.GetDropsNumber();
+                                    if (hasActiveSession)
+                                    {
+                                        drops_lbl_val.Text = App.meterState.GetDrops() + "%";
+                                        drops_lbl_val.ForeColor = GetDropsColor(dropsPercent);
+                                    }
+                                    else
+                                    {
+                                        drops_lbl_val.Text = 0f.ToString("n2") + "%";
+                                        drops_lbl_val.ForeColor = _inactiveMetricColor;
+                                    }
+                                });
                             }
                         }
                     });
@@ -1060,6 +1116,22 @@ namespace tickMeter.Forms
                 step = 10;
 
             return (float)step;
+        }
+
+        private static Color GetDropsColor(float dropsPercent)
+        {
+            var zone = Classes.Zone.Green;
+
+            if (dropsPercent > 5f)
+            {
+                zone = Classes.Zone.Red;
+            }
+            else if (dropsPercent > 1f)
+            {
+                zone = Classes.Zone.Yellow;
+            }
+
+            return Classes.ZoneColors.ToColor(zone);
         }
 
        
@@ -1650,8 +1722,18 @@ namespace tickMeter.Forms
             // Сбрасываем сглаживание при остановке трекинга
             Classes.TickrateSmoothingManager.Reset();
             
-            tickrate_val.ForeColor = App.settingsForm.ColorBad.ForeColor;
-            ping_val.ForeColor = App.settingsForm.ColorMid.ForeColor;
+            tickrate_val.ForeColor = _inactiveMetricColor;
+            tickrate_val.Text = "0";
+            ping_val.ForeColor = _inactiveMetricColor;
+            ping_val.Text = "n/a ms";
+            traffic_val.ForeColor = _inactiveMetricColor;
+            traffic_val.Text = 0f.ToString("N2") + " / " + 0f.ToString("N2") + " mb";
+            time_val.ForeColor = _inactiveMetricColor;
+            time_val.Text = "00:00";
+            drops_lbl_val.ForeColor = _inactiveMetricColor;
+            drops_lbl_val.Text = 0f.ToString("n2") + "%";
+            ip_val.ForeColor = _inactiveMetricColor;
+            ip_val.Text = string.Empty;
             try { graph.Image = graph.InitialImage; } catch(Exception) {  }
             
             
