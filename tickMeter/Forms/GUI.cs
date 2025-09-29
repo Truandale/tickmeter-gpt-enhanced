@@ -548,7 +548,8 @@ namespace tickMeter.Forms
                 }
 
             //form overlay isn't visible, but still update ping data for both GUI and RTSS
-            bool skipGUIUpdate = !OnScreen;
+            bool refreshWhileHidden = App.settingsManager.GetOption("ui_refresh_hidden", "False", "SETTINGS") == "True";
+            bool skipGUIUpdate = !OnScreen && !refreshWhileHidden;
 
             // === ChatGPT ENHANCED: Snapshot-based unified zoning ===
             // Use SAME snapshot as RTSS for perfect consistency

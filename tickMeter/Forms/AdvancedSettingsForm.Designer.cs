@@ -155,6 +155,7 @@ namespace tickMeter.Forms
             this.lblCurrentQuality = new System.Windows.Forms.Label();
             this.lblQualityRating = new System.Windows.Forms.Label();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
+            this.chkUiRefreshHidden = new System.Windows.Forms.CheckBox();
             this.chkStunEnable = new System.Windows.Forms.CheckBox();
             this.chkShowPingSpikes = new System.Windows.Forms.CheckBox();
             this.lblPingSpikeThreshold = new System.Windows.Forms.Label();
@@ -2071,6 +2072,7 @@ namespace tickMeter.Forms
             // 
             // groupBox5
             // 
+            this.groupBox5.Controls.Add(this.chkUiRefreshHidden);
             this.groupBox5.Controls.Add(this.chkStunEnable);
             this.groupBox5.Controls.Add(this.chkShowPingSpikes);
             this.groupBox5.Controls.Add(this.lblPingSpikeThreshold);
@@ -2099,6 +2101,17 @@ namespace tickMeter.Forms
             this.groupBox5.TabIndex = 4;
             this.groupBox5.TabStop = false;
             this.groupBox5.Text = "Универсальные";
+            // 
+            // chkUiRefreshHidden
+            // 
+            this.chkUiRefreshHidden.AutoSize = true;
+            this.chkUiRefreshHidden.Location = new System.Drawing.Point(363, 160);
+            this.chkUiRefreshHidden.Margin = new System.Windows.Forms.Padding(4);
+            this.chkUiRefreshHidden.Name = "chkUiRefreshHidden";
+            this.chkUiRefreshHidden.Size = new System.Drawing.Size(318, 20);
+            this.chkUiRefreshHidden.TabIndex = 17;
+            this.chkUiRefreshHidden.Text = "Обновлять окно, когда спрятано";
+            this.chkUiRefreshHidden.UseVisualStyleBackColor = true;
             // 
             // chkStunEnable
             // 
@@ -2714,6 +2727,7 @@ namespace tickMeter.Forms
     private System.Windows.Forms.CheckBox chkDedupMultiNic;
     private System.Windows.Forms.CheckBox chkEnableIPv6;
     private System.Windows.Forms.CheckBox chkRtssOnlyActive;
+    private System.Windows.Forms.CheckBox chkUiRefreshHidden;
     private System.Windows.Forms.CheckBox chkStunEnable;
     private System.Windows.Forms.CheckBox chkShowPingSpikes;
     private System.Windows.Forms.NumericUpDown numPingSpikeThreshold;

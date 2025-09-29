@@ -51,6 +51,7 @@ namespace tickMeter.Forms
                 chkDedupMultiNic.Checked = App.settingsManager.GetOption("dedup_multi_nic", "True", "SETTINGS") == "True";
                 chkEnableIPv6.Checked = App.settingsManager.GetOption("enable_ipv6", "True", "SETTINGS") == "True";
                 chkRtssOnlyActive.Checked = App.settingsManager.GetOption("rtss_only_active", "True", "SETTINGS") == "True";
+                chkUiRefreshHidden.Checked = App.settingsManager.GetOption("ui_refresh_hidden", "False", "SETTINGS") == "True";
                 chkStunEnable.Checked = App.settingsManager.GetOption("stun_enable", "True", "SETTINGS") == "True";
                 chkShowPingSpikes.Checked = App.settingsManager.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
                 
@@ -143,6 +144,7 @@ namespace tickMeter.Forms
                 App.settingsManager.SetOption("dedup_multi_nic", chkDedupMultiNic.Checked.ToString(), "SETTINGS");
                 App.settingsManager.SetOption("enable_ipv6", chkEnableIPv6.Checked.ToString(), "SETTINGS");
                 App.settingsManager.SetOption("rtss_only_active", chkRtssOnlyActive.Checked.ToString(), "SETTINGS");
+                App.settingsManager.SetOption("ui_refresh_hidden", chkUiRefreshHidden.Checked.ToString(), "SETTINGS");
                 App.settingsManager.SetOption("stun_enable", chkStunEnable.Checked.ToString(), "SETTINGS");
                 App.settingsManager.SetOption("show_ping_spikes", chkShowPingSpikes.Checked.ToString(), "ADVANCED");
                 
@@ -305,6 +307,7 @@ namespace tickMeter.Forms
             chkDedupMultiNic.Checked = true;
             chkEnableIPv6.Checked = true;
             chkRtssOnlyActive.Checked = true;
+            chkUiRefreshHidden.Checked = false;
             chkStunEnable.Checked = true;
             
             // Smoothing - включены для стабильности
