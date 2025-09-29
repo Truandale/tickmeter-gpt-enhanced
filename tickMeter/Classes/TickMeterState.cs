@@ -60,6 +60,16 @@ namespace tickMeter
             return new DateTime(date.Ticks - (date.Ticks % TimeSpan.TicksPerSecond), date.Kind);
         }
 
+        public static float ComputeTickTimeMs(long previousTicks, long currentTicks)
+        {
+            if (previousTicks <= 0 || currentTicks <= 0) return 0f;
+            long deltaTicks = currentTicks - previousTicks;
+            if (deltaTicks <= 0) return 0f;
+            float tickTime = deltaTicks / (float)TimeSpan.TicksPerMillisecond;
+            if (tickTime > 100f) tickTime = 100f;
+            return tickTime;
+        }
+
         public int avgStableTickrate = 0; // Попытка рассчитать "стабильный" тикрейт
 
         public int loss = 0;
@@ -73,18 +83,13 @@ namespace tickMeter
             {
                 tickTimeBuffer.RemoveAt(0);
             }
-            if (CurrentTimestamp != null)
+            if (timeStamp != DateTime.MinValue)
             {
-                float tickTime = (float)(packetTicks - CurrentTimestamp.Ticks) / 10000;
-                if (OutputTickRate > 0)
+                float tickTime = ComputeTickTimeMs(timeStamp.Ticks, packetTicks);
+                if (tickTime > 0f)
                 {
-                    tickTime -= 500 / OutputTickRate;
-                    if (tickTime < 0)
-                    {
-                        tickTime = 0;
-                    }
+                    tickTimeBuffer.Add(tickTime);
                 }
-                tickTimeBuffer.Add(tickTime);
             }
         }
 

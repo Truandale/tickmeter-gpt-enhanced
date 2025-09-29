@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using tickMeter;
 
 namespace tickMeter.Classes
 {
@@ -110,11 +111,13 @@ namespace tickMeter.Classes
             {
                 tickTimeBuffer.RemoveAt(0);
             }
-            if (lastUpdate != null)
+            if (_lastUpate != DateTime.MinValue)
             {
-                float tickTime = Math.Abs(Math.Min((float)(packetTicks - lastUpdate.Ticks) / 10000, 100));
-
-                tickTimeBuffer.Add(tickTime);
+                float tickTime = TickMeterState.ComputeTickTimeMs(_lastUpate.Ticks, packetTicks);
+                if (tickTime > 0f)
+                {
+                    tickTimeBuffer.Add(tickTime);
+                }
             }
         }
     }
