@@ -36,11 +36,6 @@ namespace tickMeter
         public bool isBuiltInProfileActive = false;
         public bool isCustomProfileActive = false;
 
-        public int AvgTickrate;
-        public List<int> TicksHistory { get; set; }
-        public List<DateTime> TickTimestamps { get; set; }
-        private const int TickHistoryDownsampleThreshold = 6000;
-        private const int TickHistoryRecentKeep = 2000;
         public List<float> tickTimeBuffer = new List<float>();
         public List<float> pingBuffer = new List<float>();
         public List<float> tickrateGraph = new List<float>();
@@ -129,7 +124,8 @@ namespace tickMeter
         private void MeterValidateTimerTick(Object source, System.Timers.ElapsedEventArgs e)
         {
             // Если отслеживание активно, игра определена, но новых "тиков" не было
-            if (IsTracking && Game != "" && LastTicksCount == TicksHistory.Count)
+            int currentTicksCount = Server?.TicksHistory?.Count ?? 0;
+            if (IsTracking && Game != "" && LastTicksCount == currentTicksCount)
             {
                 KillTimers(); // Остановить таймеры пинга и валидации
             }
@@ -137,7 +133,7 @@ namespace tickMeter
             {
                 Server.SetPingTimer(); // Убедиться, что таймер пинга активен
             }
-            LastTicksCount = TicksHistory.Count;
+            LastTicksCount = currentTicksCount;
         }
 
         public DateTime CurrentTimestamp
@@ -150,39 +146,43 @@ namespace tickMeter
                 {
                     int rawTickRate = TickRate;
                     // Применяем сглаживание, если включено
-                    OutputTickRate = TickrateSmoothingManager.SmoothTickrate(rawTickRate);
+                    int smoothedTickrate = TickrateSmoothingManager.SmoothTickrate(rawTickRate);
                     
-                    AvgTickrate = (AvgTickrate + OutputTickRate) / 2;
+                    // Update individual server tickrate data
+                    if (Server != null)
+                    {
+                        Server.UpdateTickrate(smoothedTickrate, value);
+                    }
+                    
+                    // Update legacy global calculations for backward compatibility
                     if (avgStableTickrate == 0)
                     {
-                        avgStableTickrate = OutputTickRate;
+                        avgStableTickrate = smoothedTickrate;
                     }
-                    float ratio = ((float)avgStableTickrate / (float)AvgTickrate);
+                    
+                    var currentAvgTickrate = Server?.AvgTickrate ?? 0;
+                    float ratio = avgStableTickrate > 0 ? ((float)avgStableTickrate / (float)currentAvgTickrate) : 1.0f;
 
                     if (ratio < 1.5 && ratio > 0.5)
                     {
-                        avgStableTickrate += (AvgTickrate + avgStableTickrate);
+                        avgStableTickrate += (currentAvgTickrate + avgStableTickrate);
                         avgStableTickrate /= 3;
                     }
                     if (totalTicksCnt > 300)
                     {
-                        int dropped = avgStableTickrate - OutputTickRate;
+                        int dropped = avgStableTickrate - smoothedTickrate;
                         if (dropped < 0) { dropped = 0; }
                         loss += dropped;
                         if (loss < 0) loss = 0;
                     }
 
-                    TicksHistory.Add(OutputTickRate);
-                    TickTimestamps?.Add(value);
                     if (tickrateGraph.Count > 511)
                     {
                         tickrateGraph.RemoveAt(0);
                     }
-                    tickrateGraph.Add(OutputTickRate);
-                    TickRateLog += timeStamp.ToString() + ";" + OutputTickRate.ToString() + Environment.NewLine;
+                    tickrateGraph.Add(smoothedTickrate);
+                    TickRateLog += timeStamp.ToString() + ";" + smoothedTickrate.ToString() + Environment.NewLine;
                     TickRate = 0;
-
-                    DownsampleTickHistoryIfNeeded();
 
                     // --- Единый буфер для графика пинга: UDP > TCP > ICMP ---
                     int pingValue = 0;
@@ -206,7 +206,28 @@ namespace tickMeter
             }
         }
 
-        public int OutputTickRate { get; set; } // Тикрейт, отображаемый пользователю
+        // Forward properties from current server
+        public int OutputTickRate 
+        { 
+            get { return Server != null ? Server.OutputTickRate : 0; }
+            set { if (Server != null) Server.OutputTickRate = value; }
+        }
+        
+        public List<int> TicksHistory 
+        { 
+            get { return Server != null ? Server.TicksHistory : new List<int>(); }
+        }
+        
+        public List<DateTime> TickTimestamps 
+        { 
+            get { return Server != null ? Server.TickTimestamps : new List<DateTime>(); }
+        }
+        
+        public int AvgTickrate
+        {
+            get { return Server != null ? Server.AvgTickrate : 0; }
+        }
+        
         public int UploadTraffic { get; set; } = 0;
         public int DownloadTraffic { get; set; } = 0;
         public string TickRateLog { get; set; } = "";
@@ -266,8 +287,12 @@ namespace tickMeter
             IsTracking = false;
             SessionStart = DateTime.Now;
             Game = "";
-            TicksHistory = new List<int>();
-            TickTimestamps = new List<DateTime>();
+            
+            // Reset server data (individual tickrate data will be reset in Server.Reset())
+            if (Server != null)
+            {
+                Server.Reset();
+            }
 
             tickTimeBuffer.Clear();
             tickrateGraph.Clear();
@@ -288,10 +313,8 @@ namespace tickMeter
             UploadTraffic = 0;
             DownloadTraffic = 0;
             TickRate = 0;
-            OutputTickRate = 0;
             totalTicksCnt = 0;
             loss = 0;
-            AvgTickrate = 0;
             avgStableTickrate = 0;
             TickRateLog = "";
             timeStamp = DateTime.MinValue; // Сброс для корректной работы CurrentTimestamp
@@ -339,63 +362,6 @@ namespace tickMeter
             return percent;
         }
 
-        private void DownsampleTickHistoryIfNeeded()
-        {
-            if (TicksHistory == null || TickTimestamps == null)
-            {
-                return;
-            }
-
-            int totalCount = TicksHistory.Count;
-            if (totalCount <= TickHistoryDownsampleThreshold)
-            {
-                return;
-            }
-
-            int keepRecent = Math.Min(TickHistoryRecentKeep, totalCount);
-            int compressCount = totalCount - keepRecent;
-            if (compressCount < 4)
-            {
-                return;
-            }
-
-            int targetCapacity = keepRecent + (compressCount + 1) / 2;
-            var downsampledTicks = new List<int>(targetCapacity);
-            var downsampledTimestamps = new List<DateTime>(targetCapacity);
-
-            int index = 0;
-            for (; index + 1 < compressCount; index += 2)
-            {
-                int tickA = TicksHistory[index];
-                int tickB = TicksHistory[index + 1];
-                int averagedTick = (int)Math.Round((tickA + tickB) / 2.0);
-
-                DateTime timeA = TickTimestamps[index];
-                DateTime timeB = TickTimestamps[index + 1];
-                long averagedTicks = timeA.Ticks + ((timeB.Ticks - timeA.Ticks) / 2);
-                var averagedTime = new DateTime(averagedTicks, timeA.Kind);
-
-                downsampledTicks.Add(averagedTick);
-                downsampledTimestamps.Add(averagedTime);
-            }
-
-            if (index < compressCount)
-            {
-                downsampledTicks.Add(TicksHistory[index]);
-                downsampledTimestamps.Add(TickTimestamps[index]);
-                index++;
-            }
-
-            for (; index < totalCount; index++)
-            {
-                downsampledTicks.Add(TicksHistory[index]);
-                downsampledTimestamps.Add(TickTimestamps[index]);
-            }
-
-            TicksHistory = downsampledTicks;
-            TickTimestamps = downsampledTimestamps;
-        }
-
         public class GameServer
         {
             private string CurrentIP = "";
@@ -422,6 +388,14 @@ namespace tickMeter
             private DateTime lastUdpPacketTime = DateTime.MinValue;
             private Queue<float> udpIntervals = new Queue<float>();
             private const int UdpIntervalsWindow = 10; // размер окна для сглаживания
+
+            // --- Individual Tickrate tracking for this server ---
+            public List<int> TicksHistory { get; set; } = new List<int>();
+            public List<DateTime> TickTimestamps { get; set; } = new List<DateTime>();
+            public int OutputTickRate { get; set; } = 0;
+            public int AvgTickrate { get; set; } = 0;
+            private const int TickHistoryDownsampleThreshold = 6000;
+            private const int TickHistoryRecentKeep = 2000;
 
             // --- Advanced Ping Spike Detection ---
             private const int SpikeTimeoutMs = 5000; // время отображения индикатора спайка (5 секунд)
@@ -940,6 +914,13 @@ namespace tickMeter
                 _ping = 0;
                 consecutivePingFails = 0;
                 currentFallbackPortIndex = -1;
+                
+                // Reset individual tickrate data
+                TicksHistory.Clear();
+                TickTimestamps.Clear();
+                OutputTickRate = 0;
+                AvgTickrate = 0;
+                
                 KillTimer();
             }
 
@@ -992,6 +973,86 @@ namespace tickMeter
                 isPinging = true;
                 await Task.Run(() => { PingServer(); }).ConfigureAwait(false);
                 isPinging = false;
+            }
+
+            /// <summary>
+            /// Updates individual tickrate data for this specific server
+            /// </summary>
+            public void UpdateTickrate(int currentTickrate, DateTime timestamp)
+            {
+                OutputTickRate = currentTickrate;
+                TicksHistory.Add(currentTickrate);
+                TickTimestamps.Add(timestamp);
+                
+                // Calculate average tickrate
+                if (AvgTickrate == 0)
+                {
+                    AvgTickrate = currentTickrate;
+                }
+                else
+                {
+                    AvgTickrate = (AvgTickrate + currentTickrate) / 2;
+                }
+                
+                // Downsample history if needed
+                DownsampleTickHistoryIfNeeded();
+            }
+
+            private void DownsampleTickHistoryIfNeeded()
+            {
+                if (TicksHistory == null || TickTimestamps == null)
+                {
+                    return;
+                }
+
+                int totalCount = TicksHistory.Count;
+                if (totalCount <= TickHistoryDownsampleThreshold)
+                {
+                    return;
+                }
+
+                int keepRecent = Math.Min(TickHistoryRecentKeep, totalCount);
+                int compressCount = totalCount - keepRecent;
+                if (compressCount < 4)
+                {
+                    return;
+                }
+
+                int targetCapacity = keepRecent + (compressCount + 1) / 2;
+                var downsampledTicks = new List<int>(targetCapacity);
+                var downsampledTimestamps = new List<DateTime>(targetCapacity);
+
+                int index = 0;
+                for (; index + 1 < compressCount; index += 2)
+                {
+                    int tickA = TicksHistory[index];
+                    int tickB = TicksHistory[index + 1];
+                    int averagedTick = (int)Math.Round((tickA + tickB) / 2.0);
+
+                    DateTime timeA = TickTimestamps[index];
+                    DateTime timeB = TickTimestamps[index + 1];
+                    long averagedTicks = timeA.Ticks + ((timeB.Ticks - timeA.Ticks) / 2);
+                    var averagedTime = new DateTime(averagedTicks, timeA.Kind);
+
+                    downsampledTicks.Add(averagedTick);
+                    downsampledTimestamps.Add(averagedTime);
+                }
+
+                if (index < compressCount)
+                {
+                    downsampledTicks.Add(TicksHistory[index]);
+                    downsampledTimestamps.Add(TickTimestamps[index]);
+                    index++;
+                }
+
+                for (; index < totalCount; index++)
+                {
+                    downsampledTicks.Add(TicksHistory[index]);
+                    downsampledTimestamps.Add(TickTimestamps[index]);
+                }
+
+                TicksHistory = downsampledTicks;
+                TickTimestamps = downsampledTimestamps;
             }
 
             private class IpInfo
