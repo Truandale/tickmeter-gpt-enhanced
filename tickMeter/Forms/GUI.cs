@@ -922,6 +922,7 @@ namespace tickMeter.Forms
                         App.meterState.Game = procStats.name;
                         App.meterState.Server.Ip = procStats.remoteIp.ToString();
                         App.meterState.DownloadTraffic = procStats.downloaded;
+                        App.meterState.UploadTraffic = procStats.sent;
                         
                         // Обновляем TickRate и добавляем в детектор спайков
                         int currentTickRate = procStats.getTicksIn();

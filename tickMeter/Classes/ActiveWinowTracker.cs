@@ -48,6 +48,7 @@ namespace tickMeter.Classes
                 if(tickOut > 0)
                 {
                     connections[hash].sent += (int)traffic;
+                    App.meterState.UploadTraffic += (int)traffic;
                 }
             }
         }
@@ -171,7 +172,7 @@ namespace tickMeter.Classes
                         localPort = tcp.SourcePort;
                         break;
                 }
-                trackTick(processName, protocol.ToLower(), App.meterState.LocalIP, localPort, ip.Source.ToString(), remotePort, 0, 1, packetSize, packet.Timestamp, 0);
+                trackTick(processName, protocol.ToLower(), App.meterState.LocalIP, localPort, ip.Destination.ToString(), remotePort, 0, 1, packetSize, packet.Timestamp, 0);
             }
         }
 
