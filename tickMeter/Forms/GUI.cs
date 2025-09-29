@@ -89,6 +89,8 @@ namespace tickMeter.Forms
         public string targetKey = "";
         private int _gcCounter = 0; // Счётчик для периодической сборки мусора
     private const int ChartMaxPoints = 120;
+    private const string TickrateChartAreaName = "TickrateArea";
+    private const string TickrateSeriesName = "Tickrate";
         
         // Stage 5: Analytics form
         private SpikeAnalyticsForm _spikeAnalyticsForm;
@@ -227,24 +229,26 @@ namespace tickMeter.Forms
 
         protected void ShowAll()
         {
-            ip_val.Visible = 
-            ip_lbl.Visible = 
-            ping_val.Visible = 
-            ping_lbl.Visible = 
-            countryLbl.Visible = 
-            traffic_lbl.Visible = 
-            traffic_val.Visible = 
-            time_lbl.Visible = 
-            time_val.Visible = 
-            SettingsButton.Visible =
-            gameProfilesButton.Visible =
-            drops_lbl.Visible = 
-            drops_lbl_val.Visible = 
-            packetStatsBtn.Visible = 
+            ip_val.Visible = true;
+            ip_lbl.Visible = true;
+            ping_val.Visible = true;
+            ping_lbl.Visible = true;
+            countryLbl.Visible = true;
+            traffic_lbl.Visible = true;
+            traffic_val.Visible = true;
+            time_lbl.Visible = true;
+            time_val.Visible = true;
+            SettingsButton.Visible = true;
+            gameProfilesButton.Visible = true;
+            drops_lbl.Visible = true;
+            drops_lbl_val.Visible = true;
+            packetStatsBtn.Visible = true;
             spikeAnalyticsBtn.Visible = true;
-            
+
             if (TickrateChart1 != null)
-                TickrateChart1.Visible = true;
+            {
+                TickrateChart1.Visible = App.settingsForm.settings_chart_checkbox.Checked;
+            }
         }
 
         [PermissionSet(SecurityAction.Demand, Name = "FullTrust")]
@@ -288,16 +292,15 @@ namespace tickMeter.Forms
                     TopMost = false;
                     OnScreen = false;
                 }
-                if (!App.settingsForm.settings_chart_checkbox.Checked)
+                bool chartEnabled = App.settingsForm.settings_chart_checkbox.Checked;
+                if (!chartEnabled)
                 {
                     Height = 160;
-                    if (TickrateChart1 != null)
-                        TickrateChart1.Visible = false;
                 }
-                else
+
+                if (TickrateChart1 != null)
                 {
-                    if (TickrateChart1 != null)
-                        TickrateChart1.Visible = true;
+                    TickrateChart1.Visible = chartEnabled;
                 }
                 Width = 475;
 
@@ -1062,59 +1065,65 @@ namespace tickMeter.Forms
 
         private void ConfigureTickrateChart()
         {
+            if (TickrateChart1 == null || TickrateChart1.IsDisposed)
+            {
+                return;
+            }
+
             try
             {
-                if (TickrateChart1 == null || TickrateChart1.IsDisposed)
-                {
-                    return;
-                }
-
                 TickrateChart1.SuspendLayout();
-                
-                // Очищаем существующие серии и легенды
+
                 TickrateChart1.Series.Clear();
                 TickrateChart1.Legends.Clear();
 
-                // Настраиваем область графика
-                if (TickrateChart1.ChartAreas.Count == 0)
+                var area = TickrateChart1.ChartAreas.FindByName(TickrateChartAreaName);
+                if (area == null)
                 {
-                    TickrateChart1.ChartAreas.Add(new ChartArea("MainArea"));
+                    TickrateChart1.ChartAreas.Clear();
+                    area = new ChartArea(TickrateChartAreaName);
+                    TickrateChart1.ChartAreas.Add(area);
                 }
-                
-                ChartArea area = TickrateChart1.ChartAreas[0];
-                area.Name = "MainArea";
+
+                Color axisLineColor = Color.FromArgb(160, _neutralActiveColor);
+                Color gridColor = Color.FromArgb(90, _inactiveMetricColor);
+
                 area.BackColor = Color.Transparent;
                 area.BorderWidth = 0;
-                
-                // Настройка оси X
-                area.AxisX.MajorGrid.Enabled = false;
+
+                // Ось X
+                area.AxisX.MajorGrid.Enabled = true;
+                area.AxisX.MajorGrid.LineColor = gridColor;
+                area.AxisX.MajorGrid.LineDashStyle = ChartDashStyle.Dot;
                 area.AxisX.MinorGrid.Enabled = false;
-                area.AxisX.LineColor = Color.FromArgb(120, Color.White);
-                area.AxisX.LabelStyle.ForeColor = Color.FromArgb(220, Color.White);
+                area.AxisX.LineColor = axisLineColor;
+                area.AxisX.MajorTickMark.LineColor = axisLineColor;
+                area.AxisX.LabelStyle.ForeColor = Color.FromArgb(220, _neutralActiveColor);
                 area.AxisX.LabelStyle.Font = new Font("Segoe UI", 8f, FontStyle.Regular);
                 area.AxisX.IsMarginVisible = false;
+                area.AxisX.IntervalAutoMode = IntervalAutoMode.VariableCount;
                 area.AxisX.Minimum = 1;
                 area.AxisX.Maximum = ChartMaxPoints;
 
-                // Настройка оси Y с красными жирными подписями
+                // Ось Y
                 area.AxisY.MajorGrid.Enabled = true;
-                area.AxisY.MajorGrid.LineColor = Color.FromArgb(70, Color.White);
+                area.AxisY.MajorGrid.LineColor = gridColor;
                 area.AxisY.MajorGrid.LineDashStyle = ChartDashStyle.Dash;
+                area.AxisY.MinorGrid.Enabled = false;
+                area.AxisY.LineColor = axisLineColor;
+                area.AxisY.MajorTickMark.LineColor = axisLineColor;
                 area.AxisY.LabelStyle.ForeColor = Color.Red;
-                area.AxisY.LabelStyle.Font = new Font("Segoe UI", 8f, FontStyle.Bold);
-                area.AxisY.LineColor = Color.FromArgb(120, Color.White);
+                area.AxisY.LabelStyle.Font = new Font("Segoe UI", 9f, FontStyle.Bold);
                 area.AxisY.Minimum = 0;
                 area.AxisY.Maximum = 60;
                 area.AxisY.Interval = 10;
 
-                // Настройка самого графика
                 TickrateChart1.BackColor = Color.Transparent;
                 TickrateChart1.BorderlineWidth = 0;
                 TickrateChart1.AntiAliasing = AntiAliasingStyles.All;
                 TickrateChart1.TextAntiAliasingQuality = TextAntiAliasingQuality.High;
 
-                // Создаем серию данных
-                Series series = new Series("Tickrate")
+                Series series = new Series(TickrateSeriesName)
                 {
                     ChartType = SeriesChartType.FastLine,
                     Color = _neutralActiveColor,
@@ -1122,11 +1131,14 @@ namespace tickMeter.Forms
                     XValueType = ChartValueType.Int32,
                     YValueType = ChartValueType.Int32,
                     IsXValueIndexed = true,
-                    ChartArea = area.Name
+                    ChartArea = area.Name,
+                    IsVisibleInLegend = false
                 };
 
+                series.EmptyPointStyle.Color = _neutralActiveColor;
+                series.EmptyPointStyle.BorderWidth = 0;
+
                 TickrateChart1.Series.Add(series);
-                ResetTickrateChart();
             }
             catch (Exception ex)
             {
@@ -1138,8 +1150,13 @@ namespace tickMeter.Forms
                 {
                     TickrateChart1?.ResumeLayout();
                 }
-                catch { }
+                catch
+                {
+                    // ignore
+                }
             }
+
+            ResetTickrateChart();
         }
 
         private void UpdateTickrateChart(List<int> ticks)
@@ -1149,13 +1166,18 @@ namespace tickMeter.Forms
                 return;
             }
 
-            if (TickrateChart1.Series.Count == 0)
+            Series series = TickrateChart1.Series.FindByName(TickrateSeriesName);
+            if (series == null)
             {
                 return;
             }
 
-            Series series = TickrateChart1.Series[0];
-            ChartArea area = TickrateChart1.ChartAreas[0];
+            ChartArea area = TickrateChart1.ChartAreas.FindByName(TickrateChartAreaName) ??
+                             (TickrateChart1.ChartAreas.Count > 0 ? TickrateChart1.ChartAreas[0] : null);
+            if (area == null)
+            {
+                return;
+            }
             DataPointCollection points = series.Points;
 
             points.SuspendUpdates();
@@ -1215,12 +1237,18 @@ namespace tickMeter.Forms
                 return;
             }
 
-            if (TickrateChart1.Series.Count > 0)
+            Series series = TickrateChart1.Series.FindByName(TickrateSeriesName);
+            if (series != null)
             {
-                TickrateChart1.Series[0].Points.Clear();
+                series.Points.Clear();
             }
 
-            ChartArea area = TickrateChart1.ChartAreas[0];
+            ChartArea area = TickrateChart1.ChartAreas.FindByName(TickrateChartAreaName) ??
+                             (TickrateChart1.ChartAreas.Count > 0 ? TickrateChart1.ChartAreas[0] : null);
+            if (area == null)
+            {
+                return;
+            }
             area.AxisY.Minimum = 0;
             area.AxisY.Maximum = 60;
             area.AxisY.Interval = 10;
