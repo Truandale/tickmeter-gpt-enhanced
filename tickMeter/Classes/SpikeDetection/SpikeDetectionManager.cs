@@ -219,6 +219,9 @@ namespace tickMeter.Classes.SpikeDetection
 
                 // Минимальная длительность спайка
                 settings.MinSpikeDurationMs = settingsManager.GetInt("spikes.min_hold_ms", 120, "ADVANCED");
+                settings.MinDeltaTimeSeconds = Math.Max(0.001, settingsManager.GetDouble("spikes.min_dt_sec", settings.MinDeltaTimeSeconds, "ADVANCED"));
+                settings.MaxDeltaTimeSeconds = Math.Max(settings.MinDeltaTimeSeconds, settingsManager.GetDouble("spikes.max_dt_sec", settings.MaxDeltaTimeSeconds, "ADVANCED"));
+                settings.DefaultSampleIntervalSeconds = Math.Max(settings.MinDeltaTimeSeconds, settingsManager.GetDouble("spikes.default_dt_sec", settings.DefaultSampleIntervalSeconds, "ADVANCED"));
 
                 // Критическое исправление #8: Загружаем специфичные коэффициенты для метрик
                 LoadMetricSpecificCoefficients(settings, settingsManager);
@@ -265,9 +268,9 @@ namespace tickMeter.Classes.SpikeDetection
         {
             try
             {
-                System.Diagnostics.Debug.Print($"[SpikeDetection] Spike detected: {spikeEvent.Metric} at {spikeEvent.Timestamp:HH:mm:ss.fff}, " +
-                    $"baseline={spikeEvent.Baseline:F1}, threshold={spikeEvent.Threshold:F1}, energy={spikeEvent.Energy:F2}, " +
-                    $"duration={spikeEvent.Duration.TotalMilliseconds:F0}ms");
+                System.Diagnostics.Debug.Print($"[SpikeDetection] Spike {spikeEvent.Phase}: {spikeEvent.Metric} at {spikeEvent.Timestamp:HH:mm:ss.fff}, " +
+                    $"value={spikeEvent.Value:F2}, baseline={spikeEvent.Baseline:F2}, threshold={spikeEvent.Threshold:F2}, energy={spikeEvent.Energy:F2}, " +
+                    $"duration={spikeEvent.Duration.TotalMilliseconds:F0}ms, confirmed={spikeEvent.IsConfirmed}");
 
                 // Вызываем глобальное событие
                 SpikeDetected?.Invoke(spikeEvent);
@@ -289,6 +292,11 @@ namespace tickMeter.Classes.SpikeDetection
         {
             try
             {
+                if (spikeEvent.Phase != SpikeEventPhase.End || !spikeEvent.IsConfirmed)
+                {
+                    return;
+                }
+
                 // Определяем тип алерта на основе метрики
                 AlertManager.AlertType alertType;
                 switch (spikeEvent.Metric)
@@ -311,7 +319,7 @@ namespace tickMeter.Classes.SpikeDetection
                 await AlertManager.SendAlert(
                     alertType,
                     spikeEvent.Metric.ToString(),
-                    spikeEvent.Value,
+                    spikeEvent.PeakValue,
                     spikeEvent.Threshold
                 );
             }

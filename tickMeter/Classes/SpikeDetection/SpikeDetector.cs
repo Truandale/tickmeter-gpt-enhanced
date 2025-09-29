@@ -19,6 +19,8 @@ namespace tickMeter.Classes.SpikeDetection
         public double SpikeEnergy { get; set; } = 0.0;
         public Queue<double> InitWindow { get; set; } = new Queue<double>();
         public bool IsInitialized { get; set; } = false;
+        public double LastValue { get; set; } = double.NaN;
+        public double PeakValue { get; set; } = double.NaN;
     }
 
     /// <summary>
@@ -70,6 +72,8 @@ namespace tickMeter.Classes.SpikeDetection
                 // Рассчитываем текущий порог с учетом чувствительности и направленности
                 double threshold = CalculateThreshold(metric, state.EmaValue, state.EwSigma);
                 state.CurrentThreshold = threshold;
+
+                state.LastValue = value;
                 
                 // Проверяем детекцию спайка
                 CheckSpikeDetection(metric, state, value, timestamp, threshold);
@@ -78,6 +82,12 @@ namespace tickMeter.Classes.SpikeDetection
 
         private void InitializeMetric(MetricState state, double value)
         {
+            state.LastValue = value;
+            if (double.IsNaN(state.PeakValue))
+            {
+                state.PeakValue = value;
+            }
+
             state.InitWindow.Enqueue(value);
             
             if (state.InitWindow.Count >= _settings.InitWindowSize)
@@ -89,6 +99,8 @@ namespace tickMeter.Classes.SpikeDetection
                 // Начальное стандартное отклонение
                 double variance = values.Select(v => Math.Pow(v - state.EmaValue, 2)).Average();
                 state.EwSigma = Math.Sqrt(variance);
+                state.LastValue = values.Last();
+                state.PeakValue = values.Last();
                 
                 state.IsInitialized = true;
                 state.InitWindow.Clear(); // Освобождаем память
@@ -105,6 +117,8 @@ namespace tickMeter.Classes.SpikeDetection
                 // Первое значение
                 state.EmaValue = value;
                 state.EwSigma = 0.1; // Минимальная σ для избежания деления на ноль
+                state.LastValue = value;
+                state.PeakValue = value;
                 return;
             }
 
@@ -219,12 +233,21 @@ namespace tickMeter.Classes.SpikeDetection
             bool inRefractoryPeriod = (timestamp - state.LastSpikeTime).TotalMilliseconds < _settings.RefractoryPeriodMs;
             
             // Критическое исправление #4: Энергия по времени, а не по тикам
-            double deltaTime = 0.0;
+            double deltaTime;
             if (state.LastUpdateTime != DateTime.MinValue)
             {
                 deltaTime = (timestamp - state.LastUpdateTime).TotalSeconds;
-                deltaTime = Math.Max(0.001, Math.Min(deltaTime, 1.0)); // Ограничиваем разумными пределами
+                if (double.IsNaN(deltaTime) || double.IsInfinity(deltaTime) || deltaTime <= 0)
+                {
+                    deltaTime = _settings.DefaultSampleIntervalSeconds;
+                }
             }
+            else
+            {
+                deltaTime = _settings.DefaultSampleIntervalSeconds;
+            }
+
+            deltaTime = Clamp(deltaTime, _settings.MinDeltaTimeSeconds, _settings.MaxDeltaTimeSeconds);
             state.LastUpdateTime = timestamp;
             
             if (state.IsInSpike)
@@ -246,11 +269,13 @@ namespace tickMeter.Classes.SpikeDetection
                     {
                         case MetricKind.Tickrate:
                             residual = Math.Max(0, baseline - value - threshold_on); // Спайк вниз
+                            state.PeakValue = double.IsNaN(state.PeakValue) ? value : Math.Min(state.PeakValue, value);
                             break;
                         case MetricKind.Ping:
                         case MetricKind.Ticktime:
                         default:
                             residual = Math.Max(0, value - baseline - threshold_on); // Спайк вверх
+                            state.PeakValue = double.IsNaN(state.PeakValue) ? value : Math.Max(state.PeakValue, value);
                             break;
                     }
                     
@@ -275,39 +300,46 @@ namespace tickMeter.Classes.SpikeDetection
         {
             state.IsInSpike = true;
             state.SpikeStartTime = timestamp;
+            state.PeakValue = value;
+            state.LastValue = value;
             
             // Начальная энергия спайка
             double excessValue = Math.Max(0, value - state.EmaValue);
             state.SpikeEnergy = excessValue * excessValue;
+
+            var spikeEvent = new SpikeEvent(timestamp, metric, value, state.EmaValue, threshold, 0.0)
+            {
+                Phase = SpikeEventPhase.Start,
+                IsConfirmed = false,
+                PeakValue = value,
+                LastValue = value
+            };
+
+            SpikeDetected?.Invoke(spikeEvent);
         }
 
         private void EndSpike(MetricKind metric, MetricState state, DateTime timestamp)
         {
             var spikeDuration = timestamp - state.SpikeStartTime;
-            
-            // Проверяем минимальную длительность и энергию спайка
-            if (spikeDuration.TotalMilliseconds >= _settings.MinSpikeDurationMs && 
-                state.SpikeEnergy >= _settings.MinEnergyThreshold)
+            bool isConfirmed = spikeDuration.TotalMilliseconds >= _settings.MinSpikeDurationMs &&
+                               state.SpikeEnergy >= _settings.MinEnergyThreshold;
+
+            var spikeEvent = new SpikeEvent(state.SpikeStartTime, metric, state.PeakValue, state.EmaValue, state.CurrentThreshold, state.SpikeEnergy)
             {
-                // Создаем событие спайка
-                var spikeEvent = new SpikeEvent(
-                    state.SpikeStartTime,
-                    metric,
-                    0, // Значение будет установлено позже если нужно
-                    state.EmaValue,
-                    state.CurrentThreshold,
-                    state.SpikeEnergy
-                );
-                spikeEvent.Duration = spikeDuration;
-                
-                // Вызываем событие
-                SpikeDetected?.Invoke(spikeEvent);
-            }
-            
+                Duration = spikeDuration,
+                Phase = SpikeEventPhase.End,
+                IsConfirmed = isConfirmed,
+                PeakValue = state.PeakValue,
+                LastValue = state.LastValue
+            };
+
+            SpikeDetected?.Invoke(spikeEvent);
+
             // Сбрасываем состояние спайка
             state.IsInSpike = false;
             state.LastSpikeTime = timestamp;
             state.SpikeEnergy = 0.0;
+            state.PeakValue = double.NaN;
         }
 
         public bool HasActiveSpike(MetricKind metric)
@@ -349,6 +381,8 @@ namespace tickMeter.Classes.SpikeDetection
                     state.SpikeEnergy = 0.0;
                     state.InitWindow.Clear();
                     state.IsInitialized = false;
+                    state.LastValue = double.NaN;
+                    state.PeakValue = double.NaN;
                 }
             }
         }
@@ -362,6 +396,21 @@ namespace tickMeter.Classes.SpikeDetection
                 // При изменении настроек можем сбросить состояние для корректной работы
                 // или оставить как есть для плавного перехода
             }
+        }
+
+        private static double Clamp(double value, double min, double max)
+        {
+            if (value < min)
+            {
+                return min;
+            }
+
+            if (value > max)
+            {
+                return max;
+            }
+
+            return value;
         }
     }
 }

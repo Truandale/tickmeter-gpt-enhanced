@@ -908,10 +908,13 @@ namespace tickMeter.Forms
                             {
                                 // Берем последнее значение из буфера как текущий ticktime
                                 float lastTickTime = procStats.tickTimeBuffer[procStats.tickTimeBuffer.Count - 1];
-                                Classes.SpikeDetection.SpikeDetectionManager.AddValue(
-                                    Classes.SpikeDetection.MetricKind.Ticktime, 
-                                    lastTickTime
-                                );
+                                if (lastTickTime > 0)
+                                {
+                                    Classes.SpikeDetection.SpikeDetectionManager.AddValue(
+                                        Classes.SpikeDetection.MetricKind.Ticktime, 
+                                        lastTickTime
+                                    );
+                                }
                             }
                         }
                         catch (Exception ex)
@@ -1877,35 +1880,45 @@ namespace tickMeter.Forms
         {
             try
             {
-                System.Diagnostics.Debug.Print($"[OnSpikeDetected] Spike detected: {spikeEvent.Metric} at {spikeEvent.Timestamp:HH:mm:ss.fff}");
-                
+                bool isActive = spikeEvent.Phase == Classes.SpikeDetection.SpikeEventPhase.Start;
+                System.Diagnostics.Debug.Print($"[OnSpikeDetected] Spike {spikeEvent.Phase} ({spikeEvent.Metric}) value={spikeEvent.Value:F2}, confirmed={spikeEvent.IsConfirmed}");
+
                 // Обновляем флаги спайков в зависимости от типа метрики
                 switch (spikeEvent.Metric)
                 {
                     case Classes.SpikeDetection.MetricKind.Ping:
                         if (App.meterState?.Server != null)
                         {
-                            App.meterState.Server.SetPingSpike(true);
+                            App.meterState.Server.SetPingSpike(isActive);
                         }
-                        ShowSpikeNotification("Ping", spikeEvent.Value, "ms", ref _lastPingSpikeNotification);
+                        if (!isActive && spikeEvent.IsConfirmed)
+                        {
+                            ShowSpikeNotification("Ping", spikeEvent.Value, "ms", ref _lastPingSpikeNotification);
+                        }
                         break;
-                        
+
                     case Classes.SpikeDetection.MetricKind.Tickrate:
                         if (App.meterState?.Server != null)
                         {
-                            App.meterState.Server.SetTickRateSpike(true);
+                            App.meterState.Server.SetTickRateSpike(isActive);
                         }
-                        ShowSpikeNotification("Tickrate", spikeEvent.Value, "Hz", ref _lastTickrateSpikeNotification);
-                        System.Diagnostics.Debug.Print($"[OnSpikeDetected] Tickrate spike detected: {spikeEvent.Value:F1}");
+                        if (!isActive && spikeEvent.IsConfirmed)
+                        {
+                            ShowSpikeNotification("Tickrate", spikeEvent.Value, "Hz", ref _lastTickrateSpikeNotification);
+                        }
+                        System.Diagnostics.Debug.Print($"[OnSpikeDetected] Tickrate spike {spikeEvent.Phase}: value={spikeEvent.Value:F1}, peak={spikeEvent.PeakValue:F1}");
                         break;
-                        
+
                     case Classes.SpikeDetection.MetricKind.Ticktime:
                         if (App.meterState?.Server != null)
                         {
-                            App.meterState.Server.SetTickTimeSpike(true);
+                            App.meterState.Server.SetTickTimeSpike(isActive);
                         }
-                        ShowSpikeNotification("Ticktime", spikeEvent.Value, "ms", ref _lastTicktimeSpikeNotification);
-                        System.Diagnostics.Debug.Print($"[OnSpikeDetected] Ticktime spike detected: {spikeEvent.Value:F1}ms");
+                        if (!isActive && spikeEvent.IsConfirmed)
+                        {
+                            ShowSpikeNotification("Ticktime", spikeEvent.Value, "ms", ref _lastTicktimeSpikeNotification);
+                        }
+                        System.Diagnostics.Debug.Print($"[OnSpikeDetected] Ticktime spike {spikeEvent.Phase}: value={spikeEvent.Value:F1}ms");
                         break;
                 }
             }

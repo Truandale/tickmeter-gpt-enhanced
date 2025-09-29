@@ -22,12 +22,17 @@ namespace tickMeter.Classes
         private static readonly Queue<float> _packetLossHistory = new Queue<float>();
         
         // Настройки анализа
-        private static int _historySize = 100; // Размер буфера для анализа
-        private static float _stabilityThreshold = 0.15f; // Порог стабильности (15%)
+    private static int _historySize = 100; // Размер буфера для анализа
+    private static float _stabilityThreshold = 0.15f; // Базовый порог стабильности (15%)
+    private static float _pingStabilityThreshold = 0.15f;
+    private static float _tickrateStabilityThreshold = 0.10f;
+    private static float _ticktimeStabilityThreshold = 0.18f;
         private static float _qualityThreshold = 0.8f; // Порог качества сети (80%)
         
         // ChatGPT Optimization Settings
-        private static float _targetTickrate = 128f; // Целевой тикрейт
+    private static float _manualTargetTickrate = 128f; // Пользовательский целевой тикрейт
+    private static float _dynamicTargetTickrate = 128f; // Автоматически рассчитанный
+    private static bool _targetTickrateAuto = true;
         private static float _pingGoodMs = 30f; // Хороший ping (мс)
         private static float _pingBadMs = 80f; // Плохой ping (мс)
         private static float _ticktimeGoodMs = 8f; // Хороший ticktime (мс)
@@ -47,8 +52,14 @@ namespace tickMeter.Classes
         public static bool IsPredictingIssues { get; private set; } = false;
         public static string PredictionDetails { get; private set; } = "";
         
-        // EMA smoothing для общего качества
-        private static float _overallEma = -1f; // -1 означает неинициализировано
+    // EMA smoothing для общего качества
+    private static float _overallEma = -1f; // -1 означает неинициализировано
+
+    // Отслеживание валидного пинга для борьбы с ложными скачками
+    private static float _lastValidPing = -1f;
+    private static int _missingPingSamples = 0;
+    private const int MissingPingTolerance = 5;
+    private const int MissingPingCritical = 30;
         
         // События для уведомлений
         public static event Action<float> QualityChanged;
@@ -74,6 +85,24 @@ namespace tickMeter.Classes
                 {
                     _stabilityThreshold = stability;
                 }
+
+                var pingStabilityStr = App.settingsManager?.GetOption("stability_threshold_ping", stabilityStr ?? "0.15", "ADVANCED");
+                if (!SettingsManager.TryParseInvariantFloat(pingStabilityStr?.Trim(), out _pingStabilityThreshold) || _pingStabilityThreshold <= 0)
+                {
+                    _pingStabilityThreshold = _stabilityThreshold;
+                }
+
+                var tickrateStabilityStr = App.settingsManager?.GetOption("stability_threshold_tickrate", "0.10", "ADVANCED");
+                if (!SettingsManager.TryParseInvariantFloat(tickrateStabilityStr?.Trim(), out _tickrateStabilityThreshold) || _tickrateStabilityThreshold <= 0)
+                {
+                    _tickrateStabilityThreshold = Math.Max(0.05f, _stabilityThreshold * 0.75f);
+                }
+
+                var ticktimeStabilityStr = App.settingsManager?.GetOption("stability_threshold_ticktime", "0.18", "ADVANCED");
+                if (!SettingsManager.TryParseInvariantFloat(ticktimeStabilityStr?.Trim(), out _ticktimeStabilityThreshold) || _ticktimeStabilityThreshold <= 0)
+                {
+                    _ticktimeStabilityThreshold = Math.Max(0.10f, _stabilityThreshold * 1.1f);
+                }
                 
                 var qualityStr = App.settingsManager?.GetOption("quality_threshold", "0.8", "ADVANCED");
                 if (SettingsManager.TryParseInvariantFloat(qualityStr?.Trim(), out float quality) && quality > 0 && quality <= 1)
@@ -82,11 +111,16 @@ namespace tickMeter.Classes
                 }
                 
                 // Загружаем ChatGPT optimization settings
+                var targetMode = App.settingsManager?.GetOption("quality_target_tickrate_mode", "auto", "ADVANCED")?.Trim();
                 var targetTickrateStr = App.settingsManager?.GetOption("quality_target_tickrate", "128", "ADVANCED");
-                if (SettingsManager.TryParseInvariantFloat(targetTickrateStr?.Trim(), out float targetTickrate) && targetTickrate > 0)
+
+                if (!string.IsNullOrWhiteSpace(targetTickrateStr) &&
+                    SettingsManager.TryParseInvariantFloat(targetTickrateStr.Trim(), out float configuredTarget) && configuredTarget > 0)
                 {
-                    _targetTickrate = targetTickrate;
+                    _manualTargetTickrate = configuredTarget;
                 }
+
+                _targetTickrateAuto = !string.Equals(targetMode, "manual", StringComparison.OrdinalIgnoreCase);
                 
                 var pingGoodStr = App.settingsManager?.GetOption("quality_ping_good_ms", "30", "ADVANCED");
                 if (SettingsManager.TryParseInvariantFloat(pingGoodStr?.Trim(), out float pingGood) && pingGood > 0)
@@ -118,8 +152,11 @@ namespace tickMeter.Classes
                     _emaAlpha = emaAlpha;
                 }
                 
-                Debug.Print($"[NetworkQualityAnalyzer] Initialized: history={_historySize}, stability={_stabilityThreshold}, quality={_qualityThreshold}");
-                Debug.Print($"[NetworkQualityAnalyzer] ChatGPT Settings: targetTickrate={_targetTickrate}, pingGood={_pingGoodMs}, pingBad={_pingBadMs}, ticktimeGood={_ticktimeGoodMs}, ticktimeBad={_ticktimeBadMs}, emaAlpha={_emaAlpha}");
+                _dynamicTargetTickrate = _manualTargetTickrate;
+
+                Debug.Print($"[NetworkQualityAnalyzer] Initialized: history={_historySize}, stability(base)={_stabilityThreshold}, quality={_qualityThreshold}");
+                Debug.Print($"[NetworkQualityAnalyzer] Stability thresholds => ping={_pingStabilityThreshold}, tickrate={_tickrateStabilityThreshold}, ticktime={_ticktimeStabilityThreshold}");
+                Debug.Print($"[NetworkQualityAnalyzer] ChatGPT Settings: targetTickrateMode={( _targetTickrateAuto ? "auto" : _manualTargetTickrate.ToString("F0", CultureInfo.InvariantCulture))}, pingGood={_pingGoodMs}, pingBad={_pingBadMs}, ticktimeGood={_ticktimeGoodMs}, ticktimeBad={_ticktimeBadMs}, emaAlpha={_emaAlpha}");
             }
             catch (Exception ex)
             {
@@ -137,21 +174,17 @@ namespace tickMeter.Classes
                 try
                 {
                     // Добавляем данные в буферы
-                    AddToBuffer(_pingHistory, ping);
+                    if (TryAddPingSample(ping))
+                    {
+                        UpdateJitterFromPingHistory();
+                    }
+
                     AddToBuffer(_tickrateHistory, tickrate);
                     AddToBuffer(_ticktimeHistory, ticktime);
                     AddToBuffer(_packetLossHistory, packetLoss);
                     
-                    // Рассчитываем jitter (изменчивость ping)
-                    if (_pingHistory.Count >= 2)
-                    {
-                        var pingArray = _pingHistory.ToArray();
-                        float currentJitter = Math.Abs(pingArray[pingArray.Length - 1] - pingArray[pingArray.Length - 2]);
-                        AddToBuffer(_jitterHistory, currentJitter);
-                    }
-                    
                     // Выполняем анализ только если есть достаточно данных
-                    if (_pingHistory.Count >= 10)
+                    if (_pingHistory.Count >= 10 || _tickrateHistory.Count >= 10 || _ticktimeHistory.Count >= 10)
                     {
                         PerformQualityAnalysis();
                     }
@@ -176,6 +209,28 @@ namespace tickMeter.Classes
                 buffer.Dequeue();
             }
         }
+
+        private static bool TryAddPingSample(float ping)
+        {
+            if (ping > 0)
+            {
+                _lastValidPing = ping;
+                _missingPingSamples = 0;
+                AddToBuffer(_pingHistory, ping);
+                return true;
+            }
+
+            _missingPingSamples = Math.Min(_missingPingSamples + 1, MissingPingCritical);
+            return false;
+        }
+
+        private static void UpdateJitterFromPingHistory()
+        {
+            if (_pingHistory.Count < 2) return;
+            var pingArray = _pingHistory.ToArray();
+            float currentJitter = Math.Abs(pingArray[pingArray.Length - 1] - pingArray[pingArray.Length - 2]);
+            AddToBuffer(_jitterHistory, currentJitter);
+        }
         
         /// <summary>
         /// Выполняет анализ качества сети
@@ -193,9 +248,9 @@ namespace tickMeter.Classes
                 var oldPredicting = IsPredictingIssues;
                 var oldPredictionDetails = PredictionDetails;
                 
-                PingStability = CalculateStability(_pingHistory);
-                TickrateStability = CalculateStability(_tickrateHistory);
-                TicktimeStability = CalculateStability(_ticktimeHistory);
+                PingStability = CalculateStability(_pingHistory, _pingStabilityThreshold);
+                TickrateStability = CalculateStability(_tickrateHistory, _tickrateStabilityThreshold);
+                TicktimeStability = CalculateStability(_ticktimeHistory, _ticktimeStabilityThreshold);
                 
                 // Рассчитываем средний jitter
                 if (_jitterHistory.Count > 0)
@@ -230,7 +285,8 @@ namespace tickMeter.Classes
                 
                 Debug.Print($"[NetworkQualityAnalyzer] Quality: {OverallQuality:F2} ({QualityRating}), " +
                            $"Ping: {PingStability:F2}, Tickrate: {TickrateStability:F2}, " +
-                           $"Ticktime: {TicktimeStability:F2}, Jitter: {AverageJitter:F1}ms");
+                           $"Ticktime: {TicktimeStability:F2}, Jitter: {AverageJitter:F1}ms, " +
+                           $"Target={GetCurrentTargetTickrate():F1}Hz, missingPing={_missingPingSamples}");
             }
             catch (Exception ex)
             {
@@ -241,7 +297,7 @@ namespace tickMeter.Classes
         /// <summary>
         /// Рассчитывает стабильность метрики (коэффициент вариации)
         /// </summary>
-        private static float CalculateStability(Queue<float> data)
+        private static float CalculateStability(Queue<float> data, float threshold)
         {
             if (data.Count < 3) return 1.0f;
             
@@ -253,10 +309,11 @@ namespace tickMeter.Classes
             
             float variance = values.Select(x => (x - mean) * (x - mean)).Average();
             float stdDev = (float)Math.Sqrt(variance);
+            if (threshold <= 0) threshold = 0.1f;
             float coefficientOfVariation = stdDev / mean;
             
             // Преобразуем в показатель стабильности (1 = стабильно, 0 = нестабильно)
-            float stability = Math.Max(0, 1.0f - coefficientOfVariation / _stabilityThreshold);
+            float stability = Math.Max(0, 1.0f - coefficientOfVariation / threshold);
             return Math.Min(1.0f, stability);
         }
         
@@ -295,11 +352,12 @@ namespace tickMeter.Classes
             quality += (1f - pingLevelPenalty) * pingLevelWeight;
             
             // Tickrate level penalty
+            float effectiveTargetTickrate = GetEffectiveTargetTickrate();
             float avgTickrate = _tickrateHistory.Count > 0 ? _tickrateHistory.Average() : 0f;
             float tickrateLevelPenalty = 0f;
-            if (avgTickrate < _targetTickrate)
+            if (effectiveTargetTickrate > 0 && avgTickrate < effectiveTargetTickrate)
             {
-                tickrateLevelPenalty = Math.Min(1f, Math.Max(0f, (_targetTickrate - avgTickrate) / _targetTickrate));
+                tickrateLevelPenalty = Math.Min(1f, Math.Max(0f, (effectiveTargetTickrate - avgTickrate) / effectiveTargetTickrate));
             }
             quality += (1f - tickrateLevelPenalty) * tickrateLevelWeight;
             
@@ -327,6 +385,12 @@ namespace tickMeter.Classes
             else
             {
                 quality += packetLossWeight;
+            }
+
+            if (_missingPingSamples >= MissingPingTolerance)
+            {
+                float availabilityPenalty = Math.Min(1f, (_missingPingSamples - MissingPingTolerance) / (float)Math.Max(1, MissingPingCritical - MissingPingTolerance));
+                quality *= (1f - 0.25f * availabilityPenalty);
             }
             
             // Ограничиваем результат перед применением EMA
@@ -362,7 +426,8 @@ namespace tickMeter.Classes
         /// </summary>
         private static void PredictNetworkIssues()
         {
-            var issues = new List<string>();
+                var issues = new List<string>();
+                float effectiveTargetTickrate = GetCurrentTargetTickrate();
             
             // Проверяем тренды в данных
             if (_pingHistory.Count >= 20)
@@ -409,10 +474,10 @@ namespace tickMeter.Classes
             }
             
             // Проверяем падение среднего tickrate
-            if (_tickrateHistory.Count >= 10)
+                if (effectiveTargetTickrate > 0 && _tickrateHistory.Count >= 10)
             {
                 float avgTickrate = _tickrateHistory.Average();
-                if (avgTickrate < _targetTickrate * 0.9f) // Падение ниже 90% от цели
+                    if (avgTickrate < effectiveTargetTickrate * 0.9f) // Падение ниже 90% от цели
                 {
                     issues.Add("Tickrate below target");
                 }
@@ -423,6 +488,11 @@ namespace tickMeter.Classes
             {
                 issues.Add("Overall network quality below threshold");
             }
+
+                if (_missingPingSamples >= MissingPingTolerance)
+                {
+                    issues.Add("Ping data unavailable");
+                }
             
             IsPredictingIssues = issues.Count > 0;
             PredictionDetails = issues.Count > 0 ? string.Join(", ", issues) : "";
@@ -477,7 +547,52 @@ namespace tickMeter.Classes
                 
                 // Сбрасываем EMA
                 _overallEma = -1f;
+                _dynamicTargetTickrate = _manualTargetTickrate;
+                _lastValidPing = -1f;
+                _missingPingSamples = 0;
             }
+        }
+
+        private static float GetEffectiveTargetTickrate()
+        {
+            if (!_targetTickrateAuto)
+            {
+                return _manualTargetTickrate;
+            }
+
+            _dynamicTargetTickrate = CalculateDynamicTargetTickrate();
+            return _dynamicTargetTickrate > 0 ? _dynamicTargetTickrate : _manualTargetTickrate;
+        }
+
+        private static float GetCurrentTargetTickrate()
+        {
+            return _targetTickrateAuto ? _dynamicTargetTickrate : _manualTargetTickrate;
+        }
+
+        private static float CalculateDynamicTargetTickrate()
+        {
+            var values = _tickrateHistory.Where(x => x > 0).ToArray();
+            if (values.Length == 0)
+            {
+                return _manualTargetTickrate;
+            }
+
+            Array.Sort(values);
+            int idx = (int)Math.Round(values.Length * 0.9) - 1;
+            idx = Math.Max(0, Math.Min(idx, values.Length - 1));
+            float percentile = values[idx];
+
+            // Ограничиваем разумными пределами для игровых серверов
+            percentile = Math.Max(30f, Math.Min(260f, percentile));
+
+            // Плавно обновляем динамический таргет, чтобы избежать скачков
+            if (_dynamicTargetTickrate <= 0)
+            {
+                return percentile;
+            }
+
+            float blendAlpha = 0.2f; // быстрая адаптация, но без резких прыжков
+            return _dynamicTargetTickrate + blendAlpha * (percentile - _dynamicTargetTickrate);
         }
     }
     

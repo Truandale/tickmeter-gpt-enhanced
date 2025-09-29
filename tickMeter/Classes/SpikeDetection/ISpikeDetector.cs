@@ -14,6 +14,15 @@ namespace tickMeter.Classes.SpikeDetection
     }
 
     /// <summary>
+    /// Фаза события спайка
+    /// </summary>
+    public enum SpikeEventPhase
+    {
+        Start,
+        End
+    }
+
+    /// <summary>
     /// Событие обнаружения спайка
     /// </summary>
     public struct SpikeEvent
@@ -25,7 +34,11 @@ namespace tickMeter.Classes.SpikeDetection
         public double Threshold { get; set; }
         public double Energy { get; set; }
         public TimeSpan Duration { get; set; }
-        
+        public SpikeEventPhase Phase { get; set; }
+        public bool IsConfirmed { get; set; }
+        public double PeakValue { get; set; }
+        public double LastValue { get; set; }
+
         public SpikeEvent(DateTime timestamp, MetricKind metric, double value, double baseline, double threshold, double energy)
         {
             Timestamp = timestamp;
@@ -35,6 +48,10 @@ namespace tickMeter.Classes.SpikeDetection
             Threshold = threshold;
             Energy = energy;
             Duration = TimeSpan.Zero;
+            Phase = SpikeEventPhase.End;
+            IsConfirmed = true;
+            PeakValue = value;
+            LastValue = value;
         }
     }
 
@@ -111,14 +128,19 @@ namespace tickMeter.Classes.SpikeDetection
         // Рефракторный период (мс)
         public int RefractoryPeriodMs { get; set; } = 1000;
         
-        // Энергетические пороги
-        public double MinEnergyThreshold { get; set; } = 1.0;
+    // Энергетические пороги
+    public double MinEnergyThreshold { get; set; } = 1.0;
         
-        // Минимальная длительность спайка (мс)
-        public int MinSpikeDurationMs { get; set; } = 100;
+    // Минимальная длительность спайка (мс)
+    public int MinSpikeDurationMs { get; set; } = 100;
         
-        // Размер окна для инициализации
-        public int InitWindowSize { get; set; } = 20;
+    // Обработка Δt для расчёта энергии
+    public double MinDeltaTimeSeconds { get; set; } = 0.01;
+    public double MaxDeltaTimeSeconds { get; set; } = 5.0;
+    public double DefaultSampleIntervalSeconds { get; set; } = 0.5;
+        
+    // Размер окна для инициализации
+    public int InitWindowSize { get; set; } = 20;
 
         // Критическое исправление #8: Специфичные по метрикам коэффициенты чувствительности
         public Dictionary<MetricKind, double> MetricSensitivityCoefficients { get; set; }
