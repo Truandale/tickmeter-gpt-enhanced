@@ -88,7 +88,7 @@ namespace tickMeter.Forms
         public DbdStatsManager DbdMngr;
         public string targetKey = "";
         private int _gcCounter = 0; // Счётчик для периодической сборки мусора
-    private const int ChartMaxPoints = 120;
+    private const int InitialTickrateWindowSeconds = 120;
     private const string TickrateChartAreaName = "TickrateArea";
     private const string TickrateSeriesName = "Tickrate";
     private const string TickrateAverageSeriesName = "TickrateAverage";
@@ -684,7 +684,7 @@ namespace tickMeter.Forms
                             //update tickrate chart
                             if (App.settingsForm.settings_chart_checkbox.Checked)
                             {
-                                QueueUIUpdate(() => UpdateTickrateChart(App.meterState.TicksHistory));
+                                QueueUIUpdate(() => UpdateTickrateChart(App.meterState.TicksHistory, App.meterState.TickTimestamps));
                             }
                             
                             //update traffic
@@ -1098,15 +1098,21 @@ namespace tickMeter.Forms
                 area.AxisX.MajorGrid.Enabled = true;
                 area.AxisX.MajorGrid.LineColor = gridColor;
                 area.AxisX.MajorGrid.LineDashStyle = ChartDashStyle.Dot;
+                area.AxisX.MajorGrid.IntervalType = DateTimeIntervalType.Seconds;
+                area.AxisX.MajorGrid.Interval = 5;
                 area.AxisX.MinorGrid.Enabled = false;
                 area.AxisX.LineColor = axisLineColor;
                 area.AxisX.MajorTickMark.LineColor = axisLineColor;
                 area.AxisX.LabelStyle.ForeColor = Color.FromArgb(220, _neutralActiveColor);
                 area.AxisX.LabelStyle.Font = new Font("Segoe UI", 8f, FontStyle.Regular);
+                area.AxisX.LabelStyle.Format = "HH:mm:ss";
+                area.AxisX.LabelStyle.IsEndLabelVisible = true;
                 area.AxisX.IsMarginVisible = false;
-                area.AxisX.IntervalAutoMode = IntervalAutoMode.VariableCount;
-                area.AxisX.Minimum = 1;
-                area.AxisX.Maximum = ChartMaxPoints;
+                area.AxisX.IntervalType = DateTimeIntervalType.Seconds;
+                area.AxisX.Interval = 5;
+                var now = DateTime.Now;
+                area.AxisX.Minimum = now.AddSeconds(-InitialTickrateWindowSeconds).ToOADate();
+                area.AxisX.Maximum = now.ToOADate();
 
                 // Ось Y
                 area.AxisY.MajorGrid.Enabled = true;
@@ -1131,9 +1137,9 @@ namespace tickMeter.Forms
                     ChartType = SeriesChartType.FastLine,
                     Color = _neutralActiveColor,
                     BorderWidth = 2,
-                    XValueType = ChartValueType.Int32,
+                    XValueType = ChartValueType.DateTime,
                     YValueType = ChartValueType.Int32,
-                    IsXValueIndexed = true,
+                    IsXValueIndexed = false,
                     ChartArea = area.Name,
                     IsVisibleInLegend = false
                 };
@@ -1141,21 +1147,20 @@ namespace tickMeter.Forms
                 series.EmptyPointStyle.Color = _neutralActiveColor;
                 series.EmptyPointStyle.BorderWidth = 0;
 
-                Color averageColor = Color.FromArgb(72, 132, 255);
                 Series averageSeries = new Series(TickrateAverageSeriesName)
                 {
                     ChartType = SeriesChartType.FastLine,
-                    Color = averageColor,
+                    Color = TickrateAverageColor,
                     BorderWidth = 2,
                     BorderDashStyle = ChartDashStyle.Dash,
-                    XValueType = ChartValueType.Int32,
+                    XValueType = ChartValueType.DateTime,
                     YValueType = ChartValueType.Double,
-                    IsXValueIndexed = true,
+                    IsXValueIndexed = false,
                     ChartArea = area.Name,
                     IsVisibleInLegend = false
                 };
 
-                averageSeries.EmptyPointStyle.Color = averageColor;
+                averageSeries.EmptyPointStyle.Color = averageSeries.Color;
                 averageSeries.EmptyPointStyle.BorderWidth = 0;
 
                 TickrateChart1.Series.Add(series);
@@ -1180,7 +1185,7 @@ namespace tickMeter.Forms
             ResetTickrateChart();
         }
 
-        private void UpdateTickrateChart(List<int> ticks)
+        private void UpdateTickrateChart(List<int> ticks, List<DateTime> timestamps)
         {
             if (TickrateChart1 == null || TickrateChart1.IsDisposed)
             {
@@ -1210,26 +1215,35 @@ namespace tickMeter.Forms
                 points.Clear();
                 averagePoints.Clear();
 
-                if (ticks == null || ticks.Count == 0)
+                int ticksCount = ticks?.Count ?? 0;
+                int timestampsCount = timestamps?.Count ?? 0;
+
+                if (ticksCount == 0 || timestampsCount == 0)
                 {
                     area.AxisY.Minimum = 0;
                     area.AxisY.Maximum = 60;
                     area.AxisY.Interval = 10;
-                    area.AxisX.Minimum = 0;
-                    area.AxisX.Maximum = ChartMaxPoints;
-                    area.AxisX.Interval = Math.Max(1d, ChartMaxPoints / 6d);
+                    DateTime now = DateTime.Now;
+                    ConfigureTickrateTimeAxis(area, now.AddSeconds(-InitialTickrateWindowSeconds), now);
                     return;
                 }
 
-                int visibleCount = Math.Min(ChartMaxPoints, ticks.Count);
-                int startIndex = ticks.Count - visibleCount;
+                int count = Math.Min(ticksCount, timestampsCount);
                 double maxValue = 0;
                 double rollingSum = 0;
+                DateTime? minTime = null;
+                DateTime? maxTime = null;
 
-                for (int i = 0; i < visibleCount; i++)
+                for (int i = 0; i < count; i++)
                 {
-                    int tickValue = ticks[startIndex + i];
-                    points.AddXY(i + 1, tickValue);
+                    int tickValue = ticks[i];
+                    DateTime timestamp = timestamps[i];
+                    if (timestamp == DateTime.MinValue)
+                    {
+                        timestamp = (maxTime ?? DateTime.Now).AddMilliseconds(16);
+                    }
+
+                    points.AddXY(timestamp, tickValue);
                     if (tickValue > maxValue)
                     {
                         maxValue = tickValue;
@@ -1238,12 +1252,21 @@ namespace tickMeter.Forms
                     rollingSum += tickValue;
                     if (i >= TickrateAverageWindow)
                     {
-                        rollingSum -= ticks[startIndex + i - TickrateAverageWindow];
+                        rollingSum -= ticks[i - TickrateAverageWindow];
                     }
 
                     int windowSize = Math.Min(TickrateAverageWindow, i + 1);
                     double averageValue = windowSize > 0 ? rollingSum / windowSize : tickValue;
-                    averagePoints.AddXY(i + 1, averageValue);
+                    averagePoints.AddXY(timestamp, averageValue);
+
+                    if (!minTime.HasValue || timestamp < minTime.Value)
+                    {
+                        minTime = timestamp;
+                    }
+                    if (!maxTime.HasValue || timestamp > maxTime.Value)
+                    {
+                        maxTime = timestamp;
+                    }
                 }
 
                 double dynamicPadding = Math.Max(5d, maxValue * 0.1d);
@@ -1254,9 +1277,9 @@ namespace tickMeter.Forms
                 area.AxisY.Maximum = axisMax;
                 area.AxisY.Interval = axisInterval;
 
-                area.AxisX.Minimum = 1;
-                area.AxisX.Maximum = points.Count > 0 ? points.Count : 1;
-                area.AxisX.Interval = Math.Max(1d, Math.Round(points.Count / 6.0));
+                DateTime axisMin = minTime ?? DateTime.Now.AddSeconds(-InitialTickrateWindowSeconds);
+                DateTime axisMaxTime = maxTime ?? DateTime.Now;
+                ConfigureTickrateTimeAxis(area, axisMin, axisMaxTime);
             }
             finally
             {
@@ -1289,9 +1312,8 @@ namespace tickMeter.Forms
             area.AxisY.Minimum = 0;
             area.AxisY.Maximum = 60;
             area.AxisY.Interval = 10;
-            area.AxisX.Minimum = 0;
-            area.AxisX.Maximum = ChartMaxPoints;
-            area.AxisX.Interval = Math.Max(1d, ChartMaxPoints / 6d);
+            DateTime now = DateTime.Now;
+            ConfigureTickrateTimeAxis(area, now.AddSeconds(-InitialTickrateWindowSeconds), now);
 
             TickrateChart1.Invalidate();
         }
@@ -1322,6 +1344,85 @@ namespace tickMeter.Forms
                 step = 10;
 
             return (float)step;
+        }
+
+        private static void ConfigureTickrateTimeAxis(ChartArea area, DateTime minTime, DateTime maxTime)
+        {
+            if (area == null)
+            {
+                return;
+            }
+
+            if (maxTime <= minTime)
+            {
+                maxTime = minTime.AddSeconds(1);
+            }
+
+            double spanSeconds = (maxTime - minTime).TotalSeconds;
+            if (double.IsNaN(spanSeconds) || double.IsInfinity(spanSeconds))
+            {
+                spanSeconds = 1;
+            }
+
+            area.AxisX.Minimum = minTime.ToOADate();
+            area.AxisX.Maximum = maxTime.ToOADate();
+
+            if (spanSeconds <= 120) // до 2 минут
+            {
+                double intervalSeconds = SelectTimeInterval(spanSeconds, new[] { 1d, 2d, 5d, 10d, 15d, 30d });
+                ApplyTimeAxis(area, DateTimeIntervalType.Seconds, intervalSeconds, "HH:mm:ss");
+            }
+            else if (spanSeconds <= 3600) // до 1 часа
+            {
+                double intervalMinutes = SelectTimeInterval(spanSeconds / 60d, new[] { 1d, 2d, 5d, 10d, 15d });
+                ApplyTimeAxis(area, DateTimeIntervalType.Minutes, intervalMinutes, "HH:mm");
+            }
+            else if (spanSeconds <= 14400) // до 4 часов
+            {
+                double intervalMinutes = SelectTimeInterval(spanSeconds / 60d, new[] { 5d, 10d, 15d, 30d });
+                ApplyTimeAxis(area, DateTimeIntervalType.Minutes, intervalMinutes, "HH:mm");
+            }
+            else if (spanSeconds <= 86400) // до суток
+            {
+                double intervalHours = SelectTimeInterval(spanSeconds / 3600d, new[] { 1d, 2d, 3d, 6d, 12d });
+                ApplyTimeAxis(area, DateTimeIntervalType.Hours, intervalHours, "dd.MM HH:mm");
+            }
+            else
+            {
+                double intervalDays = SelectTimeInterval(spanSeconds / 86400d, new[] { 1d, 2d, 3d, 7d, 14d });
+                string format = spanSeconds <= 604800 ? "dd.MM" : "dd.MM.yyyy";
+                ApplyTimeAxis(area, DateTimeIntervalType.Days, intervalDays, format);
+            }
+        }
+
+        private static void ApplyTimeAxis(ChartArea area, DateTimeIntervalType intervalType, double interval, string labelFormat)
+        {
+            interval = Math.Max(interval, 1d);
+            area.AxisX.IntervalType = intervalType;
+            area.AxisX.Interval = interval;
+            area.AxisX.LabelStyle.Format = labelFormat;
+            area.AxisX.MajorGrid.IntervalType = intervalType;
+            area.AxisX.MajorGrid.Interval = interval;
+            area.AxisX.MajorTickMark.IntervalType = intervalType;
+            area.AxisX.MajorTickMark.Interval = interval;
+        }
+
+        private static double SelectTimeInterval(double spanUnits, IReadOnlyList<double> candidates)
+        {
+            if (spanUnits <= 0)
+            {
+                return candidates[0];
+            }
+
+            foreach (double candidate in candidates)
+            {
+                if (spanUnits / candidate <= 8d)
+                {
+                    return candidate;
+                }
+            }
+
+            return candidates[candidates.Count - 1];
         }
 
         private static Color GetDropsColor(float dropsPercent)

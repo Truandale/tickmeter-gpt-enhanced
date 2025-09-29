@@ -38,6 +38,9 @@ namespace tickMeter
 
         public int AvgTickrate;
         public List<int> TicksHistory { get; set; }
+        public List<DateTime> TickTimestamps { get; set; }
+        private const int TickHistoryDownsampleThreshold = 6000;
+        private const int TickHistoryRecentKeep = 2000;
         public List<float> tickTimeBuffer = new List<float>();
         public List<float> pingBuffer = new List<float>();
         public List<float> tickrateGraph = new List<float>();
@@ -170,6 +173,7 @@ namespace tickMeter
                     }
 
                     TicksHistory.Add(OutputTickRate);
+                    TickTimestamps?.Add(value);
                     if (tickrateGraph.Count > 511)
                     {
                         tickrateGraph.RemoveAt(0);
@@ -177,6 +181,8 @@ namespace tickMeter
                     tickrateGraph.Add(OutputTickRate);
                     TickRateLog += timeStamp.ToString() + ";" + OutputTickRate.ToString() + Environment.NewLine;
                     TickRate = 0;
+
+                    DownsampleTickHistoryIfNeeded();
 
                     // --- Единый буфер для графика пинга: UDP > TCP > ICMP ---
                     int pingValue = 0;
@@ -261,6 +267,7 @@ namespace tickMeter
             SessionStart = DateTime.Now;
             Game = "";
             TicksHistory = new List<int>();
+            TickTimestamps = new List<DateTime>();
 
             tickTimeBuffer.Clear();
             tickrateGraph.Clear();
@@ -330,6 +337,63 @@ namespace tickMeter
             float percent = ((float)lostTicks / (float)totalSamples) * 100f;
             percent = Math.Max(0f, Math.Min(100f, percent));
             return percent;
+        }
+
+        private void DownsampleTickHistoryIfNeeded()
+        {
+            if (TicksHistory == null || TickTimestamps == null)
+            {
+                return;
+            }
+
+            int totalCount = TicksHistory.Count;
+            if (totalCount <= TickHistoryDownsampleThreshold)
+            {
+                return;
+            }
+
+            int keepRecent = Math.Min(TickHistoryRecentKeep, totalCount);
+            int compressCount = totalCount - keepRecent;
+            if (compressCount < 4)
+            {
+                return;
+            }
+
+            int targetCapacity = keepRecent + (compressCount + 1) / 2;
+            var downsampledTicks = new List<int>(targetCapacity);
+            var downsampledTimestamps = new List<DateTime>(targetCapacity);
+
+            int index = 0;
+            for (; index + 1 < compressCount; index += 2)
+            {
+                int tickA = TicksHistory[index];
+                int tickB = TicksHistory[index + 1];
+                int averagedTick = (int)Math.Round((tickA + tickB) / 2.0);
+
+                DateTime timeA = TickTimestamps[index];
+                DateTime timeB = TickTimestamps[index + 1];
+                long averagedTicks = timeA.Ticks + ((timeB.Ticks - timeA.Ticks) / 2);
+                var averagedTime = new DateTime(averagedTicks, timeA.Kind);
+
+                downsampledTicks.Add(averagedTick);
+                downsampledTimestamps.Add(averagedTime);
+            }
+
+            if (index < compressCount)
+            {
+                downsampledTicks.Add(TicksHistory[index]);
+                downsampledTimestamps.Add(TickTimestamps[index]);
+                index++;
+            }
+
+            for (; index < totalCount; index++)
+            {
+                downsampledTicks.Add(TicksHistory[index]);
+                downsampledTimestamps.Add(TickTimestamps[index]);
+            }
+
+            TicksHistory = downsampledTicks;
+            TickTimestamps = downsampledTimestamps;
         }
 
         public class GameServer
