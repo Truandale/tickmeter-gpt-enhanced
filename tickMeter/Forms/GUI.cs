@@ -91,6 +91,8 @@ namespace tickMeter.Forms
     private const int ChartMaxPoints = 120;
     private const string TickrateChartAreaName = "TickrateArea";
     private const string TickrateSeriesName = "Tickrate";
+    private const string TickrateAverageSeriesName = "TickrateAverage";
+    private const int TickrateAverageWindow = 20;
         
         // Stage 5: Analytics form
         private SpikeAnalyticsForm _spikeAnalyticsForm;
@@ -113,8 +115,9 @@ namespace tickMeter.Forms
                 int.Parse(App.settingsManager?.GetOption("overlay_fps", "15", "ADVANCED") ?? "15"))))));
         
         private static readonly Color DefaultNeutralActiveColor = Color.FromArgb(0xFF, 0x80, 0x40);
-    private readonly Color _inactiveMetricColor = Color.FromArgb(0x44, 0x44, 0x44);
-    private Color _neutralActiveColor = DefaultNeutralActiveColor;
+        private static readonly Color TickrateAverageColor = Color.FromArgb(0x4A, 0xA1, 0xFF);
+        private readonly Color _inactiveMetricColor = Color.FromArgb(0x44, 0x44, 0x44);
+        private Color _neutralActiveColor = DefaultNeutralActiveColor;
 
         private const int WM_ACTIVATE = 0x0006;
         private const int WA_ACTIVE = 1;
@@ -1138,7 +1141,25 @@ namespace tickMeter.Forms
                 series.EmptyPointStyle.Color = _neutralActiveColor;
                 series.EmptyPointStyle.BorderWidth = 0;
 
+                Color averageColor = Color.FromArgb(72, 132, 255);
+                Series averageSeries = new Series(TickrateAverageSeriesName)
+                {
+                    ChartType = SeriesChartType.FastLine,
+                    Color = averageColor,
+                    BorderWidth = 2,
+                    BorderDashStyle = ChartDashStyle.Dash,
+                    XValueType = ChartValueType.Int32,
+                    YValueType = ChartValueType.Double,
+                    IsXValueIndexed = true,
+                    ChartArea = area.Name,
+                    IsVisibleInLegend = false
+                };
+
+                averageSeries.EmptyPointStyle.Color = averageColor;
+                averageSeries.EmptyPointStyle.BorderWidth = 0;
+
                 TickrateChart1.Series.Add(series);
+                TickrateChart1.Series.Add(averageSeries);
             }
             catch (Exception ex)
             {
@@ -1167,7 +1188,8 @@ namespace tickMeter.Forms
             }
 
             Series series = TickrateChart1.Series.FindByName(TickrateSeriesName);
-            if (series == null)
+            Series averageSeries = TickrateChart1.Series.FindByName(TickrateAverageSeriesName);
+            if (series == null || averageSeries == null)
             {
                 return;
             }
@@ -1179,11 +1201,14 @@ namespace tickMeter.Forms
                 return;
             }
             DataPointCollection points = series.Points;
+            DataPointCollection averagePoints = averageSeries.Points;
 
             points.SuspendUpdates();
+            averagePoints.SuspendUpdates();
             try
             {
                 points.Clear();
+                averagePoints.Clear();
 
                 if (ticks == null || ticks.Count == 0)
                 {
@@ -1199,6 +1224,7 @@ namespace tickMeter.Forms
                 int visibleCount = Math.Min(ChartMaxPoints, ticks.Count);
                 int startIndex = ticks.Count - visibleCount;
                 double maxValue = 0;
+                double rollingSum = 0;
 
                 for (int i = 0; i < visibleCount; i++)
                 {
@@ -1208,6 +1234,16 @@ namespace tickMeter.Forms
                     {
                         maxValue = tickValue;
                     }
+
+                    rollingSum += tickValue;
+                    if (i >= TickrateAverageWindow)
+                    {
+                        rollingSum -= ticks[startIndex + i - TickrateAverageWindow];
+                    }
+
+                    int windowSize = Math.Min(TickrateAverageWindow, i + 1);
+                    double averageValue = windowSize > 0 ? rollingSum / windowSize : tickValue;
+                    averagePoints.AddXY(i + 1, averageValue);
                 }
 
                 double dynamicPadding = Math.Max(5d, maxValue * 0.1d);
@@ -1224,6 +1260,7 @@ namespace tickMeter.Forms
             }
             finally
             {
+                averagePoints.ResumeUpdates();
                 points.ResumeUpdates();
             }
 
@@ -1238,10 +1275,10 @@ namespace tickMeter.Forms
             }
 
             Series series = TickrateChart1.Series.FindByName(TickrateSeriesName);
-            if (series != null)
-            {
-                series.Points.Clear();
-            }
+            series?.Points.Clear();
+
+            Series averageSeries = TickrateChart1.Series.FindByName(TickrateAverageSeriesName);
+            averageSeries?.Points.Clear();
 
             ChartArea area = TickrateChart1.ChartAreas.FindByName(TickrateChartAreaName) ??
                              (TickrateChart1.ChartAreas.Count > 0 ? TickrateChart1.ChartAreas[0] : null);
