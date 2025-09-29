@@ -390,6 +390,10 @@ namespace tickMeter
             public int AvgTickrate { get; set; } = 0;
             private const int TickHistoryDownsampleThreshold = 6000;
             private const int TickHistoryRecentKeep = 2000;
+            
+            // History management constants
+            private const int MaxHistoryAgeHours = 24; // Максимальный возраст истории (часы)
+            private const int MaxGraphDataPoints = 1000; // Максимум точек для графика
 
             // --- Individual Traffic tracking for this server ---
             public int UploadTraffic { get; set; } = 0;
@@ -874,13 +878,20 @@ namespace tickMeter
                     CurrentIP = value;
                     if (oldIP != CurrentIP && !string.IsNullOrEmpty(CurrentIP))
                     {
-                        if (App.meterState != null)
-                        {
-                            App.meterState.totalTicksCnt = 0;
-                            App.meterState.loss = 0;
-                            App.meterState.avgStableTickrate = 0;
-                            App.meterState.SessionStart = DateTime.Now;
-                        }
+                        // Reset individual server data for new IP
+                        // This ensures each IP has its own fresh metrics
+                        TicksHistory.Clear();
+                        TickTimestamps.Clear();
+                        TickrateGraph.Clear();
+                        OutputTickRate = 0;
+                        AvgTickrate = 0;
+                        UploadTraffic = 0;
+                        DownloadTraffic = 0;
+                        TotalTicksCount = 0;
+                        LostTicks = 0;
+                        AvgStableTickrate = 0;
+                        TickRateLog = "";
+                        SessionStart = DateTime.Now;
 
                         if (PingTimer == null || !PingTimer.Enabled)
                         {
@@ -1057,6 +1068,12 @@ namespace tickMeter
                 
                 // Downsample history if needed
                 DownsampleTickHistoryIfNeeded();
+                
+                // Clean old data periodically (every 100 updates)
+                if (TotalTicksCount % 100 == 0)
+                {
+                    CleanOldData();
+                }
             }
             
             /// <summary>
@@ -1088,6 +1105,70 @@ namespace tickMeter
             public TimeSpan GetSessionDuration()
             {
                 return DateTime.Now.Subtract(SessionStart);
+            }
+            
+            /// <summary>
+            /// Cleans old data based on age and size limits
+            /// </summary>
+            public void CleanOldData()
+            {
+                CleanOldTickHistory();
+                CleanOldGraphData();
+            }
+            
+            /// <summary>
+            /// Removes tick history older than MaxHistoryAgeHours
+            /// </summary>
+            private void CleanOldTickHistory()
+            {
+                if (TickTimestamps == null || TicksHistory == null || TickTimestamps.Count == 0)
+                    return;
+                    
+                DateTime cutoffTime = DateTime.Now.AddHours(-MaxHistoryAgeHours);
+                int removeCount = 0;
+                
+                for (int i = 0; i < TickTimestamps.Count; i++)
+                {
+                    if (TickTimestamps[i] >= cutoffTime)
+                        break;
+                    removeCount++;
+                }
+                
+                if (removeCount > 0)
+                {
+                    TickTimestamps.RemoveRange(0, removeCount);
+                    TicksHistory.RemoveRange(0, Math.Min(removeCount, TicksHistory.Count));
+                }
+            }
+            
+            /// <summary>
+            /// Keeps graph data within reasonable limits
+            /// </summary>
+            private void CleanOldGraphData()
+            {
+                if (TickrateGraph == null)
+                    return;
+                    
+                while (TickrateGraph.Count > MaxGraphDataPoints)
+                {
+                    TickrateGraph.RemoveAt(0);
+                }
+            }
+            
+            /// <summary>
+            /// Gets server statistics summary
+            /// </summary>
+            public string GetServerStatsSummary()
+            {
+                var duration = GetSessionDuration();
+                var drops = GetDropsPercentage();
+                
+                return $"IP: {Ip}\n" +
+                       $"Session: {duration:hh\\:mm\\:ss}\n" +
+                       $"Avg Tickrate: {AvgTickrate}\n" +
+                       $"Packet Loss: {drops:F2}%\n" +
+                       $"Traffic: ↑{UploadTraffic / (1024 * 1024):F2} ↓{DownloadTraffic / (1024 * 1024):F2} MB\n" +
+                       $"Data Points: {TicksHistory.Count}";
             }
 
             private void DownsampleTickHistoryIfNeeded()
