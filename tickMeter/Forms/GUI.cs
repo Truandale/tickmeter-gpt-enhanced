@@ -241,8 +241,10 @@ namespace tickMeter.Forms
             drops_lbl.Visible = 
             drops_lbl_val.Visible = 
             packetStatsBtn.Visible = 
-            spikeAnalyticsBtn.Visible = 
-            TickrateChart1.Visible = true;
+            spikeAnalyticsBtn.Visible = true;
+            
+            if (TickrateChart1 != null)
+                TickrateChart1.Visible = true;
         }
 
         [PermissionSet(SecurityAction.Demand, Name = "FullTrust")]
@@ -289,11 +291,13 @@ namespace tickMeter.Forms
                 if (!App.settingsForm.settings_chart_checkbox.Checked)
                 {
                     Height = 160;
-                    TickrateChart1.Visible = false;
+                    if (TickrateChart1 != null)
+                        TickrateChart1.Visible = false;
                 }
                 else
                 {
-                    TickrateChart1.Visible = true;
+                    if (TickrateChart1 != null)
+                        TickrateChart1.Visible = true;
                 }
                 Width = 475;
 
@@ -1058,27 +1062,41 @@ namespace tickMeter.Forms
 
         private void ConfigureTickrateChart()
         {
-            if (TickrateChart1 == null)
-            {
-                return;
-            }
-
-            TickrateChart1.SuspendLayout();
             try
             {
+                if (TickrateChart1 == null || TickrateChart1.IsDisposed)
+                {
+                    return;
+                }
+
+                TickrateChart1.SuspendLayout();
+                
+                // Очищаем существующие серии и легенды
                 TickrateChart1.Series.Clear();
                 TickrateChart1.Legends.Clear();
 
+                // Настраиваем область графика
+                if (TickrateChart1.ChartAreas.Count == 0)
+                {
+                    TickrateChart1.ChartAreas.Add(new ChartArea("MainArea"));
+                }
+                
                 ChartArea area = TickrateChart1.ChartAreas[0];
+                area.Name = "MainArea";
                 area.BackColor = Color.Transparent;
                 area.BorderWidth = 0;
+                
+                // Настройка оси X
                 area.AxisX.MajorGrid.Enabled = false;
                 area.AxisX.MinorGrid.Enabled = false;
                 area.AxisX.LineColor = Color.FromArgb(120, Color.White);
                 area.AxisX.LabelStyle.ForeColor = Color.FromArgb(220, Color.White);
                 area.AxisX.LabelStyle.Font = new Font("Segoe UI", 8f, FontStyle.Regular);
                 area.AxisX.IsMarginVisible = false;
+                area.AxisX.Minimum = 1;
+                area.AxisX.Maximum = ChartMaxPoints;
 
+                // Настройка оси Y с красными жирными подписями
                 area.AxisY.MajorGrid.Enabled = true;
                 area.AxisY.MajorGrid.LineColor = Color.FromArgb(70, Color.White);
                 area.AxisY.MajorGrid.LineDashStyle = ChartDashStyle.Dash;
@@ -1089,11 +1107,13 @@ namespace tickMeter.Forms
                 area.AxisY.Maximum = 60;
                 area.AxisY.Interval = 10;
 
+                // Настройка самого графика
                 TickrateChart1.BackColor = Color.Transparent;
                 TickrateChart1.BorderlineWidth = 0;
                 TickrateChart1.AntiAliasing = AntiAliasingStyles.All;
                 TickrateChart1.TextAntiAliasingQuality = TextAntiAliasingQuality.High;
 
+                // Создаем серию данных
                 Series series = new Series("Tickrate")
                 {
                     ChartType = SeriesChartType.FastLine,
@@ -1108,9 +1128,17 @@ namespace tickMeter.Forms
                 TickrateChart1.Series.Add(series);
                 ResetTickrateChart();
             }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[ConfigureTickrateChart] Error: {ex.Message}");
+            }
             finally
             {
-                TickrateChart1.ResumeLayout();
+                try
+                {
+                    TickrateChart1?.ResumeLayout();
+                }
+                catch { }
             }
         }
 
