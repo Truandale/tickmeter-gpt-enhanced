@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
+using System.Windows.Forms.DataVisualization.Charting;
 using PcapDotNet.Core;
 using PcapDotNet.Packets;
 using System.Threading.Tasks;
@@ -80,8 +81,6 @@ namespace tickMeter.Forms
         int restartLimit = 1;
         int lastSelectedAdapterID = -1;
         public string threadID = ""; 
-        int chartLeftPadding = 25;
-        int chartXStep = 4;
         int appInitHeigh;
         int appInitWidth;
         bool OnScreen;
@@ -89,6 +88,7 @@ namespace tickMeter.Forms
         public DbdStatsManager DbdMngr;
         public string targetKey = "";
         private int _gcCounter = 0; // Счётчик для периодической сборки мусора
+    private const int ChartMaxPoints = 120;
         
         // Stage 5: Analytics form
         private SpikeAnalyticsForm _spikeAnalyticsForm;
@@ -110,9 +110,7 @@ namespace tickMeter.Forms
             (int)Math.Round(1000.0 / Math.Max(1, Math.Min(60, 
                 int.Parse(App.settingsManager?.GetOption("overlay_fps", "15", "ADVANCED") ?? "15"))))));
         
-        // Убираем chartBckg как поле класса - теперь создаётся локально в UpdateGraph()
-
-    private static readonly Color DefaultNeutralActiveColor = Color.FromArgb(0xFF, 0x80, 0x40);
+        private static readonly Color DefaultNeutralActiveColor = Color.FromArgb(0xFF, 0x80, 0x40);
     private readonly Color _inactiveMetricColor = Color.FromArgb(0x44, 0x44, 0x44);
     private Color _neutralActiveColor = DefaultNeutralActiveColor;
 
@@ -149,6 +147,7 @@ namespace tickMeter.Forms
                 App.Init();
                 App.gui = this;
                 _neutralActiveColor = LoadNeutralActiveColor();
+                ConfigureTickrateChart();
 
                 // Подписываемся на результаты ping
                 if (App.pingManager != null)
@@ -242,7 +241,8 @@ namespace tickMeter.Forms
             drops_lbl.Visible = 
             drops_lbl_val.Visible = 
             packetStatsBtn.Visible = 
-            spikeAnalyticsBtn.Visible = true;
+            spikeAnalyticsBtn.Visible = 
+            TickrateChart1.Visible = true;
         }
 
         [PermissionSet(SecurityAction.Demand, Name = "FullTrust")]
@@ -289,6 +289,11 @@ namespace tickMeter.Forms
                 if (!App.settingsForm.settings_chart_checkbox.Checked)
                 {
                     Height = 160;
+                    TickrateChart1.Visible = false;
+                }
+                else
+                {
+                    TickrateChart1.Visible = true;
                 }
                 Width = 475;
 
@@ -669,7 +674,7 @@ namespace tickMeter.Forms
                             //update tickrate chart
                             if (App.settingsForm.settings_chart_checkbox.Checked)
                             {
-                                QueueUIUpdate(() => graph.Image = UpdateGraph(App.meterState.TicksHistory));
+                                QueueUIUpdate(() => UpdateTickrateChart(App.meterState.TicksHistory));
                             }
                             
                             //update traffic
@@ -1051,78 +1056,151 @@ namespace tickMeter.Forms
             }
         }
 
-        public Bitmap UpdateGraph(List<int> ticks)
+        private void ConfigureTickrateChart()
         {
-            if (ticks.Count < 2) 
+            if (TickrateChart1 == null)
             {
-                // Возвращаем копию начального изображения без создания лишних объектов
-                return new Bitmap(graph.InitialImage);
+                return;
             }
 
-            // Используем using для автоматического освобождения ресурсов
-            using (var chartBckg = new Bitmap(graph.InitialImage))
-            using (var g = Graphics.FromImage(chartBckg))
-            using (var pen = new Pen(Color.Red, 1))
+            TickrateChart1.SuspendLayout();
+            try
             {
-                int w = graph.Image.Width;
-                int h = graph.Image.Height;
-                int GraphMaxTicks = (w - chartLeftPadding) / chartXStep;
+                TickrateChart1.Series.Clear();
+                TickrateChart1.Legends.Clear();
 
-                // динамически определяем шкалу по видимому диапазону значений
-                int visiblePoints = Math.Min(ticks.Count, GraphMaxTicks + 1);
-                int startIndex = Math.Max(0, ticks.Count - visiblePoints);
+                ChartArea area = TickrateChart1.ChartAreas[0];
+                area.BackColor = Color.Transparent;
+                area.BorderWidth = 0;
+                area.AxisX.MajorGrid.Enabled = false;
+                area.AxisX.MinorGrid.Enabled = false;
+                area.AxisX.LineColor = Color.FromArgb(120, Color.White);
+                area.AxisX.LabelStyle.ForeColor = Color.FromArgb(220, Color.White);
+                area.AxisX.LabelStyle.Font = new Font("Segoe UI", 8f, FontStyle.Regular);
+                area.AxisX.IsMarginVisible = false;
 
-                int maxTickValue = 0;
-                for (int idx = startIndex; idx < ticks.Count; idx++)
+                area.AxisY.MajorGrid.Enabled = true;
+                area.AxisY.MajorGrid.LineColor = Color.FromArgb(70, Color.White);
+                area.AxisY.MajorGrid.LineDashStyle = ChartDashStyle.Dash;
+                area.AxisY.LabelStyle.ForeColor = Color.Red;
+                area.AxisY.LabelStyle.Font = new Font("Segoe UI", 8f, FontStyle.Bold);
+                area.AxisY.LineColor = Color.FromArgb(120, Color.White);
+                area.AxisY.Minimum = 0;
+                area.AxisY.Maximum = 60;
+                area.AxisY.Interval = 10;
+
+                TickrateChart1.BackColor = Color.Transparent;
+                TickrateChart1.BorderlineWidth = 0;
+                TickrateChart1.AntiAliasing = AntiAliasingStyles.All;
+                TickrateChart1.TextAntiAliasingQuality = TextAntiAliasingQuality.High;
+
+                Series series = new Series("Tickrate")
                 {
-                    if (ticks[idx] > maxTickValue)
-                        maxTickValue = ticks[idx];
+                    ChartType = SeriesChartType.FastLine,
+                    Color = _neutralActiveColor,
+                    BorderWidth = 2,
+                    XValueType = ChartValueType.Int32,
+                    YValueType = ChartValueType.Int32,
+                    IsXValueIndexed = true,
+                    ChartArea = area.Name
+                };
+
+                TickrateChart1.Series.Add(series);
+                ResetTickrateChart();
+            }
+            finally
+            {
+                TickrateChart1.ResumeLayout();
+            }
+        }
+
+        private void UpdateTickrateChart(List<int> ticks)
+        {
+            if (TickrateChart1 == null || TickrateChart1.IsDisposed)
+            {
+                return;
+            }
+
+            if (TickrateChart1.Series.Count == 0)
+            {
+                return;
+            }
+
+            Series series = TickrateChart1.Series[0];
+            ChartArea area = TickrateChart1.ChartAreas[0];
+            DataPointCollection points = series.Points;
+
+            points.SuspendUpdates();
+            try
+            {
+                points.Clear();
+
+                if (ticks == null || ticks.Count == 0)
+                {
+                    area.AxisY.Minimum = 0;
+                    area.AxisY.Maximum = 60;
+                    area.AxisY.Interval = 10;
+                    area.AxisX.Minimum = 0;
+                    area.AxisX.Maximum = ChartMaxPoints;
+                    area.AxisX.Interval = Math.Max(1d, ChartMaxPoints / 6d);
+                    return;
                 }
 
-                float dynamicPadding = Math.Max(5f, maxTickValue * 0.1f);
-                float scaleBase = Math.Max(60f, maxTickValue + dynamicPadding);
-                if (scaleBase <= 0f)
-                    scaleBase = 60f;
+                int visibleCount = Math.Min(ChartMaxPoints, ticks.Count);
+                int startIndex = ticks.Count - visibleCount;
+                double maxValue = 0;
 
-                float scale = h / scaleBase;
-
-                // Рисуем адаптивную сетку
-                float rawStep = scaleBase / 5f;
-                float gridStep = GetNiceGridStep(rawStep);
-
-                using (var gridPen = new Pen(Color.FromArgb(70, Color.White), 1))
-                using (var font = new Font("Segoe UI", 7f, FontStyle.Regular))
-                using (var brush = new SolidBrush(Color.FromArgb(210, Color.White)))
+                for (int i = 0; i < visibleCount; i++)
                 {
-                    for (float level = gridStep; level < scaleBase; level += gridStep)
+                    int tickValue = ticks[startIndex + i];
+                    points.AddXY(i + 1, tickValue);
+                    if (tickValue > maxValue)
                     {
-                        int y = h - (int)Math.Round(level * scale);
-                        if (y < 0 || y >= h)
-                            continue;
-
-                        g.DrawLine(gridPen, chartLeftPadding, y, w - 1, y);
-
-                        string label = level >= 100 ? level.ToString("N0", CultureInfo.InvariantCulture)
-                                                    : level.ToString("N1", CultureInfo.InvariantCulture);
-                        float labelY = y - font.Height / 2f;
-                        if (labelY < 0) labelY = 0;
-                        g.DrawString(label, font, brush, 2f, labelY);
+                        maxValue = tickValue;
                     }
                 }
 
-                int stepX = 0;
-                
-                for (int i = ticks.Count - 2; i >= 0 && ticks.Count - i - 1 < GraphMaxTicks; i--)
-                {
-                    stepX++;
-                    g.DrawLine(pen, 
-                        new Point(chartLeftPadding + (stepX - 1) * chartXStep, h - (int)Math.Round(ticks[i + 1] * scale)), 
-                        new Point(chartLeftPadding + stepX * chartXStep, h - (int)Math.Round(ticks[i] * scale)));
-                }
-                
-                // Возвращаем копию, чтобы исходный bitmap можно было корректно освободить
-                return new Bitmap(chartBckg);
+                double dynamicPadding = Math.Max(5d, maxValue * 0.1d);
+                double axisMax = Math.Max(60d, maxValue + dynamicPadding);
+                double axisInterval = Math.Max(1d, GetNiceGridStep((float)(axisMax / 5d)));
+
+                area.AxisY.Minimum = 0;
+                area.AxisY.Maximum = axisMax;
+                area.AxisY.Interval = axisInterval;
+
+                area.AxisX.Minimum = 1;
+                area.AxisX.Maximum = points.Count > 0 ? points.Count : 1;
+                area.AxisX.Interval = Math.Max(1d, Math.Round(points.Count / 6.0));
             }
+            finally
+            {
+                points.ResumeUpdates();
+            }
+
+            TickrateChart1.Invalidate();
+        }
+
+        private void ResetTickrateChart()
+        {
+            if (TickrateChart1 == null || TickrateChart1.IsDisposed)
+            {
+                return;
+            }
+
+            if (TickrateChart1.Series.Count > 0)
+            {
+                TickrateChart1.Series[0].Points.Clear();
+            }
+
+            ChartArea area = TickrateChart1.ChartAreas[0];
+            area.AxisY.Minimum = 0;
+            area.AxisY.Maximum = 60;
+            area.AxisY.Interval = 10;
+            area.AxisX.Minimum = 0;
+            area.AxisX.Maximum = ChartMaxPoints;
+            area.AxisX.Interval = Math.Max(1d, ChartMaxPoints / 6d);
+
+            TickrateChart1.Invalidate();
         }
 
         private static float GetNiceGridStep(float rawStep)
@@ -1771,7 +1849,7 @@ namespace tickMeter.Forms
             ip_val.Text = string.Empty;
             countryLbl.ForeColor = _inactiveMetricColor;
             countryLbl.Text = string.Empty;
-            try { graph.Image = graph.InitialImage; } catch(Exception) {  }
+            try { ResetTickrateChart(); } catch(Exception) {  }
             
             
             if (App.settingsForm.settings_log_checkbox.Checked)
@@ -2419,7 +2497,12 @@ namespace tickMeter.Forms
                 DebugLogger.log(ex);
             }
         }
-        
+
         #endregion Stage 5: Spike Analytics
+
+        private void chart1_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

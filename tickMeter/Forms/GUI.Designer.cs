@@ -30,6 +30,9 @@
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(GUI));
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
+            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.tickrate_lbl = new System.Windows.Forms.Label();
             this.ticksLoop = new System.Windows.Forms.Timer(this.components);
             this.tickrate_val = new System.Windows.Forms.Label();
@@ -48,19 +51,19 @@
             this.packetStatsBtn = new System.Windows.Forms.PictureBox();
             this.spikeAnalyticsBtn = new System.Windows.Forms.PictureBox();
             this.SettingsButton = new System.Windows.Forms.PictureBox();
-            this.graph = new System.Windows.Forms.PictureBox();
             this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
             this.icon_menu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.exit = new System.Windows.Forms.ToolStripMenuItem();
             this.drops_lbl = new System.Windows.Forms.Label();
             this.drops_lbl_val = new System.Windows.Forms.Label();
+            this.TickrateChart1 = new System.Windows.Forms.DataVisualization.Charting.Chart();
             ((System.ComponentModel.ISupportInitialize)(this.webStatsButton)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gameProfilesButton)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.packetStatsBtn)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.spikeAnalyticsBtn)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.SettingsButton)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.graph)).BeginInit();
             this.icon_menu.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.TickrateChart1)).BeginInit();
             this.SuspendLayout();
             // 
             // tickrate_lbl
@@ -73,7 +76,7 @@
             this.tickrate_lbl.Location = new System.Drawing.Point(16, 11);
             this.tickrate_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.tickrate_lbl.Name = "tickrate_lbl";
-            this.tickrate_lbl.Size = new System.Drawing.Size(203, 48);
+            this.tickrate_lbl.Size = new System.Drawing.Size(162, 39);
             this.tickrate_lbl.TabIndex = 18;
             this.tickrate_lbl.Text = "Tickrate:";
             this.tickrate_lbl.UseCompatibleTextRendering = true;
@@ -93,7 +96,7 @@
             this.tickrate_val.Location = new System.Drawing.Point(237, 7);
             this.tickrate_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.tickrate_val.Name = "tickrate_val";
-            this.tickrate_val.Size = new System.Drawing.Size(45, 65);
+            this.tickrate_val.Size = new System.Drawing.Size(36, 53);
             this.tickrate_val.TabIndex = 24;
             this.tickrate_val.Text = "0";
             this.tickrate_val.UseCompatibleTextRendering = true;
@@ -109,7 +112,7 @@
             this.ping_val.Location = new System.Drawing.Point(237, 113);
             this.ping_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.ping_val.Name = "ping_val";
-            this.ping_val.Size = new System.Drawing.Size(97, 48);
+            this.ping_val.Size = new System.Drawing.Size(77, 39);
             this.ping_val.TabIndex = 25;
             this.ping_val.Text = "0 ms";
             this.ping_val.UseCompatibleTextRendering = true;
@@ -125,7 +128,7 @@
             this.ping_lbl.Location = new System.Drawing.Point(16, 113);
             this.ping_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.ping_lbl.Name = "ping_lbl";
-            this.ping_lbl.Size = new System.Drawing.Size(139, 48);
+            this.ping_lbl.Size = new System.Drawing.Size(111, 39);
             this.ping_lbl.TabIndex = 26;
             this.ping_lbl.Text = "Ping :";
             this.ping_lbl.UseCompatibleTextRendering = true;
@@ -140,7 +143,7 @@
             this.ip_lbl.Location = new System.Drawing.Point(16, 65);
             this.ip_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.ip_lbl.Name = "ip_lbl";
-            this.ip_lbl.Size = new System.Drawing.Size(75, 48);
+            this.ip_lbl.Size = new System.Drawing.Size(60, 39);
             this.ip_lbl.TabIndex = 27;
             this.ip_lbl.Text = "IP:";
             this.ip_lbl.UseCompatibleTextRendering = true;
@@ -156,7 +159,7 @@
             this.ip_val.Location = new System.Drawing.Point(237, 65);
             this.ip_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.ip_val.Name = "ip_val";
-            this.ip_val.Size = new System.Drawing.Size(330, 48);
+            this.ip_val.Size = new System.Drawing.Size(264, 39);
             this.ip_val.TabIndex = 28;
             this.ip_val.Text = "000.000.000.000";
             this.ip_val.UseCompatibleTextRendering = true;
@@ -173,7 +176,7 @@
             this.countryLbl.Location = new System.Drawing.Point(331, 25);
             this.countryLbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.countryLbl.Name = "countryLbl";
-            this.countryLbl.Size = new System.Drawing.Size(0, 35);
+            this.countryLbl.Size = new System.Drawing.Size(0, 28);
             this.countryLbl.TabIndex = 29;
             this.countryLbl.UseCompatibleTextRendering = true;
             // 
@@ -193,7 +196,7 @@
             this.traffic_lbl.Location = new System.Drawing.Point(15, 161);
             this.traffic_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.traffic_lbl.Name = "traffic_lbl";
-            this.traffic_lbl.Size = new System.Drawing.Size(160, 48);
+            this.traffic_lbl.Size = new System.Drawing.Size(128, 39);
             this.traffic_lbl.TabIndex = 38;
             this.traffic_lbl.Text = "UP/DL :";
             this.traffic_lbl.UseCompatibleTextRendering = true;
@@ -208,7 +211,7 @@
             this.traffic_val.Location = new System.Drawing.Point(236, 161);
             this.traffic_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.traffic_val.Name = "traffic_val";
-            this.traffic_val.Size = new System.Drawing.Size(182, 48);
+            this.traffic_val.Size = new System.Drawing.Size(145, 39);
             this.traffic_val.TabIndex = 37;
             this.traffic_val.Text = "0 / 0 Mb";
             this.traffic_val.UseCompatibleTextRendering = true;
@@ -224,7 +227,7 @@
             this.time_lbl.Location = new System.Drawing.Point(16, 212);
             this.time_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.time_lbl.Name = "time_lbl";
-            this.time_lbl.Size = new System.Drawing.Size(139, 48);
+            this.time_lbl.Size = new System.Drawing.Size(111, 39);
             this.time_lbl.TabIndex = 42;
             this.time_lbl.Text = "Time :";
             this.time_lbl.UseCompatibleTextRendering = true;
@@ -239,7 +242,7 @@
             this.time_val.Location = new System.Drawing.Point(237, 212);
             this.time_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.time_val.Name = "time_val";
-            this.time_val.Size = new System.Drawing.Size(118, 48);
+            this.time_val.Size = new System.Drawing.Size(94, 39);
             this.time_val.TabIndex = 41;
             this.time_val.Text = "00:00";
             this.time_val.UseCompatibleTextRendering = true;
@@ -313,19 +316,6 @@
             this.SettingsButton.Visible = false;
             this.SettingsButton.Click += new System.EventHandler(this.SettingsButton_Click);
             // 
-            // graph
-            // 
-            this.graph.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.graph.Enabled = false;
-            this.graph.Image = global::tickMeter.Properties.Resources.grid;
-            this.graph.InitialImage = global::tickMeter.Properties.Resources.grid;
-            this.graph.Location = new System.Drawing.Point(8, 318);
-            this.graph.Margin = new System.Windows.Forms.Padding(4);
-            this.graph.Name = "graph";
-            this.graph.Size = new System.Drawing.Size(487, 224);
-            this.graph.TabIndex = 34;
-            this.graph.TabStop = false;
-            // 
             // notifyIcon1
             // 
             this.notifyIcon1.ContextMenuStrip = this.icon_menu;
@@ -340,7 +330,7 @@
             this.icon_menu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.exit});
             this.icon_menu.Name = "icon_menu";
-            this.icon_menu.Size = new System.Drawing.Size(103, 28);
+            this.icon_menu.Size = new System.Drawing.Size(93, 26);
             this.icon_menu.Text = "TickMeter";
             this.icon_menu.Opening += new System.ComponentModel.CancelEventHandler(this.icon_menu_Opening);
             this.icon_menu.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.icon_menu_ItemClicked);
@@ -348,7 +338,7 @@
             // exit
             // 
             this.exit.Name = "exit";
-            this.exit.Size = new System.Drawing.Size(102, 24);
+            this.exit.Size = new System.Drawing.Size(92, 22);
             this.exit.Text = "Exit";
             // 
             // drops_lbl
@@ -361,7 +351,7 @@
             this.drops_lbl.Location = new System.Drawing.Point(16, 260);
             this.drops_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.drops_lbl.Name = "drops_lbl";
-            this.drops_lbl.Size = new System.Drawing.Size(139, 48);
+            this.drops_lbl.Size = new System.Drawing.Size(111, 39);
             this.drops_lbl.TabIndex = 45;
             this.drops_lbl.Text = "Drops:";
             this.drops_lbl.UseCompatibleTextRendering = true;
@@ -376,18 +366,36 @@
             this.drops_lbl_val.Location = new System.Drawing.Point(236, 260);
             this.drops_lbl_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.drops_lbl_val.Name = "drops_lbl_val";
-            this.drops_lbl_val.Size = new System.Drawing.Size(54, 48);
+            this.drops_lbl_val.Size = new System.Drawing.Size(43, 39);
             this.drops_lbl_val.TabIndex = 46;
             this.drops_lbl_val.Text = "0%";
             this.drops_lbl_val.UseCompatibleTextRendering = true;
             this.drops_lbl_val.UseMnemonic = false;
+            // 
+            // TickrateChart1
+            // 
+            chartArea1.Name = "ChartArea1";
+            this.TickrateChart1.ChartAreas.Add(chartArea1);
+            legend1.Name = "Legend1";
+            this.TickrateChart1.Legends.Add(legend1);
+            this.TickrateChart1.Location = new System.Drawing.Point(14, 302);
+            this.TickrateChart1.Name = "TickrateChart1";
+            series1.ChartArea = "ChartArea1";
+            series1.Legend = "Legend1";
+            series1.Name = "Series1";
+            this.TickrateChart1.Series.Add(series1);
+            this.TickrateChart1.Size = new System.Drawing.Size(469, 236);
+            this.TickrateChart1.TabIndex = 47;
+            this.TickrateChart1.Text = "Tickrate Graph";
+            this.TickrateChart1.Click += new System.EventHandler(this.chart1_Click);
             // 
             // GUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Control;
-            this.ClientSize = new System.Drawing.Size(577, 540);
+            this.ClientSize = new System.Drawing.Size(579, 540);
+            this.Controls.Add(this.TickrateChart1);
             this.Controls.Add(this.drops_lbl_val);
             this.Controls.Add(this.drops_lbl);
             this.Controls.Add(this.webStatsButton);
@@ -399,7 +407,6 @@
             this.Controls.Add(this.SettingsButton);
             this.Controls.Add(this.traffic_lbl);
             this.Controls.Add(this.traffic_val);
-            this.Controls.Add(this.graph);
             this.Controls.Add(this.countryLbl);
             this.Controls.Add(this.ip_val);
             this.Controls.Add(this.ip_lbl);
@@ -425,8 +432,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.packetStatsBtn)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.spikeAnalyticsBtn)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.SettingsButton)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.graph)).EndInit();
             this.icon_menu.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.TickrateChart1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -439,7 +446,6 @@
         private System.Windows.Forms.Label ip_val;
         private System.Windows.Forms.Label countryLbl;
         private System.Windows.Forms.Timer retryLoop;
-        private System.Windows.Forms.PictureBox graph;
         private System.Windows.Forms.Label traffic_val;
         private System.Windows.Forms.PictureBox SettingsButton;
         public System.Windows.Forms.Label tickrate_lbl;
@@ -457,6 +463,7 @@
         public System.Windows.Forms.Label drops_lbl_val;
         private System.Windows.Forms.PictureBox packetStatsBtn;
         private System.Windows.Forms.PictureBox spikeAnalyticsBtn;
+        private System.Windows.Forms.DataVisualization.Charting.Chart TickrateChart1;
     }
 }
 
