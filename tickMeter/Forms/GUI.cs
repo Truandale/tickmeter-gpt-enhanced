@@ -46,6 +46,30 @@ namespace tickMeter.Forms
         private readonly System.Threading.Timer _uiProcessingTimer;
         private volatile bool _uiProcessingActive = false;
         private readonly object _threadManagementLock = new object();
+
+        private Color LoadNeutralActiveColor()
+        {
+            try
+            {
+                var hex = App.settingsManager?.GetOption("color_mid", "FF8040", "SETTINGS");
+                if (string.IsNullOrWhiteSpace(hex))
+                {
+                    return DefaultNeutralActiveColor;
+                }
+
+                hex = hex.Trim();
+                if (!hex.StartsWith("#", StringComparison.Ordinal))
+                {
+                    hex = "#" + hex;
+                }
+
+                return ColorTranslator.FromHtml(hex);
+            }
+            catch
+            {
+                return DefaultNeutralActiveColor;
+            }
+        }
         
         // Анти-реэнтерабельность для StartTracking/StopTracking (предотвращение роста воркеров)
         private int _startTrackingBusy = 0;
@@ -88,10 +112,9 @@ namespace tickMeter.Forms
         
         // Убираем chartBckg как поле класса - теперь создаётся локально в UpdateGraph()
 
-        private readonly Color _inactiveMetricColor = Color.FromArgb(0x44, 0x44, 0x44);
-        private readonly Color _trafficActiveColor;
-        private readonly Color _timeActiveColor;
-        private readonly Color _ipActiveColor;
+    private static readonly Color DefaultNeutralActiveColor = Color.FromArgb(0xFF, 0x80, 0x40);
+    private readonly Color _inactiveMetricColor = Color.FromArgb(0x44, 0x44, 0x44);
+    private Color _neutralActiveColor = DefaultNeutralActiveColor;
 
         private const int WM_ACTIVATE = 0x0006;
         private const int WA_ACTIVE = 1;
@@ -123,11 +146,9 @@ namespace tickMeter.Forms
             try
             {
                 InitializeComponent();
-                _trafficActiveColor = traffic_val.ForeColor;
-                _timeActiveColor = time_val.ForeColor;
-                _ipActiveColor = ip_val.ForeColor;
                 App.Init();
                 App.gui = this;
+                _neutralActiveColor = LoadNeutralActiveColor();
 
                 // Подписываемся на результаты ping
                 if (App.pingManager != null)
@@ -556,7 +577,20 @@ namespace tickMeter.Forms
                         if (App.settingsForm.settings_ping_checkbox.Checked)
                         {
                             // Phase 3: Single Consumer Pattern - queue UI updates instead of direct Invoke
-                            QueueUIUpdate(() => countryLbl.Text = App.meterState.Server.Location);
+                            QueueUIUpdate(() =>
+                            {
+                                var server = App.meterState.Server;
+                                if (hasActiveSession && server != null && !string.IsNullOrEmpty(server.Location))
+                                {
+                                    countryLbl.Text = server.Location;
+                                    countryLbl.ForeColor = _neutralActiveColor;
+                                }
+                                else
+                                {
+                                    countryLbl.Text = string.Empty;
+                                    countryLbl.ForeColor = _inactiveMetricColor;
+                                }
+                            });
                             QueueUIUpdate(() => {
                                 var server = App.meterState.Server;
                                 string pingText;
@@ -648,7 +682,7 @@ namespace tickMeter.Forms
                                     if (hasActiveSession)
                                     {
                                         traffic_val.Text = activeTrafficText;
-                                        traffic_val.ForeColor = _trafficActiveColor;
+                                        traffic_val.ForeColor = _neutralActiveColor;
                                     }
                                     else
                                     {
@@ -664,7 +698,7 @@ namespace tickMeter.Forms
                                 QueueUIUpdate(() =>
                                 {
                                     ip_val.Text = hasActiveSession ? App.meterState.Server.Ip : string.Empty;
-                                    ip_val.ForeColor = hasActiveSession ? _ipActiveColor : _inactiveMetricColor;
+                                    ip_val.ForeColor = hasActiveSession ? _neutralActiveColor : _inactiveMetricColor;
                                 });
                             }
                             
@@ -680,7 +714,7 @@ namespace tickMeter.Forms
                                     if (hasActiveSession && !string.IsNullOrEmpty(App.meterState.Server.Ip))
                                     {
                                         time_val.Text = duration;
-                                        time_val.ForeColor = _timeActiveColor;
+                                        time_val.ForeColor = _neutralActiveColor;
                                     }
                                     else
                                     {
@@ -1734,6 +1768,8 @@ namespace tickMeter.Forms
             drops_lbl_val.Text = 0f.ToString("n2") + "%";
             ip_val.ForeColor = _inactiveMetricColor;
             ip_val.Text = string.Empty;
+            countryLbl.ForeColor = _inactiveMetricColor;
+            countryLbl.Text = string.Empty;
             try { graph.Image = graph.InitialImage; } catch(Exception) {  }
             
             
