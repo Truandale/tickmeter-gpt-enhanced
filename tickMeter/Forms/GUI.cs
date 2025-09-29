@@ -975,21 +975,91 @@ namespace tickMeter.Forms
             {
                 int w = graph.Image.Width;
                 int h = graph.Image.Height;
-                float scale = (float)h / 61; //2.8
                 int GraphMaxTicks = (w - chartLeftPadding) / chartXStep;
+
+                // динамически определяем шкалу по видимому диапазону значений
+                int visiblePoints = Math.Min(ticks.Count, GraphMaxTicks + 1);
+                int startIndex = Math.Max(0, ticks.Count - visiblePoints);
+
+                int maxTickValue = 0;
+                for (int idx = startIndex; idx < ticks.Count; idx++)
+                {
+                    if (ticks[idx] > maxTickValue)
+                        maxTickValue = ticks[idx];
+                }
+
+                float dynamicPadding = Math.Max(5f, maxTickValue * 0.1f);
+                float scaleBase = Math.Max(60f, maxTickValue + dynamicPadding);
+                if (scaleBase <= 0f)
+                    scaleBase = 60f;
+
+                float scale = h / scaleBase;
+
+                // Рисуем адаптивную сетку
+                float rawStep = scaleBase / 5f;
+                float gridStep = GetNiceGridStep(rawStep);
+
+                using (var gridPen = new Pen(Color.FromArgb(70, Color.White), 1))
+                using (var font = new Font("Segoe UI", 7f, FontStyle.Regular))
+                using (var brush = new SolidBrush(Color.FromArgb(210, Color.White)))
+                {
+                    for (float level = gridStep; level < scaleBase; level += gridStep)
+                    {
+                        int y = h - (int)Math.Round(level * scale);
+                        if (y < 0 || y >= h)
+                            continue;
+
+                        g.DrawLine(gridPen, chartLeftPadding, y, w - 1, y);
+
+                        string label = level >= 100 ? level.ToString("N0", CultureInfo.InvariantCulture)
+                                                    : level.ToString("N1", CultureInfo.InvariantCulture);
+                        float labelY = y - font.Height / 2f;
+                        if (labelY < 0) labelY = 0;
+                        g.DrawString(label, font, brush, 2f, labelY);
+                    }
+                }
+
                 int stepX = 0;
                 
                 for (int i = ticks.Count - 2; i >= 0 && ticks.Count - i - 1 < GraphMaxTicks; i--)
                 {
                     stepX++;
                     g.DrawLine(pen, 
-                        new Point(chartLeftPadding + (stepX - 1) * chartXStep, h - (int)((float)ticks[i + 1] * scale)), 
-                        new Point(chartLeftPadding + stepX * chartXStep, h - (int)((float)ticks[i] * scale)));
+                        new Point(chartLeftPadding + (stepX - 1) * chartXStep, h - (int)Math.Round(ticks[i + 1] * scale)), 
+                        new Point(chartLeftPadding + stepX * chartXStep, h - (int)Math.Round(ticks[i] * scale)));
                 }
                 
                 // Возвращаем копию, чтобы исходный bitmap можно было корректно освободить
                 return new Bitmap(chartBckg);
             }
+        }
+
+        private static float GetNiceGridStep(float rawStep)
+        {
+            if (rawStep <= 0f)
+                return 10f;
+
+            double exponent = Math.Floor(Math.Log10(rawStep));
+            double baseValue = Math.Pow(10, exponent);
+            double normalized = rawStep / baseValue;
+
+            double[] candidates = { 1d, 2d, 2.5d, 5d, 10d };
+            double chosen = candidates[candidates.Length - 1];
+
+            foreach (double candidate in candidates)
+            {
+                if (normalized <= candidate)
+                {
+                    chosen = candidate;
+                    break;
+                }
+            }
+
+            double step = chosen * baseValue;
+            if (step <= 0)
+                step = 10;
+
+            return (float)step;
         }
 
        
