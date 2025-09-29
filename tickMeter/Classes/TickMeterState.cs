@@ -22,7 +22,6 @@ namespace tickMeter
         public bool IsTracking { get; set; } = false;
         public bool ConnectionsManagerFlag = false; // Используется ли ConnectionsManager
 
-        public DateTime SessionStart { get; set; }
         public GameServer Server { get; set; }
 
         public string LocalIP { get; set; }
@@ -38,7 +37,6 @@ namespace tickMeter
 
         public List<float> tickTimeBuffer = new List<float>();
         public List<float> pingBuffer = new List<float>();
-        public List<float> tickrateGraph = new List<float>();
         
         // Thread-safe access to pingBuffer
         private readonly object _pingBufferLock = new object();
@@ -68,15 +66,14 @@ namespace tickMeter
             return tickTime;
         }
 
-        public int avgStableTickrate = 0; // Попытка рассчитать "стабильный" тикрейт
-
-        public int loss = 0;
-        public int totalTicksCnt = 0;
-
         public void updateTicktimeBuffer(long packetTicks)
         {
-            // Увеличиваем только если это действительно игровой tick-пакет
-            totalTicksCnt++;
+            // Используем индивидуальные данные сервера
+            if (Server != null)
+            {
+                Server.TotalTicksCount++;
+            }
+            
             if (tickTimeBuffer.Count > 511)
             {
                 tickTimeBuffer.RemoveAt(0);
@@ -105,11 +102,10 @@ namespace tickMeter
 
         public TickMeterState()
         {
-            // Инициализация буферов для графиков
+            // Инициализация буферов
             for (int i = 0; i < 513; i++)
             {
                 tickTimeBuffer.Add(0);
-                tickrateGraph.Add(0);
                 lock (_pingBufferLock)
                 {
                     pingBuffer.Add(30); // Начальное значение для графика пинга
@@ -154,34 +150,7 @@ namespace tickMeter
                         Server.UpdateTickrate(smoothedTickrate, value);
                     }
                     
-                    // Update legacy global calculations for backward compatibility
-                    if (avgStableTickrate == 0)
-                    {
-                        avgStableTickrate = smoothedTickrate;
-                    }
-                    
-                    var currentAvgTickrate = Server?.AvgTickrate ?? 0;
-                    float ratio = avgStableTickrate > 0 ? ((float)avgStableTickrate / (float)currentAvgTickrate) : 1.0f;
-
-                    if (ratio < 1.5 && ratio > 0.5)
-                    {
-                        avgStableTickrate += (currentAvgTickrate + avgStableTickrate);
-                        avgStableTickrate /= 3;
-                    }
-                    if (totalTicksCnt > 300)
-                    {
-                        int dropped = avgStableTickrate - smoothedTickrate;
-                        if (dropped < 0) { dropped = 0; }
-                        loss += dropped;
-                        if (loss < 0) loss = 0;
-                    }
-
-                    if (tickrateGraph.Count > 511)
-                    {
-                        tickrateGraph.RemoveAt(0);
-                    }
-                    tickrateGraph.Add(smoothedTickrate);
-                    TickRateLog += timeStamp.ToString() + ";" + smoothedTickrate.ToString() + Environment.NewLine;
+                    // Reset tick counter for next measurement
                     TickRate = 0;
 
                     // --- Единый буфер для графика пинга: UDP > TCP > ICMP ---
@@ -228,9 +197,56 @@ namespace tickMeter
             get { return Server != null ? Server.AvgTickrate : 0; }
         }
         
-        public int UploadTraffic { get; set; } = 0;
-        public int DownloadTraffic { get; set; } = 0;
-        public string TickRateLog { get; set; } = "";
+        // Forward traffic data from current server
+        public int UploadTraffic 
+        { 
+            get { return Server != null ? Server.UploadTraffic : 0; }
+            set { if (Server != null) Server.UploadTraffic = value; }
+        }
+        
+        public int DownloadTraffic 
+        { 
+            get { return Server != null ? Server.DownloadTraffic : 0; }
+            set { if (Server != null) Server.DownloadTraffic = value; }
+        }
+        
+        // Forward session data from current server
+        public DateTime SessionStart 
+        { 
+            get { return Server != null ? Server.SessionStart : DateTime.Now; }
+            set { if (Server != null) Server.SessionStart = value; }
+        }
+        
+        // Forward loss data from current server
+        public int totalTicksCnt 
+        { 
+            get { return Server != null ? Server.TotalTicksCount : 0; }
+            set { if (Server != null) Server.TotalTicksCount = value; }
+        }
+        
+        public int loss 
+        { 
+            get { return Server != null ? Server.LostTicks : 0; }
+            set { if (Server != null) Server.LostTicks = value; }
+        }
+        
+        public int avgStableTickrate 
+        { 
+            get { return Server != null ? Server.AvgStableTickrate : 0; }
+            set { if (Server != null) Server.AvgStableTickrate = value; }
+        }
+        
+        // Forward log and graph data from current server
+        public string TickRateLog 
+        { 
+            get { return Server != null ? Server.TickRateLog : ""; }
+            set { if (Server != null) Server.TickRateLog = value; }
+        }
+        
+        public List<float> tickrateGraph 
+        { 
+            get { return Server != null ? Server.TickrateGraph : new List<float>(); }
+        }
 
         // Forward TCP ping (current ping value) from GameServer
         public int TcpPing
@@ -285,17 +301,15 @@ namespace tickMeter
         public void Reset()
         {
             IsTracking = false;
-            SessionStart = DateTime.Now;
             Game = "";
             
-            // Reset server data (individual tickrate data will be reset in Server.Reset())
+            // Reset server data (individual data will be reset in Server.Reset())
             if (Server != null)
             {
                 Server.Reset();
             }
 
             tickTimeBuffer.Clear();
-            tickrateGraph.Clear();
             lock (_pingBufferLock)
             {
                 pingBuffer.Clear();
@@ -303,22 +317,14 @@ namespace tickMeter
             for (int i = 0; i < 513; i++)
             {
                 tickTimeBuffer.Add(0);
-                tickrateGraph.Add(0);
                 lock (_pingBufferLock)
                 {
                     pingBuffer.Add(30);
                 }
             }
 
-            UploadTraffic = 0;
-            DownloadTraffic = 0;
             TickRate = 0;
-            totalTicksCnt = 0;
-            loss = 0;
-            avgStableTickrate = 0;
-            TickRateLog = "";
             timeStamp = DateTime.MinValue; // Сброс для корректной работы CurrentTimestamp
-            Server?.Reset(); // Сброс состояния сервера
         }
 
         public void KillTimers()
@@ -336,30 +342,18 @@ namespace tickMeter
 
         internal string GetDrops()
         {
-            // Исправление: защита от деления на 0 и от аномалий
-            int deliveredTicks = totalTicksCnt;
-            int lostTicks = loss;
-            int totalSamples = deliveredTicks + lostTicks;
-
-            if (totalSamples <= 0)
+            if (Server == null)
                 return "0.00";
-
-            float percent = ((float)lostTicks / (float)totalSamples) * 100f;
-            percent = Math.Max(0f, Math.Min(100f, percent));
-            return percent.ToString("n2");
+                
+            return Server.GetDropsPercentage().ToString("n2");
         }
+        
         internal float GetDropsNumber()
         {
-            int deliveredTicks = totalTicksCnt;
-            int lostTicks = loss;
-            int totalSamples = deliveredTicks + lostTicks;
-
-            if (totalSamples <= 0)
+            if (Server == null)
                 return 0f;
-
-            float percent = ((float)lostTicks / (float)totalSamples) * 100f;
-            percent = Math.Max(0f, Math.Min(100f, percent));
-            return percent;
+                
+            return Server.GetDropsPercentage();
         }
 
         public class GameServer
@@ -396,6 +390,24 @@ namespace tickMeter
             public int AvgTickrate { get; set; } = 0;
             private const int TickHistoryDownsampleThreshold = 6000;
             private const int TickHistoryRecentKeep = 2000;
+
+            // --- Individual Traffic tracking for this server ---
+            public int UploadTraffic { get; set; } = 0;
+            public int DownloadTraffic { get; set; } = 0;
+            
+            // --- Individual Session tracking for this server ---
+            public DateTime SessionStart { get; set; } = DateTime.Now;
+            
+            // --- Individual Loss tracking for this server ---
+            public int TotalTicksCount { get; set; } = 0;
+            public int LostTicks { get; set; } = 0;
+            public int AvgStableTickrate { get; set; } = 0;
+            
+            // --- Individual Log for this server ---
+            public string TickRateLog { get; set; } = "";
+            
+            // --- Individual Graph data for this server ---
+            public List<float> TickrateGraph { get; set; } = new List<float>();
 
             // --- Advanced Ping Spike Detection ---
             private const int SpikeTimeoutMs = 5000; // время отображения индикатора спайка (5 секунд)
@@ -921,6 +933,22 @@ namespace tickMeter
                 OutputTickRate = 0;
                 AvgTickrate = 0;
                 
+                // Reset individual traffic data
+                UploadTraffic = 0;
+                DownloadTraffic = 0;
+                
+                // Reset individual session data
+                SessionStart = DateTime.Now;
+                
+                // Reset individual loss data
+                TotalTicksCount = 0;
+                LostTicks = 0;
+                AvgStableTickrate = 0;
+                
+                // Reset individual log and graph data
+                TickRateLog = "";
+                TickrateGraph.Clear();
+                
                 KillTimer();
             }
 
@@ -994,8 +1022,72 @@ namespace tickMeter
                     AvgTickrate = (AvgTickrate + currentTickrate) / 2;
                 }
                 
+                // Update individual loss calculations
+                if (AvgStableTickrate == 0)
+                {
+                    AvgStableTickrate = currentTickrate;
+                }
+                
+                float ratio = AvgStableTickrate > 0 ? ((float)AvgStableTickrate / (float)AvgTickrate) : 1.0f;
+                if (ratio < 1.5 && ratio > 0.5)
+                {
+                    AvgStableTickrate += (AvgTickrate + AvgStableTickrate);
+                    AvgStableTickrate /= 3;
+                }
+                
+                if (TotalTicksCount > 300)
+                {
+                    int dropped = AvgStableTickrate - currentTickrate;
+                    if (dropped < 0) { dropped = 0; }
+                    LostTicks += dropped;
+                    if (LostTicks < 0) LostTicks = 0;
+                }
+                
+                TotalTicksCount++;
+                
+                // Update individual graph data
+                if (TickrateGraph.Count > 511)
+                {
+                    TickrateGraph.RemoveAt(0);
+                }
+                TickrateGraph.Add(currentTickrate);
+                
+                // Update individual log
+                TickRateLog += timestamp.ToString() + ";" + currentTickrate.ToString() + Environment.NewLine;
+                
                 // Downsample history if needed
                 DownsampleTickHistoryIfNeeded();
+            }
+            
+            /// <summary>
+            /// Updates individual traffic data for this specific server
+            /// </summary>
+            public void UpdateTraffic(int uploadBytes, int downloadBytes)
+            {
+                UploadTraffic += uploadBytes;
+                DownloadTraffic += downloadBytes;
+            }
+            
+            /// <summary>
+            /// Gets individual drops percentage for this server
+            /// </summary>
+            public float GetDropsPercentage()
+            {
+                int totalSamples = TotalTicksCount + LostTicks;
+                if (totalSamples <= 0)
+                    return 0f;
+                    
+                float percent = ((float)LostTicks / (float)totalSamples) * 100f;
+                percent = Math.Max(0f, Math.Min(100f, percent));
+                return percent;
+            }
+            
+            /// <summary>
+            /// Gets individual session duration for this server
+            /// </summary>
+            public TimeSpan GetSessionDuration()
+            {
+                return DateTime.Now.Subtract(SessionStart);
             }
 
             private void DownsampleTickHistoryIfNeeded()
