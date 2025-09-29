@@ -154,6 +154,19 @@ namespace tickMeter.Forms
             this.btnResetQualityAnalyzer = new System.Windows.Forms.Button();
             this.lblCurrentQuality = new System.Windows.Forms.Label();
             this.lblQualityRating = new System.Windows.Forms.Label();
+            this.groupBoxTickrateChart = new System.Windows.Forms.GroupBox();
+            this.chkTickrateChartEnabled = new System.Windows.Forms.CheckBox();
+            this.cmbTickrateChartMode = new System.Windows.Forms.ComboBox();
+            this.lblTickrateChartMode = new System.Windows.Forms.Label();
+            this.chkTickrateChartPerServer = new System.Windows.Forms.CheckBox();
+            this.chkTickrateChartCompression = new System.Windows.Forms.CheckBox();
+            this.chkTickrateChartTimeScale = new System.Windows.Forms.CheckBox();
+            this.chkTickrateChartTrimming = new System.Windows.Forms.CheckBox();
+            this.lblTickrateChartMaxPoints = new System.Windows.Forms.Label();
+            this.numTickrateChartMaxPoints = new System.Windows.Forms.NumericUpDown();
+            this.lblTickrateChartHistoryHours = new System.Windows.Forms.Label();
+            this.numTickrateChartHistoryHours = new System.Windows.Forms.NumericUpDown();
+            this.btnTickrateChartReset = new System.Windows.Forms.Button();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.chkUiRefreshHidden = new System.Windows.Forms.CheckBox();
             this.chkStunEnable = new System.Windows.Forms.CheckBox();
@@ -197,6 +210,9 @@ namespace tickMeter.Forms
             this.btnReset = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
+            this.groupBoxTickrateChart.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numTickrateChartMaxPoints)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numTickrateChartHistoryHours)).BeginInit();
             this.groupBoxVpnBypass.SuspendLayout();
             this.groupBoxPhase3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numUiProcessingRate)).BeginInit();
@@ -249,6 +265,7 @@ namespace tickMeter.Forms
             // panel1
             // 
             this.panel1.AutoScroll = true;
+            this.panel1.Controls.Add(this.groupBoxTickrateChart);
             this.panel1.Controls.Add(this.groupBoxExtendedOverlay);
             this.panel1.Controls.Add(this.groupBoxVpnBypass);
             this.panel1.Controls.Add(this.groupBoxPhase3);
@@ -1881,6 +1898,186 @@ namespace tickMeter.Forms
             this.chkShowDiagnosticInfo.Text = "Показывать диагностическую информацию";
             this.chkShowDiagnosticInfo.UseVisualStyleBackColor = true;
             // 
+            // groupBoxTickrateChart
+            // 
+            this.groupBoxTickrateChart.Controls.Add(this.chkTickrateChartEnabled);
+            this.groupBoxTickrateChart.Controls.Add(this.lblTickrateChartMode);
+            this.groupBoxTickrateChart.Controls.Add(this.cmbTickrateChartMode);
+            this.groupBoxTickrateChart.Controls.Add(this.chkTickrateChartPerServer);
+            this.groupBoxTickrateChart.Controls.Add(this.chkTickrateChartCompression);
+            this.groupBoxTickrateChart.Controls.Add(this.chkTickrateChartTimeScale);
+            this.groupBoxTickrateChart.Controls.Add(this.chkTickrateChartTrimming);
+            this.groupBoxTickrateChart.Controls.Add(this.lblTickrateChartMaxPoints);
+            this.groupBoxTickrateChart.Controls.Add(this.numTickrateChartMaxPoints);
+            this.groupBoxTickrateChart.Controls.Add(this.lblTickrateChartHistoryHours);
+            this.groupBoxTickrateChart.Controls.Add(this.numTickrateChartHistoryHours);
+            this.groupBoxTickrateChart.Controls.Add(this.btnTickrateChartReset);
+            this.groupBoxTickrateChart.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBoxTickrateChart.Location = new System.Drawing.Point(13, 804);
+            this.groupBoxTickrateChart.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBoxTickrateChart.Name = "groupBoxTickrateChart";
+            this.groupBoxTickrateChart.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBoxTickrateChart.Size = new System.Drawing.Size(753, 220);
+            this.groupBoxTickrateChart.TabIndex = 8;
+            this.groupBoxTickrateChart.TabStop = false;
+            this.groupBoxTickrateChart.Text = "Управление графиком тикрейта";
+            // 
+            // chkTickrateChartEnabled
+            // 
+            this.chkTickrateChartEnabled.AutoSize = true;
+            this.chkTickrateChartEnabled.Location = new System.Drawing.Point(8, 25);
+            this.chkTickrateChartEnabled.Margin = new System.Windows.Forms.Padding(4);
+            this.chkTickrateChartEnabled.Name = "chkTickrateChartEnabled";
+            this.chkTickrateChartEnabled.Size = new System.Drawing.Size(155, 20);
+            this.chkTickrateChartEnabled.TabIndex = 0;
+            this.chkTickrateChartEnabled.Text = "Включить график";
+            this.chkTickrateChartEnabled.UseVisualStyleBackColor = true;
+            // 
+            // lblTickrateChartMode
+            // 
+            this.lblTickrateChartMode.AutoSize = true;
+            this.lblTickrateChartMode.Location = new System.Drawing.Point(8, 55);
+            this.lblTickrateChartMode.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblTickrateChartMode.Name = "lblTickrateChartMode";
+            this.lblTickrateChartMode.Size = new System.Drawing.Size(104, 16);
+            this.lblTickrateChartMode.TabIndex = 1;
+            this.lblTickrateChartMode.Text = "Режим графика:";
+            // 
+            // cmbTickrateChartMode
+            // 
+            this.cmbTickrateChartMode.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbTickrateChartMode.FormattingEnabled = true;
+            this.cmbTickrateChartMode.Items.AddRange(new object[] {
+            "Простой график (точки)",
+            "График с временной шкалой",
+            "Сжатый график",
+            "Отключен"});
+            this.cmbTickrateChartMode.Location = new System.Drawing.Point(120, 52);
+            this.cmbTickrateChartMode.Margin = new System.Windows.Forms.Padding(4);
+            this.cmbTickrateChartMode.Name = "cmbTickrateChartMode";
+            this.cmbTickrateChartMode.Size = new System.Drawing.Size(200, 24);
+            this.cmbTickrateChartMode.TabIndex = 2;
+            // 
+            // chkTickrateChartPerServer
+            // 
+            this.chkTickrateChartPerServer.AutoSize = true;
+            this.chkTickrateChartPerServer.Location = new System.Drawing.Point(8, 85);
+            this.chkTickrateChartPerServer.Margin = new System.Windows.Forms.Padding(4);
+            this.chkTickrateChartPerServer.Name = "chkTickrateChartPerServer";
+            this.chkTickrateChartPerServer.Size = new System.Drawing.Size(192, 20);
+            this.chkTickrateChartPerServer.TabIndex = 3;
+            this.chkTickrateChartPerServer.Text = "Индивидуально по серверу";
+            this.chkTickrateChartPerServer.UseVisualStyleBackColor = true;
+            // 
+            // chkTickrateChartCompression
+            // 
+            this.chkTickrateChartCompression.AutoSize = true;
+            this.chkTickrateChartCompression.Location = new System.Drawing.Point(250, 85);
+            this.chkTickrateChartCompression.Margin = new System.Windows.Forms.Padding(4);
+            this.chkTickrateChartCompression.Name = "chkTickrateChartCompression";
+            this.chkTickrateChartCompression.Size = new System.Drawing.Size(128, 20);
+            this.chkTickrateChartCompression.TabIndex = 4;
+            this.chkTickrateChartCompression.Text = "Сжимать данные";
+            this.chkTickrateChartCompression.UseVisualStyleBackColor = true;
+            // 
+            // chkTickrateChartTimeScale
+            // 
+            this.chkTickrateChartTimeScale.AutoSize = true;
+            this.chkTickrateChartTimeScale.Location = new System.Drawing.Point(420, 85);
+            this.chkTickrateChartTimeScale.Margin = new System.Windows.Forms.Padding(4);
+            this.chkTickrateChartTimeScale.Name = "chkTickrateChartTimeScale";
+            this.chkTickrateChartTimeScale.Size = new System.Drawing.Size(136, 20);
+            this.chkTickrateChartTimeScale.TabIndex = 5;
+            this.chkTickrateChartTimeScale.Text = "Временная шкала";
+            this.chkTickrateChartTimeScale.UseVisualStyleBackColor = true;
+            // 
+            // chkTickrateChartTrimming
+            // 
+            this.chkTickrateChartTrimming.AutoSize = true;
+            this.chkTickrateChartTrimming.Location = new System.Drawing.Point(8, 115);
+            this.chkTickrateChartTrimming.Margin = new System.Windows.Forms.Padding(4);
+            this.chkTickrateChartTrimming.Name = "chkTickrateChartTrimming";
+            this.chkTickrateChartTrimming.Size = new System.Drawing.Size(135, 20);
+            this.chkTickrateChartTrimming.TabIndex = 6;
+            this.chkTickrateChartTrimming.Text = "Обрезать график";
+            this.chkTickrateChartTrimming.UseVisualStyleBackColor = true;
+            // 
+            // lblTickrateChartMaxPoints
+            // 
+            this.lblTickrateChartMaxPoints.AutoSize = true;
+            this.lblTickrateChartMaxPoints.Location = new System.Drawing.Point(8, 145);
+            this.lblTickrateChartMaxPoints.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblTickrateChartMaxPoints.Name = "lblTickrateChartMaxPoints";
+            this.lblTickrateChartMaxPoints.Size = new System.Drawing.Size(165, 16);
+            this.lblTickrateChartMaxPoints.TabIndex = 7;
+            this.lblTickrateChartMaxPoints.Text = "Максимум точек графика:";
+            // 
+            // numTickrateChartMaxPoints
+            // 
+            this.numTickrateChartMaxPoints.Location = new System.Drawing.Point(181, 142);
+            this.numTickrateChartMaxPoints.Margin = new System.Windows.Forms.Padding(4);
+            this.numTickrateChartMaxPoints.Maximum = new decimal(new int[] {
+            10000,
+            0,
+            0,
+            0});
+            this.numTickrateChartMaxPoints.Minimum = new decimal(new int[] {
+            100,
+            0,
+            0,
+            0});
+            this.numTickrateChartMaxPoints.Name = "numTickrateChartMaxPoints";
+            this.numTickrateChartMaxPoints.Size = new System.Drawing.Size(100, 22);
+            this.numTickrateChartMaxPoints.TabIndex = 8;
+            this.numTickrateChartMaxPoints.Value = new decimal(new int[] {
+            1000,
+            0,
+            0,
+            0});
+            // 
+            // lblTickrateChartHistoryHours
+            // 
+            this.lblTickrateChartHistoryHours.AutoSize = true;
+            this.lblTickrateChartHistoryHours.Location = new System.Drawing.Point(320, 145);
+            this.lblTickrateChartHistoryHours.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblTickrateChartHistoryHours.Name = "lblTickrateChartHistoryHours";
+            this.lblTickrateChartHistoryHours.Size = new System.Drawing.Size(134, 16);
+            this.lblTickrateChartHistoryHours.TabIndex = 9;
+            this.lblTickrateChartHistoryHours.Text = "История (часы):";
+            // 
+            // numTickrateChartHistoryHours
+            // 
+            this.numTickrateChartHistoryHours.Location = new System.Drawing.Point(462, 142);
+            this.numTickrateChartHistoryHours.Margin = new System.Windows.Forms.Padding(4);
+            this.numTickrateChartHistoryHours.Maximum = new decimal(new int[] {
+            168,
+            0,
+            0,
+            0});
+            this.numTickrateChartHistoryHours.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.numTickrateChartHistoryHours.Name = "numTickrateChartHistoryHours";
+            this.numTickrateChartHistoryHours.Size = new System.Drawing.Size(70, 22);
+            this.numTickrateChartHistoryHours.TabIndex = 10;
+            this.numTickrateChartHistoryHours.Value = new decimal(new int[] {
+            24,
+            0,
+            0,
+            0});
+            // 
+            // btnTickrateChartReset
+            // 
+            this.btnTickrateChartReset.Location = new System.Drawing.Point(8, 180);
+            this.btnTickrateChartReset.Margin = new System.Windows.Forms.Padding(4);
+            this.btnTickrateChartReset.Name = "btnTickrateChartReset";
+            this.btnTickrateChartReset.Size = new System.Drawing.Size(150, 28);
+            this.btnTickrateChartReset.TabIndex = 11;
+            this.btnTickrateChartReset.Text = "Сброс к умолчанию";
+            this.btnTickrateChartReset.UseVisualStyleBackColor = true;
+            // 
             // groupBoxNetworkQuality
             // 
             this.groupBoxNetworkQuality.Controls.Add(this.chkNetworkQualityEnabled);
@@ -1895,12 +2092,12 @@ namespace tickMeter.Forms
             this.groupBoxNetworkQuality.Controls.Add(this.lblCurrentQuality);
             this.groupBoxNetworkQuality.Controls.Add(this.lblQualityRating);
             this.groupBoxNetworkQuality.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxNetworkQuality.Location = new System.Drawing.Point(13, 804);
+            this.groupBoxNetworkQuality.Location = new System.Drawing.Point(13, 1024);
             this.groupBoxNetworkQuality.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxNetworkQuality.Name = "groupBoxNetworkQuality";
             this.groupBoxNetworkQuality.Padding = new System.Windows.Forms.Padding(4);
             this.groupBoxNetworkQuality.Size = new System.Drawing.Size(753, 180);
-            this.groupBoxNetworkQuality.TabIndex = 8;
+            this.groupBoxNetworkQuality.TabIndex = 9;
             this.groupBoxNetworkQuality.TabStop = false;
             this.groupBoxNetworkQuality.Text = "Stage 6: Анализ качества сети";
             // 
@@ -2669,6 +2866,10 @@ namespace tickMeter.Forms
             ((System.ComponentModel.ISupportInitialize)(this.numTickrateYellow)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numTicktimeGreen)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numTicktimeYellow)).EndInit();
+            this.groupBoxTickrateChart.ResumeLayout(false);
+            this.groupBoxTickrateChart.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numTickrateChartMaxPoints)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numTickrateChartHistoryHours)).EndInit();
             this.groupBoxNetworkQuality.ResumeLayout(false);
             this.groupBoxNetworkQuality.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numQualityHistorySize)).EndInit();
@@ -2834,6 +3035,22 @@ namespace tickMeter.Forms
         private System.Windows.Forms.Button btnResetQualityAnalyzer;
         private System.Windows.Forms.Label lblCurrentQuality;
         private System.Windows.Forms.Label lblQualityRating;
+        
+        // Tickrate Chart Settings
+        private System.Windows.Forms.GroupBox groupBoxTickrateChart;
+        private System.Windows.Forms.CheckBox chkTickrateChartEnabled;
+        private System.Windows.Forms.ComboBox cmbTickrateChartMode;
+        private System.Windows.Forms.Label lblTickrateChartMode;
+        private System.Windows.Forms.CheckBox chkTickrateChartPerServer;
+        private System.Windows.Forms.CheckBox chkTickrateChartCompression;
+        private System.Windows.Forms.CheckBox chkTickrateChartTimeScale;
+        private System.Windows.Forms.CheckBox chkTickrateChartTrimming;
+        private System.Windows.Forms.Label lblTickrateChartMaxPoints;
+        private System.Windows.Forms.NumericUpDown numTickrateChartMaxPoints;
+        private System.Windows.Forms.Label lblTickrateChartHistoryHours;
+        private System.Windows.Forms.NumericUpDown numTickrateChartHistoryHours;
+        private System.Windows.Forms.Button btnTickrateChartReset;
+        
         private System.Windows.Forms.GroupBox groupBoxNetworkOptimizer;
         private System.Windows.Forms.CheckBox chkNetworkOptimizationEnabled;
         private System.Windows.Forms.Label lblOptimizationThreshold;

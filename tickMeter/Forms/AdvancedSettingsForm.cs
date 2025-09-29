@@ -101,6 +101,9 @@ namespace tickMeter.Forms
                 
                 // Extended Overlay settings
                 LoadExtendedOverlaySettings();
+                
+                // Tickrate Chart settings
+                LoadTickrateChartSettings();
             }
             catch (Exception ex)
             {
@@ -193,6 +196,9 @@ namespace tickMeter.Forms
                 
                 // Extended Overlay settings  
                 SaveExtendedOverlaySettings();
+                
+                // Tickrate Chart settings
+                SaveTickrateChartSettings();
                 
                 // Применяем новые настройки интервала overlay
                 App.gui?.ApplyOverlayIntervalFromSettings();
@@ -1454,6 +1460,157 @@ namespace tickMeter.Forms
             catch (Exception ex)
             {
                 Console.WriteLine($"[AdvancedSettings] Error saving extended overlay settings: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Загружает настройки графика тикрейта из конфига
+        /// </summary>
+        private void LoadTickrateChartSettings()
+        {
+            if (App.settingsManager == null) return;
+            
+            try
+            {
+                // Основные настройки
+                chkTickrateChartEnabled.Checked = App.settingsManager.GetOption("tickrate_chart_enabled", "True", "TICKRATE_CHART") == "True";
+                chkTickrateChartPerServer.Checked = App.settingsManager.GetOption("tickrate_chart_per_server", "True", "TICKRATE_CHART") == "True";
+                chkTickrateChartCompression.Checked = App.settingsManager.GetOption("tickrate_chart_compression", "True", "TICKRATE_CHART") == "True";
+                chkTickrateChartTimeScale.Checked = App.settingsManager.GetOption("tickrate_chart_time_scale", "False", "TICKRATE_CHART") == "True";
+                chkTickrateChartTrimming.Checked = App.settingsManager.GetOption("tickrate_chart_trimming", "True", "TICKRATE_CHART") == "True";
+                
+                // Режим графика
+                string chartMode = App.settingsManager.GetOption("tickrate_chart_mode", "Простой график (точки)", "TICKRATE_CHART");
+                if (cmbTickrateChartMode.Items.Contains(chartMode))
+                {
+                    cmbTickrateChartMode.SelectedItem = chartMode;
+                }
+                else
+                {
+                    cmbTickrateChartMode.SelectedIndex = 0; // Простой график по умолчанию
+                }
+                
+                // Численные настройки
+                numTickrateChartMaxPoints.Value = decimal.Parse(App.settingsManager.GetOption("tickrate_chart_max_points", "1000", "TICKRATE_CHART"));
+                numTickrateChartHistoryHours.Value = decimal.Parse(App.settingsManager.GetOption("tickrate_chart_history_hours", "24", "TICKRATE_CHART"));
+                
+                // Подключение обработчиков событий
+                chkTickrateChartEnabled.CheckedChanged += OnTickrateChartSettingsChanged;
+                cmbTickrateChartMode.SelectedIndexChanged += OnTickrateChartSettingsChanged;
+                chkTickrateChartPerServer.CheckedChanged += OnTickrateChartSettingsChanged;
+                chkTickrateChartCompression.CheckedChanged += OnTickrateChartSettingsChanged;
+                chkTickrateChartTimeScale.CheckedChanged += OnTickrateChartSettingsChanged;
+                chkTickrateChartTrimming.CheckedChanged += OnTickrateChartSettingsChanged;
+                numTickrateChartMaxPoints.ValueChanged += OnTickrateChartSettingsChanged;
+                numTickrateChartHistoryHours.ValueChanged += OnTickrateChartSettingsChanged;
+                btnTickrateChartReset.Click += OnTickrateChartReset;
+                
+                // Обновляем состояние контролов
+                UpdateTickrateChartControlsState();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[AdvancedSettings] Error loading tickrate chart settings: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Сохраняет настройки графика тикрейта в конфиг
+        /// </summary>
+        private void SaveTickrateChartSettings()
+        {
+            if (App.settingsManager == null) return;
+            
+            try
+            {
+                App.settingsManager.SetOption("tickrate_chart_enabled", chkTickrateChartEnabled.Checked ? "True" : "False", "TICKRATE_CHART");
+                App.settingsManager.SetOption("tickrate_chart_per_server", chkTickrateChartPerServer.Checked ? "True" : "False", "TICKRATE_CHART");
+                App.settingsManager.SetOption("tickrate_chart_compression", chkTickrateChartCompression.Checked ? "True" : "False", "TICKRATE_CHART");
+                App.settingsManager.SetOption("tickrate_chart_time_scale", chkTickrateChartTimeScale.Checked ? "True" : "False", "TICKRATE_CHART");
+                App.settingsManager.SetOption("tickrate_chart_trimming", chkTickrateChartTrimming.Checked ? "True" : "False", "TICKRATE_CHART");
+                App.settingsManager.SetOption("tickrate_chart_mode", cmbTickrateChartMode.SelectedItem?.ToString() ?? "Простой график (точки)", "TICKRATE_CHART");
+                App.settingsManager.SetOption("tickrate_chart_max_points", numTickrateChartMaxPoints.Value.ToString(), "TICKRATE_CHART");
+                App.settingsManager.SetOption("tickrate_chart_history_hours", numTickrateChartHistoryHours.Value.ToString(), "TICKRATE_CHART");
+                
+                // Применяем настройки к системе
+                ApplyTickrateChartSettings();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[AdvancedSettings] Error saving tickrate chart settings: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Обновляет состояние контролов графика тикрейта
+        /// </summary>
+        private void UpdateTickrateChartControlsState()
+        {
+            bool isEnabled = chkTickrateChartEnabled.Checked;
+            bool isDisabled = cmbTickrateChartMode.SelectedItem?.ToString() == "Отключен";
+            
+            // Включение/отключение контролов в зависимости от основного флага
+            cmbTickrateChartMode.Enabled = isEnabled;
+            chkTickrateChartPerServer.Enabled = isEnabled && !isDisabled;
+            chkTickrateChartCompression.Enabled = isEnabled && !isDisabled;
+            chkTickrateChartTimeScale.Enabled = isEnabled && !isDisabled;
+            chkTickrateChartTrimming.Enabled = isEnabled && !isDisabled;
+            numTickrateChartMaxPoints.Enabled = isEnabled && !isDisabled;
+            numTickrateChartHistoryHours.Enabled = isEnabled && !isDisabled;
+            btnTickrateChartReset.Enabled = isEnabled;
+            
+            // Логическая связанность опций
+            if (cmbTickrateChartMode.SelectedItem?.ToString() == "Сжатый график")
+            {
+                chkTickrateChartCompression.Checked = true;
+                chkTickrateChartCompression.Enabled = false; // Принудительно включено
+            }
+            
+            if (cmbTickrateChartMode.SelectedItem?.ToString() == "График с временной шкалой")
+            {
+                chkTickrateChartTimeScale.Checked = true;
+                chkTickrateChartTimeScale.Enabled = false; // Принудительно включено
+            }
+        }
+        
+        /// <summary>
+        /// Обработчик изменения настроек графика тикрейта
+        /// </summary>
+        private void OnTickrateChartSettingsChanged(object sender, EventArgs e)
+        {
+            UpdateTickrateChartControlsState();
+        }
+        
+        /// <summary>
+        /// Сброс настроек графика тикрейта к умолчанию
+        /// </summary>
+        private void OnTickrateChartReset(object sender, EventArgs e)
+        {
+            chkTickrateChartEnabled.Checked = true;
+            cmbTickrateChartMode.SelectedIndex = 0; // Простой график
+            chkTickrateChartPerServer.Checked = true;
+            chkTickrateChartCompression.Checked = true;
+            chkTickrateChartTimeScale.Checked = false;
+            chkTickrateChartTrimming.Checked = true;
+            numTickrateChartMaxPoints.Value = 1000;
+            numTickrateChartHistoryHours.Value = 24;
+            
+            UpdateTickrateChartControlsState();
+        }
+        
+        /// <summary>
+        /// Применяет настройки графика тикрейта к системе
+        /// </summary>
+        private void ApplyTickrateChartSettings()
+        {
+            // Обновляем константы в TickMeterState на основе настроек
+            if (App.meterState != null)
+            {
+                // Через reflection обновляем константы (если это возможно)
+                // Или добавляем свойства в TickMeterState для динамического изменения
+                
+                // Пока что просто уведомляем о необходимости перезапуска для применения изменений
+                // В будущем можно добавить динамическое изменение параметров
             }
         }
         
