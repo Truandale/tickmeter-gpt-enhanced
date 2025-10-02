@@ -3,7 +3,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -93,10 +95,13 @@ namespace tickMeter.Classes
         }
         
         private readonly ConcurrentDictionary<Key, (Info info, long ts)> _map = new ConcurrentDictionary<Key, (Info info, long ts)>();
-        private readonly ConcurrentDictionary<(byte proto, IPAddress local, int lport), int> _udpOwner = new ConcurrentDictionary<(byte proto, IPAddress local, int lport), int>(); // UDP без remote
-        private readonly Thread _thread;
+    private readonly ConcurrentDictionary<(byte proto, IPAddress local, int lport), int> _udpOwner = new ConcurrentDictionary<(byte proto, IPAddress local, int lport), int>(); // UDP без remote
+    private int _udpOwnerLogCount;
+    private int _lookupLogCount;
+    private readonly Thread _thread;
         private volatile bool _stop;
         private readonly int _ttlMs = 3000; // срок жизни записи
+    private int _lastDumpTick;
 
         public ConnectionTracker()
         {
@@ -113,20 +118,79 @@ namespace tickMeter.Classes
         public bool TryResolve(byte proto, IPAddress local, int lport, IPAddress remote, int rport, out Info info)
         {
             var now = Environment.TickCount;
-            // Полный 5-tuple
-            if (_map.TryGetValue(new Key(proto, local, lport, remote, rport), out var x) && now - x.ts <= _ttlMs)
-            { info = x.info; return true; }
-            if (_map.TryGetValue(new Key(proto, remote, rport, local, lport), out x) && now - x.ts <= _ttlMs)
-            { info = x.info; return true; }
 
-            // UDP fallback: по локальной стороне (remote не всегда известен в таблице)
-            if (proto == 17 && _udpOwner.TryGetValue((proto, local, lport), out var pidUdp))
+            if (TryGetFiveTuple(proto, local, lport, remote, rport, now, out info))
             {
-                info = new Info(pidUdp, TryGetExe(pidUdp));
+                return true;
+            }
+
+            if (proto == 17)
+            {
+                if (TryResolveUdpOwner((proto, local, lport), out info))
+                {
+                    LogLookup("HIT udpOwner", proto, local, lport, remote, rport, extra:$"owner={(info.Exe ?? string.Empty)}/{info.Pid}");
+                    return true;
+                }
+                if (TryResolveUdpOwner((proto, remote, rport), out info))
+                {
+                    LogLookup("HIT udpOwner swapped", proto, local, lport, remote, rport, extra:$"owner={(info.Exe ?? string.Empty)}/{info.Pid}");
+                    return true;
+                }
+            }
+
+            info = default;
+            LogLookup("MISS", proto, local, lport, remote, rport);
+            return false;
+        }
+
+        private bool TryGetFiveTuple(byte proto, IPAddress local, int lport, IPAddress remote, int rport, int now, out Info info)
+        {
+            if (_map.TryGetValue(new Key(proto, local, lport, remote, rport), out var direct) && now - direct.ts <= _ttlMs)
+            {
+                info = direct.info;
+                LogLookup("HIT fiveTuple direct", proto, local, lport, remote, rport, extra:$"owner={(info.Exe ?? string.Empty)}/{info.Pid}");
+                return true;
+            }
+
+            if (_map.TryGetValue(new Key(proto, remote, rport, local, lport), out var reverse) && now - reverse.ts <= _ttlMs)
+            {
+                info = reverse.info;
+                LogLookup("HIT fiveTuple reverse", proto, local, lport, remote, rport, extra:$"owner={(info.Exe ?? string.Empty)}/{info.Pid}");
                 return true;
             }
 
             info = default;
+            return false;
+        }
+
+        private bool TryResolveUdpOwner((byte proto, IPAddress ip, int port) candidate, out Info info)
+        {
+            info = default;
+
+            if (candidate.port <= 0)
+                return false;
+
+            if (_udpOwner.TryGetValue(candidate, out var pid))
+            {
+                info = new Info(pid, TryGetExe(pid));
+                return true;
+            }
+
+            IPAddress wildcard = null;
+            if (candidate.ip != null)
+            {
+                if (candidate.ip.AddressFamily == AddressFamily.InterNetwork)
+                    wildcard = IPAddress.Any;
+                else if (candidate.ip.AddressFamily == AddressFamily.InterNetworkV6)
+                    wildcard = IPAddress.IPv6Any;
+            }
+
+            if (wildcard != null && _udpOwner.TryGetValue((candidate.proto, wildcard, candidate.port), out pid))
+            {
+                info = new Info(pid, TryGetExe(pid));
+                return true;
+            }
+
             return false;
         }
 
@@ -142,6 +206,7 @@ namespace tickMeter.Classes
                     RefreshUdp(AF_INET);
                     RefreshUdp(AF_INET6);
                     EvictExpired();
+                    DumpProcessSnapshotIfNeeded();
                 }
                 catch { /* ignore all */ }
                 var due = 300 - (int)sw.ElapsedMilliseconds;
@@ -157,6 +222,137 @@ namespace tickMeter.Classes
             foreach (var kv in _map)
                 if (now - kv.Value.ts > _ttlMs)
                     _map.TryRemove(kv.Key, out _);
+        }
+
+        private void DumpProcessSnapshotIfNeeded()
+        {
+            var now = Environment.TickCount;
+            if (_lastDumpTick != 0 && unchecked(now - _lastDumpTick) < 2000)
+                return;
+
+            _lastDumpTick = now;
+
+            var snapshot = new Dictionary<int, string>();
+            var details = new Dictionary<int, SnapshotDetails>();
+
+            foreach (var entry in _map)
+            {
+                var info = entry.Value.info;
+                if (info.Pid <= 0)
+                    continue;
+
+                var name = info.Exe;
+                if (string.IsNullOrWhiteSpace(name))
+                    name = TryGetExe(info.Pid);
+
+                if (snapshot.TryGetValue(info.Pid, out var existingName))
+                {
+                    if (string.IsNullOrWhiteSpace(existingName) && !string.IsNullOrWhiteSpace(name))
+                        snapshot[info.Pid] = name;
+                }
+                else
+                {
+                    snapshot[info.Pid] = name;
+                }
+
+                var key = entry.Key;
+                var detail = GetOrCreateDetail(details, info.Pid, name);
+                detail.ConnectionCount++;
+                if (detail.Samples.Count < 3)
+                {
+                    detail.Samples.Add($"{key.Local}:{key.LocalPort}->{key.Remote}:{key.RemotePort}");
+                }
+            }
+
+            foreach (var entry in _udpOwner)
+            {
+                var pid = entry.Value;
+                if (pid <= 0)
+                    continue;
+
+                var name = TryGetExe(pid);
+
+                if (snapshot.TryGetValue(pid, out var existingName))
+                {
+                    if (string.IsNullOrWhiteSpace(existingName) && !string.IsNullOrWhiteSpace(name))
+                        snapshot[pid] = name;
+                }
+                else
+                {
+                    snapshot[pid] = name;
+                }
+
+                var detail = GetOrCreateDetail(details, pid, name);
+                detail.ConnectionCount++;
+                if (detail.UdpEndpoints.Count < 3)
+                {
+                    var key = entry.Key;
+                    detail.UdpEndpoints.Add($"{key.local}:{key.lport}");
+                }
+            }
+
+            if (snapshot.Count == 0)
+                return;
+
+            var builder = new StringBuilder();
+            builder.Append("[Tracker] Active processes: ");
+
+            bool first = true;
+            foreach (var kv in snapshot.OrderBy(p => p.Key))
+            {
+                if (!first)
+                    builder.Append("; ");
+                builder.Append(kv.Key);
+                if (!string.IsNullOrWhiteSpace(kv.Value))
+                    builder.Append("=").Append(kv.Value);
+                first = false;
+            }
+
+            DebugLogger.log(builder.ToString());
+
+            foreach (var kv in details)
+            {
+                var detail = kv.Value;
+                if (!string.Equals(detail.Name, "browser", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var detailBuilder = new StringBuilder();
+                detailBuilder.Append($"[Tracker] Detail PID={kv.Key} Name={detail.Name ?? "<unknown>"} conn={detail.ConnectionCount}");
+
+                if (detail.Samples.Count > 0)
+                {
+                    detailBuilder.Append(" samples=").Append(string.Join(", ", detail.Samples));
+                }
+
+                if (detail.UdpEndpoints.Count > 0)
+                {
+                    detailBuilder.Append(" udpLocal=").Append(string.Join(", ", detail.UdpEndpoints));
+                }
+
+                DebugLogger.log(detailBuilder.ToString());
+            }
+        }
+
+        private static SnapshotDetails GetOrCreateDetail(Dictionary<int, SnapshotDetails> map, int pid, string name)
+        {
+            if (!map.TryGetValue(pid, out var detail))
+            {
+                detail = new SnapshotDetails();
+                map[pid] = detail;
+            }
+
+            if (!string.IsNullOrWhiteSpace(name))
+                detail.Name = name;
+
+            return detail;
+        }
+
+        private sealed class SnapshotDetails
+        {
+            public string Name;
+            public int ConnectionCount;
+            public List<string> Samples { get; } = new List<string>();
+            public List<string> UdpEndpoints { get; } = new List<string>();
         }
 
         // ---------- IP Helper ----------
@@ -246,8 +442,8 @@ namespace tickMeter.Classes
                         p += Marshal.SizeOf<MIB_TCPROW_OWNER_PID>();
                         var l = new IPAddress(row.localAddr);
                         var r = new IPAddress(row.remoteAddr);
-                        int lp = (int)SwapUshort((ushort)(row.localPort_be >> 16));
-                        int rp = (int)SwapUshort((ushort)(row.remotePort_be >> 16));
+                        int lp = (int)SwapUshort((ushort)row.localPort_be);
+                        int rp = (int)SwapUshort((ushort)row.remotePort_be);
                         var info = new Info((int)row.owningPid, TryGetExe((int)row.owningPid));
                         _map[new Key(6, l, lp, r, rp)] = (info, now);
                     }
@@ -262,8 +458,8 @@ namespace tickMeter.Classes
                         p += Marshal.SizeOf<MIB_TCP6ROW_OWNER_PID>();
                         var l = new IPAddress(row.localAddr, (long)row.localScopeId);
                         var r = new IPAddress(row.remoteAddr, (long)row.remoteScopeId);
-                        int lp = (int)SwapUshort((ushort)(row.localPort_be >> 16));
-                        int rp = (int)SwapUshort((ushort)(row.remotePort_be >> 16));
+                        int lp = (int)SwapUshort((ushort)row.localPort_be);
+                        int rp = (int)SwapUshort((ushort)row.remotePort_be);
                         var info = new Info((int)row.owningPid, TryGetExe((int)row.owningPid));
                         _map[new Key(6, l, lp, r, rp)] = (info, now);
                     }
@@ -291,8 +487,10 @@ namespace tickMeter.Classes
                         var row = Marshal.PtrToStructure<MIB_UDPROW_OWNER_PID>(p);
                         p += Marshal.SizeOf<MIB_UDPROW_OWNER_PID>();
                         var l = new IPAddress(row.localAddr);
-                        int lp = (int)SwapUshort((ushort)(row.localPort_be >> 16));
-                        _udpOwner[(17, l, lp)] = (int)row.owningPid;
+                        int lp = (int)SwapUshort((ushort)row.localPort_be);
+                        var pid = (int)row.owningPid;
+                        _udpOwner[(17, l, lp)] = pid;
+                        LogUdpOwnerSnapshot(17, l, lp, pid);
                     }
                 }
                 else
@@ -304,12 +502,50 @@ namespace tickMeter.Classes
                         var row = Marshal.PtrToStructure<MIB_UDP6ROW_OWNER_PID>(p);
                         p += Marshal.SizeOf<MIB_UDP6ROW_OWNER_PID>();
                         var l = new IPAddress(row.localAddr, (long)row.localScopeId);
-                        int lp = (int)SwapUshort((ushort)(row.localPort_be >> 16));
-                        _udpOwner[(17, l, lp)] = (int)row.owningPid;
+                        int lp = (int)SwapUshort((ushort)row.localPort_be);
+                        var pid = (int)row.owningPid;
+                        _udpOwner[(17, l, lp)] = pid;
+                        LogUdpOwnerSnapshot(17, l, lp, pid);
                     }
                 }
             }
             finally { Marshal.FreeHGlobal(buf); }
+        }
+
+        private void LogUdpOwnerSnapshot(byte proto, IPAddress local, int port, int pid)
+        {
+            if (pid <= 0 || port <= 0)
+                return;
+
+            var index = Interlocked.Increment(ref _udpOwnerLogCount);
+            if (index > 200)
+                return;
+
+            string exe = TryGetExe(pid);
+            DebugLogger.log($"[Tracker] UdpOwner map proto={proto} local={local}:{port} pid={pid} exe={exe}");
+        }
+
+        private void LogLookup(string stage, byte proto, IPAddress local, int lport, IPAddress remote, int rport, string extra = null)
+        {
+            var index = Interlocked.Increment(ref _lookupLogCount);
+            if (index > 300)
+                return;
+
+            string localIp = local?.ToString() ?? "<null>";
+            string remoteIp = remote?.ToString() ?? "<null>";
+            var sb = new StringBuilder();
+            sb.Append("[Tracker] Resolve ")
+              .Append(stage)
+              .Append(" proto=").Append(proto)
+              .Append(" local=").Append(localIp).Append(':').Append(lport)
+              .Append(" remote=").Append(remoteIp).Append(':').Append(rport);
+
+            if (!string.IsNullOrWhiteSpace(extra))
+            {
+                sb.Append(' ').Append(extra);
+            }
+
+            DebugLogger.log(sb.ToString());
         }
 
         private static ushort SwapUshort(ushort x) => (ushort)((x >> 8) | (x << 8));

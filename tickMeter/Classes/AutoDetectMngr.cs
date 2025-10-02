@@ -52,6 +52,52 @@ namespace tickMeter.Classes
         public static string RequireProcess;
         public static List<ProcessNetworkStats> activeProcesses = new List<ProcessNetworkStats>();
 
+        private static bool TryGetUdpPorts(UdpDatagram udp, out uint sourcePort, out uint destinationPort)
+        {
+            sourcePort = 0;
+            destinationPort = 0;
+
+            if (udp == null)
+                return false;
+
+            try
+            {
+                if (udp.Length < 8)
+                    return false;
+
+                sourcePort = udp.SourcePort;
+                destinationPort = udp.DestinationPort;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool TryGetTcpPorts(TcpDatagram tcp, out uint sourcePort, out uint destinationPort)
+        {
+            sourcePort = 0;
+            destinationPort = 0;
+
+            if (tcp == null)
+                return false;
+
+            try
+            {
+                if (tcp.Length < 20)
+                    return false;
+
+                sourcePort = tcp.SourcePort;
+                destinationPort = tcp.DestinationPort;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public static void AnalyzePacket(Packet packet)
         {
             if (!IsEnabled()) return;
@@ -87,11 +133,8 @@ namespace tickMeter.Classes
             string processName = @"n\a";
             if (protocol == IpV4Protocol.Udp.ToString())
             {
-                if (udp == null)
+                if (!TryGetUdpPorts(udp, out fromPort, out toPort))
                     return;
-
-                fromPort = udp.SourcePort;
-                toPort = udp.DestinationPort;
                 try
                 {
                     UdpProcessRecord record;
@@ -112,11 +155,8 @@ namespace tickMeter.Classes
             }
             else
             {
-                if (tcp == null)
+                if (!TryGetTcpPorts(tcp, out fromPort, out toPort))
                     return;
-
-                fromPort = tcp.SourcePort;
-                toPort = tcp.DestinationPort;
                 try
                 {
                     TcpProcessRecord record;

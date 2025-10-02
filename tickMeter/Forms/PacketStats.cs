@@ -58,6 +58,8 @@ namespace tickMeter
         public int outPackets = 0;
         public int inTraffic = 0;
         public int outTraffic = 0;
+    private bool _vpnLogInitialized;
+    private int _trackerLogCount;
 
         public ConnectionsManager connMngr;
 
@@ -774,6 +776,12 @@ namespace tickMeter
             
             Int32 iKey = 0;
             bool vpnBypassAdvanced = VpnSettings.AdvancedEnabled;
+            if (!_vpnLogInitialized)
+            {
+                _vpnLogInitialized = true;
+                var basicFlag = App.settingsManager?.GetOption("vpn_bypass_basic", "False", "ADVANCED");
+                DebugLogger.log($"[PacketStats] VPN flags: advanced={vpnBypassAdvanced}, basic={basicFlag}, captureVirtual={VpnSettings.ForceCaptureVirtual}, allowRaw={VpnSettings.AllowNonEthernet}, disableBpf={VpnSettings.DisableBpf}, etw={VpnSettings.EnableEtwEnrichment}, tracker={(App.connectionTracker != null)}");
+            }
             foreach (Packet packet in tmpPackets) {
                 // Проверяем, что пакет не null
                 if (packet == null)
@@ -885,11 +893,37 @@ namespace tickMeter
                 {
                     try
                     {
-                        var srcAddress = new IPAddress(ip.Source.ToValue());
-                        var dstAddress = new IPAddress(ip.Destination.ToValue());
-                        if (App.connectionTracker.TryResolve(trackerProto, srcAddress, trackerSrcPort, dstAddress, trackerDstPort, out var info))
+                        if (!IPAddress.TryParse(from_ip, out var srcAddress))
+                        {
+                            srcAddress = new IPAddress(ip.Source.ToValue());
+                        }
+
+                        if (!IPAddress.TryParse(to_ip, out var dstAddress))
+                        {
+                            dstAddress = new IPAddress(ip.Destination.ToValue());
+                        }
+                        bool swappedLookup = false;
+                        if (App.connectionTracker.TryResolve(trackerProto, srcAddress, trackerSrcPort, dstAddress, trackerDstPort, out var info) ||
+                            (swappedLookup = App.connectionTracker.TryResolve(trackerProto, dstAddress, trackerDstPort, srcAddress, trackerSrcPort, out info)))
                         {
                             trackerOverride = info;
+                            if (_trackerLogCount < 100)
+                            {
+                                _trackerLogCount++;
+                                if (!swappedLookup)
+                                {
+                                    DebugLogger.log($"[PacketStats] Tracker HIT proto={trackerProto} {srcAddress}:{trackerSrcPort} -> {dstAddress}:{trackerDstPort} => PID={info.Pid} EXE={info.Exe}");
+                                }
+                                else
+                                {
+                                    DebugLogger.log($"[PacketStats] Tracker HIT proto={trackerProto} (swapped) {dstAddress}:{trackerDstPort} -> {srcAddress}:{trackerSrcPort} => PID={info.Pid} EXE={info.Exe}");
+                                }
+                            }
+                        }
+                        else if (_trackerLogCount < 100)
+                        {
+                            _trackerLogCount++;
+                            DebugLogger.log($"[PacketStats] Tracker MISS proto={trackerProto} {srcAddress}:{trackerSrcPort} -> {dstAddress}:{trackerDstPort} (initialProcess={processName})");
                         }
                     }
                     catch (Exception ex)

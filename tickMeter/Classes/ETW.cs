@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -21,6 +22,8 @@ namespace tickMeter.Classes
             public string fromIp;
             public uint toPort;
             public uint fromPort;
+
+            private static int _eventLogCount;
 
             public ProcessNetworkData(string name, int pId, string toIp, string fromIp, uint toPort, uint fromPort)
             {
@@ -61,6 +64,11 @@ namespace tickMeter.Classes
                 if (!processes.ContainsKey(hash))
                 {
                     processes.Add(hash, new ProcessNetworkData(processName, processID, saddr, daddr, (uint)sport, (uint)dport));
+                    var loggedCount = System.Threading.Interlocked.Increment(ref _eventLogCount);
+                    if (loggedCount <= 100)
+                    {
+                        DebugLogger.log($"[ETW] Event #{loggedCount}: PID={processID} NAME={processName} {saddr}:{sport} -> {daddr}:{dport}");
+                    }
                 }
             }
         }
@@ -90,6 +98,8 @@ namespace tickMeter.Classes
                 _initialized = true;
             }
 
+            DebugLogger.log("[ETW] init() вызван: запускаем поток ядровой трассировки.");
+
             Thread t = new Thread(ETWSessionThread)
             {
                 IsBackground = true,
@@ -98,15 +108,43 @@ namespace tickMeter.Classes
             t.Start();
         }
 
+        private static readonly int AccessDeniedHresult = unchecked((int)0x80070005);
+
         private static async void ETWSessionThread()
         {
             try
             {
+                bool elevated = TraceEventSession.IsElevated() ?? false;
+                if (!elevated)
+                {
+                    DebugLogger.log("[ETW] Недостаточно прав: запуск сессии Kernel невозможен без запуска tickMeter от имени администратора.");
+                    lock (_initLock)
+                    {
+                        _initialized = false;
+                    }
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[ETW] Проверка прав завершилась исключением: {ex.GetType().Name} {ex.Message}");
+                lock (_initLock)
+                {
+                    _initialized = false;
+                }
+                return;
+            }
+
+            try
+            {
+                DebugLogger.log("[ETW] Запуск ядровой ETW-сессии...");
                 await Task.Run(() =>
                 {
                     using (var kernelSession = new TraceEventSession(KernelTraceEventParser.KernelSessionName))
                     {
                         kernelSession.EnableKernelProvider(KernelTraceEventParser.Keywords.NetworkTCPIP);
+
+                        DebugLogger.log("[ETW] Kernel session started: трассировка TCP/UDP активирована.");
 
 
                         kernelSession.Source.Kernel.TcpIpAccept += acceptTCPIP;
@@ -131,6 +169,11 @@ namespace tickMeter.Classes
             catch (Exception ex)
             {
                 Debug.Print($"[ETW] Session terminated: {ex.Message}");
+                DebugLogger.log($"[ETW] Session terminated: {ex.Message}");
+                if (ex.HResult == AccessDeniedHresult)
+                {
+                    DebugLogger.log("[ETW] Access denied: перезапустите tickMeter от имени администратора или запустите системный сервис-драйвер.");
+                }
             }
             finally
             {
@@ -188,6 +231,18 @@ namespace tickMeter.Classes
         {
             try
             {
+                if (processes.Count == 0)
+                {
+                    var missCount = System.Threading.Interlocked.Increment(ref _resolveEmptyLogCount);
+                    if (missCount <= 50)
+                    {
+                        DebugLogger.log($"[ETW] resolveProcessname: кэш пуст. from={fromIp}:{fromPort} to={toIp}:{toPort}");
+                    }
+                }
+            }
+            catch { }
+            try
+            {
                 foreach (ProcessNetworkData procData in processes.Values)
                 {
                     if(procData == null) continue;
@@ -202,11 +257,98 @@ namespace tickMeter.Classes
                         && procData.toIp == fromIp
                         && procData.fromIp == toIp))
                     {
-                        return procData.pName;
+                        var resolvedName = EnsureProcessName(procData, fromIp, toIp, fromPort, toPort);
+                        var hitCount = System.Threading.Interlocked.Increment(ref _resolveHitLogCount);
+                        if (hitCount <= 100)
+                        {
+                            DebugLogger.log($"[ETW] resolveProcessname HIT #{hitCount}: {resolvedName} PID={procData.pId} from={fromIp}:{fromPort} to={toIp}:{toPort}");
+                        }
+                        return resolvedName;
                     }
                 }
             } catch { }
+            var miss = System.Threading.Interlocked.Increment(ref _resolveMissLogCount);
+            if (miss <= 100)
+            {
+                DebugLogger.log($"[ETW] resolveProcessname MISS #{miss}: from={fromIp}:{fromPort} to={toIp}:{toPort} (cache={processes.Count})");
+            }
             return @"n\a";
+        }
+
+        private static int _resolveHitLogCount;
+        private static int _resolveMissLogCount;
+        private static int _resolveEmptyLogCount;
+
+        private static string EnsureProcessName(ProcessNetworkData procData, string fromIp, string toIp, uint fromPort, uint toPort)
+        {
+            if (procData == null)
+                return "<unknown>";
+
+            if (!string.IsNullOrWhiteSpace(procData.pName))
+                return procData.pName;
+
+            string resolved = TryGetProcessName(procData.pId);
+
+            if (string.IsNullOrWhiteSpace(resolved))
+            {
+                resolved = ResolveViaConnectionTracker(fromIp, toIp, fromPort, toPort);
+            }
+
+            if (string.IsNullOrWhiteSpace(resolved) && procData.pId > 0)
+            {
+                resolved = procData.pId.ToString();
+            }
+
+            if (string.IsNullOrWhiteSpace(resolved))
+            {
+                resolved = "<unknown>";
+            }
+
+            procData.pName = resolved;
+            return resolved;
+        }
+
+        private static string TryGetProcessName(int pid)
+        {
+            if (pid <= 0)
+                return string.Empty;
+
+            try
+            {
+                using (var process = Process.GetProcessById(pid))
+                {
+                    return process.ProcessName;
+                }
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private static string ResolveViaConnectionTracker(string fromIp, string toIp, uint fromPort, uint toPort)
+        {
+            if (App.connectionTracker == null)
+                return string.Empty;
+
+            if (!IPAddress.TryParse(fromIp, out var src) || !IPAddress.TryParse(toIp, out var dst))
+                return string.Empty;
+
+            ConnectionTracker.Info info;
+
+            if (App.connectionTracker.TryResolve(6, src, (int)fromPort, dst, (int)toPort, out info))
+                return info.Exe;
+
+            if (App.connectionTracker.TryResolve(17, src, (int)fromPort, dst, (int)toPort, out info))
+                return info.Exe;
+
+            if (App.connectionTracker.TryResolve(6, dst, (int)toPort, src, (int)fromPort, out info))
+                return info.Exe;
+
+            if (App.connectionTracker.TryResolve(17, dst, (int)toPort, src, (int)fromPort, out info))
+                return info.Exe;
+
+            return string.Empty;
         }
     }
 }

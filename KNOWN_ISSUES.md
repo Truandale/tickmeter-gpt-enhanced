@@ -100,6 +100,30 @@ show_ping_spikes = False     # Spikes disabled
 
 ---
 
+## ⚠️ ETW обогащение не стартует без прав администратора
+
+### Симптомы
+
+- В `debug.log` появляется стек с `System.Runtime.InteropServices.Marshal.ThrowExceptionForHRInternal`.
+- Сообщение об ошибке: `0x80070005 (E_ACCESSDENIED)` при вызове `TraceEventSession.EnableKernelProvider`.
+- Вкладка Live View продолжает показывать процессы как `n\a`, несмотря на включённые галочки VPN bypass.
+
+### Причина
+
+- Сессия `Microsoft-Windows-Kernel-Network` требует запуска от имени Administrator (или под SYSTEM).
+- Без прав ETW не создаёт подписку, и данные о процессах остаются пустыми.
+
+### Обходной путь
+
+1. Запустить tickMeter через контекстное меню «Запуск от имени администратора».
+2. Убедиться, что `vpn_bypass_advanced = True` и `vpn_etw_enrichment = True` в `settings.ini` (секция `[ADVANCED]`).
+3. Повторно открыть Live View и проверить наличие записей в `debug.log`.
+
+### Дальнейшие шаги
+
+- Рассмотреть внедрение фонового сервиса/драйвера с нужными правами (см. `docs/DriverIntegrationPlan.md`).
+- Добавить более дружелюбное уведомление в UI при провале инициализации ETW.
+
 **Status:** This issue prevents the Color Zone Profile system from working as designed.
 All UI components are implemented but runtime behavior is incorrect.
 
