@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using tickMeter.Classes;
 using System.Runtime.CompilerServices;
+using System.Net;
 
 namespace tickMeter
 {
@@ -769,6 +770,7 @@ namespace tickMeter
             ListViewItem[] items = new ListViewItem[tmpPackets.Count];
             
             Int32 iKey = 0;
+            bool vpnBypassAdvanced = App.settingsManager?.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
             foreach (Packet packet in tmpPackets) {
                 // Проверяем, что пакет не null
                 if (packet == null)
@@ -793,6 +795,10 @@ namespace tickMeter
                 string from_ip = "";
                 string to_ip = "";
                 string packet_size = "";
+                ConnectionTracker.Info? trackerOverride = null;
+                byte trackerProto = 0;
+                int trackerSrcPort = 0;
+                int trackerDstPort = 0;
                 
                 try
                 {
@@ -813,6 +819,9 @@ namespace tickMeter
                 {
                     fromPort = udp.SourcePort;
                     toPort = udp.DestinationPort;
+                    trackerProto = 17;
+                    trackerSrcPort = (int)fromPort;
+                    trackerDstPort = (int)toPort;
                     try
                     {
                         UdpProcessRecord record;
@@ -841,6 +850,9 @@ namespace tickMeter
                 {
                     fromPort = tcp.SourcePort;
                     toPort = tcp.DestinationPort;
+                    trackerProto = 6;
+                    trackerSrcPort = (int)fromPort;
+                    trackerDstPort = (int)toPort;
                     try
                     {
                         TcpProcessRecord record;
@@ -866,9 +878,34 @@ namespace tickMeter
                     }
 
                 }
+                if (vpnBypassAdvanced && trackerProto != 0 && App.connectionTracker != null)
+                {
+                    try
+                    {
+                        var srcAddress = new IPAddress(ip.Source.ToValue());
+                        var dstAddress = new IPAddress(ip.Destination.ToValue());
+                        if (App.connectionTracker.TryResolve(trackerProto, srcAddress, trackerSrcPort, dstAddress, trackerDstPort, out var info))
+                        {
+                            trackerOverride = info;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Print($"[PacketStats] VPN bypass resolve error: {ex.Message}");
+                    }
+                }
                 if(processName == @"n\a")
                 {
                     processName = ETW.resolveProcessname(from_ip, to_ip, fromPort, toPort);
+                }
+                if (vpnBypassAdvanced && trackerOverride.HasValue)
+                {
+                    var mergedName = VpnBypassHelper.MergeProcessName(processName, trackerOverride);
+                    if (!string.Equals(processName, mergedName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        Debug.Print($"[PacketStats] VPN bypass override: {processName} -> {mergedName} (PID {trackerOverride.Value.Pid})");
+                    }
+                    processName = mergedName;
                 }
                 
                 if (!packetFilter.ValidateProcess(processName)) continue;

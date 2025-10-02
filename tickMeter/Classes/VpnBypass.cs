@@ -302,4 +302,52 @@ namespace tickMeter.Classes
             catch { return string.Empty; }
         }
     }
+
+    public static class VpnBypassHelper
+    {
+        private static readonly string[] SuspiciousTokens = new[]
+        {
+            "vpn", "wintun", "wireguard", "tap", "tun", "ksde", "secureline", "openvpn"
+        };
+
+        public static string MergeProcessName(string currentName, ConnectionTracker.Info? resolvedInfo)
+        {
+            if (!resolvedInfo.HasValue)
+                return currentName;
+
+            if (!ShouldOverride(currentName))
+                return currentName;
+
+            var candidate = resolvedInfo.Value.Exe;
+            if (!string.IsNullOrWhiteSpace(candidate))
+                return candidate;
+
+            if (resolvedInfo.Value.Pid > 0)
+                return resolvedInfo.Value.Pid.ToString();
+
+            return currentName;
+        }
+
+        public static bool ShouldOverride(string currentName)
+        {
+            if (string.IsNullOrWhiteSpace(currentName))
+                return true;
+
+            var normalized = currentName.Trim();
+
+            if (normalized.Equals(@"n\a", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            if (int.TryParse(normalized, out _))
+                return true;
+
+            foreach (var token in SuspiciousTokens)
+            {
+                if (normalized.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+            }
+
+            return false;
+        }
+    }
 }

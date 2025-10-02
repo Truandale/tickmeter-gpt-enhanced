@@ -14,6 +14,7 @@ using System.Globalization;
 using System.Diagnostics;
 using tickMeter.Classes;
 using System.Threading;
+using System.Net;
 using System.Net.Sockets;
 using System.Linq;
 using System.Reflection;
@@ -414,7 +415,7 @@ namespace tickMeter.Forms
                 // на реальные данные процесса через ConnectionTracker
                 try
                 {
-                    if (packet.Ethernet.IpV4 != null)
+                    if (packet.Ethernet?.IpV4 != null && App.connectionTracker != null)
                     {
                         var ipv4 = packet.Ethernet.IpV4;
                         byte proto = 0;
@@ -433,17 +434,14 @@ namespace tickMeter.Forms
                             dstPort = ipv4.Udp.DestinationPort;
                         }
                         
-                        if (proto > 0 && App.connectionTracker != null)
+                        if (proto > 0)
                         {
-                            // Преобразуем PcapDotNet.IpV4Address в System.Net.IPAddress
-                            var srcIP = new System.Net.IPAddress(ipv4.Source.ToValue());
-                            var dstIP = new System.Net.IPAddress(ipv4.Destination.ToValue());
+                            var srcIP = new IPAddress(ipv4.Source.ToValue());
+                            var dstIP = new IPAddress(ipv4.Destination.ToValue());
                             
-                            // Пытаемся разрешить соединение в реальный процесс
                             if (App.connectionTracker.TryResolve(proto, srcIP, srcPort, dstIP, dstPort, out var info))
                             {
                                 Debug.Print($"VPN bypass: packet {srcIP}:{srcPort} -> {dstIP}:{dstPort} resolved to PID {info.Pid} ({info.Exe})");
-                                // TODO: подменить данные пакета для отображения реального процесса
                             }
                         }
                     }

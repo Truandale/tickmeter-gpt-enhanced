@@ -53,6 +53,9 @@ namespace tickMeter
         {
             await Task.Run(() =>
             {
+                bool vpnBypassAdvanced = App.settingsManager?.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+                bool canUseTracker = vpnBypassAdvanced && App.connectionTracker != null;
+
                 lock (_processInfoLock)
                 {
                     ProcessInfoList = Process.GetProcesses();
@@ -99,6 +102,25 @@ namespace tickMeter
                                 record.ProcessName = procData.pName;
                             }
                         }
+
+                        if (canUseTracker && record.LocalAddress != null && record.RemoteAddress != null)
+                        {
+                            try
+                            {
+                                if (App.connectionTracker.TryResolve(6, record.LocalAddress, (int)record.LocalPort, record.RemoteAddress, (int)record.RemotePort, out var enriched))
+                                {
+                                    var mergedName = VpnBypassHelper.MergeProcessName(record.ProcessName, enriched);
+                                    if (!string.Equals(record.ProcessName, mergedName, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        record.ProcessName = mergedName;
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.Print($"[ConnectionsManager] VPN bypass TCP override failed: {ex.Message}");
+                            }
+                        }
                     }
                 }
 
@@ -129,6 +151,25 @@ namespace tickMeter
                             if (procData != null)
                             {
                                 record.ProcessName = procData.pName;
+                            }
+                        }
+
+                        if (canUseTracker && record.LocalAddress != null)
+                        {
+                            try
+                            {
+                                if (App.connectionTracker.TryResolve(17, record.LocalAddress, (int)record.LocalPort, IPAddress.Any, 0, out var enrichedUdp))
+                                {
+                                    var mergedName = VpnBypassHelper.MergeProcessName(record.ProcessName, enrichedUdp);
+                                    if (!string.Equals(record.ProcessName, mergedName, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        record.ProcessName = mergedName;
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.Print($"[ConnectionsManager] VPN bypass UDP override failed: {ex.Message}");
                             }
                         }
                     }
