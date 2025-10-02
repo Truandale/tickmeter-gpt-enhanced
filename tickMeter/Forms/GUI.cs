@@ -408,7 +408,7 @@ namespace tickMeter.Forms
                 if (IsDuplicate(packet)) return; // NEW: проверка дублей
             
             // VPN bypass mode handling
-            bool vpnBypassAdvanced = App.settingsManager?.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+            bool vpnBypassAdvanced = VpnSettings.AdvancedEnabled;
             if (vpnBypassAdvanced)
             {
                 // В продвинутом режиме обхода VPN пытаемся подменить данные пакета
@@ -1501,10 +1501,10 @@ namespace tickMeter.Forms
             
             // Проверяем настройки VPN обхода
             bool vpnBypassBasic = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
-            bool vpnBypassAdvanced = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+            bool vpnBypassAdvanced = VpnSettings.AdvancedEnabled;
             
             string captureAllSetting = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS");
-            var captureAll = captureAllSetting == "True";
+            var captureAll = VpnSettings.ForceCaptureVirtual || captureAllSetting == "True";
             Debug.Print($"[StartTracking] Settings debug - capture_all_adapters raw: '{captureAllSetting}', converted: {captureAll}");
             Debug.Print($"[StartTracking] VPN bypass - basic: {vpnBypassBasic}, advanced: {vpnBypassAdvanced}");
             
@@ -1638,9 +1638,10 @@ namespace tickMeter.Forms
                             {
                                 using (var comm = currentDevice.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 500))
                                 {
-                                    if (comm.DataLink.Kind != DataLinkKind.Ethernet) 
+                                    var linkKind = comm.DataLink.Kind;
+                                    if (!PacketNormalizer.IsSupported(linkKind)) 
                                     {
-                                        Debug.Print($"[PCAP-Multi-{currentWorkerIndex}] Not Ethernet, exiting");
+                                        Debug.Print($"[PCAP-Multi-{currentWorkerIndex}] Unsupported link {linkKind}, exiting");
                                         return;
                                     }
                                     
@@ -1659,7 +1660,8 @@ namespace tickMeter.Forms
                                         var result = comm.ReceivePacket(out packet);
                                         if (result == PacketCommunicatorReceiveResult.Ok && packet != null)
                                         {
-                                            PacketHandler(packet);
+                                            var normalized = PacketNormalizer.EnsureEthernet(packet, linkKind) ?? packet;
+                                            PacketHandler(normalized);
                                         }
                                         else
                                         {
@@ -1784,9 +1786,9 @@ namespace tickMeter.Forms
             }
             
             // Проверяем режимы работы
-            var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
+            var captureAll = VpnSettings.ForceCaptureVirtual || App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
             bool vpnBypassBasic = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
-            bool vpnBypassAdvanced = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+            bool vpnBypassAdvanced = VpnSettings.AdvancedEnabled;
             
             // В мульти-режиме или VPN режиме НЕ ПЕРЕЗАПУСКАЕМ воркеры автоматически
             if (captureAll || vpnBypassBasic || vpnBypassAdvanced)
@@ -1844,9 +1846,9 @@ namespace tickMeter.Forms
             SetHighPriorityThread(Thread.CurrentThread, "PCAP-BgWorker");
             
             // В мульти-режиме или VPN режиме этот метод не должен вызываться
-            var captureAll = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
+            var captureAll = VpnSettings.ForceCaptureVirtual || App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
             bool vpnBypassBasic = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
-            bool vpnBypassAdvanced = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+            bool vpnBypassAdvanced = VpnSettings.AdvancedEnabled;
             if (captureAll || vpnBypassBasic || vpnBypassAdvanced) return;
             
             if (selectedAdapter == null)
@@ -1857,9 +1859,10 @@ namespace tickMeter.Forms
             
             using (PacketCommunicator communicator = selectedAdapter.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 500))
             {
-                if (communicator.DataLink.Kind != DataLinkKind.Ethernet)
+                var linkKind = communicator.DataLink.Kind;
+                if (!PacketNormalizer.IsSupported(linkKind))
                 {
-                    MessageBox.Show("This program works only on Ethernet networks!");
+                    MessageBox.Show("This adapter type is not supported in the current configuration!");
                     return;
                 }
 
@@ -1876,7 +1879,8 @@ namespace tickMeter.Forms
                     var result = communicator.ReceivePacket(out packet);
                     if (result == PacketCommunicatorReceiveResult.Ok && packet != null)
                     {
-                        PacketHandler(packet);
+                        var normalized = PacketNormalizer.EnsureEthernet(packet, linkKind) ?? packet;
+                        PacketHandler(normalized);
                     }
                     else
                     {
@@ -2225,7 +2229,6 @@ namespace tickMeter.Forms
             {
                 Hide();
             }
-            ETW.init();
         }
 
         private void SettingsButton_Click(object sender, EventArgs e)
@@ -2510,6 +2513,12 @@ namespace tickMeter.Forms
         {
             try
             {
+                if (VpnSettings.DisableBpf)
+                {
+                    Debug.Print("[PCAP] BPF filter skipped due to VPN override");
+                    return;
+                }
+
                 bool bpfEnabled = App.settingsManager?.GetOption("bpf_filter_enabled", "False", "ADVANCED") == "True";
                 if (bpfEnabled)
                 {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -65,40 +66,79 @@ namespace tickMeter.Classes
         }
 
         public static Dictionary<string, ProcessNetworkData> processes = new Dictionary<string, ProcessNetworkData>();
+        private static readonly object _initLock = new object();
+        private static bool _initialized;
+
+        public static bool IsInitialized
+        {
+            get
+            {
+                lock (_initLock)
+                {
+                    return _initialized;
+                }
+            }
+        }
+
         public static void init()
         {
-            Thread t = new Thread(ETWSessionThread);
-            t.IsBackground = true;
+            lock (_initLock)
+            {
+                if (_initialized)
+                    return;
+
+                _initialized = true;
+            }
+
+            Thread t = new Thread(ETWSessionThread)
+            {
+                IsBackground = true,
+                Name = "ETWSession"
+            };
             t.Start();
         }
 
         private static async void ETWSessionThread()
         {
-            await Task.Run(() =>
+            try
             {
-                using (var kernelSession = new TraceEventSession(KernelTraceEventParser.KernelSessionName))
+                await Task.Run(() =>
                 {
-                    kernelSession.EnableKernelProvider(KernelTraceEventParser.Keywords.NetworkTCPIP);
+                    using (var kernelSession = new TraceEventSession(KernelTraceEventParser.KernelSessionName))
+                    {
+                        kernelSession.EnableKernelProvider(KernelTraceEventParser.Keywords.NetworkTCPIP);
 
 
-                    kernelSession.Source.Kernel.TcpIpAccept += acceptTCPIP;
-                    kernelSession.Source.Kernel.TcpIpPartACK += ackTCPIP;
-                    kernelSession.Source.Kernel.TcpIpFullACK += ackTCPIP;
-                    kernelSession.Source.Kernel.TcpIpDupACK += ackTCPIP;
-                    kernelSession.Source.Kernel.TcpIpConnect += acceptTCPIP;
-                    kernelSession.Source.Kernel.TcpIpReconnect += tcpIpTrace;
-                    kernelSession.Source.Kernel.TcpIpConnectIPV6 += acceptTCPIPv6;
-                    kernelSession.Source.Kernel.TcpIpSendIPV6 += sendTCPIPv6;
-                    kernelSession.Source.Kernel.TcpIpRecvIPV6 += recvTCPIPv6;
-                    kernelSession.Source.Kernel.TcpIpAcceptIPV6 += acceptTCPIPv6;
-                    kernelSession.Source.Kernel.TcpIpSend += tcpIpSend;
-                    kernelSession.Source.Kernel.TcpIpRecv += tcpIpTrace;
-                    kernelSession.Source.Kernel.UdpIpSend += udpSendTrace;
-                    kernelSession.Source.Kernel.UdpIpRecv += udpSendTrace;
+                        kernelSession.Source.Kernel.TcpIpAccept += acceptTCPIP;
+                        kernelSession.Source.Kernel.TcpIpPartACK += ackTCPIP;
+                        kernelSession.Source.Kernel.TcpIpFullACK += ackTCPIP;
+                        kernelSession.Source.Kernel.TcpIpDupACK += ackTCPIP;
+                        kernelSession.Source.Kernel.TcpIpConnect += acceptTCPIP;
+                        kernelSession.Source.Kernel.TcpIpReconnect += tcpIpTrace;
+                        kernelSession.Source.Kernel.TcpIpConnectIPV6 += acceptTCPIPv6;
+                        kernelSession.Source.Kernel.TcpIpSendIPV6 += sendTCPIPv6;
+                        kernelSession.Source.Kernel.TcpIpRecvIPV6 += recvTCPIPv6;
+                        kernelSession.Source.Kernel.TcpIpAcceptIPV6 += acceptTCPIPv6;
+                        kernelSession.Source.Kernel.TcpIpSend += tcpIpSend;
+                        kernelSession.Source.Kernel.TcpIpRecv += tcpIpTrace;
+                        kernelSession.Source.Kernel.UdpIpSend += udpSendTrace;
+                        kernelSession.Source.Kernel.UdpIpRecv += udpSendTrace;
 
-                    kernelSession.Source.Process();
+                        kernelSession.Source.Process();
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[ETW] Session terminated: {ex.Message}");
+            }
+            finally
+            {
+                lock (_initLock)
+                {
+                    _initialized = false;
                 }
-            });
+            }
         }
 
         private static void ackTCPIP(TcpIpTraceData session)

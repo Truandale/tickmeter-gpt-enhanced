@@ -59,7 +59,8 @@ namespace tickMeter.Classes
                 try
                 {
                     _comm = Device.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 150);
-                    if (_comm.DataLink.Kind != DataLinkKind.Ethernet) return;
+                    var linkKind = _comm.DataLink.Kind;
+                    if (!PacketNormalizer.IsSupported(linkKind)) return;
                     TryApplyTunings(_comm);
 
                     var token = _cts.Token;
@@ -70,7 +71,8 @@ namespace tickMeter.Classes
                             try { _comm.Break(); } catch { }
                             return;
                         }
-                        _owner.Dispatch(Device, packet); // НИКАКОГО UI!
+                        var normalized = PacketNormalizer.EnsureEthernet(packet, linkKind) ?? packet;
+                        _owner.Dispatch(Device, normalized); // НИКАКОГО UI!
                     });
                 }
                 catch
@@ -96,10 +98,15 @@ namespace tickMeter.Classes
             {
                 // BPF
                 try {
-                    var expr = App.settingsManager.GetOption("capture_filter","ip or ip6");
-                    using (var filter = comm.CreateFilter(expr))
+                    bool disableBpf = VpnSettings.DisableBpf;
+                    bool bpfEnabled = App.settingsManager?.GetOption("bpf_filter_enabled", "False", "ADVANCED") == "True";
+                    if (!disableBpf && bpfEnabled)
                     {
-                        comm.SetFilter(filter);
+                        var expr = App.settingsManager.GetOption("capture_filter","ip or ip6");
+                        using (var filter = comm.CreateFilter(expr))
+                        {
+                            comm.SetFilter(filter);
+                        }
                     }
                 } catch { }
                 // Kernel buffer (через рефлексию; молчим если метода нет)

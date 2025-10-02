@@ -55,12 +55,23 @@ namespace tickMeter.Classes
         public static void AnalyzePacket(Packet packet)
         {
             if (!IsEnabled()) return;
+
+            if (packet?.Ethernet?.IpV4 == null)
+                return;
+
+            var connManager = App.connMngr;
+            if (connManager == null)
+                return;
+
             IpV4Datagram ip;
             try
             {
                 ip = packet.Ethernet.IpV4;
             }
-            catch (Exception) { return; }
+            catch (Exception)
+            {
+                return;
+            }
 
             UdpDatagram udp = ip.Udp;
             TcpDatagram tcp = ip.Tcp;
@@ -76,13 +87,16 @@ namespace tickMeter.Classes
             string processName = @"n\a";
             if (protocol == IpV4Protocol.Udp.ToString())
             {
+                if (udp == null)
+                    return;
+
                 fromPort = udp.SourcePort;
                 toPort = udp.DestinationPort;
                 try
                 {
                     UdpProcessRecord record;
-                    List<UdpProcessRecord> UdpConnections = App.connMngr.UdpActiveConnections;
-                    if (UdpConnections.Count > 0)
+                    List<UdpProcessRecord> UdpConnections = connManager.UdpActiveConnections;
+                    if (UdpConnections != null && UdpConnections.Count > 0)
                     {
                         record = UdpConnections.First(procReq => procReq.LocalPort== fromPort || procReq.LocalPort == toPort);
 
@@ -98,18 +112,21 @@ namespace tickMeter.Classes
             }
             else
             {
+                if (tcp == null)
+                    return;
+
                 fromPort = tcp.SourcePort;
                 toPort = tcp.DestinationPort;
                 try
                 {
                     TcpProcessRecord record;
-                    List<TcpProcessRecord> TcpConnections = App.connMngr.TcpActiveConnections;
-                    if (TcpConnections.Count > 0)
+                    List<TcpProcessRecord> TcpConnections = connManager.TcpActiveConnections;
+                    if (TcpConnections != null && TcpConnections.Count > 0)
                     {
-                       record = TcpConnections.First(procReq => 
-                       (procReq.LocalPort == fromPort && procReq.RemotePort == toPort)
-                       || (procReq.LocalPort == fromPort && procReq.RemotePort == toPort)
-                       );
+                        record = TcpConnections.First(procReq =>
+                            (procReq.LocalPort == fromPort && procReq.RemotePort == toPort)
+                            || (procReq.LocalPort == fromPort && procReq.RemotePort == toPort)
+                        );
                         
                         if (record != null)
                         {
@@ -117,7 +134,10 @@ namespace tickMeter.Classes
                         }
                     }
                 }
-                catch (Exception) {processName = @"n\a"; }
+                catch (Exception)
+                {
+                    processName = @"n\a";
+                }
             }
 
             if (processName == @"n\a")

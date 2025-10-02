@@ -47,6 +47,18 @@ namespace tickMeter.Classes
             
             // Инициализируем VPN bypass компоненты
             connectionTracker = new ConnectionTracker();
+            if (VpnSettings.EnableEtwEnrichment)
+            {
+                try
+                {
+                    ETW.init();
+                    Debug.Print("[App.Init] ETW enrichment session initialized");
+                }
+                catch (Exception ex)
+                {
+                    Debug.Print($"[App.Init] ETW initialization failed: {ex.Message}");
+                }
+            }
             
             // Инициализируем детектор спайков
             Classes.SpikeDetection.SpikeDetectionManager.InitializeDetector();

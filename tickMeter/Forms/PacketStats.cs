@@ -67,9 +67,9 @@ namespace tickMeter
         public PacketFilter packetFilter;
 
         // Multi-adapter support - DEPRECATED: переходим на CaptureService
-        private readonly List<BackgroundWorker> _pcapWorkers = new List<BackgroundWorker>();
-        private bool CaptureAll => App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
-        private bool _ignoreVirtual => App.settingsManager.GetOption("ignore_virtual_adapters", "True", "SETTINGS") == "True";
+    private readonly List<BackgroundWorker> _pcapWorkers = new List<BackgroundWorker>();
+    private bool CaptureAll => VpnSettings.ForceCaptureVirtual || App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
+    private bool _ignoreVirtual => VpnSettings.ForceCaptureVirtual ? false : App.settingsManager.GetOption("ignore_virtual_adapters", "True", "SETTINGS") == "True";
 
         // CaptureService integration - ОСНОВНАЯ СИСТЕМА
         private tickMeter.Classes.CaptureService.Subscription _captureSub;
@@ -538,22 +538,20 @@ namespace tickMeter
 
             using (communicator)
             {
-                // Проверяем, что адаптер поддерживает Ethernet
+                var linkKind = communicator.DataLink.Kind;
                 try
                 {
-                    if (communicator.DataLink.Kind != DataLinkKind.Ethernet)
+                    if (!PacketNormalizer.IsSupported(linkKind))
                     {
-                        // В режиме мультиадаптера просто пропускаем неподдерживаемые адаптеры
                         if (!CaptureAll)
                         {
-                            MessageBox.Show("This program works only on Ethernet networks!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            MessageBox.Show("This adapter type is not supported in the current configuration!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
                         return;
                     }
                 }
                 catch (NotSupportedException)
                 {
-                    // Неподдерживаемый тип адаптера (например, loopback) - пропускаем
                     if (!CaptureAll)
                     {
                         MessageBox.Show("This adapter type is not supported!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -564,8 +562,9 @@ namespace tickMeter
                 // Применяем опциональный BPF фильтр из Advanced настроек
                 try
                 {
+                    bool disableBpf = VpnSettings.DisableBpf;
                     bool bpfEnabled = App.settingsManager?.GetOption("bpf_filter_enabled", "False", "ADVANCED") == "True";
-                    if (bpfEnabled)
+                    if (!disableBpf && bpfEnabled)
                     {
                         string filterExpr = App.settingsManager?.GetOption("capture_filter", "ip or ip6", "ADVANCED");
                         if (!string.IsNullOrWhiteSpace(filterExpr))
@@ -584,7 +583,11 @@ namespace tickMeter
                         try
                         {
                             // Получаем пакеты порциями с коротким таймаутом
-                            var result = communicator.ReceivePackets(100, PacketHandler);
+                            var result = communicator.ReceivePackets(100, p =>
+                            {
+                                var normalized = PacketNormalizer.EnsureEthernet(p, linkKind) ?? p;
+                                PacketHandler(normalized);
+                            });
                             if (result == PacketCommunicatorReceiveResult.Timeout)
                             {
                                 // Таймаут - проверяем флаг tracking и продолжаем
@@ -770,7 +773,7 @@ namespace tickMeter
             ListViewItem[] items = new ListViewItem[tmpPackets.Count];
             
             Int32 iKey = 0;
-            bool vpnBypassAdvanced = App.settingsManager?.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+            bool vpnBypassAdvanced = VpnSettings.AdvancedEnabled;
             foreach (Packet packet in tmpPackets) {
                 // Проверяем, что пакет не null
                 if (packet == null)

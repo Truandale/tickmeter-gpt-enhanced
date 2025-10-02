@@ -8,6 +8,8 @@ namespace tickMeter.Forms
 {
     public partial class AdvancedSettingsForm : Form
     {
+        private bool _loadingSettings;
+
         public AdvancedSettingsForm()
         {
             InitializeComponent();
@@ -17,6 +19,7 @@ namespace tickMeter.Forms
 
         private void LoadSettings()
         {
+            _loadingSettings = true;
             try
             {
                 // Live View настройки
@@ -69,6 +72,10 @@ namespace tickMeter.Forms
                 // VPN bypass настройки
                 chkVpnBypassBasic.Checked = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
                 chkVpnBypassAdvanced.Checked = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+                chkVpnCaptureVirtual.Checked = App.settingsManager.GetOption("vpn_capture_virtual", "False", "ADVANCED") == "True";
+                chkVpnAllowRaw.Checked = App.settingsManager.GetOption("vpn_allow_non_ethernet", "False", "ADVANCED") == "True";
+                chkVpnDisableBpf.Checked = App.settingsManager.GetOption("vpn_disable_bpf", "False", "ADVANCED") == "True";
+                chkVpnEtwEnrichment.Checked = App.settingsManager.GetOption("vpn_etw_enrichment", "False", "ADVANCED") == "True";
                 
                 // Performance Optimization Phase 1-3 настройки
                 chkAntiReentrancy.Checked = App.settingsManager.GetOption("anti_reentrancy", "True", "ADVANCED") == "True";
@@ -108,6 +115,11 @@ namespace tickMeter.Forms
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка загрузки настроек: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            finally
+            {
+                _loadingSettings = false;
+                ApplyVpnRules();
             }
         }
 
@@ -160,6 +172,10 @@ namespace tickMeter.Forms
                 // VPN bypass настройки
                 App.settingsManager.SetOption("vpn_bypass_basic", chkVpnBypassBasic.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("vpn_bypass_advanced", chkVpnBypassAdvanced.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("vpn_capture_virtual", chkVpnCaptureVirtual.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("vpn_allow_non_ethernet", chkVpnAllowRaw.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("vpn_disable_bpf", chkVpnDisableBpf.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("vpn_etw_enrichment", chkVpnEtwEnrichment.Checked.ToString(), "ADVANCED");
                 
                 // Performance Optimization Phase 1-3 настройки  
                 App.settingsManager.SetOption("anti_reentrancy", chkAntiReentrancy.Checked.ToString(), "ADVANCED");
@@ -209,6 +225,121 @@ namespace tickMeter.Forms
             {
                 MessageBox.Show($"Ошибка сохранения настроек: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void ApplyVpnRules()
+        {
+            if (chkVpnBypassAdvanced == null || chkVpnCaptureVirtual == null || chkVpnDisableBpf == null || chkVpnAllowRaw == null || chkVpnEtwEnrichment == null)
+                return;
+
+            var previousState = _loadingSettings;
+            _loadingSettings = true;
+
+            try
+            {
+                bool advancedEnabled = chkVpnBypassAdvanced.Checked;
+
+                chkVpnCaptureVirtual.Enabled = advancedEnabled;
+                chkVpnAllowRaw.Enabled = advancedEnabled;
+                chkVpnDisableBpf.Enabled = advancedEnabled;
+                chkVpnEtwEnrichment.Enabled = advancedEnabled;
+
+                bool captureVirtual = advancedEnabled && chkVpnCaptureVirtual.Checked;
+                chkCaptureAllAdapters.Enabled = !captureVirtual;
+                chkIgnoreVirtualAdapters.Enabled = !captureVirtual;
+
+                if (captureVirtual)
+                {
+                    if (!chkCaptureAllAdapters.Checked)
+                        chkCaptureAllAdapters.Checked = true;
+                    if (chkIgnoreVirtualAdapters.Checked)
+                        chkIgnoreVirtualAdapters.Checked = false;
+                }
+
+                bool disableBpf = advancedEnabled && chkVpnDisableBpf.Checked;
+                chkBpfFilter.Enabled = !disableBpf;
+                if (disableBpf && chkBpfFilter.Checked)
+                    chkBpfFilter.Checked = false;
+
+                captureFilterTextBox.Enabled = !disableBpf && chkBpfFilter.Checked;
+            }
+            finally
+            {
+                _loadingSettings = previousState;
+                if (!_loadingSettings)
+                {
+                    bool disableBpf = chkVpnBypassAdvanced.Checked && chkVpnDisableBpf.Checked;
+                    captureFilterTextBox.Enabled = !disableBpf && chkBpfFilter.Checked;
+                }
+            }
+        }
+
+        private void chkVpnCaptureVirtual_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_loadingSettings) return;
+            ApplyVpnRules();
+        }
+
+        private void chkVpnDisableBpf_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_loadingSettings) return;
+            ApplyVpnRules();
+        }
+
+        private void chkVpnAllowRaw_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_loadingSettings) return;
+            // Пока только применяем общие правила
+            ApplyVpnRules();
+        }
+
+        private void chkVpnEtwEnrichment_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_loadingSettings) return;
+            if (chkVpnEtwEnrichment.Checked && !ETW.IsInitialized)
+            {
+                try
+                {
+                    ETW.init();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Не удалось запустить ETW-сессию: {ex.Message}", "ETW", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    chkVpnEtwEnrichment.Checked = false;
+                }
+            }
+            else if (!chkVpnEtwEnrichment.Checked && ETW.IsInitialized)
+            {
+                MessageBox.Show(
+                    "Отключение ETW вступит в силу после перезапуска приложения.",
+                    "ETW",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+        }
+
+        private void chkVpnBypassAdvanced_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_loadingSettings) return;
+
+            if (!chkVpnBypassAdvanced.Checked)
+            {
+                var previous = _loadingSettings;
+                _loadingSettings = true;
+                try
+                {
+                    chkVpnCaptureVirtual.Checked = false;
+                    chkVpnAllowRaw.Checked = false;
+                    chkVpnDisableBpf.Checked = false;
+                    chkVpnEtwEnrichment.Checked = false;
+                }
+                finally
+                {
+                    _loadingSettings = previous;
+                }
+            }
+
+            ApplyVpnRules();
         }
 
         private void btnSave_Click(object sender, EventArgs e)
@@ -334,6 +465,11 @@ namespace tickMeter.Forms
             // VPN bypass - отключен по умолчанию
             chkVpnBypassBasic.Checked = false;
             chkVpnBypassAdvanced.Checked = false;
+            chkVpnCaptureVirtual.Checked = false;
+            chkVpnAllowRaw.Checked = false;
+            chkVpnDisableBpf.Checked = false;
+            chkVpnEtwEnrichment.Checked = false;
+            ApplyVpnRules();
             
             // === PHASE 1: Anti-reentrancy (ВКЛЮЧЕНЫ) ===
             chkAntiReentrancy.Checked = true;

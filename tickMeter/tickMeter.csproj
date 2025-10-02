@@ -230,6 +230,7 @@
     <Compile Include="Classes\AutoDetectMngr.cs" />
     <Compile Include="Classes\CaptureService.cs" />
     <Compile Include="Classes\ConnectionsManager.cs" />
+  <Compile Include="Classes\PacketNormalizer.cs" />
     <Compile Include="Classes\ETW.cs" />
     <Compile Include="Classes\GameProfile.cs" />
     <Compile Include="Classes\GameProfileManager.cs" />

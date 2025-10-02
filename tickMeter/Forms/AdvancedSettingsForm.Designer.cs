@@ -30,6 +30,10 @@ namespace tickMeter.Forms
         {
             this.panel1 = new System.Windows.Forms.Panel();
             this.groupBoxVpnBypass = new System.Windows.Forms.GroupBox();
+            this.chkVpnEtwEnrichment = new System.Windows.Forms.CheckBox();
+            this.chkVpnDisableBpf = new System.Windows.Forms.CheckBox();
+            this.chkVpnAllowRaw = new System.Windows.Forms.CheckBox();
+            this.chkVpnCaptureVirtual = new System.Windows.Forms.CheckBox();
             this.chkVpnBypassAdvanced = new System.Windows.Forms.CheckBox();
             this.chkVpnBypassBasic = new System.Windows.Forms.CheckBox();
             this.groupBoxPhase3 = new System.Windows.Forms.GroupBox();
@@ -293,6 +297,10 @@ namespace tickMeter.Forms
             // 
             // groupBoxVpnBypass
             // 
+            this.groupBoxVpnBypass.Controls.Add(this.chkVpnEtwEnrichment);
+            this.groupBoxVpnBypass.Controls.Add(this.chkVpnDisableBpf);
+            this.groupBoxVpnBypass.Controls.Add(this.chkVpnAllowRaw);
+            this.groupBoxVpnBypass.Controls.Add(this.chkVpnCaptureVirtual);
             this.groupBoxVpnBypass.Controls.Add(this.chkVpnBypassAdvanced);
             this.groupBoxVpnBypass.Controls.Add(this.chkVpnBypassBasic);
             this.groupBoxVpnBypass.Dock = System.Windows.Forms.DockStyle.Top;
@@ -300,10 +308,58 @@ namespace tickMeter.Forms
             this.groupBoxVpnBypass.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxVpnBypass.Name = "groupBoxVpnBypass";
             this.groupBoxVpnBypass.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBoxVpnBypass.Size = new System.Drawing.Size(753, 98);
+            this.groupBoxVpnBypass.Size = new System.Drawing.Size(753, 214);
             this.groupBoxVpnBypass.TabIndex = 5;
             this.groupBoxVpnBypass.TabStop = false;
             this.groupBoxVpnBypass.Text = "VPN Bypass";
+            // 
+            // chkVpnEtwEnrichment
+            // 
+            this.chkVpnEtwEnrichment.AutoSize = true;
+            this.chkVpnEtwEnrichment.Location = new System.Drawing.Point(40, 171);
+            this.chkVpnEtwEnrichment.Margin = new System.Windows.Forms.Padding(4);
+            this.chkVpnEtwEnrichment.Name = "chkVpnEtwEnrichment";
+            this.chkVpnEtwEnrichment.Size = new System.Drawing.Size(413, 20);
+            this.chkVpnEtwEnrichment.TabIndex = 5;
+            this.chkVpnEtwEnrichment.Text = "Сопоставление через ETW (TCPIP события для реальных адресов)";
+            this.chkVpnEtwEnrichment.UseVisualStyleBackColor = true;
+            this.chkVpnEtwEnrichment.CheckedChanged += new System.EventHandler(this.chkVpnEtwEnrichment_CheckedChanged);
+            // 
+            // chkVpnDisableBpf
+            // 
+            this.chkVpnDisableBpf.AutoSize = true;
+            this.chkVpnDisableBpf.Location = new System.Drawing.Point(40, 143);
+            this.chkVpnDisableBpf.Margin = new System.Windows.Forms.Padding(4);
+            this.chkVpnDisableBpf.Name = "chkVpnDisableBpf";
+            this.chkVpnDisableBpf.Size = new System.Drawing.Size(333, 20);
+            this.chkVpnDisableBpf.TabIndex = 4;
+            this.chkVpnDisableBpf.Text = "Отключать BPF фильтр при обходе VPN (полный захват)";
+            this.chkVpnDisableBpf.UseVisualStyleBackColor = true;
+            this.chkVpnDisableBpf.CheckedChanged += new System.EventHandler(this.chkVpnDisableBpf_CheckedChanged);
+            // 
+            // chkVpnAllowRaw
+            // 
+            this.chkVpnAllowRaw.AutoSize = true;
+            this.chkVpnAllowRaw.Location = new System.Drawing.Point(40, 115);
+            this.chkVpnAllowRaw.Margin = new System.Windows.Forms.Padding(4);
+            this.chkVpnAllowRaw.Name = "chkVpnAllowRaw";
+            this.chkVpnAllowRaw.Size = new System.Drawing.Size(356, 20);
+            this.chkVpnAllowRaw.TabIndex = 3;
+            this.chkVpnAllowRaw.Text = "Разрешать Raw/TUN каналы (WireGuard, Wintun и т.п.)";
+            this.chkVpnAllowRaw.UseVisualStyleBackColor = true;
+            this.chkVpnAllowRaw.CheckedChanged += new System.EventHandler(this.chkVpnAllowRaw_CheckedChanged);
+            // 
+            // chkVpnCaptureVirtual
+            // 
+            this.chkVpnCaptureVirtual.AutoSize = true;
+            this.chkVpnCaptureVirtual.Location = new System.Drawing.Point(20, 87);
+            this.chkVpnCaptureVirtual.Margin = new System.Windows.Forms.Padding(4);
+            this.chkVpnCaptureVirtual.Name = "chkVpnCaptureVirtual";
+            this.chkVpnCaptureVirtual.Size = new System.Drawing.Size(446, 20);
+            this.chkVpnCaptureVirtual.TabIndex = 2;
+            this.chkVpnCaptureVirtual.Text = "Захватывать VPN/виртуальные адаптеры (блокирует Ignore virtual)";
+            this.chkVpnCaptureVirtual.UseVisualStyleBackColor = true;
+            this.chkVpnCaptureVirtual.CheckedChanged += new System.EventHandler(this.chkVpnCaptureVirtual_CheckedChanged);
             // 
             // chkVpnBypassAdvanced
             // 
@@ -315,6 +371,7 @@ namespace tickMeter.Forms
             this.chkVpnBypassAdvanced.TabIndex = 1;
             this.chkVpnBypassAdvanced.Text = "Сложный VPN bypass (отслеживание через IP Helper API)";
             this.chkVpnBypassAdvanced.UseVisualStyleBackColor = true;
+            this.chkVpnBypassAdvanced.CheckedChanged += new System.EventHandler(this.chkVpnBypassAdvanced_CheckedChanged);
             // 
             // chkVpnBypassBasic
             // 
@@ -2935,8 +2992,12 @@ namespace tickMeter.Forms
     private System.Windows.Forms.Label lblPingSpikeThreshold;
 
         private System.Windows.Forms.GroupBox groupBoxVpnBypass;
-        private System.Windows.Forms.CheckBox chkVpnBypassBasic;
-        private System.Windows.Forms.CheckBox chkVpnBypassAdvanced;
+    private System.Windows.Forms.CheckBox chkVpnBypassBasic;
+    private System.Windows.Forms.CheckBox chkVpnBypassAdvanced;
+    private System.Windows.Forms.CheckBox chkVpnCaptureVirtual;
+    private System.Windows.Forms.CheckBox chkVpnAllowRaw;
+    private System.Windows.Forms.CheckBox chkVpnDisableBpf;
+    private System.Windows.Forms.CheckBox chkVpnEtwEnrichment;
         
         // Performance Optimization Controls
         private System.Windows.Forms.GroupBox groupBoxPhase1;

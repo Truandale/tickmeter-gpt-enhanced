@@ -53,7 +53,7 @@ namespace tickMeter
         {
             await Task.Run(() =>
             {
-                bool vpnBypassAdvanced = App.settingsManager?.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+                bool vpnBypassAdvanced = VpnSettings.AdvancedEnabled;
                 bool canUseTracker = vpnBypassAdvanced && App.connectionTracker != null;
 
                 lock (_processInfoLock)

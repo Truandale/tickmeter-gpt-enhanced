@@ -23,6 +23,31 @@ namespace tickMeter.Classes
         }
     }
 
+    public static class VpnSettings
+    {
+        private static bool IsTrue(string key)
+        {
+            try
+            {
+                return App.settingsManager?.GetOption(key, "False", "ADVANCED") == "True";
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+    public static bool AdvancedEnabled => IsTrue("vpn_bypass_advanced");
+
+    public static bool ForceCaptureVirtual => AdvancedEnabled && IsTrue("vpn_capture_virtual");
+
+    public static bool AllowNonEthernet => AdvancedEnabled && IsTrue("vpn_allow_non_ethernet");
+
+    public static bool DisableBpf => AdvancedEnabled && IsTrue("vpn_disable_bpf");
+
+    public static bool EnableEtwEnrichment => AdvancedEnabled && IsTrue("vpn_etw_enrichment");
+    }
+
     /// <summary>
     /// Быстрый трекер соединений: (proto, local(ip,port), remote(ip,port)) -> { pid, exe }
     /// Источник: IP Helper (v4+v6). Период обновления ~300 мс. ETW можно добавить позднее.
