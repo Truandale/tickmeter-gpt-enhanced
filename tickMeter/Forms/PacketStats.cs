@@ -1,6 +1,7 @@
 ﻿using PcapDotNet.Core;
 using PcapDotNet.Packets;
 using PcapDotNet.Packets.IpV4;
+using PcapDotNet.Packets.IpV6;
 using PcapDotNet.Packets.Transport;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,8 @@ using System.Windows.Forms;
 using tickMeter.Classes;
 using System.Runtime.CompilerServices;
 using System.Net;
+using System.Net.Sockets;
+using tickMeter.WinDivertLayer;
 
 namespace tickMeter
 {
@@ -31,9 +34,11 @@ namespace tickMeter
         public int Length;
         public string Protocol;
         public string ProcessName;
+        public string ResolvedRemote;
+        public string ResolvedBy;
         
         public PacketRow(DateTime ts, int id, string srcIp, uint srcPort, string dstIp, uint dstPort, 
-                        int len, string proto, string proc)
+                        int len, string proto, string proc, string resolvedRemote, string resolvedBy)
         {
             Timestamp = ts;
             Id = id;
@@ -44,6 +49,8 @@ namespace tickMeter
             Length = len;
             Protocol = proto;
             ProcessName = proc;
+            ResolvedRemote = resolvedRemote;
+            ResolvedBy = resolvedBy;
         }
     }
     
@@ -67,6 +74,7 @@ namespace tickMeter
         Thread PcapThread;
         public BackgroundWorker pcapWorker;
         public PacketFilter packetFilter;
+    private WinDivertSniffer _winDivertSniffer;
 
         // Multi-adapter support - DEPRECATED: переходим на CaptureService
     private readonly List<BackgroundWorker> _pcapWorkers = new List<BackgroundWorker>();
@@ -88,10 +96,12 @@ namespace tickMeter
         private int _ringHead = 0, _ringCount = 0; // head — индекс самого старого
         private bool _useVirtual = false;
         private int _packetIdCounter = 0;
+    private bool _enableIpv6 = true;
 
         public PacketStats()
         {
             InitializeComponent();
+            EtwBroker.Start();
             packetFilter = new PacketFilter();
             
             // Инициализация VirtualMode на основе настроек
@@ -167,6 +177,7 @@ namespace tickMeter
                 
                 // Настройка Local IP
                 App.meterState.LocalIP = App.settingsForm.local_ip_textbox.Text;
+                _enableIpv6 = App.settingsManager?.GetOption("enable_ipv6", "True", "SETTINGS") == "True";
                 
                 // Запуск CaptureService подписки
                 StartCaptureService();
@@ -317,33 +328,71 @@ namespace tickMeter
         {
             try
             {
-                // Базовая проверка наличия IP
-                if (packet.Ethernet?.IpV4 == null && packet.Ethernet?.IpV6 == null)
+                var ethernet = packet.Ethernet;
+                if (ethernet == null)
                     return false;
-                
-                // Применяем фильтр IP если установлен
+
+                var ipv4 = ethernet.IpV4;
+                var ipv6 = _enableIpv6 ? ethernet.IpV6 : null;
+
+                if (ipv4 == null && ipv6 == null)
+                    return false;
+
                 if (!string.IsNullOrEmpty(packetFilter.DestIpFilter) || !string.IsNullOrEmpty(packetFilter.SourceIpFilter))
                 {
-                    var ipv4 = packet.Ethernet.IpV4;
+                    bool matches = false;
                     if (ipv4 != null)
-                    {
-                        var srcIp = ipv4.Source.ToString();
-                        var dstIp = ipv4.Destination.ToString();
-                        
-                        bool matchesSrc = string.IsNullOrEmpty(packetFilter.SourceIpFilter) || srcIp.Contains(packetFilter.SourceIpFilter);
-                        bool matchesDst = string.IsNullOrEmpty(packetFilter.DestIpFilter) || dstIp.Contains(packetFilter.DestIpFilter);
-                        
-                        if (!matchesSrc && !matchesDst)
-                            return false;
-                    }
+                        matches |= MatchesIpFilters(ipv4.Source.ToString(), ipv4.Destination.ToString());
+                    if (!matches && ipv6 != null)
+                        matches |= MatchesIpFilters(ipv6.Source.ToString(), ipv6.CurrentDestination.ToString());
+
+                    if (!matches)
+                        return false;
                 }
-                
+
                 return true;
             }
             catch
             {
                 return false;
             }
+        }
+
+        private bool MatchesIpFilters(string source, string dest)
+        {
+            bool matchesSrc = string.IsNullOrEmpty(packetFilter.SourceIpFilter) || source.IndexOf(packetFilter.SourceIpFilter, StringComparison.OrdinalIgnoreCase) >= 0;
+            bool matchesDst = string.IsNullOrEmpty(packetFilter.DestIpFilter) || dest.IndexOf(packetFilter.DestIpFilter, StringComparison.OrdinalIgnoreCase) >= 0;
+            return matchesSrc || matchesDst;
+        }
+
+        private static bool IsLocalAddress(string ip)
+        {
+            if (string.IsNullOrWhiteSpace(ip))
+                return false;
+
+            if (!IPAddress.TryParse(ip, out var address))
+                return false;
+
+            if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+            {
+                var bytes = address.GetAddressBytes();
+                if (bytes[0] == 10) return true;
+                if (bytes[0] == 127) return true;
+                if (bytes[0] == 192 && bytes[1] == 168) return true;
+                if (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31) return true;
+                return false;
+            }
+
+            if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+            {
+                if (IPAddress.IsLoopback(address)) return true;
+                if (address.IsIPv6LinkLocal || address.IsIPv6SiteLocal) return true;
+                var bytes = address.GetAddressBytes();
+                if ((bytes[0] & 0xfe) == 0xfc) return true; // Unique local fc00::/7
+                return false;
+            }
+
+            return false;
         }
         
         /// <summary>
@@ -624,14 +673,39 @@ namespace tickMeter
         private void PacketHandler(Packet packet)
         {
             if (!tracking) return;
-            IpV4Datagram ip;
+
+            IpV4Datagram ip4 = null;
+            IpV6Datagram ip6 = null;
+
             try
             {
-                ip = packet.Ethernet.IpV4;
+                var ethernet = packet.Ethernet;
+                if (ethernet == null)
+                    return;
+
+                ip4 = ethernet.IpV4;
+                if (ip4 == null && _enableIpv6)
+                {
+                    ip6 = ethernet.IpV6;
+                }
             }
-            catch (Exception) { return; }
-            packetFilter.ip = ip;
-            if (!packetFilter.Validate()) return;
+            catch (Exception)
+            {
+                return;
+            }
+
+            if (ip4 == null && ip6 == null)
+                return;
+
+            if (ip4 != null)
+            {
+                packetFilter.ip = ip4;
+                if (!packetFilter.Validate()) return;
+            }
+            else if (!_enableIpv6)
+            {
+                return;
+            }
             
             // Thread-safe addition to PacketBuffer with aggressive size limit for Live View
             lock (_packetBufferLock)
@@ -658,38 +732,43 @@ namespace tickMeter
 
             // Простая логика: подсчитываем все пакеты
             // Исходящие: если source из приватной подсети (наша сеть)
-            string sourceIP = ip.Source.ToString();
-            string destIP = ip.Destination.ToString();
-            
-            bool sourceIsLocal = sourceIP.StartsWith("192.168.") || sourceIP.StartsWith("10.") || 
-                               sourceIP.StartsWith("172.16.") || sourceIP.StartsWith("172.17.") ||
-                               sourceIP.StartsWith("172.18.") || sourceIP.StartsWith("172.19.") ||
-                               sourceIP.StartsWith("172.2") || sourceIP.StartsWith("172.30.") ||
-                               sourceIP.StartsWith("127.") || sourceIP == "::1";
-                               
-            bool destIsLocal = destIP.StartsWith("192.168.") || destIP.StartsWith("10.") || 
-                             destIP.StartsWith("172.16.") || destIP.StartsWith("172.17.") ||
-                             destIP.StartsWith("172.18.") || destIP.StartsWith("172.19.") ||
-                             destIP.StartsWith("172.2") || destIP.StartsWith("172.30.") ||
-                             destIP.StartsWith("127.") || destIP == "::1";
+            string sourceIP;
+            string destIP;
+            int packetLength;
+
+            if (ip4 != null)
+            {
+                sourceIP = ip4.Source.ToString();
+                destIP = ip4.Destination.ToString();
+                packetLength = ip4.TotalLength;
+            }
+            else
+            {
+                sourceIP = ip6.Source.ToString();
+                destIP = ip6.CurrentDestination.ToString();
+                packetLength = packet.Length;
+            }
+
+            bool sourceIsLocal = IsLocalAddress(sourceIP);
+            bool destIsLocal = IsLocalAddress(destIP);
 
             if (sourceIsLocal && !destIsLocal)
             {
                 // Исходящий трафик: из локальной сети в интернет
                 outPackets++;
-                outTraffic += ip.TotalLength;
+                outTraffic += packetLength;
             }
             else if (!sourceIsLocal && destIsLocal)
             {
                 // Входящий трафик: из интернета в локальную сеть
                 inPackets++;
-                inTraffic += ip.TotalLength;
+                inTraffic += packetLength;
             }
             else
             {
                 // Внутренний трафик или неопределенный - считаем как исходящий
                 outPackets++;
-                outTraffic += ip.TotalLength;
+                outTraffic += packetLength;
             }
         }
 
@@ -787,143 +866,155 @@ namespace tickMeter
                 if (packet == null)
                     continue;
                     
-                IpV4Datagram ip;
+                IpV4Datagram ip4 = null;
+                IpV6Datagram ip6 = null;
                 try
                 {
-                    // Проверяем, что пакет имеет Ethernet заголовок
-                    if (packet.Ethernet == null)
+                    var ethernet = packet.Ethernet;
+                    if (ethernet == null)
                         continue;
-                    
-                    // Проверяем, что это IPv4 пакет
-                    ip = packet.Ethernet.IpV4;
-                    if (ip == null)
-                        continue;
+
+                    ip4 = ethernet.IpV4;
+                    if (ip4 == null && _enableIpv6)
+                    {
+                        ip6 = ethernet.IpV6;
+                    }
                 }
-                catch (Exception) { continue; } // Продолжаем обработку следующего пакета
+                catch (Exception) { continue; }
+
+                if (ip4 == null && ip6 == null)
+                    continue;
 
                 UdpDatagram udp = null;
                 TcpDatagram tcp = null;
-                string from_ip = "";
-                string to_ip = "";
-                string packet_size = "";
+                string from_ip;
+                string to_ip;
+                int packetLength;
+                string packet_size;
                 ConnectionTracker.Info? trackerOverride = null;
                 byte trackerProto = 0;
                 int trackerSrcPort = 0;
                 int trackerDstPort = 0;
-                
-                try
-                {
-                    udp = ip.Udp;
-                    tcp = ip.Tcp;
-                    
-                    from_ip = ip.Source.ToString();
-                    to_ip = ip.Destination.ToString();
-                    packet_size = ip.TotalLength.ToString();
-                }
-                catch (Exception) { continue; } // Пропускаем пакет, если не можем получить базовую информацию
-
-                string protocol = ip.Protocol.ToString();
                 uint fromPort = 0;
                 uint toPort = 0;
-                string processName = @"n\a";
-                if (protocol == IpV4Protocol.Udp.ToString() && udp != null)
+                string protocol;
+
+                try
+                {
+                    if (ip4 != null)
+                    {
+                        udp = ip4.Udp;
+                        tcp = ip4.Tcp;
+                        from_ip = ip4.Source.ToString();
+                        to_ip = ip4.Destination.ToString();
+                        packetLength = ip4.TotalLength;
+                        protocol = ip4.Protocol.ToString();
+                    }
+                    else
+                    {
+                        udp = ip6.Udp;
+                        tcp = ip6.Tcp;
+                        from_ip = ip6.Source.ToString();
+                        to_ip = ip6.CurrentDestination.ToString();
+                        packetLength = packet.Length;
+                        protocol = ip6.NextHeader.ToString();
+                    }
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+
+                if (udp != null)
                 {
                     fromPort = udp.SourcePort;
                     toPort = udp.DestinationPort;
                     trackerProto = 17;
-                    trackerSrcPort = (int)fromPort;
-                    trackerDstPort = (int)toPort;
-                    try
-                    {
-                        UdpProcessRecord record;
-                        List<UdpProcessRecord> UdpConnections = connMngr.UdpActiveConnections;
-                        if (UdpConnections.Count > 0)
-                        {
-                            record = UdpConnections.Find(
-                                procReq => procReq.LocalPort == fromPort || procReq.LocalPort == toPort
-                                );
-
-                            if (record != null)
-                            {
-                                processName = record.ProcessName;
-                                if(processName == null)
-                                {
-                                    processName = record.ProcessId.ToString();
-                                }
-                            }
-                        }
-                    } catch(Exception) { 
-                        processName = @"n\a"; 
-                    }
-                    
                 }
-                else if (protocol == IpV4Protocol.Tcp.ToString() && tcp != null)
+                else if (tcp != null)
                 {
                     fromPort = tcp.SourcePort;
                     toPort = tcp.DestinationPort;
                     trackerProto = 6;
+                }
+
+                if (trackerProto != 0)
+                {
                     trackerSrcPort = (int)fromPort;
                     trackerDstPort = (int)toPort;
+                    protocol = trackerProto == 6 ? "TCP" : "UDP";
+                }
+
+                packet_size = packetLength.ToString();
+                string processName = @"n\a";
+                if (trackerProto == 17 && udp != null)
+                {
                     try
                     {
-                        TcpProcessRecord record;
-                        List<TcpProcessRecord> TcpConnections = connMngr.TcpActiveConnections;
-                        if(TcpConnections.Count > 0)
+                        var udpConnections = connMngr.UdpActiveConnections;
+                        if (udpConnections.Count > 0)
                         {
-                            record = TcpConnections.Find(
-                                procReq => (procReq.LocalPort == fromPort && procReq.RemotePort == toPort)
-                                || (procReq.LocalPort == toPort && procReq.RemotePort == fromPort)
-                                );
+                            var record = udpConnections.Find(procReq => procReq.LocalPort == fromPort || procReq.LocalPort == toPort);
                             if (record != null)
                             {
-                                processName = record.ProcessName;
-                                if (processName == null)
-                                {
-                                    processName = record.ProcessId.ToString();
-                                }
+                                processName = record.ProcessName ?? record.ProcessId.ToString();
                             }
                         }
-                        
-                    } catch (Exception) { 
-                        processName = @"n\a"; 
                     }
-
+                    catch (Exception)
+                    {
+                        processName = @"n\a";
+                    }
+                }
+                else if (trackerProto == 6 && tcp != null)
+                {
+                    try
+                    {
+                        var tcpConnections = connMngr.TcpActiveConnections;
+                        if (tcpConnections.Count > 0)
+                        {
+                            var record = tcpConnections.Find(procReq => (procReq.LocalPort == fromPort && procReq.RemotePort == toPort)
+                                                                       || (procReq.LocalPort == toPort && procReq.RemotePort == fromPort));
+                            if (record != null)
+                            {
+                                processName = record.ProcessName ?? record.ProcessId.ToString();
+                            }
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        processName = @"n\a";
+                    }
                 }
                 if (vpnBypassAdvanced && trackerProto != 0 && App.connectionTracker != null)
                 {
                     try
                     {
-                        if (!IPAddress.TryParse(from_ip, out var srcAddress))
+                        if (IPAddress.TryParse(from_ip, out var srcAddress) && IPAddress.TryParse(to_ip, out var dstAddress))
                         {
-                            srcAddress = new IPAddress(ip.Source.ToValue());
-                        }
-
-                        if (!IPAddress.TryParse(to_ip, out var dstAddress))
-                        {
-                            dstAddress = new IPAddress(ip.Destination.ToValue());
-                        }
-                        bool swappedLookup = false;
-                        if (App.connectionTracker.TryResolve(trackerProto, srcAddress, trackerSrcPort, dstAddress, trackerDstPort, out var info) ||
-                            (swappedLookup = App.connectionTracker.TryResolve(trackerProto, dstAddress, trackerDstPort, srcAddress, trackerSrcPort, out info)))
-                        {
-                            trackerOverride = info;
-                            if (_trackerLogCount < 100)
+                            bool swappedLookup = false;
+                            if (App.connectionTracker.TryResolve(trackerProto, srcAddress, trackerSrcPort, dstAddress, trackerDstPort, out var info) ||
+                                (swappedLookup = App.connectionTracker.TryResolve(trackerProto, dstAddress, trackerDstPort, srcAddress, trackerSrcPort, out info)))
                             {
-                                _trackerLogCount++;
-                                if (!swappedLookup)
+                                trackerOverride = info;
+                                if (_trackerLogCount < 100)
                                 {
-                                    DebugLogger.log($"[PacketStats] Tracker HIT proto={trackerProto} {srcAddress}:{trackerSrcPort} -> {dstAddress}:{trackerDstPort} => PID={info.Pid} EXE={info.Exe}");
-                                }
-                                else
-                                {
-                                    DebugLogger.log($"[PacketStats] Tracker HIT proto={trackerProto} (swapped) {dstAddress}:{trackerDstPort} -> {srcAddress}:{trackerSrcPort} => PID={info.Pid} EXE={info.Exe}");
+                                    _trackerLogCount++;
+                                    if (!swappedLookup)
+                                    {
+                                        DebugLogger.log($"[PacketStats] Tracker HIT proto={trackerProto} {srcAddress}:{trackerSrcPort} -> {dstAddress}:{trackerDstPort} => PID={info.Pid} EXE={info.Exe}");
+                                    }
+                                    else
+                                    {
+                                        DebugLogger.log($"[PacketStats] Tracker HIT proto={trackerProto} (swapped) {dstAddress}:{trackerDstPort} -> {srcAddress}:{trackerSrcPort} => PID={info.Pid} EXE={info.Exe}");
+                                    }
                                 }
                             }
-                        }
-                        else if (_trackerLogCount < 100)
-                        {
-                            _trackerLogCount++;
-                            DebugLogger.log($"[PacketStats] Tracker MISS proto={trackerProto} {srcAddress}:{trackerSrcPort} -> {dstAddress}:{trackerDstPort} (initialProcess={processName})");
+                            else if (_trackerLogCount < 100)
+                            {
+                                _trackerLogCount++;
+                                DebugLogger.log($"[PacketStats] Tracker MISS proto={trackerProto} {srcAddress}:{trackerSrcPort} -> {dstAddress}:{trackerDstPort} (initialProcess={processName})");
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -947,10 +1038,12 @@ namespace tickMeter
                 
                 if (!packetFilter.ValidateProcess(processName)) continue;
 
+                var (resolvedRemote, resolvedBy) = ResolveRemoteMetadata(to_ip, trackerOverride);
+
                 if (_useVirtual)
                 {
                     // VirtualMode: добавляем в кольцевой буфер
-                    var row = CreatePacketRow(packet, ip, udp, tcp, processName);
+                    var row = CreatePacketRow(packet, from_ip, fromPort, to_ip, toPort, packetLength, protocol, processName, resolvedRemote, resolvedBy);
                     RingAdd(row);
                 }
                 else
@@ -965,6 +1058,8 @@ namespace tickMeter
                     item.SubItems.Add(fromPort.ToString());
                     item.SubItems.Add(to_ip);
                     item.SubItems.Add(toPort.ToString());
+                    item.SubItems.Add(resolvedRemote);
+                    item.SubItems.Add(resolvedBy);
                     item.SubItems.Add(packet_size);
                     item.SubItems.Add(protocol);
                     item.SubItems.Add(processName);
@@ -1268,6 +1363,8 @@ namespace tickMeter
             item.SubItems.Add(row.SourcePort.ToString());
             item.SubItems.Add(row.DestIP);
             item.SubItems.Add(row.DestPort.ToString());
+            item.SubItems.Add(row.ResolvedRemote ?? string.Empty);
+            item.SubItems.Add(row.ResolvedBy ?? string.Empty);
             item.SubItems.Add(row.Length.ToString());
             item.SubItems.Add(row.Protocol);
             item.SubItems.Add(row.ProcessName);
@@ -1322,34 +1419,44 @@ namespace tickMeter
         /// <summary>
         /// Создает PacketRow из пакета для VirtualMode
         /// </summary>
-        private PacketRow CreatePacketRow(Packet packet, IpV4Datagram ip, UdpDatagram udp, TcpDatagram tcp, string processName)
+        private PacketRow CreatePacketRow(Packet packet, string sourceIp, uint sourcePort, string destIp, uint destPort, int length, string protocol, string processName, string resolvedRemote, string resolvedBy)
         {
-            string protocol = ip.Protocol.ToString();
-            uint fromPort = 0;
-            uint toPort = 0;
-            
-            if (protocol == IpV4Protocol.Udp.ToString() && udp != null)
-            {
-                fromPort = udp.SourcePort;
-                toPort = udp.DestinationPort;
-            }
-            else if (protocol == IpV4Protocol.Tcp.ToString() && tcp != null)
-            {
-                fromPort = tcp.SourcePort;
-                toPort = tcp.DestinationPort;
-            }
-            
             return new PacketRow(
                 packet.Timestamp,
                 Interlocked.Increment(ref _packetIdCounter),
-                ip.Source.ToString(),
-                fromPort,
-                ip.Destination.ToString(),
-                toPort,
-                ip.TotalLength,
-                protocol,
-                processName ?? "n/a"
+                sourceIp ?? string.Empty,
+                sourcePort,
+                destIp ?? string.Empty,
+                destPort,
+                length,
+                string.IsNullOrWhiteSpace(protocol) ? "Unknown" : protocol,
+                processName ?? "n/a",
+                resolvedRemote ?? string.Empty,
+                resolvedBy ?? "raw"
             );
+        }
+
+        private (string remote, string resolvedBy) ResolveRemoteMetadata(string destinationIp, ConnectionTracker.Info? trackerOverride)
+        {
+            string remote = destinationIp ?? string.Empty;
+            string resolvedBy = "raw";
+
+            if (!string.IsNullOrWhiteSpace(destinationIp))
+            {
+                var meta = MetadataResolver.Resolve(destinationIp);
+                if (!string.IsNullOrWhiteSpace(meta.remote) && !string.Equals(meta.remote, destinationIp, StringComparison.OrdinalIgnoreCase))
+                {
+                    remote = meta.remote;
+                    resolvedBy = meta.source;
+                }
+            }
+
+            if (trackerOverride.HasValue)
+            {
+                resolvedBy = resolvedBy == "raw" ? "tracker" : resolvedBy + "+tracker";
+            }
+
+            return (remote, resolvedBy);
         }
         
         private void CheckAndSwitchMode()
@@ -1372,17 +1479,19 @@ namespace tickMeter
                     // Парсим данные из SubItems
                     DateTime.TryParse(item.SubItems[0].Text, out DateTime ts);
                     int.TryParse(item.SubItems[1].Text, out int id);
-                    uint.TryParse(item.SubItems[2].Text, out uint srcPort);
-                    uint.TryParse(item.SubItems[4].Text, out uint dstPort);
-                    int.TryParse(item.SubItems[5].Text, out int len);
+                    uint.TryParse(item.SubItems[3].Text, out uint srcPort);
+                    uint.TryParse(item.SubItems[5].Text, out uint dstPort);
+                    int.TryParse(item.SubItems[8].Text, out int len);
                     
                     _ring[i] = new PacketRow(
-                        ts, id, 
-                        item.SubItems[3].Text, srcPort,  // source IP, source port
-                        item.SubItems[4].Text, dstPort,  // dest IP, dest port
-                        len, 
-                        item.SubItems[6].Text,           // protocol
-                        item.SubItems[7].Text            // process
+                        ts, id,
+                        item.SubItems[2].Text, srcPort,          // source IP, source port
+                        item.SubItems[4].Text, dstPort,          // dest IP, dest port
+                        len,
+                        item.SubItems[9].Text,                   // protocol
+                        item.SubItems[10].Text,                  // process
+                        item.SubItems[6].Text,                   // resolved remote
+                        item.SubItems[7].Text                    // resolved by
                     );
                 }
                 _ringCount = Math.Min(currentCount, _ring.Length);

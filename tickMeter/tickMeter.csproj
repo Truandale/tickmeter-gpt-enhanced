@@ -225,6 +225,8 @@
     <Compile Include="Classes\AutoDetectMngr.cs" />
     <Compile Include="Classes\CaptureService.cs" />
     <Compile Include="Classes\ConnectionsManager.cs" />
+  <Compile Include="Classes\EtwBroker.cs" />
+  <Compile Include="Classes\MetadataResolver.cs" />
   <Compile Include="Classes\PacketNormalizer.cs" />
     <Compile Include="Classes\ETW.cs" />
     <Compile Include="Classes\GameProfile.cs" />
@@ -249,6 +251,7 @@
     <Compile Include="Classes\Zoner.cs" />
     <Compile Include="Classes\VpnBypass.cs" />
     <Compile Include="Classes\WebStatsManager.cs" />
+  <Compile Include="WinDivertLayer\WinDivertSniffer.cs" />
     <Compile Include="Forms\GUI.cs">
       <SubType>Form</SubType>
     </Compile>

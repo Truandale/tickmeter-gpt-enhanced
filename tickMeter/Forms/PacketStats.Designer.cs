@@ -38,6 +38,8 @@ namespace tickMeter
             System.Windows.Forms.ColumnHeader columnHeader3;
             System.Windows.Forms.ColumnHeader from_ip;
             System.Windows.Forms.ColumnHeader from_port;
+            System.Windows.Forms.ColumnHeader columnHeaderResolvedRemote;
+            System.Windows.Forms.ColumnHeader columnHeaderResolvedBy;
             this.autoscroll = new System.Windows.Forms.CheckBox();
             this.start = new System.Windows.Forms.Button();
             this.stop = new System.Windows.Forms.Button();
@@ -60,6 +62,8 @@ namespace tickMeter
             this.columnHeader8 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader9 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader10 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderResolvedRemote = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderResolvedBy = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.active_refresh = new System.Windows.Forms.Timer(this.components);
             this.listView1 = new tickMeter.Classes.ListViewNF();
@@ -70,9 +74,13 @@ namespace tickMeter
             this.packet_size = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.protocol = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.process = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.resolvedRemoteColumn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.resolvedByColumn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             from_ip = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             from_port = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            columnHeaderResolvedRemote = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            columnHeaderResolvedBy = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -80,7 +88,7 @@ namespace tickMeter
             // 
             columnHeader3.Text = "Remote IP";
             columnHeader3.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            columnHeader3.Width = 125;
+            columnHeader3.Width = 140;
             // 
             // autoscroll
             // 
@@ -243,6 +251,8 @@ namespace tickMeter
             this.listView2.AllowColumnReorder = true;
             this.listView2.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             columnHeader3,
+            columnHeaderResolvedRemote,
+            columnHeaderResolvedBy,
             this.columnHeader5,
             this.columnHeader6,
             this.columnHeader7,
@@ -294,6 +304,16 @@ namespace tickMeter
             this.columnHeader10.Text = "Process";
             this.columnHeader10.Width = 160;
             // 
+            // columnHeaderResolvedRemote
+            // 
+            columnHeaderResolvedRemote.Text = "Resolved Remote";
+            columnHeaderResolvedRemote.Width = 180;
+            // 
+            // columnHeaderResolvedBy
+            // 
+            columnHeaderResolvedBy.Text = "Resolved By";
+            columnHeaderResolvedBy.Width = 110;
+            // 
             // columnHeader1
             // 
             this.columnHeader1.Text = "";
@@ -315,6 +335,8 @@ namespace tickMeter
             from_port,
             this.to_ip,
             this.to_port,
+            this.resolvedRemoteColumn,
+            this.resolvedByColumn,
             this.packet_size,
             this.protocol,
             this.process});
@@ -363,6 +385,16 @@ namespace tickMeter
             // 
             this.to_port.Text = "To Port";
             this.to_port.Width = 90;
+            // 
+            // resolvedRemoteColumn
+            // 
+            this.resolvedRemoteColumn.Text = "Resolved Remote";
+            this.resolvedRemoteColumn.Width = 200;
+            // 
+            // resolvedByColumn
+            // 
+            this.resolvedByColumn.Text = "Resolved By";
+            this.resolvedByColumn.Width = 110;
             // 
             // packet_size
             // 
@@ -416,6 +448,8 @@ namespace tickMeter
         private System.Windows.Forms.ColumnHeader packet_size;
         private System.Windows.Forms.ColumnHeader protocol;
         private System.Windows.Forms.ColumnHeader to_port;
+    private System.Windows.Forms.ColumnHeader resolvedRemoteColumn;
+    private System.Windows.Forms.ColumnHeader resolvedByColumn;
 
         
         private CheckBox autoscroll;
@@ -441,6 +475,8 @@ namespace tickMeter
         private ColumnHeader columnHeader8;
         private ColumnHeader columnHeader9;
         private ColumnHeader columnHeader10;
+    private ColumnHeader columnHeaderResolvedRemote;
+    private ColumnHeader columnHeaderResolvedBy;
         private Timer active_refresh;
         private ColumnHeader columnHeader1;
         private Label top_process_name;
