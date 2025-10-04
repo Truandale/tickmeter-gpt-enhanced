@@ -68,6 +68,8 @@ namespace tickMeter
     private bool _vpnLogInitialized;
     private int _trackerLogCount;
     private int _transportDecodeErrors;
+    private int _etwRemapLogCount;
+    private const int TransportDecodeErrorLogLimit = 5;
 
         public ConnectionsManager connMngr;
 
@@ -104,6 +106,7 @@ namespace tickMeter
             InitializeComponent();
             EtwBroker.Start();
             packetFilter = new PacketFilter();
+            ResetTransportDecodeErrors();
             
             // Инициализация VirtualMode на основе настроек
             _useVirtual = App.settingsManager?.GetOption("live_virtual_list", "False", "ADVANCED") == "True";
@@ -191,6 +194,8 @@ namespace tickMeter
                 
                 // Сброс счетчиков
                 inPackets = outPackets = inTraffic = outTraffic = 0;
+                ResetTransportDecodeErrors();
+                Interlocked.Exchange(ref _etwRemapLogCount, 0);
                 
                 Debug.Print("[PacketStats] SafeRestartCapture: completed successfully");
             }
@@ -927,6 +932,9 @@ namespace tickMeter
                 }
 
                 bool transportDecodeFailed = false;
+                Exception transportException = null;
+                string transportKind = "RAW";
+                string protocolBeforeOverride = protocol;
 
                 if (udp != null)
                 {
@@ -935,14 +943,20 @@ namespace tickMeter
                         fromPort = udp.SourcePort;
                         toPort = udp.DestinationPort;
                         trackerProto = 17;
+                        transportKind = "UDP";
+                        protocol = "UDP";
                     }
-                    catch (ArgumentOutOfRangeException)
+                    catch (ArgumentOutOfRangeException ex)
                     {
                         transportDecodeFailed = true;
+                        transportException = ex;
+                        transportKind = "UDP";
                     }
-                    catch (IndexOutOfRangeException)
+                    catch (IndexOutOfRangeException ex)
                     {
                         transportDecodeFailed = true;
+                        transportException = ex;
+                        transportKind = "UDP";
                     }
                 }
                 else if (tcp != null)
@@ -952,28 +966,78 @@ namespace tickMeter
                         fromPort = tcp.SourcePort;
                         toPort = tcp.DestinationPort;
                         trackerProto = 6;
+                        transportKind = "TCP";
+                        protocol = "TCP";
                     }
-                    catch (ArgumentOutOfRangeException)
+                    catch (ArgumentOutOfRangeException ex)
                     {
                         transportDecodeFailed = true;
+                        transportException = ex;
+                        transportKind = "TCP";
                     }
-                    catch (IndexOutOfRangeException)
+                    catch (IndexOutOfRangeException ex)
                     {
                         transportDecodeFailed = true;
+                        transportException = ex;
+                        transportKind = "TCP";
                     }
                 }
-
-                if (transportDecodeFailed && _transportDecodeErrors < 5)
+                else
                 {
-                    _transportDecodeErrors++;
-                    DebugLogger.log($"[PacketStats] Skipping truncated {protocol} packet: unable to read ports");
+                    protocol = protocolBeforeOverride;
+                }
+
+                if (transportDecodeFailed)
+                {
+                    RegisterTransportDecodeFailure(transportKind, protocolBeforeOverride, packetLength, packet, transportException);
+                    continue;
                 }
 
                 if (trackerProto != 0)
                 {
                     trackerSrcPort = (int)fromPort;
                     trackerDstPort = (int)toPort;
-                    protocol = trackerProto == 6 ? "TCP" : "UDP";
+                }
+
+                if (trackerProto == 0)
+                {
+                    protocol = protocolBeforeOverride;
+                }
+
+                if (trackerProto != 0 && VpnSettings.EnableEtwEnrichment)
+                {
+                    try
+                    {
+                        if (EtwBroker.TryRemap(trackerProto, from_ip, trackerSrcPort, to_ip, trackerDstPort, out var remap))
+                        {
+                            var remapRemote = remap.RemoteString;
+                            if (string.IsNullOrWhiteSpace(remapRemote))
+                            {
+                                MetadataResolver.Promote(to_ip, string.Empty, remap.SourceTag, remap.SuggestedTtl);
+                            }
+                            else
+                            {
+                                MetadataResolver.Promote(to_ip, remapRemote, remap.SourceTag, remap.SuggestedTtl);
+                                if (!string.Equals(remapRemote, to_ip, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    var logIndex = Interlocked.Increment(ref _etwRemapLogCount);
+                                    if (logIndex <= 100)
+                                    {
+                                        DebugLogger.log($"[PacketStats] ETW remap: proto={trackerProto} {from_ip}:{trackerSrcPort} -> {to_ip}:{trackerDstPort} => real={remapRemote} pid={remap.ProcessId} name={remap.ProcessName}");
+                                    }
+                                }
+                            }
+
+                            if (!trackerOverride.HasValue && remap.ProcessId > 0)
+                            {
+                                trackerOverride = new ConnectionTracker.Info(remap.ProcessId, remap.ProcessName);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Print($"[PacketStats] ETW remap error: {ex.Message}");
+                    }
                 }
 
                 packet_size = packetLength.ToString();
@@ -1465,6 +1529,47 @@ namespace tickMeter
                 resolvedRemote ?? string.Empty,
                 resolvedBy ?? "raw"
             );
+        }
+
+        private void ResetTransportDecodeErrors()
+        {
+            Interlocked.Exchange(ref _transportDecodeErrors, 0);
+            UpdateTransportDecodeStatus(0);
+        }
+
+        private void UpdateTransportDecodeStatus(int count)
+        {
+            if (transportStatusLabel == null)
+                return;
+
+            Action updateAction = () =>
+            {
+                transportStatusLabel.Visible = count > 0;
+                transportStatusLabel.Text = count > 0 ? $"Truncated packets: {count}" : string.Empty;
+            };
+
+            if (InvokeRequired)
+            {
+                try { BeginInvoke(updateAction); } catch { }
+            }
+            else
+            {
+                updateAction();
+            }
+        }
+
+        private void RegisterTransportDecodeFailure(string transportKind, string protocolName, int packetLength, Packet packet, Exception ex)
+        {
+            var current = Interlocked.Increment(ref _transportDecodeErrors);
+
+            if (current <= TransportDecodeErrorLogLimit)
+            {
+                var captureLength = packet?.Buffer?.Length ?? 0;
+                var errorDetails = ex != null ? $" ex={ex.GetType().Name}:{ex.Message}" : string.Empty;
+                DebugLogger.log($"[PacketStats] Skipping {transportKind} packet ({protocolName}) len={packetLength} captured={captureLength}{errorDetails}");
+            }
+
+            UpdateTransportDecodeStatus(current);
         }
 
         private (string remote, string resolvedBy) ResolveRemoteMetadata(string destinationIp, ConnectionTracker.Info? trackerOverride)

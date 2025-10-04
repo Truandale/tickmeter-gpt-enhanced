@@ -52,6 +52,7 @@ namespace tickMeter.Classes
                 try
                 {
                     ETW.init();
+                    EtwBroker.Start();
                     Debug.Print("[App.Init] ETW enrichment session initialized");
                 }
                 catch (Exception ex)

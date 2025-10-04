@@ -44,6 +44,7 @@ namespace tickMeter
             this.start = new System.Windows.Forms.Button();
             this.stop = new System.Windows.Forms.Button();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
+            this.transportStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.RefreshTimer = new System.Windows.Forms.Timer(this.components);
             this.filter = new System.Windows.Forms.Button();
             this.clear = new System.Windows.Forms.Button();
@@ -125,12 +126,20 @@ namespace tickMeter
             // 
             // statusStrip1
             // 
+            this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.transportStatusLabel});
             this.statusStrip1.Location = new System.Drawing.Point(0, 832);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Padding = new System.Windows.Forms.Padding(1, 0, 19, 0);
             this.statusStrip1.Size = new System.Drawing.Size(1213, 22);
             this.statusStrip1.TabIndex = 20;
             this.statusStrip1.Text = "statusStrip1";
+            // 
+            // transportStatusLabel
+            // 
+            this.transportStatusLabel.Name = "transportStatusLabel";
+            this.transportStatusLabel.Size = new System.Drawing.Size(0, 17);
+            this.transportStatusLabel.Visible = false;
             // 
             // RefreshTimer
             // 
@@ -457,6 +466,7 @@ namespace tickMeter
         private Button stop;
         private Button clear;
         private StatusStrip statusStrip1;
+        private ToolStripStatusLabel transportStatusLabel;
         public ListViewNF listView1;
         private Timer RefreshTimer;
         private Button filter;

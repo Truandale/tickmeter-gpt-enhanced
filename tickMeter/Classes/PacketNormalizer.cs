@@ -18,7 +18,15 @@ namespace tickMeter.Classes
             if (!VpnSettings.AllowNonEthernet)
                 return false;
 
-            return kind == DataLinkKind.IpV4;
+            switch (kind)
+            {
+                case DataLinkKind.IpV4:
+                case DataLinkKind.PointToPointProtocolWithDirection:
+                case DataLinkKind.LinuxSll:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         /// <summary>
@@ -51,20 +59,46 @@ namespace tickMeter.Classes
             if (sourceBytes == null || sourceBytes.Length == 0)
                 return packet;
 
-            byte[] payload;
-            ushort etherType;
+            byte[] payload = null;
+            ushort etherType = 0;
 
-            switch (kind)
+            if (kind == DataLinkKind.IpV4)
             {
-                case DataLinkKind.IpV4:
+                var packetLength = packet.Length;
+                payload = new byte[packetLength];
+                Buffer.BlockCopy(sourceBytes, 0, payload, 0, packetLength);
+                etherType = GuessEtherTypeFromIpPayload(payload);
+            }
+            else
+            {
+                // Heuristic for loopback / cooked headers (e.g., Null / LinuxSll)
+                if (sourceBytes.Length > 4)
+                {
+                    var af = BitConverter.ToUInt32(sourceBytes, 0);
+                    if (af == 2u || af == 24u)
+                    {
+                        var payloadLength = packet.Length - 4;
+                        if (payloadLength > 0)
+                        {
+                            payload = new byte[payloadLength];
+                            Buffer.BlockCopy(sourceBytes, 4, payload, 0, payloadLength);
+                            etherType = af == 24u ? (ushort)0x86DD : (ushort)0x0800;
+                        }
+                    }
+                }
+
+                if (payload == null)
+                {
+                    // Fallback: treat as raw IP if header not recognized
                     var packetLength = packet.Length;
                     payload = new byte[packetLength];
                     Buffer.BlockCopy(sourceBytes, 0, payload, 0, packetLength);
-                    etherType = 0x0800;
-                    break;
-                default:
-                    return packet;
+                    etherType = GuessEtherTypeFromIpPayload(payload);
+                }
             }
+
+            if (payload == null || payload.Length == 0 || etherType == 0)
+                return packet;
 
             var buffer = new byte[payload.Length + 14];
             buffer[12] = (byte)(etherType >> 8);
@@ -72,6 +106,21 @@ namespace tickMeter.Classes
             Buffer.BlockCopy(payload, 0, buffer, 14, payload.Length);
 
             return new Packet(buffer, packet.Timestamp, DataLinkKind.Ethernet);
+        }
+
+        private static ushort GuessEtherTypeFromIpPayload(byte[] payload)
+        {
+            if (payload == null || payload.Length == 0)
+                return 0;
+
+            var version = (payload[0] >> 4) & 0x0F;
+
+            if (version == 4)
+                return 0x0800;
+            if (version == 6)
+                return 0x86DD;
+
+            return 0;
         }
     }
 }
