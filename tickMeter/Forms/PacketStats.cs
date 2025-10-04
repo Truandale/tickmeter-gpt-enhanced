@@ -1889,17 +1889,21 @@ namespace tickMeter
 
             if (EtwBroker.TryGetRemote(pid, localPort, protocolType.Value, localAddress, out var remoteEndpoint) && IsRoutableEndpoint(remoteEndpoint))
             {
-                resolved.remote = FormatEndpoint(remoteEndpoint.Address, remoteEndpoint.Port);
+                var realRemoteFormatted = FormatEndpoint(remoteEndpoint.Address, remoteEndpoint.Port);
+                resolved.remote = realRemoteFormatted;
                 resolved.resolvedBy = AppendSourceTag(resolved.resolvedBy, "etw-vpn");
-                MetadataResolver.Promote(toIp, remoteEndpoint.Address.ToString(), "etw-vpn", TimeSpan.FromSeconds(5));
+                // Записываем полный endpoint с портом в MetadataResolver для последующих lookup
+                MetadataResolver.Promote(toIp, realRemoteFormatted, "etw-vpn", TimeSpan.FromSeconds(5));
                 return;
             }
 
             if (EtwBroker.TryGetRecentRemote(TimeSpan.FromSeconds(2), out var fallbackEndpoint) && IsRoutableEndpoint(fallbackEndpoint))
             {
-                resolved.remote = FormatEndpoint(fallbackEndpoint.Address, fallbackEndpoint.Port);
+                var fallbackRemoteFormatted = FormatEndpoint(fallbackEndpoint.Address, fallbackEndpoint.Port);
+                resolved.remote = fallbackRemoteFormatted;
                 resolved.resolvedBy = AppendSourceTag(resolved.resolvedBy, "etw-recent");
-                MetadataResolver.Promote(toIp, fallbackEndpoint.Address.ToString(), "etw-recent", TimeSpan.FromSeconds(3));
+                // Записываем полный endpoint с портом в MetadataResolver
+                MetadataResolver.Promote(toIp, fallbackRemoteFormatted, "etw-recent", TimeSpan.FromSeconds(3));
             }
         }
 

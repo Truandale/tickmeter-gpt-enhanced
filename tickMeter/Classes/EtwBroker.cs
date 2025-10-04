@@ -145,7 +145,10 @@ namespace tickMeter.Classes
 
             public TimeSpan Age => DateTime.UtcNow - TimestampUtc;
             public TimeSpan SuggestedTtl => TimeSpan.FromSeconds(30);
-            public string RemoteString => RemoteAddress?.ToString() ?? string.Empty;
+            // Возвращаем полный endpoint с портом для корректного отображения в LiveView
+            public string RemoteString => RemoteAddress != null && RemotePort > 0 
+                ? $"{RemoteAddress}:{RemotePort}" 
+                : (RemoteAddress?.ToString() ?? string.Empty);
             public string SourceTag => "etw";
         }
 
