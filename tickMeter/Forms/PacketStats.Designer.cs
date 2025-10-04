@@ -38,8 +38,6 @@ namespace tickMeter
             System.Windows.Forms.ColumnHeader columnHeader3;
             System.Windows.Forms.ColumnHeader from_ip;
             System.Windows.Forms.ColumnHeader from_port;
-            System.Windows.Forms.ColumnHeader columnHeaderResolvedRemote;
-            System.Windows.Forms.ColumnHeader columnHeaderResolvedBy;
             this.autoscroll = new System.Windows.Forms.CheckBox();
             this.start = new System.Windows.Forms.Button();
             this.stop = new System.Windows.Forms.Button();
@@ -80,8 +78,6 @@ namespace tickMeter
             columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             from_ip = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             from_port = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            columnHeaderResolvedRemote = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            columnHeaderResolvedBy = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -260,8 +256,8 @@ namespace tickMeter
             this.listView2.AllowColumnReorder = true;
             this.listView2.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             columnHeader3,
-            columnHeaderResolvedRemote,
-            columnHeaderResolvedBy,
+            this.columnHeaderResolvedRemote,
+            this.columnHeaderResolvedBy,
             this.columnHeader5,
             this.columnHeader6,
             this.columnHeader7,
@@ -315,13 +311,13 @@ namespace tickMeter
             // 
             // columnHeaderResolvedRemote
             // 
-            columnHeaderResolvedRemote.Text = "Resolved Remote";
-            columnHeaderResolvedRemote.Width = 180;
+            this.columnHeaderResolvedRemote.Text = "Resolved Remote";
+            this.columnHeaderResolvedRemote.Width = 180;
             // 
             // columnHeaderResolvedBy
             // 
-            columnHeaderResolvedBy.Text = "Resolved By";
-            columnHeaderResolvedBy.Width = 110;
+            this.columnHeaderResolvedBy.Text = "Resolved By";
+            this.columnHeaderResolvedBy.Width = 110;
             // 
             // columnHeader1
             // 
