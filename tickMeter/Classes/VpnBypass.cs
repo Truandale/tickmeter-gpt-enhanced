@@ -99,8 +99,12 @@ namespace tickMeter.Classes
             public Info(int pid, string exe) { Pid = pid; Exe = exe; }
         }
         
+        // Событие для синтетических записей LiveView из туннельного трафика
+        public event Action<Key, Info> OnNewTunnelConnection;
+        
         private readonly ConcurrentDictionary<Key, (Info info, long ts)> _map = new ConcurrentDictionary<Key, (Info info, long ts)>();
     private readonly ConcurrentDictionary<(byte proto, IPAddress local, int lport), int> _udpOwner = new ConcurrentDictionary<(byte proto, IPAddress local, int lport), int>(); // UDP без remote
+        private readonly HashSet<Key> _reportedKeys = new HashSet<Key>(); // Уже отправленные в LiveView
     private int _udpOwnerLogCount;
     private int _lookupLogCount;
     private readonly Thread _thread;
@@ -227,6 +231,39 @@ namespace tickMeter.Classes
             foreach (var kv in _map)
                 if (now - kv.Value.ts > _ttlMs)
                     _map.TryRemove(kv.Key, out _);
+            
+            // Очищаем _reportedKeys от устаревших записей
+            var expiredKeys = new List<Key>();
+            foreach (var key in _reportedKeys)
+            {
+                if (!_map.ContainsKey(key))
+                    expiredKeys.Add(key);
+            }
+            foreach (var key in expiredKeys)
+                _reportedKeys.Remove(key);
+        }
+
+        private static bool IsTunnelIP(IPAddress ip)
+        {
+            if (ip == null || ip.AddressFamily != AddressFamily.InterNetwork)
+                return false;
+                
+            // Проверяем диапазоны частных сетей (10.x, 172.16-31.x, 192.168.x)
+            var bytes = ip.GetAddressBytes();
+            
+            // 10.0.0.0/8
+            if (bytes[0] == 10)
+                return true;
+            
+            // 172.16.0.0/12
+            if (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
+                return true;
+            
+            // 192.168.0.0/16
+            if (bytes[0] == 192 && bytes[1] == 168)
+                return true;
+            
+            return false;
         }
 
         private void DumpProcessSnapshotIfNeeded()
@@ -450,7 +487,15 @@ namespace tickMeter.Classes
                         int lp = (int)SwapUshort((ushort)row.localPort_be);
                         int rp = (int)SwapUshort((ushort)row.remotePort_be);
                         var info = new Info((int)row.owningPid, TryGetExe((int)row.owningPid));
-                        _map[new Key(6, l, lp, r, rp)] = (info, now);
+                        var key = new Key(6, l, lp, r, rp);
+                        _map[key] = (info, now);
+                        
+                        // Уведомляем LiveView о новом туннельном соединении
+                        if (IsTunnelIP(l) && !_reportedKeys.Contains(key))
+                        {
+                            _reportedKeys.Add(key);
+                            OnNewTunnelConnection?.Invoke(key, info);
+                        }
                     }
                 }
                 else
@@ -466,7 +511,15 @@ namespace tickMeter.Classes
                         int lp = (int)SwapUshort((ushort)row.localPort_be);
                         int rp = (int)SwapUshort((ushort)row.remotePort_be);
                         var info = new Info((int)row.owningPid, TryGetExe((int)row.owningPid));
-                        _map[new Key(6, l, lp, r, rp)] = (info, now);
+                        var key = new Key(6, l, lp, r, rp);
+                        _map[key] = (info, now);
+                        
+                        // Уведомляем LiveView о новом туннельном соединении
+                        if (IsTunnelIP(l) && !_reportedKeys.Contains(key))
+                        {
+                            _reportedKeys.Add(key);
+                            OnNewTunnelConnection?.Invoke(key, info);
+                        }
                     }
                 }
             }

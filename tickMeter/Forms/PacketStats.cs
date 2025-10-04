@@ -170,6 +170,13 @@ namespace tickMeter
             DebugLogger.log($"[LiveView] Initialized (virtual={_useVirtual}, maxRows={maxRows}, captureAll={CaptureAll}, ignoreVirtual={effectiveIgnoreVirtual}, vpnMode={_vpnMode}, tunnelDetected={hasTunnelAdapter})");
             _virtualModeSwitchLogged = _useVirtual;
             
+            // Подписываемся на события туннельных соединений для синтетических записей LiveView
+            if (App.connectionTracker != null)
+            {
+                App.connectionTracker.OnNewTunnelConnection += HandleTunnelConnection;
+                DebugLogger.log("[LiveView] Subscribed to ConnectionTracker.OnNewTunnelConnection");
+            }
+            
             // TunnelAutoAttach.Init() уже подписывается на EtwBroker.OnLocalTunnelObserved внутри
             TryInitTunnelAutoAttach();
         }
@@ -479,6 +486,68 @@ namespace tickMeter
             {
                 DebugLogger.log($"[PacketStats] Unable to enumerate adapters for auto attach: {ex.GetType().Name} {ex.Message}");
                 return Enumerable.Empty<LivePacketDevice>();
+            }
+        }
+
+        /// <summary>
+        /// Обработчик событий новых туннельных соединений из ConnectionTracker
+        /// Создаёт синтетические записи LiveView для трафика, невидимого pcap
+        /// </summary>
+        private void HandleTunnelConnection(ConnectionTracker.Key key, ConnectionTracker.Info info)
+        {
+            try
+            {
+                // Генерируем синтетическую запись LiveView
+                var protocol = key.Proto == 6 ? "TCP" : (key.Proto == 17 ? "UDP" : $"Proto{key.Proto}");
+                var processName = info.Exe ?? $"PID{info.Pid}";
+                var timestamp = DateTime.Now;
+                
+                // Пытаемся обогатить данные через ETW
+                string resolvedRemote = $"{key.Remote}:{key.RemotePort}";
+                string resolvedBy = "tracker-synthetic";
+                
+                if (VpnSettings.EnableEtwEnrichment)
+                {
+                    var protocolType = key.Proto == 6 ? ProtocolType.Tcp : (key.Proto == 17 ? ProtocolType.Udp : (ProtocolType?)null);
+                    if (protocolType.HasValue)
+                    {
+                        if (EtwBroker.TryGetRemote(info.Pid, key.LocalPort, protocolType.Value, key.Local, out var realEndpoint))
+                        {
+                            resolvedRemote = $"{realEndpoint.Address}:{realEndpoint.Port}";
+                            resolvedBy = "ETW-Tunnel";
+                        }
+                    }
+                }
+                
+                // Добавляем в LiveView
+                if (_useVirtual)
+                {
+                    var row = new PacketRow(
+                        timestamp,
+                        Interlocked.Increment(ref _packetIdCounter),
+                        key.Local.ToString(),
+                        (uint)key.LocalPort,
+                        key.Remote.ToString(),
+                        (uint)key.RemotePort,
+                        0, // length неизвестен для синтетических записей
+                        protocol,
+                        processName,
+                        resolvedRemote,
+                        resolvedBy
+                    );
+                    
+                    DebugLogger.log($"[Synthetic] {timestamp:HH:mm:ss.fff} TUNNEL {key.Local}:{key.LocalPort} -> {key.Remote}:{key.RemotePort} proto={protocol} proc={processName} remote={resolvedRemote} by={resolvedBy}");
+                    RingAdd(row);
+                }
+                else
+                {
+                    // Classic ListView mode (не поддерживается для синтетических записей из-за UI thread)
+                    DebugLogger.log($"[Synthetic] SKIP (classic mode): {key.Local}:{key.LocalPort} -> {key.Remote}:{key.RemotePort} proc={processName}");
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[Synthetic] ERROR: {ex.GetType().Name} {ex.Message}");
             }
         }
 
