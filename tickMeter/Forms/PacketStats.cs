@@ -317,7 +317,11 @@ namespace tickMeter
                 return false;
 
             if (_ignoreVirtual && IsVirtualDevice(device))
-                return false;
+            {
+                var label = string.Concat(device.Name ?? string.Empty, " ", device.Description ?? string.Empty).Trim();
+                if (!VpnHeuristicsLib.IfaceLooksVpn(label))
+                    return false;
+            }
 
             return true;
         }
@@ -891,6 +895,9 @@ namespace tickMeter
                 packetLength = packet.Length;
             }
 
+            if (ShouldSkipAddressForDisplay(sourceIP) || ShouldSkipAddressForDisplay(destIP))
+                return;
+
             bool sourceIsLocal = IsLocalAddress(sourceIP);
             bool destIsLocal = IsLocalAddress(destIP);
 
@@ -1008,7 +1015,9 @@ namespace tickMeter
                 if (packet == null)
                     continue;
                 var deviceIsVirtual = captured.IsVirtual;
-                    
+                var interfaceLabel = string.Concat(captured?.Device?.Name ?? string.Empty, " ", captured?.Device?.Description ?? string.Empty).Trim();
+                var interfaceLooksVpn = VpnHeuristicsLib.IfaceLooksVpn(interfaceLabel);
+
                 IpV4Datagram ip4 = null;
                 IpV6Datagram ip6 = null;
                 try
@@ -1023,7 +1032,10 @@ namespace tickMeter
                         ip6 = ethernet.IpV6;
                     }
                 }
-                catch (Exception) { continue; }
+                catch (Exception)
+                {
+                    continue;
+                }
 
                 if (ip4 == null && ip6 == null)
                     continue;
@@ -1055,8 +1067,8 @@ namespace tickMeter
                     }
                     else
                     {
-                        udp = ip6.Udp;
-                        tcp = ip6.Tcp;
+                        udp = ip6?.Udp;
+                        tcp = ip6?.Tcp;
                         from_ip = ip6.Source.ToString();
                         to_ip = ip6.CurrentDestination.ToString();
                         packetLength = packet.Length;
@@ -1067,6 +1079,9 @@ namespace tickMeter
                 {
                     continue;
                 }
+
+                if (ShouldSkipAddressForDisplay(from_ip) || ShouldSkipAddressForDisplay(to_ip))
+                    continue;
 
                 bool transportDecodeFailed = false;
                 Exception transportException = null;
@@ -1275,11 +1290,13 @@ namespace tickMeter
                 ApplyVpnHeuristics(
                     ref resolved,
                     deviceIsVirtual,
+                    interfaceLooksVpn,
                     processName,
                     trackerOverride,
                     trackerProto,
                     trackerSrcPort,
                     trackerDstPort,
+                    from_ip,
                     to_ip,
                     fromPort,
                     toPort);
@@ -1769,11 +1786,13 @@ namespace tickMeter
         private void ApplyVpnHeuristics(
             ref (string remote, string resolvedBy) resolved,
             bool deviceIsVirtual,
+            bool interfaceLooksVpn,
             string processName,
             ConnectionTracker.Info? trackerOverride,
             byte trackerProto,
             int trackerSrcPort,
             int trackerDstPort,
+            string fromIp,
             string toIp,
             uint fromPort,
             uint toPort)
@@ -1783,7 +1802,7 @@ namespace tickMeter
             if (!VpnSettings.AdvancedEnabled)
                 return;
 
-            if (deviceIsVirtual)
+            if (deviceIsVirtual || interfaceLooksVpn)
             {
                 resolved.resolvedBy = AppendSourceTag(resolved.resolvedBy, "pcap-vpn");
                 return;
@@ -1802,17 +1821,24 @@ namespace tickMeter
 
             int pid = trackerOverride?.Pid ?? 0;
             int localPort = trackerSrcPort > 0 ? trackerSrcPort : (int)(fromPort > ushort.MaxValue ? ushort.MaxValue : fromPort);
-            bool updated = false;
+            if (pid <= 0 || localPort <= 0)
+                return;
 
-            if (pid > 0 && localPort > 0 && EtwBroker.TryGetRemote(pid, localPort, protocolType.Value, out var remoteEndpoint))
+            IPAddress localAddress = IPAddress.Any;
+            if (!string.IsNullOrWhiteSpace(fromIp) && !IPAddress.TryParse(fromIp, out localAddress))
+            {
+                localAddress = IPAddress.Any;
+            }
+
+            if (EtwBroker.TryGetRemote(pid, localPort, protocolType.Value, localAddress, out var remoteEndpoint) && IsRoutableEndpoint(remoteEndpoint))
             {
                 resolved.remote = FormatEndpoint(remoteEndpoint.Address, remoteEndpoint.Port);
                 resolved.resolvedBy = AppendSourceTag(resolved.resolvedBy, "etw-vpn");
                 MetadataResolver.Promote(toIp, remoteEndpoint.Address.ToString(), "etw-vpn", TimeSpan.FromSeconds(5));
-                updated = true;
+                return;
             }
 
-            if (!updated && EtwBroker.TryGetRecentRemote(TimeSpan.FromSeconds(2), out var fallbackEndpoint))
+            if (EtwBroker.TryGetRecentRemote(TimeSpan.FromSeconds(2), out var fallbackEndpoint) && IsRoutableEndpoint(fallbackEndpoint))
             {
                 resolved.remote = FormatEndpoint(fallbackEndpoint.Address, fallbackEndpoint.Port);
                 resolved.resolvedBy = AppendSourceTag(resolved.resolvedBy, "etw-recent");
@@ -1848,6 +1874,42 @@ namespace tickMeter
                 return FormatEndpoint(current, port);
 
             return current;
+        }
+
+        private static bool ShouldSkipAddressForDisplay(string ip)
+        {
+            if (string.IsNullOrWhiteSpace(ip))
+                return true;
+
+            if (string.Equals(ip, "0.0.0.0", StringComparison.Ordinal) || string.Equals(ip, "::", StringComparison.Ordinal))
+                return true;
+
+            if (IPAddress.TryParse(ip, out var parsed) && (IPAddress.IsLoopback(parsed) || parsed.Equals(IPAddress.Any) || parsed.Equals(IPAddress.IPv6Any)))
+                return true;
+
+            return false;
+        }
+
+        private static bool IsRoutableEndpoint(IPEndPoint endpoint)
+        {
+            if (endpoint == null || endpoint.Port <= 0)
+                return false;
+
+            return IsRoutableAddress(endpoint.Address);
+        }
+
+        private static bool IsRoutableAddress(IPAddress address)
+        {
+            if (address == null)
+                return false;
+
+            if (address.Equals(IPAddress.Any) || address.Equals(IPAddress.None) || address.Equals(IPAddress.IPv6Any))
+                return false;
+
+            if (IPAddress.IsLoopback(address))
+                return false;
+
+            return true;
         }
 
         private static string FormatEndpoint(string hostOrIp, uint port)

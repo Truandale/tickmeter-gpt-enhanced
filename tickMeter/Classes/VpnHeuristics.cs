@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Sockets;
 
 namespace tickMeter.Classes
@@ -9,16 +10,21 @@ namespace tickMeter.Classes
         private static readonly HashSet<string> GatewayProcessNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "wireguard",
+            "wg",
             "openvpn",
+            "vpnui",
+            "vpnclient",
+            "vpnagent",
             "ksde",
             "vpnsvc",
             "nordvpn-service",
             "nordvpn",
+            "protonvpn",
             "tailscaled",
             "tailscale",
             "zerotier-one",
+            "zerotier",
             "windscribe",
-            "protonvpn",
             "surfshark",
             "expressvpn",
             "pia-service",
@@ -35,10 +41,51 @@ namespace tickMeter.Classes
             "stealthguard",
             "pritunl",
             "wg-quick",
-            "strongswan"
+            "strongswan",
+            "tunsafe",
+            "ikev2",
+            "avp",
+            "zerotier_core"
         };
 
-        public static bool LooksLikeVpnShell(string exeName, ProtocolType protocol, int destinationPort)
+        private static readonly string[] VpnProcessPatterns =
+        {
+            "wireguard",
+            "wintun",
+            "openvpn",
+            "vpn",
+            "ikev2",
+            "zt",
+            "zerotier",
+            "tunsafe",
+            "strongswan",
+            "clash",
+            "tailscale",
+            "wg"
+        };
+
+        private static readonly string[] VpnInterfacePatterns =
+        {
+            "wintun",
+            "wireguard",
+            "openvpn",
+            "zerotier",
+            "zt",
+            "tap",
+            "tun",
+            "l2tp",
+            "pppoe",
+            "tailscale",
+            "ikev",
+            "vpn"
+        };
+
+        private static readonly HashSet<int> VpnShellPorts = new HashSet<int>
+        {
+            51820, 1194, 1701, 4500, 500
+        };
+
+        public static bool IsLikelyVpnProcess(string exeName)
         {
             if (string.IsNullOrWhiteSpace(exeName))
                 return false;
@@ -46,13 +93,33 @@ namespace tickMeter.Classes
             if (GatewayProcessNames.Contains(exeName))
                 return true;
 
-            if (protocol == ProtocolType.Udp)
-            {
-                if (destinationPort == 51820 || destinationPort == 1194 || destinationPort == 1701 || destinationPort == 4500)
-                    return true;
-            }
+            var lower = exeName.ToLowerInvariant();
+            return VpnProcessPatterns.Any(p => lower.Contains(p));
+        }
 
-            return false;
+        public static bool IsVpnShellPort(int port)
+        {
+            if (port <= 0)
+                return false;
+
+            return VpnShellPorts.Contains(port);
+        }
+
+        public static bool LooksLikeVpnShell(string exeName, ProtocolType protocol, int destinationPort)
+        {
+            if (protocol == ProtocolType.Udp && IsVpnShellPort(destinationPort))
+                return true;
+
+            return IsLikelyVpnProcess(exeName);
+        }
+
+        public static bool IfaceLooksVpn(string ifaceName)
+        {
+            if (string.IsNullOrWhiteSpace(ifaceName))
+                return false;
+
+            var lower = ifaceName.ToLowerInvariant();
+            return VpnInterfacePatterns.Any(p => lower.Contains(p));
         }
     }
 }

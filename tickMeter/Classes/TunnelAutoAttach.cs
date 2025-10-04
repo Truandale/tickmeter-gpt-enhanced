@@ -16,7 +16,7 @@ namespace tickMeter.Classes
     private static readonly ConcurrentDictionary<string, (DateTime attachedAt, LivePacketDevice device)> ActiveDevices = new ConcurrentDictionary<string, (DateTime, LivePacketDevice)>(StringComparer.OrdinalIgnoreCase);
         private static readonly string[] VirtualHints =
         {
-            "tun", "tap", "wireguard", "vpn", "wg", "openvpn", "tailscale", "zerotier", "forti", "checkpoint"
+            "tun", "tap", "wintun", "wireguard", "vpn", "wg", "openvpn", "tailscale", "zerotier", "forti", "checkpoint", "l2tp", "pppoe"
         };
 
         private static Func<IEnumerable<LivePacketDevice>> _deviceProvider;
@@ -71,11 +71,12 @@ namespace tickMeter.Classes
                 return;
 
             PendingIps[key] = now;
+            DebugLogger.log($"[AutoAttach] Tunnel hint from {key}");
 
-            Task.Run(() => TryAttachVirtualDevices(now));
+            Task.Run(() => TryAttachVirtualDevices(key, now));
         }
 
-        private static void TryAttachVirtualDevices(DateTime triggeredAt)
+        private static void TryAttachVirtualDevices(string hintKey, DateTime triggeredAt)
         {
             IEnumerable<LivePacketDevice> devices;
             try
@@ -106,6 +107,7 @@ namespace tickMeter.Classes
 
                 try
                 {
+                    DebugLogger.log($"[AutoAttach] Tunnel IP {hintKey} → device {device.Name} ({device.Description})");
                     _startCapture?.Invoke(device);
                 }
                 catch (Exception ex)

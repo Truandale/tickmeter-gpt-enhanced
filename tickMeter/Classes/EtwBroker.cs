@@ -3,6 +3,7 @@ using Microsoft.Diagnostics.Tracing.Parsers.Kernel;
 using Microsoft.Diagnostics.Tracing.Session;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -13,7 +14,7 @@ namespace tickMeter.Classes
 {
     public static class EtwBroker
     {
-    public static event Action<IPAddress> OnLocalTunnelObserved;
+        public static event Action<IPAddress> OnLocalTunnelObserved;
 
     private sealed class ConnectionEntry
         {
@@ -156,8 +157,8 @@ namespace tickMeter.Classes
         private static readonly ConcurrentDictionary<LocalKey, ConnectionEntry> _localIndex =
             new ConcurrentDictionary<LocalKey, ConnectionEntry>();
 
-        private static readonly ConcurrentDictionary<(int pid, int port, byte proto), ConnectionEntry> _pidIndex =
-            new ConcurrentDictionary<(int, int, byte), ConnectionEntry>();
+        private static readonly ConcurrentDictionary<(int pid, int port, byte proto, string localKey), ConnectionEntry> _pidIndex =
+            new ConcurrentDictionary<(int, int, byte, string), ConnectionEntry>();
 
         private static readonly ConcurrentQueue<(DateTime timestampUtc, IPEndPoint endpoint)> _recentRemotes =
             new ConcurrentQueue<(DateTime, IPEndPoint)>();
@@ -341,12 +342,14 @@ namespace tickMeter.Classes
             _localIndex[new LocalKey(proto, local, localPort)] = entry;
             if (processId > 0 && localPort > 0 && proto != 0)
             {
-                _pidIndex[(processId, localPort, proto)] = entry;
+                var localKey = NormalizeLocalKey(local);
+                _pidIndex[(processId, localPort, proto, localKey)] = entry;
             }
 
             PushRecent(entry);
             NotifyTunnel(local);
             NotifyTunnel(remote);
+            NotifyTunnelByPort(local, localPort, remotePort);
 
             CleanupIfNeeded();
 
@@ -413,6 +416,8 @@ namespace tickMeter.Classes
                 return;
 
             var endpoint = new IPEndPoint(entry.RemoteAddress, entry.RemotePort);
+            if (IsJunkEndpoint(endpoint))
+                return;
             _recentRemotes.Enqueue((DateTime.UtcNow, endpoint));
 
             while (_recentRemotes.Count > 256 && _recentRemotes.TryDequeue(out _))
@@ -436,6 +441,25 @@ namespace tickMeter.Classes
             if (!IsTunnelCandidate(candidate))
                 return;
 
+            InvokeTunnel(candidate);
+        }
+
+        private static void NotifyTunnelByPort(IPAddress candidate, int localPort, int remotePort)
+        {
+            if (candidate == null)
+                return;
+
+            if (VpnHeuristics.IsVpnShellPort(localPort) || VpnHeuristics.IsVpnShellPort(remotePort))
+            {
+                InvokeTunnel(candidate);
+            }
+        }
+
+        private static void InvokeTunnel(IPAddress candidate)
+        {
+            if (candidate == null)
+                return;
+
             var handler = OnLocalTunnelObserved;
             if (handler == null)
                 return;
@@ -448,6 +472,64 @@ namespace tickMeter.Classes
             {
                 // Ignore listener failures
             }
+        }
+
+        private static string NormalizeLocalKey(IPAddress address)
+        {
+            if (address == null)
+                return IPAddress.Any.ToString();
+
+            return address.ToString();
+        }
+
+        private static IEnumerable<string> EnumerateLocalKeyCandidates(IPAddress address)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+
+            string Yield(IPAddress candidate)
+            {
+                var key = NormalizeLocalKey(candidate);
+                if (seen.Add(key))
+                    return key;
+                return null;
+            }
+
+            var primary = Yield(address);
+            if (!string.IsNullOrEmpty(primary))
+                yield return primary;
+
+            var ipv4Any = Yield(IPAddress.Any);
+            if (!string.IsNullOrEmpty(ipv4Any))
+                yield return ipv4Any;
+
+            var ipv6Any = Yield(IPAddress.IPv6Any);
+            if (!string.IsNullOrEmpty(ipv6Any))
+                yield return ipv6Any;
+        }
+
+        private static bool IsJunkAddress(IPAddress address)
+        {
+            if (address == null)
+                return true;
+
+            if (address.Equals(IPAddress.Any) || address.Equals(IPAddress.None) || address.Equals(IPAddress.IPv6Any))
+                return true;
+
+            if (IPAddress.IsLoopback(address))
+                return true;
+
+            return false;
+        }
+
+        private static bool IsJunkEndpoint(IPEndPoint endpoint)
+        {
+            if (endpoint == null)
+                return true;
+
+            if (endpoint.Port <= 0)
+                return true;
+
+            return IsJunkAddress(endpoint.Address);
         }
 
         private static bool IsTunnelCandidate(IPAddress address)
@@ -494,7 +576,7 @@ namespace tickMeter.Classes
             }
         }
 
-        public static bool TryGetRemote(int processId, int localPort, ProtocolType protocol, out IPEndPoint remote)
+        public static bool TryGetRemote(int processId, int localPort, ProtocolType protocol, IPAddress localIp, out IPEndPoint remote)
         {
             remote = null;
 
@@ -502,12 +584,15 @@ namespace tickMeter.Classes
             if (processId <= 0 || localPort <= 0 || proto == 0)
                 return false;
 
-            if (_pidIndex.TryGetValue((processId, localPort, proto), out var entry))
+            foreach (var key in EnumerateLocalKeyCandidates(localIp))
             {
-                if (entry?.RemoteAddress != null && entry.RemotePort > 0)
+                if (_pidIndex.TryGetValue((processId, localPort, proto, key), out var entry))
                 {
-                    remote = new IPEndPoint(entry.RemoteAddress, entry.RemotePort);
-                    return true;
+                    if (entry?.RemoteAddress != null && entry.RemotePort > 0 && !IsJunkAddress(entry.RemoteAddress))
+                    {
+                        remote = new IPEndPoint(entry.RemoteAddress, entry.RemotePort);
+                        return true;
+                    }
                 }
             }
 
@@ -525,6 +610,12 @@ namespace tickMeter.Classes
             while (_recentRemotes.TryPeek(out var candidate))
             {
                 if (candidate.timestampUtc < cutoff)
+                {
+                    _recentRemotes.TryDequeue(out _);
+                    continue;
+                }
+
+                if (IsJunkEndpoint(candidate.endpoint))
                 {
                     _recentRemotes.TryDequeue(out _);
                     continue;

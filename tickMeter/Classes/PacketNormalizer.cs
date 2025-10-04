@@ -24,9 +24,27 @@ namespace tickMeter.Classes
                 case DataLinkKind.PointToPointProtocolWithDirection:
                 case DataLinkKind.LinuxSll:
                     return true;
-                default:
-                    return false;
             }
+
+            var kindName = kind.ToString();
+            if (string.Equals(kindName, "IpV6", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(kindName, "Ipv6", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(kindName, "Null", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(kindName, "Loop", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(kindName, "Raw", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public static string GetRecommendedBpf(DataLinkKind kind, bool forVpn)
+        {
+            if (forVpn)
+                return null;
+
+            return "ip or ip6";
         }
 
         /// <summary>
@@ -62,12 +80,21 @@ namespace tickMeter.Classes
             byte[] payload = null;
             ushort etherType = 0;
 
+            var kindName = kind.ToString();
+
             if (kind == DataLinkKind.IpV4)
             {
                 var packetLength = packet.Length;
                 payload = new byte[packetLength];
                 Buffer.BlockCopy(sourceBytes, 0, payload, 0, packetLength);
                 etherType = GuessEtherTypeFromIpPayload(payload);
+            }
+            else if (string.Equals(kindName, "IpV6", StringComparison.OrdinalIgnoreCase) || string.Equals(kindName, "Ipv6", StringComparison.OrdinalIgnoreCase))
+            {
+                var packetLength = packet.Length;
+                payload = new byte[packetLength];
+                Buffer.BlockCopy(sourceBytes, 0, payload, 0, packetLength);
+                etherType = 0x86DD;
             }
             else
             {

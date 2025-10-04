@@ -26,6 +26,10 @@ namespace tickMeter.Classes
             if (i >= 0) return n.Substring(i); // "NPF_{GUID}..."
             return n;
         }
+        private static readonly string[] VpnInterfaceHints =
+        {
+            "tun", "tap", "wintun", "wireguard", "zerotier", "tailscale", "vpn", "l2tp", "pppoe"
+        };
         private sealed class WorkerEntry : IDisposable
         {
             public readonly LivePacketDevice Device;
@@ -61,7 +65,7 @@ namespace tickMeter.Classes
                     _comm = Device.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 150);
                     var linkKind = _comm.DataLink.Kind;
                     if (!PacketNormalizer.IsSupported(linkKind)) return;
-                    TryApplyTunings(_comm);
+                    TryApplyTunings(_comm, Device);
 
                     var token = _cts.Token;
                     _comm.ReceivePackets(0, packet =>
@@ -94,18 +98,35 @@ namespace tickMeter.Classes
                 _cts.Dispose();
             }
 
-            private static void TryApplyTunings(PacketCommunicator comm)
+            private static void TryApplyTunings(PacketCommunicator comm, LivePacketDevice device)
             {
                 // BPF
                 try {
                     bool disableBpf = VpnSettings.DisableBpf;
                     bool bpfEnabled = App.settingsManager?.GetOption("bpf_filter_enabled", "False", "ADVANCED") == "True";
+                    bool isVpnDevice = device != null && TunDetector.IsTunLike(device, VpnInterfaceHints);
+                    string configuredFilter = App.settingsManager?.GetOption("capture_filter", string.Empty, "ADVANCED") ?? string.Empty;
+                    if (string.Equals(configuredFilter, "auto", StringComparison.OrdinalIgnoreCase))
+                        configuredFilter = string.Empty;
+
                     if (!disableBpf && bpfEnabled)
                     {
-                        var expr = App.settingsManager.GetOption("capture_filter","ip or ip6");
-                        using (var filter = comm.CreateFilter(expr))
+                        string expr = null;
+                        if (!string.IsNullOrWhiteSpace(configuredFilter))
                         {
-                            comm.SetFilter(filter);
+                            expr = configuredFilter;
+                        }
+                        else if (!isVpnDevice)
+                        {
+                            expr = PacketNormalizer.GetRecommendedBpf(comm.DataLink.Kind, false);
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(expr))
+                        {
+                            using (var filter = comm.CreateFilter(expr))
+                            {
+                                comm.SetFilter(filter);
+                            }
                         }
                     }
                 } catch { }
