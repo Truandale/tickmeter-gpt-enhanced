@@ -62,7 +62,11 @@ namespace tickMeter.Classes
             {
                 try
                 {
-                    _comm = Device.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 150);
+                    // Условный snaplen: VPN/tunnel → 256, физика → 65536
+                    bool isVpn = TunDetector.IsTunLike(Device, VpnInterfaceHints);
+                    int snaplen = isVpn ? 256 : 65536;
+                    
+                    _comm = Device.Open(snaplen, PacketDeviceOpenAttributes.Promiscuous, 150);
                     var linkKind = _comm.DataLink.Kind;
                     if (!PacketNormalizer.IsSupported(linkKind)) return;
                     TryApplyTunings(_comm, Device);
@@ -112,12 +116,19 @@ namespace tickMeter.Classes
                     if (!disableBpf && bpfEnabled)
                     {
                         string expr = null;
-                        if (!string.IsNullOrWhiteSpace(configuredFilter))
+                        
+                        // На VPN/tunnel НЕ ставим BPF — весь трафик должен идти
+                        if (isVpnDevice)
+                        {
+                            expr = null; // явно пустой
+                        }
+                        else if (!string.IsNullOrWhiteSpace(configuredFilter))
                         {
                             expr = configuredFilter;
                         }
-                        else if (!isVpnDevice)
+                        else
                         {
+                            // На физике оставляем рекомендованный (ip or ip6)
                             expr = PacketNormalizer.GetRecommendedBpf(comm.DataLink.Kind, false);
                         }
 

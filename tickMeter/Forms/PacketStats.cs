@@ -153,8 +153,11 @@ namespace tickMeter
                 Debug.Print("[PacketStats] Classic ListView mode");
             }
 
-            DebugLogger.log($"[LiveView] Initialized (virtual={_useVirtual}, maxRows={maxRows}, captureAll={CaptureAll}, ignoreVirtual={_ignoreVirtual})");
+            var effectiveIgnoreVirtual = VpnSettings.ForceCaptureVirtual ? false : _ignoreVirtual;
+            DebugLogger.log($"[LiveView] Initialized (virtual={_useVirtual}, maxRows={maxRows}, captureAll={CaptureAll}, ignoreVirtual={effectiveIgnoreVirtual}, vpnMode={VpnSettings.ForceCaptureVirtual})");
             _virtualModeSwitchLogged = _useVirtual;
+            
+            // TunnelAutoAttach.Init() уже подписывается на EtwBroker.OnLocalTunnelObserved внутри
             TryInitTunnelAutoAttach();
         }
         public void InitWorker()
@@ -316,7 +319,9 @@ namespace tickMeter
             if (description.Contains("loopback") || description.Contains("npcap loopback"))
                 return false;
 
-            if (_ignoreVirtual && IsVirtualDevice(device))
+            // На VPN-профиле разрешаем виртуальные адаптеры
+            bool effectiveIgnoreVirtual = VpnSettings.ForceCaptureVirtual ? false : _ignoreVirtual;
+            if (effectiveIgnoreVirtual && IsVirtualDevice(device))
             {
                 var label = string.Concat(device.Name ?? string.Empty, " ", device.Description ?? string.Empty).Trim();
                 if (!VpnHeuristicsLib.IfaceLooksVpn(label))
@@ -1798,6 +1803,17 @@ namespace tickMeter
             uint toPort)
         {
             resolved.remote = EnsureEndpoint(resolved.remote, toIp, toPort);
+
+            // Фильтруем мусорные адреса до попыток резолва
+            if (ShouldSkipAddressForDisplay(fromIp) || ShouldSkipAddressForDisplay(toIp))
+                return;
+            
+            // Дропаем loopback-пары (127.0.0.1 ↔ 127.0.0.1)
+            if (IPAddress.TryParse(fromIp, out var srcAddr) && IPAddress.TryParse(toIp, out var dstAddr))
+            {
+                if (IPAddress.IsLoopback(srcAddr) && IPAddress.IsLoopback(dstAddr))
+                    return;
+            }
 
             if (!VpnSettings.AdvancedEnabled)
                 return;
