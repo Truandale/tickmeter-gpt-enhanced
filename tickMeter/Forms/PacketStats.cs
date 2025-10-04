@@ -508,6 +508,9 @@ namespace tickMeter
         /// </summary>
         private void HandleTunnelConnection(ConnectionTracker.Key key, ConnectionTracker.Info info)
         {
+            // Проверяем tracking - если остановлен, не добавляем записи
+            if (!tracking) return;
+            
             try
             {
                 // Генерируем синтетическую запись LiveView
@@ -576,6 +579,30 @@ namespace tickMeter
         {
             try
             {
+                // Обновляем счётчики трафика (как обычные пакеты)
+                string sourceIP = key.Local.ToString();
+                string destIP = key.Remote.ToString();
+                bool sourceIsLocal = IsLocalAddress(sourceIP);
+                bool destIsLocal = IsLocalAddress(destIP);
+                
+                if (sourceIsLocal && !destIsLocal)
+                {
+                    // Исходящий трафик
+                    outPackets++;
+                    // outTraffic не увеличиваем, т.к. реальный размер неизвестен
+                }
+                else if (!sourceIsLocal && destIsLocal)
+                {
+                    // Входящий трафик
+                    inPackets++;
+                    // inTraffic не увеличиваем, т.к. реальный размер неизвестен
+                }
+                else
+                {
+                    // Внутренний или неопределенный - считаем как исходящий
+                    outPackets++;
+                }
+                
                 if (listView1.Items.Count >= 5000)
                 {
                     listView1.Items.RemoveAt(0); // Удаляем старую запись
@@ -597,8 +624,11 @@ namespace tickMeter
                 
                 DebugLogger.log($"[Synthetic] {timestamp:HH:mm:ss.fff} TUNNEL {key.Local}:{key.LocalPort} -> {key.Remote}:{key.RemotePort} proto={protocol} proc={processName} remote={resolvedRemote} by={resolvedBy}");
                 
-                // Прокручиваем к последней записи
-                item.EnsureVisible();
+                // Прокручиваем к последней записи ТОЛЬКО если включен автоскролл
+                if (autoscroll.Checked)
+                {
+                    item.EnsureVisible();
+                }
             }
             catch (Exception ex)
             {
