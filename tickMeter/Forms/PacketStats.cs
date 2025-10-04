@@ -172,6 +172,8 @@ namespace tickMeter
             
             // TunnelAutoAttach.Init() уже подписывается на EtwBroker.OnLocalTunnelObserved внутри
             TryInitTunnelAutoAttach();
+            
+            // ПРИМЕЧАНИЕ: InitWorker() будет вызван из App.Init() ПОСЛЕ создания connectionTracker
         }
         
         public void InitWorker()
@@ -552,13 +554,55 @@ namespace tickMeter
                 }
                 else
                 {
-                    // Classic ListView mode (не поддерживается для синтетических записей из-за UI thread)
-                    DebugLogger.log($"[Synthetic] SKIP (classic mode): {key.Local}:{key.LocalPort} -> {key.Remote}:{key.RemotePort} proc={processName}");
+                    // Classic ListView mode - добавляем через UI thread
+                    if (InvokeRequired)
+                    {
+                        Invoke(new Action(() => AddSyntheticClassic(timestamp, key, info, protocol, processName, resolvedRemote, resolvedBy)));
+                    }
+                    else
+                    {
+                        AddSyntheticClassic(timestamp, key, info, protocol, processName, resolvedRemote, resolvedBy);
+                    }
                 }
             }
             catch (Exception ex)
             {
                 DebugLogger.log($"[Synthetic] ERROR: {ex.GetType().Name} {ex.Message}");
+            }
+        }
+
+        private void AddSyntheticClassic(DateTime timestamp, ConnectionTracker.Key key, ConnectionTracker.Info info, 
+                                          string protocol, string processName, string resolvedRemote, string resolvedBy)
+        {
+            try
+            {
+                if (listView1.Items.Count >= 5000)
+                {
+                    listView1.Items.RemoveAt(0); // Удаляем старую запись
+                }
+
+                var item = new ListViewItem(timestamp.ToString("HH:mm:ss.fff"));
+                item.SubItems.Add(Interlocked.Increment(ref _packetIdCounter).ToString());
+                item.SubItems.Add(key.Local.ToString());
+                item.SubItems.Add(key.LocalPort.ToString());
+                item.SubItems.Add(key.Remote.ToString());
+                item.SubItems.Add(key.RemotePort.ToString());
+                item.SubItems.Add(resolvedRemote);
+                item.SubItems.Add(resolvedBy);
+                item.SubItems.Add("0"); // length
+                item.SubItems.Add(protocol);
+                item.SubItems.Add(processName);
+
+                listView1.Items.Add(item);
+                
+                DebugLogger.log($"[Synthetic] {timestamp:HH:mm:ss.fff} TUNNEL {key.Local}:{key.LocalPort} -> {key.Remote}:{key.RemotePort} proto={protocol} proc={processName} remote={resolvedRemote} by={resolvedBy}");
+                
+                // Прокручиваем к последней записи
+                item.EnsureVisible();
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[Synthetic] AddClassic ERROR: {ex.GetType().Name} {ex.Message}");
             }
         }
 
@@ -911,24 +955,27 @@ namespace tickMeter
 
             using (communicator)
             {
-                var linkKind = communicator.DataLink.Kind;
+                DataLinkKind linkKind;
                 try
                 {
+                    linkKind = communicator.DataLink.Kind;
                     if (!PacketNormalizer.IsSupported(linkKind))
                     {
                         if (!CaptureAll)
                         {
                             MessageBox.Show("This adapter type is not supported in the current configuration!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
+                        Debug.Print($"[PacketStats] Adapter {adapter.Description} has unsupported DataLink: {linkKind}");
                         return;
                     }
                 }
-                catch (NotSupportedException)
+                catch (NotSupportedException ex)
                 {
                     if (!CaptureAll)
                     {
-                        MessageBox.Show("This adapter type is not supported!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"This adapter type is not supported: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
+                    Debug.Print($"[PacketStats] Adapter {adapter.Description} threw NotSupportedException: {ex.Message}");
                     return;
                 }
 

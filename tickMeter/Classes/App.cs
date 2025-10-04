@@ -61,6 +61,10 @@ namespace tickMeter.Classes
                 }
             }
             
+            // Инициализируем worker PacketStats ПОСЛЕ создания connectionTracker
+            packetStatsForm.InitWorker();
+            Debug.Print("[App.Init] PacketStats worker initialized with VPN components");
+            
             // Инициализируем детектор спайков
             Classes.SpikeDetection.SpikeDetectionManager.InitializeDetector();
             Debug.Print("[App.Init] Spike detection system initialized");
