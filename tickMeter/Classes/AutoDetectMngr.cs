@@ -225,6 +225,61 @@ namespace tickMeter.Classes
             }
         }
 
+        /// <summary>
+        /// Упрощённый анализ для синтетических записей (ConnectionTracker)
+        /// </summary>
+        public static void AnalyzeSyntheticPacket(string fromIp, uint fromPort, string toIp, uint toPort, string protocol, string processName)
+        {
+            if (!IsEnabled()) return;
+            if (string.IsNullOrEmpty(processName) || processName == @"n\a") return;
+
+            try
+            {
+                int i = -1;
+                if (activeProcesses.Count > 0)
+                {
+                    for (i = 0; i < activeProcesses.Count; i++)
+                    {
+                        if (activeProcesses[i].name == processName)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                if (i == -1)
+                {
+                    ProcessNetworkStats tmpProc = new ProcessNetworkStats()
+                    {
+                        name = processName,
+                        remoteIp = toIp != App.meterState.LocalIP ? toIp : fromIp,
+                        remotePort = toIp != App.meterState.LocalIP ? toPort : fromPort,
+                        localPort = toIp == App.meterState.LocalIP ? toPort : fromPort,
+                        startTrack = DateTime.Now,
+                        protocol = protocol,
+                    };
+                    activeProcesses.Add(tmpProc);
+                    i = activeProcesses.Count - 1;
+                }
+
+                if (i > -1 && activeProcesses.Count > i)
+                {
+                    if (toIp == App.meterState.LocalIP)
+                    {
+                        activeProcesses[i].ticksIn++;
+                    }
+                    else
+                    {
+                        activeProcesses[i].ticksOut++;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[AutoDetectMngr] AnalyzeSyntheticPacket error: {ex.Message}");
+            }
+        }
+
         [DllImport("user32.dll")]
         public static extern IntPtr GetWindowThreadProcessId(IntPtr hWnd, out uint ProcessId);
 

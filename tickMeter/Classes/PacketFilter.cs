@@ -195,12 +195,11 @@ namespace tickMeter.Classes
                     case IpV4Protocol.Tcp:
                         // Проверяем, что TCP данные доступны
                         if (ip.Tcp == null) return false;
-                    SourcePort = ip.Tcp.SourcePort.ToString();
-                    DestPort = ip.Tcp.DestinationPort.ToString();
-                    break;
-            }
+                        SourcePort = ip.Tcp.SourcePort.ToString();
+                        DestPort = ip.Tcp.DestinationPort.ToString();
+                        break;
+                }
 
-            
                 if (!ValidatePort(SourcePortFilter, SourcePort)) return false;
 
                 if (!ValidatePort(DestPortFilter, DestPort)) return false;

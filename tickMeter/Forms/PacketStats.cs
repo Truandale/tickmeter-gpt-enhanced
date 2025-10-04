@@ -535,6 +535,25 @@ namespace tickMeter
                     }
                 }
                 
+                // Обновляем счётчики трафика (как обычные пакеты)
+                string sourceIP = key.Local.ToString();
+                string destIP = key.Remote.ToString();
+                bool sourceIsLocal = IsLocalAddress(sourceIP);
+                bool destIsLocal = IsLocalAddress(destIP);
+                
+                if (sourceIsLocal && !destIsLocal)
+                {
+                    outPackets++;
+                }
+                else if (!sourceIsLocal && destIsLocal)
+                {
+                    inPackets++;
+                }
+                else
+                {
+                    outPackets++;
+                }
+                
                 // Добавляем в LiveView
                 if (_useVirtual)
                 {
@@ -552,8 +571,11 @@ namespace tickMeter
                         resolvedBy
                     );
                     
-                    DebugLogger.log($"[Synthetic] {timestamp:HH:mm:ss.fff} TUNNEL {key.Local}:{key.LocalPort} -> {key.Remote}:{key.RemotePort} proto={protocol} proc={processName} remote={resolvedRemote} by={resolvedBy}");
+                    LogLiveViewEntry(row);
                     RingAdd(row);
+                    
+                    // Анализируем для AutoDetect (детект активного процесса)
+                    AutoDetectMngr.AnalyzeSyntheticPacket(key.Local.ToString(), (uint)key.LocalPort, key.Remote.ToString(), (uint)key.RemotePort, protocol, processName);
                 }
                 else
                 {
@@ -608,8 +630,9 @@ namespace tickMeter
                     listView1.Items.RemoveAt(0); // Удаляем старую запись
                 }
 
+                var packetId = Interlocked.Increment(ref _packetIdCounter);
                 var item = new ListViewItem(timestamp.ToString("HH:mm:ss.fff"));
-                item.SubItems.Add(Interlocked.Increment(ref _packetIdCounter).ToString());
+                item.SubItems.Add(packetId.ToString());
                 item.SubItems.Add(key.Local.ToString());
                 item.SubItems.Add(key.LocalPort.ToString());
                 item.SubItems.Add(key.Remote.ToString());
@@ -622,7 +645,11 @@ namespace tickMeter
 
                 listView1.Items.Add(item);
                 
-                DebugLogger.log($"[Synthetic] {timestamp:HH:mm:ss.fff} TUNNEL {key.Local}:{key.LocalPort} -> {key.Remote}:{key.RemotePort} proto={protocol} proc={processName} remote={resolvedRemote} by={resolvedBy}");
+                // Логируем запись (как обычные пакеты)
+                LogLiveViewEntry(timestamp, packetId, key.Local.ToString(), (uint)key.LocalPort, key.Remote.ToString(), (uint)key.RemotePort, 0, protocol, processName, resolvedRemote, resolvedBy);
+                
+                // Анализируем для AutoDetect (детект активного процесса)
+                AutoDetectMngr.AnalyzeSyntheticPacket(key.Local.ToString(), (uint)key.LocalPort, key.Remote.ToString(), (uint)key.RemotePort, protocol, processName);
                 
                 // Прокручиваем к последней записи ТОЛЬКО если включен автоскролл
                 if (autoscroll.Checked)
