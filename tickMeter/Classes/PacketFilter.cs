@@ -174,44 +174,52 @@ namespace tickMeter.Classes
 
         public bool Validate()
         {
-            // Проверяем, что ip не null (может быть null при VPN/тунелировании)
-            if (ip == null) return false;
-            
-            if (!ValidateProtocol()) return false;
-
-            string SourcePort = "";
-            string DestPort = "";
-            
-            switch(ip.Protocol)
+            try
             {
-                case IpV4Protocol.Udp:
-                    // Проверяем, что UDP данные доступны
-                    if (ip.Udp == null) return false;
-                    SourcePort = ip.Udp.SourcePort.ToString();
-                    DestPort = ip.Udp.DestinationPort.ToString();
-                    break;
-                case IpV4Protocol.Tcp:
-                    // Проверяем, что TCP данные доступны
-                    if (ip.Tcp == null) return false;
+                // Проверяем, что ip не null (может быть null при VPN/тунелировании)
+                if (ip == null) return false;
+                
+                if (!ValidateProtocol()) return false;
+
+                string SourcePort = "";
+                string DestPort = "";
+                
+                switch(ip.Protocol)
+                {
+                    case IpV4Protocol.Udp:
+                        // Проверяем, что UDP данные доступны
+                        if (ip.Udp == null) return false;
+                        SourcePort = ip.Udp.SourcePort.ToString();
+                        DestPort = ip.Udp.DestinationPort.ToString();
+                        break;
+                    case IpV4Protocol.Tcp:
+                        // Проверяем, что TCP данные доступны
+                        if (ip.Tcp == null) return false;
                     SourcePort = ip.Tcp.SourcePort.ToString();
                     DestPort = ip.Tcp.DestinationPort.ToString();
                     break;
             }
 
             
-            if (!ValidatePort(SourcePortFilter, SourcePort)) return false;
+                if (!ValidatePort(SourcePortFilter, SourcePort)) return false;
 
-            if (!ValidatePort(DestPortFilter, DestPort)) return false;
+                if (!ValidatePort(DestPortFilter, DestPort)) return false;
 
-            string SourceIp = ip.Source.ToString();
-            string DestIp = ip.Destination.ToString();
+                string SourceIp = ip.Source.ToString();
+                string DestIp = ip.Destination.ToString();
 
-            if (!ValidateIP(SourceIpFilter, SourceIp)) return false;
-            if (!ValidateIP(DestIpFilter, DestIp)) return false;
+                if (!ValidateIP(SourceIpFilter, SourceIp)) return false;
+                if (!ValidateIP(DestIpFilter, DestIp)) return false;
 
-            if (!ValidatePacketSize()) return false;
+                if (!ValidatePacketSize()) return false;
 
-            return true;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[PacketFilter] Validate error: {ex.GetType().Name} - {ex.Message}");
+                return false;
+            }
         }
 
     }
