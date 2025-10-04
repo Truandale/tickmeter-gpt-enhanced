@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,7 +13,9 @@ namespace tickMeter.Classes
 {
     public static class EtwBroker
     {
-        private sealed class ConnectionEntry
+    public static event Action<IPAddress> OnLocalTunnelObserved;
+
+    private sealed class ConnectionEntry
         {
             public ConnectionEntry(byte protocol, IPAddress local, int localPort, IPAddress remote, int remotePort, int processId, string processName, DateTime timestampUtc)
             {
@@ -152,6 +155,12 @@ namespace tickMeter.Classes
 
         private static readonly ConcurrentDictionary<LocalKey, ConnectionEntry> _localIndex =
             new ConcurrentDictionary<LocalKey, ConnectionEntry>();
+
+        private static readonly ConcurrentDictionary<(int pid, int port, byte proto), ConnectionEntry> _pidIndex =
+            new ConcurrentDictionary<(int, int, byte), ConnectionEntry>();
+
+        private static readonly ConcurrentQueue<(DateTime timestampUtc, IPEndPoint endpoint)> _recentRemotes =
+            new ConcurrentQueue<(DateTime, IPEndPoint)>();
 
         private static CancellationTokenSource _cts;
         private static Task _runner;
@@ -330,6 +339,14 @@ namespace tickMeter.Classes
 
             _entries[new ConnectionKey(proto, local, localPort, remote, remotePort)] = entry;
             _localIndex[new LocalKey(proto, local, localPort)] = entry;
+            if (processId > 0 && localPort > 0 && proto != 0)
+            {
+                _pidIndex[(processId, localPort, proto)] = entry;
+            }
+
+            PushRecent(entry);
+            NotifyTunnel(local);
+            NotifyTunnel(remote);
 
             CleanupIfNeeded();
 
@@ -359,6 +376,14 @@ namespace tickMeter.Classes
                 if (kv.Value == null || kv.Value.IsExpired(now, EntryTtl))
                     _localIndex.TryRemove(kv.Key, out _);
             }
+
+            foreach (var kv in _pidIndex)
+            {
+                if (kv.Value == null || kv.Value.IsExpired(now, EntryTtl))
+                    _pidIndex.TryRemove(kv.Key, out _);
+            }
+
+            TrimRecent(now);
         }
 
         private static string NormalizeProcessName(string processName, int processId)
@@ -380,6 +405,136 @@ namespace tickMeter.Classes
             {
                 return string.Empty;
             }
+        }
+
+        private static void PushRecent(ConnectionEntry entry)
+        {
+            if (entry?.RemoteAddress == null || entry.RemotePort <= 0)
+                return;
+
+            var endpoint = new IPEndPoint(entry.RemoteAddress, entry.RemotePort);
+            _recentRemotes.Enqueue((DateTime.UtcNow, endpoint));
+
+            while (_recentRemotes.Count > 256 && _recentRemotes.TryDequeue(out _))
+            {
+            }
+        }
+
+        private static void TrimRecent(DateTime now)
+        {
+            while (_recentRemotes.TryPeek(out var candidate))
+            {
+                if (now - candidate.timestampUtc <= EntryTtl)
+                    break;
+
+                _recentRemotes.TryDequeue(out _);
+            }
+        }
+
+        private static void NotifyTunnel(IPAddress candidate)
+        {
+            if (!IsTunnelCandidate(candidate))
+                return;
+
+            var handler = OnLocalTunnelObserved;
+            if (handler == null)
+                return;
+
+            try
+            {
+                handler(candidate);
+            }
+            catch
+            {
+                // Ignore listener failures
+            }
+        }
+
+        private static bool IsTunnelCandidate(IPAddress address)
+        {
+            if (address == null)
+                return false;
+
+            if (IPAddress.IsLoopback(address))
+                return false;
+
+            if (address.AddressFamily == AddressFamily.InterNetwork)
+            {
+                var octets = address.GetAddressBytes();
+                if (octets[0] == 10) return true;
+                if (octets[0] == 100 && octets[1] >= 64 && octets[1] <= 127) return true; // RFC6598
+                if (octets[0] == 172 && octets[1] >= 16 && octets[1] <= 31) return true;
+                if (octets[0] == 192 && octets[1] == 168) return true;
+                return false;
+            }
+
+            if (address.AddressFamily == AddressFamily.InterNetworkV6)
+            {
+                if (address.IsIPv6LinkLocal || address.IsIPv6SiteLocal)
+                    return true;
+                var bytes = address.GetAddressBytes();
+                if ((bytes[0] & 0xfe) == 0xfc) // fc00::/7
+                    return true;
+                return false;
+            }
+
+            return false;
+        }
+
+        private static byte NormalizeProtocol(ProtocolType protocol)
+        {
+            switch (protocol)
+            {
+                case ProtocolType.Tcp:
+                    return 6;
+                case ProtocolType.Udp:
+                    return 17;
+                default:
+                    return 0;
+            }
+        }
+
+        public static bool TryGetRemote(int processId, int localPort, ProtocolType protocol, out IPEndPoint remote)
+        {
+            remote = null;
+
+            var proto = NormalizeProtocol(protocol);
+            if (processId <= 0 || localPort <= 0 || proto == 0)
+                return false;
+
+            if (_pidIndex.TryGetValue((processId, localPort, proto), out var entry))
+            {
+                if (entry?.RemoteAddress != null && entry.RemotePort > 0)
+                {
+                    remote = new IPEndPoint(entry.RemoteAddress, entry.RemotePort);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static bool TryGetRecentRemote(TimeSpan maxAge, out IPEndPoint remote)
+        {
+            remote = null;
+            if (maxAge <= TimeSpan.Zero)
+                return false;
+
+            var cutoff = DateTime.UtcNow - maxAge;
+
+            while (_recentRemotes.TryPeek(out var candidate))
+            {
+                if (candidate.timestampUtc < cutoff)
+                {
+                    _recentRemotes.TryDequeue(out _);
+                    continue;
+                }
+
+                remote = candidate.endpoint;
+                return true;
+            }
+
+            return false;
         }
     }
 }

@@ -18,6 +18,8 @@ using System.Runtime.CompilerServices;
 using System.Net;
 using System.Net.Sockets;
 using tickMeter.WinDivertLayer;
+using TunnelAutoAttachLib = tickMeter.Classes.TunnelAutoAttach;
+using VpnHeuristicsLib = tickMeter.Classes.VpnHeuristics;
 
 namespace tickMeter
 {
@@ -57,7 +59,23 @@ namespace tickMeter
     
     public partial class PacketStats : Form
     {
-        List<Packet> PacketBuffer;
+        private sealed class CapturedPacket
+        {
+            public CapturedPacket(Packet packet, LivePacketDevice device, bool isVirtual)
+            {
+                Packet = packet;
+                Device = device;
+                IsVirtual = isVirtual;
+                TimestampUtc = DateTime.UtcNow;
+            }
+
+            public Packet Packet { get; }
+            public LivePacketDevice Device { get; }
+            public bool IsVirtual { get; }
+            public DateTime TimestampUtc { get; }
+        }
+
+        List<CapturedPacket> PacketBuffer = new List<CapturedPacket>();
         private readonly object _packetBufferLock = new object();  // Thread synchronization lock
         private const int MAX_PACKET_BUFFER_SIZE = 100;  // Максимальный размер буфера для Live View (уменьшен с 1000)
         private const int CRITICAL_BUFFER_SIZE = 200;    // Критический размер для экстренной очистки
@@ -102,6 +120,8 @@ namespace tickMeter
         private int _packetIdCounter = 0;
     private bool _enableIpv6 = true;
         private bool _virtualModeSwitchLogged;
+            private readonly Dictionary<string, CaptureService.Subscription> _tunnelSubscriptions = new Dictionary<string, CaptureService.Subscription>(StringComparer.OrdinalIgnoreCase);
+            private readonly object _tunnelSubscriptionsLock = new object();
 
         private static bool GetBoolSetting(string key, string defaultValue, string section = "SETTINGS")
         {
@@ -135,6 +155,7 @@ namespace tickMeter
 
             DebugLogger.log($"[LiveView] Initialized (virtual={_useVirtual}, maxRows={maxRows}, captureAll={CaptureAll}, ignoreVirtual={_ignoreVirtual})");
             _virtualModeSwitchLogged = _useVirtual;
+            TryInitTunnelAutoAttach();
         }
         public void InitWorker()
         {
@@ -184,7 +205,7 @@ namespace tickMeter
                 StopSubscription();
                 
                 // Инициализация пакетного буфера и менеджера соединений
-                if (PacketBuffer == null) PacketBuffer = new List<Packet>();
+                if (PacketBuffer == null) PacketBuffer = new List<CapturedPacket>();
                 else 
                 {
                     lock (_packetBufferLock) { PacketBuffer.Clear(); }
@@ -287,25 +308,145 @@ namespace tickMeter
         /// </summary>
         private bool ShouldIncludeDevice(LivePacketDevice device)
         {
-            if (device?.Description == null) return false;
-            
-            var desc = device.Description.ToLowerInvariant();
-            
-            // Всегда исключаем loopback
-            if (desc.Contains("loopback") || desc.Contains("npcap loopback"))
+            if (device == null)
                 return false;
-            
-            // Фильтрация виртуальных адаптеров если включена
-            if (_ignoreVirtual)
-            {
-                if (desc.Contains("hyper-v") || desc.Contains("vmware") ||
-                    desc.Contains("virtualbox") || desc.Contains("vethernet"))
-                    return false;
-            }
-            
+
+            var description = (device.Description ?? string.Empty).ToLowerInvariant();
+
+            if (description.Contains("loopback") || description.Contains("npcap loopback"))
+                return false;
+
+            if (_ignoreVirtual && IsVirtualDevice(device))
+                return false;
+
             return true;
         }
-        
+
+        private static string GetDeviceKey(LivePacketDevice device)
+        {
+            if (device == null)
+                return string.Empty;
+
+            var name = device.Name ?? string.Empty;
+            var idx = name.IndexOf("NPF_{", StringComparison.OrdinalIgnoreCase);
+            if (idx >= 0)
+                return name.Substring(idx);
+
+            if (!string.IsNullOrWhiteSpace(name))
+                return name;
+
+            return device.Description ?? Guid.NewGuid().ToString("N");
+        }
+
+        private static bool IsVirtualDevice(LivePacketDevice device)
+        {
+            if (device == null)
+                return false;
+
+            var hints = new[] { "virtual", "vpn", "wireguard", "tun", "tap", "tailscale", "zerotier", "vmware", "hyper-v", "virtualbox" };
+            if (TunDetector.IsTunLike(device, hints))
+                return true;
+
+            var description = (device.Description ?? string.Empty).ToLowerInvariant();
+            if (description.Contains("vethernet") || description.Contains("loopback"))
+                return true;
+
+            return false;
+        }
+
+        private void EnqueuePacket(CapturedPacket captured)
+        {
+            if (captured?.Packet == null)
+                return;
+
+            lock (_packetBufferLock)
+            {
+                if (PacketBuffer.Count >= CRITICAL_BUFFER_SIZE)
+                {
+                    PacketBuffer.Clear();
+                    GC.Collect();
+                    return;
+                }
+
+                if (PacketBuffer.Count >= MAX_PACKET_BUFFER_SIZE)
+                {
+                    int removeCount = (int)(PacketBuffer.Count * 0.8);
+                    PacketBuffer.RemoveRange(0, removeCount);
+                }
+
+                PacketBuffer.Add(captured);
+            }
+        }
+
+        private void TryInitTunnelAutoAttach()
+        {
+            try
+            {
+                TunnelAutoAttachLib.Init(EnumerateTunnelCandidates, StartTunnelCapture, StopTunnelCapture);
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[PacketStats] AutoAttach init failed: {ex.GetType().Name} {ex.Message}");
+            }
+        }
+
+        private IEnumerable<LivePacketDevice> EnumerateTunnelCandidates()
+        {
+            try
+            {
+                return LivePacketDevice.AllLocalMachine.Where(d => d != null).ToList();
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[PacketStats] Unable to enumerate adapters for auto attach: {ex.GetType().Name} {ex.Message}");
+                return Enumerable.Empty<LivePacketDevice>();
+            }
+        }
+
+        private void StartTunnelCapture(LivePacketDevice device)
+        {
+            if (device == null || App.Capture == null)
+                return;
+
+            var key = GetDeviceKey(device);
+            lock (_tunnelSubscriptionsLock)
+            {
+                if (_tunnelSubscriptions.ContainsKey(key))
+                    return;
+
+                try
+                {
+                    var sub = App.Capture.Subscribe(new[] { device }, OnPacketReceived);
+                    _tunnelSubscriptions[key] = sub;
+                    DebugLogger.log($"[AutoAttach] Tunnel capture attached: {device.Description ?? device.Name}");
+                }
+                catch (Exception ex)
+                {
+                    DebugLogger.log($"[AutoAttach] Failed to attach {device.Description ?? device.Name}: {ex.GetType().Name} {ex.Message}");
+                }
+            }
+        }
+
+        private void StopTunnelCapture(LivePacketDevice device)
+        {
+            if (device == null)
+                return;
+
+            var key = GetDeviceKey(device);
+            lock (_tunnelSubscriptionsLock)
+            {
+                if (_tunnelSubscriptions.TryGetValue(key, out var sub))
+                {
+                    _tunnelSubscriptions.Remove(key);
+                    try { sub.Dispose(); }
+                    catch (Exception ex)
+                    {
+                        DebugLogger.log($"[AutoAttach] Failed to detach {device.Description ?? device.Name}: {ex.GetType().Name} {ex.Message}");
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Обработчик пакетов от CaptureService
         /// </summary>
@@ -313,27 +454,15 @@ namespace tickMeter
         {
             try
             {
-                if (!tracking || packet == null) return;
-                
-                // Применяем фильтры пакетов (упрощенная версия)
-                if (!ShouldIncludePacket(packet)) return;
-                
-                // Добавляем в буфер (thread-safe)
-                lock (_packetBufferLock)
-                {
-                    if (PacketBuffer.Count < MAX_PACKET_BUFFER_SIZE)
-                    {
-                        PacketBuffer.Add(packet);
-                    }
-                    else
-                    {
-                        // Удаляем старые пакеты при переполнении
-                        PacketBuffer.RemoveAt(0);
-                        PacketBuffer.Add(packet);
-                    }
-                }
-                
-                // Обновляем статистику трафика
+                if (!tracking || packet == null)
+                    return;
+
+                if (!ShouldIncludePacket(packet))
+                    return;
+
+                var captured = new CapturedPacket(packet, device, IsVirtualDevice(device));
+                EnqueuePacket(captured);
+
                 UpdateTrafficCounters(packet);
             }
             catch (Exception ex)
@@ -484,6 +613,19 @@ namespace tickMeter
                     _captureSub = null;
                 }
                 _captureRunning = false;
+
+                lock (_tunnelSubscriptionsLock)
+                {
+                    if (_tunnelSubscriptions.Count > 0)
+                    {
+                        foreach (var sub in _tunnelSubscriptions.Values)
+                        {
+                            try { sub.Dispose(); } catch { }
+                        }
+                        _tunnelSubscriptions.Clear();
+                    }
+                }
+                TunnelAutoAttachLib.DetachAll();
                 
                 // Дополнительно очищаем старые BackgroundWorker (для совместимости)
                 if (_pcapWorkers.Count > 0)
@@ -728,28 +870,7 @@ namespace tickMeter
                 return;
             }
             
-            // Thread-safe addition to PacketBuffer with aggressive size limit for Live View
-            lock (_packetBufferLock)
-            {
-                // Критическая проверка: если буфер сильно превысил лимит - полная очистка
-                if (PacketBuffer.Count >= CRITICAL_BUFFER_SIZE)
-                {
-                    PacketBuffer.Clear();
-                    // Форсированная сборка мусора при критическом переполнении
-                    GC.Collect();
-                    return; // Пропускаем этот пакет
-                }
-                
-                // Обычная очистка при достижении лимита
-                if (PacketBuffer.Count >= MAX_PACKET_BUFFER_SIZE)
-                {
-                    // Удаляем 80% старых пакетов для Live View
-                    int removeCount = (int)(PacketBuffer.Count * 0.8);
-                    PacketBuffer.RemoveRange(0, removeCount);
-                }
-                
-                PacketBuffer.Add(packet);
-            }
+            EnqueuePacket(new CapturedPacket(packet, null, false));
 
             // Простая логика: подсчитываем все пакеты
             // Исходящие: если source из приватной подсети (наша сеть)
@@ -830,7 +951,7 @@ namespace tickMeter
                 return;
             }
             
-            List<Packet> tmpPackets;
+            List<CapturedPacket> tmpPackets;
             try
             {
                 // Thread-safe extraction of packets from buffer with aggressive cleanup
@@ -838,7 +959,7 @@ namespace tickMeter
                 {
                     // Для Live View обрабатываем меньше пакетов за раз, но чаще
                     int processCount = Math.Min(50, PacketBuffer.Count);
-                    tmpPackets = PacketBuffer.Take(processCount).Where(p => p != null).ToList();
+                    tmpPackets = PacketBuffer.Take(processCount).Where(p => p?.Packet != null).ToList();
                     
                     // Удаляем обработанные пакеты из буфера более эффективно
                     if (processCount > 0)
@@ -866,7 +987,7 @@ namespace tickMeter
                     catch (Exception)
                     {
                         // Если даже Clear() падает, пересоздаём список
-                        PacketBuffer = new List<Packet>();
+                        PacketBuffer = new List<CapturedPacket>();
                     }
                 }
                 return; 
@@ -882,10 +1003,11 @@ namespace tickMeter
                 var basicFlag = App.settingsManager?.GetOption("vpn_bypass_basic", "False", "ADVANCED");
                 DebugLogger.log($"[PacketStats] VPN flags: advanced={vpnBypassAdvanced}, basic={basicFlag}, captureVirtual={VpnSettings.ForceCaptureVirtual}, allowRaw={VpnSettings.AllowNonEthernet}, disableBpf={VpnSettings.DisableBpf}, etw={VpnSettings.EnableEtwEnrichment}, tracker={(App.connectionTracker != null)}");
             }
-            foreach (Packet packet in tmpPackets) {
-                // Проверяем, что пакет не null
+            foreach (var captured in tmpPackets) {
+                var packet = captured?.Packet;
                 if (packet == null)
                     continue;
+                var deviceIsVirtual = captured.IsVirtual;
                     
                 IpV4Datagram ip4 = null;
                 IpV6Datagram ip6 = null;
@@ -1148,7 +1270,22 @@ namespace tickMeter
                 
                 if (!packetFilter.ValidateProcess(processName)) continue;
 
-                var (resolvedRemote, resolvedBy) = ResolveRemoteMetadata(to_ip, trackerOverride);
+                var resolved = ResolveRemoteMetadata(to_ip, toPort, trackerOverride);
+
+                ApplyVpnHeuristics(
+                    ref resolved,
+                    deviceIsVirtual,
+                    processName,
+                    trackerOverride,
+                    trackerProto,
+                    trackerSrcPort,
+                    trackerDstPort,
+                    to_ip,
+                    fromPort,
+                    toPort);
+
+                var resolvedRemote = resolved.remote;
+                var resolvedBy = resolved.resolvedBy;
 
                 if (_useVirtual)
                 {
@@ -1294,7 +1431,7 @@ namespace tickMeter
                 catch (Exception)
                 {
                     // Если даже Clear() падает, пересоздаём список
-                    PacketBuffer = new List<Packet>();
+                    PacketBuffer = new List<CapturedPacket>();
                 }
             }
             
@@ -1333,7 +1470,7 @@ namespace tickMeter
                 catch (Exception)
                 {
                     // Если Clear() падает, пересоздаём список
-                    PacketBuffer = new List<Packet>();
+                    PacketBuffer = new List<CapturedPacket>();
                 }
             }
             
@@ -1370,6 +1507,7 @@ namespace tickMeter
         {
             e.Cancel = true;
             Hide();
+        TunnelAutoAttachLib.Dispose();
             if (tracking)
                 Stop();
         }
@@ -1601,9 +1739,9 @@ namespace tickMeter
             UpdateTransportDecodeStatus(current);
         }
 
-        private (string remote, string resolvedBy) ResolveRemoteMetadata(string destinationIp, ConnectionTracker.Info? trackerOverride)
+        private (string remote, string resolvedBy) ResolveRemoteMetadata(string destinationIp, uint destinationPort, ConnectionTracker.Info? trackerOverride)
         {
-            string remote = destinationIp ?? string.Empty;
+            string remote = string.IsNullOrWhiteSpace(destinationIp) ? string.Empty : destinationIp;
             string resolvedBy = "raw";
 
             if (!string.IsNullOrWhiteSpace(destinationIp))
@@ -1611,17 +1749,151 @@ namespace tickMeter
                 var meta = MetadataResolver.Resolve(destinationIp);
                 if (!string.IsNullOrWhiteSpace(meta.remote) && !string.Equals(meta.remote, destinationIp, StringComparison.OrdinalIgnoreCase))
                 {
-                    remote = meta.remote;
+                    remote = EnsureEndpoint(meta.remote, destinationIp, destinationPort);
                     resolvedBy = meta.source;
+                }
+                else
+                {
+                    remote = FormatEndpoint(destinationIp, destinationPort);
                 }
             }
 
             if (trackerOverride.HasValue)
             {
-                resolvedBy = resolvedBy == "raw" ? "tracker" : resolvedBy + "+tracker";
+                resolvedBy = AppendSourceTag(resolvedBy, "tracker");
             }
 
             return (remote, resolvedBy);
+        }
+
+        private void ApplyVpnHeuristics(
+            ref (string remote, string resolvedBy) resolved,
+            bool deviceIsVirtual,
+            string processName,
+            ConnectionTracker.Info? trackerOverride,
+            byte trackerProto,
+            int trackerSrcPort,
+            int trackerDstPort,
+            string toIp,
+            uint fromPort,
+            uint toPort)
+        {
+            resolved.remote = EnsureEndpoint(resolved.remote, toIp, toPort);
+
+            if (!VpnSettings.AdvancedEnabled)
+                return;
+
+            if (deviceIsVirtual)
+            {
+                resolved.resolvedBy = AppendSourceTag(resolved.resolvedBy, "pcap-vpn");
+                return;
+            }
+
+            var protocolType = GetProtocol(trackerProto);
+            if (!protocolType.HasValue)
+                return;
+
+            var targetPort = trackerDstPort > 0 ? trackerDstPort : (int)(toPort > ushort.MaxValue ? ushort.MaxValue : toPort);
+            if (!VpnHeuristicsLib.LooksLikeVpnShell(processName, protocolType.Value, targetPort))
+                return;
+
+            if (!VpnSettings.EnableEtwEnrichment)
+                return;
+
+            int pid = trackerOverride?.Pid ?? 0;
+            int localPort = trackerSrcPort > 0 ? trackerSrcPort : (int)(fromPort > ushort.MaxValue ? ushort.MaxValue : fromPort);
+            bool updated = false;
+
+            if (pid > 0 && localPort > 0 && EtwBroker.TryGetRemote(pid, localPort, protocolType.Value, out var remoteEndpoint))
+            {
+                resolved.remote = FormatEndpoint(remoteEndpoint.Address, remoteEndpoint.Port);
+                resolved.resolvedBy = AppendSourceTag(resolved.resolvedBy, "etw-vpn");
+                MetadataResolver.Promote(toIp, remoteEndpoint.Address.ToString(), "etw-vpn", TimeSpan.FromSeconds(5));
+                updated = true;
+            }
+
+            if (!updated && EtwBroker.TryGetRecentRemote(TimeSpan.FromSeconds(2), out var fallbackEndpoint))
+            {
+                resolved.remote = FormatEndpoint(fallbackEndpoint.Address, fallbackEndpoint.Port);
+                resolved.resolvedBy = AppendSourceTag(resolved.resolvedBy, "etw-recent");
+                MetadataResolver.Promote(toIp, fallbackEndpoint.Address.ToString(), "etw-recent", TimeSpan.FromSeconds(3));
+            }
+        }
+
+        private static ProtocolType? GetProtocol(byte proto)
+        {
+            switch (proto)
+            {
+                case 6:
+                    return ProtocolType.Tcp;
+                case 17:
+                    return ProtocolType.Udp;
+                default:
+                    return null;
+            }
+        }
+
+        private static string EnsureEndpoint(string current, string fallbackIp, uint port)
+        {
+            if (string.IsNullOrWhiteSpace(fallbackIp))
+                return current ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(current))
+                return FormatEndpoint(fallbackIp, port);
+
+            if (string.Equals(current, fallbackIp, StringComparison.OrdinalIgnoreCase))
+                return FormatEndpoint(fallbackIp, port);
+
+            if (current.IndexOf(':') < 0 && port > 0)
+                return FormatEndpoint(current, port);
+
+            return current;
+        }
+
+        private static string FormatEndpoint(string hostOrIp, uint port)
+        {
+            if (string.IsNullOrWhiteSpace(hostOrIp))
+                return string.Empty;
+
+            if (port == 0)
+                return hostOrIp;
+
+            if (IPAddress.TryParse(hostOrIp, out var parsed) && parsed.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+            {
+                return $"[{parsed}]:{port}";
+            }
+
+            return $"{hostOrIp}:{port}";
+        }
+
+        private static string FormatEndpoint(IPAddress address, int port)
+        {
+            if (address == null)
+                return string.Empty;
+
+            if (port <= 0)
+                return address.ToString();
+
+            if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+            {
+                return $"[{address}]:{port}";
+            }
+
+            return $"{address}:{port}";
+        }
+
+        private static string AppendSourceTag(string existing, string tag)
+        {
+            if (string.IsNullOrWhiteSpace(tag))
+                return existing;
+
+            if (string.IsNullOrWhiteSpace(existing) || string.Equals(existing, "raw", StringComparison.OrdinalIgnoreCase))
+                return tag;
+
+            if (existing.IndexOf(tag, StringComparison.OrdinalIgnoreCase) >= 0)
+                return existing;
+
+            return $"{existing}+{tag}";
         }
 
         private void CheckAndSwitchMode()

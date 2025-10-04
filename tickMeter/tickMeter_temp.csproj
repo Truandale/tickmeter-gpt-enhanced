@@ -228,6 +228,8 @@
     <Compile Include="Classes\ActiveWinowTracker.cs" />
     <Compile Include="Classes\AutoDetectMngr.cs" />
     <Compile Include="Classes\ConnectionsManager.cs" />
+    <Compile Include="Classes\TunnelAutoAttach.cs" />
+    <Compile Include="Classes\VpnHeuristics.cs" />
     <Compile Include="Classes\ETW.cs" />
     <Compile Include="Classes\GameProfile.cs" />
     <Compile Include="Classes\GameProfileManager.cs" />
