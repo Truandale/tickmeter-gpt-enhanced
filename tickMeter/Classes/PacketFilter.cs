@@ -142,40 +142,90 @@ namespace tickMeter.Classes
 
         public bool ValidateForOutputPacket()
         {
-            if (!ValidateProtocol()) return false;
-
-            string SourcePort = "";
-            string DestPort = "";
-
-            if (ip.Protocol == IpV4Protocol.Udp)
+            try
             {
-                DestPort = ip.Udp.SourcePort.ToString();
-                SourcePort = ip.Udp.DestinationPort.ToString();
+                Debug.Print($"[PacketFilter] <<<<<< ValidateForOutputPacket() ENTRY - ip={ip?.GetType().Name ?? "NULL"}");
+                
+                if (ip == null) return false;
+                
+                if (!ValidateProtocol()) return false;
+
+                string SourcePort = "";
+                string DestPort = "";
+
+                if (ip.Protocol == IpV4Protocol.Udp)
+                {
+                    // RACE CONDITION FIX: сохраняем в локальную переменную
+                    var udp = ip.Udp;
+                    if (udp == null) return false;
+                    try
+                    {
+                        DestPort = udp.SourcePort.ToString();
+                        SourcePort = udp.DestinationPort.ToString();
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                }
+                else if (ip.Protocol == IpV4Protocol.Tcp)
+                {
+                    // RACE CONDITION FIX: сохраняем в локальную переменную
+                    var tcp = ip.Tcp;
+                    if (tcp == null) return false;
+                    try
+                    {
+                        DestPort = tcp.SourcePort.ToString();
+                        SourcePort = tcp.DestinationPort.ToString();
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                }
+                
+                if (!ValidatePort(SourcePortFilter, SourcePort)) return false;
+                if (!ValidatePort(DestPortFilter, DestPort)) return false;
+
+                string DestIp = "";
+                string SourceIp = "";
+                
+                try
+                {
+                    // RACE CONDITION FIX: сохраняем в локальные переменные
+                    var src = ip.Source;
+                    var dst = ip.Destination;
+                    
+                    if (src != null)
+                        DestIp = src.ToString();
+                    if (dst != null)
+                        SourceIp = dst.ToString();
+                }
+                catch
+                {
+                    return false;
+                }
+
+                if (!ValidateIP(SourceIpFilter, SourceIp)) return false;
+                if (!ValidateIP(DestIpFilter, DestIp)) return false;
+
+                if (!ValidatePacketSize()) return false;
+
+                return true;
             }
-            else if (ip.Protocol == IpV4Protocol.Tcp)
+            catch (Exception ex)
             {
-                DestPort = ip.Tcp.SourcePort.ToString();
-                SourcePort = ip.Tcp.DestinationPort.ToString();
+                Debug.Print($"[PacketFilter] ValidateForOutputPacket error: {ex.GetType().Name} - {ex.Message}");
+                return false;
             }
-            if (!ValidatePort(SourcePortFilter, SourcePort)) return false;
-
-            if (!ValidatePort(DestPortFilter, DestPort)) return false;
-
-            string DestIp = ip.Source.ToString();
-            string SourceIp = ip.Destination.ToString();
-
-            if (!ValidateIP(SourceIpFilter, SourceIp)) return false;
-            if (!ValidateIP(DestIpFilter, DestIp)) return false;
-
-            if (!ValidatePacketSize()) return false;
-
-            return true;
         }
 
         public bool Validate()
         {
             try
             {
+                Debug.Print($"[PacketFilter] >>>>>> Validate() ENTRY - ip={ip?.GetType().Name ?? "NULL"}");
+                
                 // Проверяем, что ip не null (может быть null при VPN/тунелировании)
                 if (ip == null) return false;
                 
@@ -187,12 +237,13 @@ namespace tickMeter.Classes
                 switch(ip.Protocol)
                 {
                     case IpV4Protocol.Udp:
-                        // Проверяем, что UDP данные доступны
-                        if (ip.Udp == null) return false;
+                        // RACE CONDITION FIX: сохраняем в локальную переменную
+                        var udp = ip.Udp;
+                        if (udp == null) return false;
                         try
                         {
-                            SourcePort = ip.Udp.SourcePort.ToString();
-                            DestPort = ip.Udp.DestinationPort.ToString();
+                            SourcePort = udp.SourcePort.ToString();
+                            DestPort = udp.DestinationPort.ToString();
                         }
                         catch
                         {
@@ -200,12 +251,13 @@ namespace tickMeter.Classes
                         }
                         break;
                     case IpV4Protocol.Tcp:
-                        // Проверяем, что TCP данные доступны
-                        if (ip.Tcp == null) return false;
+                        // RACE CONDITION FIX: сохраняем в локальную переменную
+                        var tcp = ip.Tcp;
+                        if (tcp == null) return false;
                         try
                         {
-                            SourcePort = ip.Tcp.SourcePort.ToString();
-                            DestPort = ip.Tcp.DestinationPort.ToString();
+                            SourcePort = tcp.SourcePort.ToString();
+                            DestPort = tcp.DestinationPort.ToString();
                         }
                         catch
                         {
@@ -223,10 +275,14 @@ namespace tickMeter.Classes
                 
                 try
                 {
-                    if (ip.Source != null)
-                        SourceIp = ip.Source.ToString();
-                    if (ip.Destination != null)
-                        DestIp = ip.Destination.ToString();
+                    // RACE CONDITION FIX: сохраняем в локальные переменные
+                    var src = ip.Source;
+                    var dst = ip.Destination;
+                    
+                    if (src != null)
+                        SourceIp = src.ToString();
+                    if (dst != null)
+                        DestIp = dst.ToString();
                 }
                 catch
                 {
