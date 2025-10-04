@@ -16,6 +16,9 @@ namespace tickMeter
         [STAThread]
         static void Main()
         {
+            DebugLogger.StartNewSession();
+            DebugLogger.log($"[Startup] Base directory: {AppDomain.CurrentDomain.BaseDirectory}");
+            DebugLogger.log($"[Startup] User: {Environment.UserName} | Machine: {Environment.MachineName}");
             LogProcessSnapshot();
 
             int curId = Process.GetCurrentProcess().Id;

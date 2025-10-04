@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -81,8 +82,8 @@ namespace tickMeter
 
         // Multi-adapter support - DEPRECATED: переходим на CaptureService
     private readonly List<BackgroundWorker> _pcapWorkers = new List<BackgroundWorker>();
-    private bool CaptureAll => VpnSettings.ForceCaptureVirtual || App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
-    private bool _ignoreVirtual => VpnSettings.ForceCaptureVirtual ? false : App.settingsManager.GetOption("ignore_virtual_adapters", "True", "SETTINGS") == "True";
+    private bool CaptureAll => VpnSettings.ForceCaptureVirtual || GetBoolSetting("capture_all_adapters", "False");
+    private bool _ignoreVirtual => VpnSettings.ForceCaptureVirtual ? false : GetBoolSetting("ignore_virtual_adapters", "True");
 
         // CaptureService integration - ОСНОВНАЯ СИСТЕМА
         private tickMeter.Classes.CaptureService.Subscription _captureSub;
@@ -100,6 +101,13 @@ namespace tickMeter
         private bool _useVirtual = false;
         private int _packetIdCounter = 0;
     private bool _enableIpv6 = true;
+        private bool _virtualModeSwitchLogged;
+
+        private static bool GetBoolSetting(string key, string defaultValue, string section = "SETTINGS")
+        {
+            var raw = App.settingsManager?.GetOption(key, defaultValue, section) ?? defaultValue;
+            return string.Equals(raw, "True", StringComparison.OrdinalIgnoreCase);
+        }
 
         public PacketStats()
         {
@@ -124,6 +132,9 @@ namespace tickMeter
             {
                 Debug.Print("[PacketStats] Classic ListView mode");
             }
+
+            DebugLogger.log($"[LiveView] Initialized (virtual={_useVirtual}, maxRows={maxRows}, captureAll={CaptureAll}, ignoreVirtual={_ignoreVirtual})");
+            _virtualModeSwitchLogged = _useVirtual;
         }
         public void InitWorker()
         {
@@ -167,6 +178,7 @@ namespace tickMeter
                 _lastStartMs = now;
                 
                 Debug.Print("[PacketStats] SafeRestartCapture: starting");
+                DebugLogger.log($"[Capture] Restart requested (captureAll={CaptureAll}, ignoreVirtual={_ignoreVirtual})");
                 
                 // Сначала останавливаем все предыдущие подписки
                 StopSubscription();
@@ -182,6 +194,7 @@ namespace tickMeter
                 // Настройка Local IP
                 App.meterState.LocalIP = App.settingsForm.local_ip_textbox.Text;
                 _enableIpv6 = App.settingsManager?.GetOption("enable_ipv6", "True", "SETTINGS") == "True";
+                DebugLogger.log($"[Capture] Settings applied (localIp={App.meterState.LocalIP}, enableIpv6={_enableIpv6})");
                 
                 // Запуск CaptureService подписки
                 StartCaptureService();
@@ -226,6 +239,7 @@ namespace tickMeter
             if (devices.Count == 0)
             {
                 Debug.Print("[PacketStats] StartCaptureService: no devices selected");
+                DebugLogger.log("[Capture] Subscription skipped: no devices selected");
                 return;
             }
             
@@ -234,6 +248,7 @@ namespace tickMeter
             _captureRunning = true;
             
             Debug.Print($"[PacketStats] StartCaptureService: subscribed to {devices.Count} devices via CaptureService");
+            DebugLogger.log($"[Capture] Subscription started on {devices.Count} device(s)");
         }
         
         /// <summary>
@@ -1139,6 +1154,7 @@ namespace tickMeter
                 {
                     // VirtualMode: добавляем в кольцевой буфер
                     var row = CreatePacketRow(packet, from_ip, fromPort, to_ip, toPort, packetLength, protocol, processName, resolvedRemote, resolvedBy);
+                    LogLiveViewEntry(row);
                     RingAdd(row);
                 }
                 else
@@ -1161,6 +1177,8 @@ namespace tickMeter
                     
                     items[iKey] = item;
                     iKey++;
+
+                    LogLiveViewEntry(packet.Timestamp, packet_id, from_ip ?? string.Empty, fromPort, to_ip ?? string.Empty, toPort, packetLength, protocol, processName, resolvedRemote, resolvedBy);
                 }
 
                 AutoDetectMngr.AnalyzePacket(packet);
@@ -1256,6 +1274,7 @@ namespace tickMeter
         public void Stop()
         {
             Debug.Print("[PacketStats] Stop: beginning");
+            DebugLogger.log($"[Capture] Stop requested (inPackets={inPackets}, outPackets={outPackets}, inTraffic={inTraffic}, outTraffic={outTraffic})");
             
             tracking = false;
             RefreshTimer.Enabled = false;
@@ -1531,6 +1550,16 @@ namespace tickMeter
             );
         }
 
+        private void LogLiveViewEntry(PacketRow row)
+        {
+            LogLiveViewEntry(row.Timestamp, row.Id, row.SourceIP, row.SourcePort, row.DestIP, row.DestPort, row.Length, row.Protocol, row.ProcessName, row.ResolvedRemote, row.ResolvedBy);
+        }
+
+        private void LogLiveViewEntry(DateTime timestamp, int id, string sourceIp, uint sourcePort, string destIp, uint destPort, int length, string protocol, string processName, string resolvedRemote, string resolvedBy)
+        {
+            DebugLogger.log($"[LiveView] {timestamp:HH:mm:ss.fff} #{id} {sourceIp}:{sourcePort.ToString(CultureInfo.InvariantCulture)} -> {destIp}:{destPort.ToString(CultureInfo.InvariantCulture)} len={length} proto={protocol} proc={processName} remote={resolvedRemote} by={resolvedBy}");
+        }
+
         private void ResetTransportDecodeErrors()
         {
             Interlocked.Exchange(ref _transportDecodeErrors, 0);
@@ -1634,6 +1663,11 @@ namespace tickMeter
                 _ringHead = _ringCount % _ring.Length;
                 
                 listView1.Items.Clear();
+                if (!_virtualModeSwitchLogged)
+                {
+                    _virtualModeSwitchLogged = true;
+                    DebugLogger.log($"[LiveView] Switched to virtual mode (count={currentCount})");
+                }
             }
         }
     }
