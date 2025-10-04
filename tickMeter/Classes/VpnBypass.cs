@@ -111,6 +111,9 @@ namespace tickMeter.Classes
         private volatile bool _stop;
         private readonly int _ttlMs = 3000; // срок жизни записи
     private int _lastDumpTick;
+        
+        // Публичное свойство для доступа к количеству активных соединений
+        public int ActiveConnectionsCount => _map.Count;
 
         public ConnectionTracker()
         {

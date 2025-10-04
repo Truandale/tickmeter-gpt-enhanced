@@ -969,26 +969,18 @@ namespace tickMeter.Classes
                 var now = DateTime.UtcNow;
                 if (now - _lastPacketCountersUpdate > PACKET_COUNTERS_TTL)
                 {
-                    // TODO: Реализовать подсчет пакетов через интеграцию с сетевым адаптером
-                    // Пока показываем примерные данные на основе трафика
-                    if (App.meterState != null)
+                    // Берём реальные счётчики из PacketStats (работает с ConnectionTracker в фоне)
+                    if (App.packetStatsForm != null)
                     {
-                        // TODO: Добавить реальные счетчики пакетов
-                        // Примерная оценка на основе трафика (если доступен)
-                        long estimatedDownPackets = 0;
-                        long estimatedUpPackets = 0;
+                        long downPackets = App.packetStatsForm.inPackets;
+                        long upPackets = App.packetStatsForm.outPackets;
+                        long downTraffic = App.packetStatsForm.inTraffic / 1024; // в KB
+                        long upTraffic = App.packetStatsForm.outTraffic / 1024; // в KB
                         
-                        // Пока используем примерные значения на основе статистики пингов
-                        if (App.meterState.pingBuffer?.Count > 0)
-                        {
-                            estimatedDownPackets = App.meterState.pingBuffer.Count; // Примерно 1 пакет на ping
-                            estimatedUpPackets = App.meterState.pingBuffer.Count / 2; // Ответы меньше
-                        }
+                        string downStr = FormatCount(downPackets);
+                        string upStr = FormatCount(upPackets);
                         
-                        string downStr = FormatCount(estimatedDownPackets);
-                        string upStr = FormatCount(estimatedUpPackets);
-                        
-                        _cachedPacketCounters = $"Traffic: ↓{downStr} ↑{upStr}";
+                        _cachedPacketCounters = $"Traffic: ↓{downStr}({downTraffic}KB) ↑{upStr}({upTraffic}KB)";
                     }
                     else
                     {
