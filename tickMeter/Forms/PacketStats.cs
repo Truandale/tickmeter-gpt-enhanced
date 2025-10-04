@@ -67,6 +67,7 @@ namespace tickMeter
         public int outTraffic = 0;
     private bool _vpnLogInitialized;
     private int _trackerLogCount;
+    private int _transportDecodeErrors;
 
         public ConnectionsManager connMngr;
 
@@ -925,17 +926,47 @@ namespace tickMeter
                     continue;
                 }
 
+                bool transportDecodeFailed = false;
+
                 if (udp != null)
                 {
-                    fromPort = udp.SourcePort;
-                    toPort = udp.DestinationPort;
-                    trackerProto = 17;
+                    try
+                    {
+                        fromPort = udp.SourcePort;
+                        toPort = udp.DestinationPort;
+                        trackerProto = 17;
+                    }
+                    catch (ArgumentOutOfRangeException)
+                    {
+                        transportDecodeFailed = true;
+                    }
+                    catch (IndexOutOfRangeException)
+                    {
+                        transportDecodeFailed = true;
+                    }
                 }
                 else if (tcp != null)
                 {
-                    fromPort = tcp.SourcePort;
-                    toPort = tcp.DestinationPort;
-                    trackerProto = 6;
+                    try
+                    {
+                        fromPort = tcp.SourcePort;
+                        toPort = tcp.DestinationPort;
+                        trackerProto = 6;
+                    }
+                    catch (ArgumentOutOfRangeException)
+                    {
+                        transportDecodeFailed = true;
+                    }
+                    catch (IndexOutOfRangeException)
+                    {
+                        transportDecodeFailed = true;
+                    }
+                }
+
+                if (transportDecodeFailed && _transportDecodeErrors < 5)
+                {
+                    _transportDecodeErrors++;
+                    DebugLogger.log($"[PacketStats] Skipping truncated {protocol} packet: unable to read ports");
                 }
 
                 if (trackerProto != 0)
@@ -1458,7 +1489,7 @@ namespace tickMeter
 
             return (remote, resolvedBy);
         }
-        
+
         private void CheckAndSwitchMode()
         {
             const int VIRTUAL_THRESHOLD = 2000;
