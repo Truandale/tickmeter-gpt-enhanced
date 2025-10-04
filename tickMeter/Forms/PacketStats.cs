@@ -1309,6 +1309,27 @@ namespace tickMeter
                 var resolvedRemote = resolved.remote;
                 var resolvedBy = resolved.resolvedBy;
 
+                // Финальная подмена на физике: если процесс похож на VPN-шелл, пытаемся взять реальный endpoint из ETW
+                if (!deviceIsVirtual && VpnSettings.EnableEtwEnrichment && trackerProto != 0 && trackerOverride.HasValue)
+                {
+                    var pid = trackerOverride.Value.Pid;
+                    var localPort = trackerSrcPort > 0 ? trackerSrcPort : (int)fromPort;
+                    var protocolType = trackerProto == 6 ? ProtocolType.Tcp : (trackerProto == 17 ? ProtocolType.Udp : (ProtocolType?)null);
+                    var dstPortForCheck = trackerDstPort > 0 ? trackerDstPort : (int)toPort;
+
+                    if (protocolType.HasValue && VpnHeuristicsLib.LooksLikeVpnShell(processName, protocolType.Value, dstPortForCheck))
+                    {
+                        if (IPAddress.TryParse(from_ip, out var localAddress))
+                        {
+                            if (EtwBroker.TryGetRemote(pid, localPort, protocolType.Value, localAddress, out var realEndpoint) && IsRoutableEndpoint(realEndpoint))
+                            {
+                                resolvedRemote = realEndpoint.ToString();
+                                resolvedBy = "ETW-Physical";
+                            }
+                        }
+                    }
+                }
+
                 if (_useVirtual)
                 {
                     // VirtualMode: добавляем в кольцевой буфер
