@@ -120,6 +120,7 @@ namespace tickMeter
         private int _packetIdCounter = 0;
     private bool _enableIpv6 = true;
         private bool _virtualModeSwitchLogged;
+        private bool _vpnMode;
             private readonly Dictionary<string, CaptureService.Subscription> _tunnelSubscriptions = new Dictionary<string, CaptureService.Subscription>(StringComparer.OrdinalIgnoreCase);
             private readonly object _tunnelSubscriptionsLock = new object();
 
@@ -163,10 +164,10 @@ namespace tickMeter
             }
             catch { }
 
-            bool vpnMode = VpnSettings.ForceCaptureVirtual || hasTunnelAdapter;
-            var effectiveIgnoreVirtual = vpnMode ? false : _ignoreVirtual;
+            _vpnMode = VpnSettings.ForceCaptureVirtual || hasTunnelAdapter;
+            var effectiveIgnoreVirtual = _vpnMode ? false : _ignoreVirtual;
             
-            DebugLogger.log($"[LiveView] Initialized (virtual={_useVirtual}, maxRows={maxRows}, captureAll={CaptureAll}, ignoreVirtual={effectiveIgnoreVirtual}, vpnMode={vpnMode}, tunnelDetected={hasTunnelAdapter})");
+            DebugLogger.log($"[LiveView] Initialized (virtual={_useVirtual}, maxRows={maxRows}, captureAll={CaptureAll}, ignoreVirtual={effectiveIgnoreVirtual}, vpnMode={_vpnMode}, tunnelDetected={hasTunnelAdapter})");
             _virtualModeSwitchLogged = _useVirtual;
             
             // TunnelAutoAttach.Init() уже подписывается на EtwBroker.OnLocalTunnelObserved внутри
@@ -312,9 +313,23 @@ namespace tickMeter
                 {
                     devices.Add(allDevices[selectedIndex]);
                 }
+                
+                // В VPN режиме добавляем ВСЕ туннельные адаптеры автоматически
+                if (_vpnMode && VpnSettings.ForceCaptureVirtual)
+                {
+                    var tunnelHints = new[] { "wintun", "wireguard", "tap", "tun", "openvpn", "tailscale", "zerotier", "vpn", "kaspersky" };
+                    foreach (var device in allDevices.Skip(1))
+                    {
+                        if (device != null && TunDetector.IsTunLike(device, tunnelHints) && !devices.Contains(device))
+                        {
+                            devices.Add(device);
+                            DebugLogger.log($"[VPN] Auto-added tunnel: {device.Description ?? device.Name}");
+                        }
+                    }
+                }
             }
             
-            Debug.Print($"[PacketStats] GetSelectedDevices: {devices.Count} devices selected (CaptureAll={CaptureAll})");
+            Debug.Print($"[PacketStats] GetSelectedDevices: {devices.Count} devices selected (CaptureAll={CaptureAll}, VpnMode={_vpnMode})");
             return devices;
         }
         

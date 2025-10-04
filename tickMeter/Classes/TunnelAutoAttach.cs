@@ -32,7 +32,8 @@ namespace tickMeter.Classes
             if (_initialized)
                 return;
 
-            if (!VpnSettings.AdvancedEnabled || VpnSettings.ForceCaptureVirtual)
+            // Инициализация только если VPN bypass включен (независимо от ForceCaptureVirtual)
+            if (!VpnSettings.AdvancedEnabled)
                 return;
 
             _deviceProvider = deviceProvider ?? throw new ArgumentNullException(nameof(deviceProvider));
