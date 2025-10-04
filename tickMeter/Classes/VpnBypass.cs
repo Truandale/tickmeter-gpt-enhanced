@@ -490,11 +490,19 @@ namespace tickMeter.Classes
                         var key = new Key(6, l, lp, r, rp);
                         _map[key] = (info, now);
                         
-                        // Уведомляем LiveView о новом туннельном соединении
+                        // Уведомляем LiveView о новом туннельном соединении (IPv4)
                         if (IsTunnelIP(l) && !_reportedKeys.Contains(key))
                         {
                             _reportedKeys.Add(key);
-                            OnNewTunnelConnection?.Invoke(key, info);
+                            if (OnNewTunnelConnection != null)
+                            {
+                                DebugLogger.log($"[Tracker] NewTunnel IPv4: {l}:{lp} -> {r}:{rp} proc={info.Exe ?? "?"}/{info.Pid}");
+                                OnNewTunnelConnection.Invoke(key, info);
+                            }
+                            else
+                            {
+                                DebugLogger.log($"[Tracker] NewTunnel IPv4 NO subscribers: {l}:{lp} -> {r}:{rp}");
+                            }
                         }
                     }
                 }
@@ -514,11 +522,19 @@ namespace tickMeter.Classes
                         var key = new Key(6, l, lp, r, rp);
                         _map[key] = (info, now);
                         
-                        // Уведомляем LiveView о новом туннельном соединении
+                        // Уведомляем LiveView о новом туннельном соединении (IPv6)
                         if (IsTunnelIP(l) && !_reportedKeys.Contains(key))
                         {
                             _reportedKeys.Add(key);
-                            OnNewTunnelConnection?.Invoke(key, info);
+                            if (OnNewTunnelConnection != null)
+                            {
+                                DebugLogger.log($"[Tracker] NewTunnel IPv6: {l}:{lp} -> {r}:{rp} proc={info.Exe ?? "?"}/{info.Pid}");
+                                OnNewTunnelConnection.Invoke(key, info);
+                            }
+                            else
+                            {
+                                DebugLogger.log($"[Tracker] NewTunnel IPv6 NO subscribers: {l}:{lp} -> {r}:{rp}");
+                            }
                         }
                     }
                 }

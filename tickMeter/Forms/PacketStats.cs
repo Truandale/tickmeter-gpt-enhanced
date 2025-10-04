@@ -170,22 +170,33 @@ namespace tickMeter
             DebugLogger.log($"[LiveView] Initialized (virtual={_useVirtual}, maxRows={maxRows}, captureAll={CaptureAll}, ignoreVirtual={effectiveIgnoreVirtual}, vpnMode={_vpnMode}, tunnelDetected={hasTunnelAdapter})");
             _virtualModeSwitchLogged = _useVirtual;
             
-            // Подписываемся на события туннельных соединений для синтетических записей LiveView
-            if (App.connectionTracker != null)
-            {
-                App.connectionTracker.OnNewTunnelConnection += HandleTunnelConnection;
-                DebugLogger.log("[LiveView] Subscribed to ConnectionTracker.OnNewTunnelConnection");
-            }
-            
             // TunnelAutoAttach.Init() уже подписывается на EtwBroker.OnLocalTunnelObserved внутри
             TryInitTunnelAutoAttach();
         }
+        
         public void InitWorker()
         {
             pcapWorker = new BackgroundWorker();
             pcapWorker.DoWork += PcapWorkerDoWork;
             pcapWorker.RunWorkerCompleted += PcapWorkerCompleted;
             pcapWorker.RunWorkerAsync();
+            
+            // ОТЛОЖЕННАЯ инициализация VPN компонентов (после App.Init)
+            InitVpnComponents();
+        }
+        
+        private void InitVpnComponents()
+        {
+            // Подписываемся на события туннельных соединений для синтетических записей LiveView
+            if (App.connectionTracker != null)
+            {
+                App.connectionTracker.OnNewTunnelConnection += HandleTunnelConnection;
+                DebugLogger.log("[LiveView] Subscribed to ConnectionTracker.OnNewTunnelConnection for synthetic entries");
+            }
+            else
+            {
+                DebugLogger.log("[LiveView] WARNING: App.connectionTracker is NULL, synthetic entries disabled");
+            }
         }
 
         
