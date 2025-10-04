@@ -19,8 +19,13 @@ namespace tickMeter.Classes
         {
             var s = (((d.Description ?? string.Empty) + " " + (d.Name ?? string.Empty))).ToLowerInvariant();
             foreach (var h in hints)
+            {
                 if (!string.IsNullOrWhiteSpace(h) && s.Contains(h.Trim().ToLowerInvariant()))
+                {
+                    DebugLogger.log($"[TunDetector] MATCH: '{d.Description ?? d.Name}' contains hint '{h}'");
                     return true;
+                }
+            }
             return false;
         }
     }

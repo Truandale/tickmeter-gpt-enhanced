@@ -296,6 +296,8 @@ namespace tickMeter
             var devices = new List<LivePacketDevice>();
             var allDevices = App.GetAdapters();
             
+            DebugLogger.log($"[GetSelectedDevices] START: CaptureAll={CaptureAll}, VpnMode={_vpnMode}, ForceCaptureVirtual={VpnSettings.ForceCaptureVirtual}, TotalAdapters={allDevices.Count}");
+            
             if (CaptureAll)
             {
                 // Захват всех адаптеров с фильтрацией
@@ -309,24 +311,57 @@ namespace tickMeter
             {
                 // Выбранный адаптер
                 int selectedIndex = App.settingsForm.adapters_list.SelectedIndex;
+                DebugLogger.log($"[GetSelectedDevices] Single-adapter mode: selectedIndex={selectedIndex}");
+                
                 if (selectedIndex > 0 && selectedIndex < allDevices.Count)
                 {
-                    devices.Add(allDevices[selectedIndex]);
+                    var primary = allDevices[selectedIndex];
+                    devices.Add(primary);
+                    DebugLogger.log($"[GetSelectedDevices] Primary adapter: {primary.Description ?? primary.Name}");
                 }
                 
                 // В VPN режиме добавляем ВСЕ туннельные адаптеры автоматически
                 if (_vpnMode && VpnSettings.ForceCaptureVirtual)
                 {
+                    DebugLogger.log("[GetSelectedDevices] VPN mode active: scanning for tunnel adapters...");
                     var tunnelHints = new[] { "wintun", "wireguard", "tap", "tun", "openvpn", "tailscale", "zerotier", "vpn", "kaspersky" };
+                    
+                    int tunnelCount = 0;
                     foreach (var device in allDevices.Skip(1))
                     {
-                        if (device != null && TunDetector.IsTunLike(device, tunnelHints) && !devices.Contains(device))
+                        if (device == null)
+                            continue;
+                            
+                        var desc = device.Description ?? device.Name ?? "";
+                        bool isTunnel = TunDetector.IsTunLike(device, tunnelHints);
+                        
+                        if (isTunnel)
                         {
-                            devices.Add(device);
-                            DebugLogger.log($"[VPN] Auto-added tunnel: {device.Description ?? device.Name}");
+                            if (!devices.Contains(device))
+                            {
+                                devices.Add(device);
+                                tunnelCount++;
+                                DebugLogger.log($"[VPN] Auto-added tunnel #{tunnelCount}: {desc}");
+                            }
+                            else
+                            {
+                                DebugLogger.log($"[VPN] Tunnel already in list: {desc}");
+                            }
                         }
                     }
+                    
+                    DebugLogger.log($"[GetSelectedDevices] VPN scan complete: {tunnelCount} tunnel(s) added");
                 }
+                else
+                {
+                    DebugLogger.log($"[GetSelectedDevices] VPN auto-add SKIPPED: vpnMode={_vpnMode}, ForceCaptureVirtual={VpnSettings.ForceCaptureVirtual}");
+                }
+            }
+            
+            DebugLogger.log($"[GetSelectedDevices] FINAL: {devices.Count} device(s) selected");
+            foreach (var dev in devices)
+            {
+                DebugLogger.log($"  → {dev.Description ?? dev.Name}");
             }
             
             Debug.Print($"[PacketStats] GetSelectedDevices: {devices.Count} devices selected (CaptureAll={CaptureAll}, VpnMode={_vpnMode})");
@@ -1859,6 +1894,9 @@ namespace tickMeter
             uint toPort)
         {
             resolved.remote = EnsureEndpoint(resolved.remote, toIp, toPort);
+            
+            var originalRemote = resolved.remote;
+            var originalBy = resolved.resolvedBy;
 
             // Фильтруем мусорные адреса до попыток резолва
             if (ShouldSkipAddressForDisplay(fromIp) || ShouldSkipAddressForDisplay(toIp))
@@ -1872,11 +1910,15 @@ namespace tickMeter
             }
 
             if (!VpnSettings.AdvancedEnabled)
+            {
+                DebugLogger.log($"[VpnHeuristics] SKIP: AdvancedEnabled=false | {fromIp}:{fromPort} -> {toIp}:{toPort} proc={processName}");
                 return;
+            }
 
             if (deviceIsVirtual || interfaceLooksVpn)
             {
                 resolved.resolvedBy = AppendSourceTag(resolved.resolvedBy, "pcap-vpn");
+                DebugLogger.log($"[VpnHeuristics] TUNNEL: {fromIp}:{fromPort} -> {toIp}:{toPort} proc={processName} | by={resolved.resolvedBy}");
                 return;
             }
 
@@ -1902,6 +1944,8 @@ namespace tickMeter
                 localAddress = IPAddress.Any;
             }
 
+            DebugLogger.log($"[VpnHeuristics] VPN-SHELL detected: proc={processName} pid={pid} | {fromIp}:{localPort} -> {toIp}:{targetPort} | Querying ETW...");
+
             if (EtwBroker.TryGetRemote(pid, localPort, protocolType.Value, localAddress, out var remoteEndpoint) && IsRoutableEndpoint(remoteEndpoint))
             {
                 var realRemoteFormatted = FormatEndpoint(remoteEndpoint.Address, remoteEndpoint.Port);
@@ -1909,6 +1953,8 @@ namespace tickMeter
                 resolved.resolvedBy = AppendSourceTag(resolved.resolvedBy, "etw-vpn");
                 // Записываем полный endpoint с портом в MetadataResolver для последующих lookup
                 MetadataResolver.Promote(toIp, realRemoteFormatted, "etw-vpn", TimeSpan.FromSeconds(5));
+                
+                DebugLogger.log($"[VpnHeuristics] ETW-VPN SUCCESS: {processName} | PCAP: {originalRemote} -> ETW: {realRemoteFormatted} | by={resolved.resolvedBy}");
                 return;
             }
 
@@ -1919,6 +1965,12 @@ namespace tickMeter
                 resolved.resolvedBy = AppendSourceTag(resolved.resolvedBy, "etw-recent");
                 // Записываем полный endpoint с портом в MetadataResolver
                 MetadataResolver.Promote(toIp, fallbackRemoteFormatted, "etw-recent", TimeSpan.FromSeconds(3));
+                
+                DebugLogger.log($"[VpnHeuristics] ETW-RECENT fallback: {processName} | PCAP: {originalRemote} -> ETW: {fallbackRemoteFormatted} | by={resolved.resolvedBy}");
+            }
+            else
+            {
+                DebugLogger.log($"[VpnHeuristics] ETW MISS: {processName} pid={pid} | {fromIp}:{localPort} -> {toIp}:{targetPort} | NO ETW data");
             }
         }
 
