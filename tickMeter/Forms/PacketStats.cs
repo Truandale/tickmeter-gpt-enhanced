@@ -153,8 +153,20 @@ namespace tickMeter
                 Debug.Print("[PacketStats] Classic ListView mode");
             }
 
-            var effectiveIgnoreVirtual = VpnSettings.ForceCaptureVirtual ? false : _ignoreVirtual;
-            DebugLogger.log($"[LiveView] Initialized (virtual={_useVirtual}, maxRows={maxRows}, captureAll={CaptureAll}, ignoreVirtual={effectiveIgnoreVirtual}, vpnMode={VpnSettings.ForceCaptureVirtual})");
+            // Динамический VPN-режим: проверяем наличие туннельных адаптеров
+            bool hasTunnelAdapter = false;
+            try
+            {
+                var allDevices = LivePacketDevice.AllLocalMachine;
+                var tunnelHints = new[] { "wintun", "wireguard", "tap", "tun", "openvpn", "tailscale", "zerotier" };
+                hasTunnelAdapter = allDevices.Any(d => TunDetector.IsTunLike(d, tunnelHints));
+            }
+            catch { }
+
+            bool vpnMode = VpnSettings.ForceCaptureVirtual || hasTunnelAdapter;
+            var effectiveIgnoreVirtual = vpnMode ? false : _ignoreVirtual;
+            
+            DebugLogger.log($"[LiveView] Initialized (virtual={_useVirtual}, maxRows={maxRows}, captureAll={CaptureAll}, ignoreVirtual={effectiveIgnoreVirtual}, vpnMode={vpnMode}, tunnelDetected={hasTunnelAdapter})");
             _virtualModeSwitchLogged = _useVirtual;
             
             // TunnelAutoAttach.Init() уже подписывается на EtwBroker.OnLocalTunnelObserved внутри
@@ -319,8 +331,16 @@ namespace tickMeter
             if (description.Contains("loopback") || description.Contains("npcap loopback"))
                 return false;
 
-            // На VPN-профиле разрешаем виртуальные адаптеры
-            bool effectiveIgnoreVirtual = VpnSettings.ForceCaptureVirtual ? false : _ignoreVirtual;
+            // На VPN-профиле/при наличии туннеля разрешаем виртуальные адаптеры
+            bool hasTunnel = false;
+            try
+            {
+                var tunnelHints = new[] { "wintun", "wireguard", "tap", "tun", "openvpn", "tailscale", "zerotier" };
+                hasTunnel = LivePacketDevice.AllLocalMachine.Any(d => TunDetector.IsTunLike(d, tunnelHints));
+            }
+            catch { }
+            
+            bool effectiveIgnoreVirtual = (VpnSettings.ForceCaptureVirtual || hasTunnel) ? false : _ignoreVirtual;
             if (effectiveIgnoreVirtual && IsVirtualDevice(device))
             {
                 var label = string.Concat(device.Name ?? string.Empty, " ", device.Description ?? string.Empty).Trim();

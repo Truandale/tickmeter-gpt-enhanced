@@ -531,6 +531,24 @@ namespace tickMeter.Classes
             if (index > 300)
                 return;
 
+            // Фильтрация мусора: не логируем MISS для 0.0.0.0, ::, loopback-пар и LISTEN-сокетов
+            if (stage == "MISS")
+            {
+                // Пропускаем 0.0.0.0 / ::
+                if (local == null || remote == null ||
+                    local.Equals(IPAddress.Any) || local.Equals(IPAddress.IPv6Any) ||
+                    remote.Equals(IPAddress.Any) || remote.Equals(IPAddress.IPv6Any))
+                    return;
+
+                // Пропускаем loopback-пары
+                if (IPAddress.IsLoopback(local) && IPAddress.IsLoopback(remote))
+                    return;
+
+                // Пропускаем LISTEN/BOUND (remote port = 0)
+                if (rport == 0)
+                    return;
+            }
+
             string localIp = local?.ToString() ?? "<null>";
             string remoteIp = remote?.ToString() ?? "<null>";
             var sb = new StringBuilder();

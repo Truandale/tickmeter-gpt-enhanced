@@ -322,21 +322,32 @@ namespace tickMeter.Forms
         {
             if (_loadingSettings) return;
 
-            if (!chkVpnBypassAdvanced.Checked)
+            var previous = _loadingSettings;
+            _loadingSettings = true;
+            try
             {
-                var previous = _loadingSettings;
-                _loadingSettings = true;
-                try
+                if (chkVpnBypassAdvanced.Checked)
                 {
+                    // При включении антимаскировки автоматически активируем необходимые опции
+                    chkVpnCaptureVirtual.Checked = true;  // Захват виртуальных адаптеров (туннелей)
+                    chkVpnEtwEnrichment.Checked = true;   // ETW обогащение для реальных целей
+                    chkVpnAllowRaw.Checked = true;        // Поддержка raw link-types (PPP, Linux SLL)
+                    // vpn_disable_bpf оставляем на усмотрение пользователя
+                    
+                    DebugLogger.log("[AdvancedSettings] VPN bypass enabled: auto-enabled capture_virtual + etw_enrichment + allow_raw");
+                }
+                else
+                {
+                    // При выключении сбрасываем все VPN-опции
                     chkVpnCaptureVirtual.Checked = false;
                     chkVpnAllowRaw.Checked = false;
                     chkVpnDisableBpf.Checked = false;
                     chkVpnEtwEnrichment.Checked = false;
                 }
-                finally
-                {
-                    _loadingSettings = previous;
-                }
+            }
+            finally
+            {
+                _loadingSettings = previous;
             }
 
             ApplyVpnRules();
