@@ -189,14 +189,28 @@ namespace tickMeter.Classes
                     case IpV4Protocol.Udp:
                         // Проверяем, что UDP данные доступны
                         if (ip.Udp == null) return false;
-                        SourcePort = ip.Udp.SourcePort.ToString();
-                        DestPort = ip.Udp.DestinationPort.ToString();
+                        try
+                        {
+                            SourcePort = ip.Udp.SourcePort.ToString();
+                            DestPort = ip.Udp.DestinationPort.ToString();
+                        }
+                        catch
+                        {
+                            return false; // Если порты недоступны, пропускаем
+                        }
                         break;
                     case IpV4Protocol.Tcp:
                         // Проверяем, что TCP данные доступны
                         if (ip.Tcp == null) return false;
-                        SourcePort = ip.Tcp.SourcePort.ToString();
-                        DestPort = ip.Tcp.DestinationPort.ToString();
+                        try
+                        {
+                            SourcePort = ip.Tcp.SourcePort.ToString();
+                            DestPort = ip.Tcp.DestinationPort.ToString();
+                        }
+                        catch
+                        {
+                            return false; // Если порты недоступны, пропускаем
+                        }
                         break;
                 }
 
@@ -204,8 +218,20 @@ namespace tickMeter.Classes
 
                 if (!ValidatePort(DestPortFilter, DestPort)) return false;
 
-                string SourceIp = ip.Source.ToString();
-                string DestIp = ip.Destination.ToString();
+                string SourceIp = "";
+                string DestIp = "";
+                
+                try
+                {
+                    if (ip.Source != null)
+                        SourceIp = ip.Source.ToString();
+                    if (ip.Destination != null)
+                        DestIp = ip.Destination.ToString();
+                }
+                catch
+                {
+                    return false; // Если IP адреса недоступны
+                }
 
                 if (!ValidateIP(SourceIpFilter, SourceIp)) return false;
                 if (!ValidateIP(DestIpFilter, DestIp)) return false;
