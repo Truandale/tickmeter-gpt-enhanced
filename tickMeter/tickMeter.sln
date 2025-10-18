@@ -1,0 +1,36 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tickMeter", "tickMeter.csproj", "{82C0F86C-6690-4E0E-094A-5C378DBF0B06}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tickMeter_temp", "tickMeter_temp.csproj", "{E73E7A05-DA72-C371-7C88-3BAFB8DA7C1A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyntaxTest", "SyntaxTest\SyntaxTest.csproj", "{3F49589B-4AC6-ABC1-4AF0-0139FA594008}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{82C0F86C-6690-4E0E-094A-5C378DBF0B06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82C0F86C-6690-4E0E-094A-5C378DBF0B06}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82C0F86C-6690-4E0E-094A-5C378DBF0B06}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82C0F86C-6690-4E0E-094A-5C378DBF0B06}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E73E7A05-DA72-C371-7C88-3BAFB8DA7C1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E73E7A05-DA72-C371-7C88-3BAFB8DA7C1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E73E7A05-DA72-C371-7C88-3BAFB8DA7C1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E73E7A05-DA72-C371-7C88-3BAFB8DA7C1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F49589B-4AC6-ABC1-4AF0-0139FA594008}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F49589B-4AC6-ABC1-4AF0-0139FA594008}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F49589B-4AC6-ABC1-4AF0-0139FA594008}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F49589B-4AC6-ABC1-4AF0-0139FA594008}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {ECB93F05-763D-4A85-A6DE-C5CFFDE1F305}
+	EndGlobalSection
+EndGlobal

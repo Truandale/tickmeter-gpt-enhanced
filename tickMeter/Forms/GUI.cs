@@ -1605,7 +1605,37 @@ namespace tickMeter.Forms
                 }
             }
             
-            App.meterState.LocalIP = App.settingsForm.local_ip_textbox.Text;
+            // В режиме мультиадаптера автоматически определяем локальный IP активного процесса
+            if (captureAll || vpnBypassBasic || vpnBypassAdvanced)
+            {
+                string autoDetectedIP = LocalIPDetector.DetectLocalIPForActiveProcess();
+                if (!string.IsNullOrEmpty(autoDetectedIP))
+                {
+                    App.meterState.LocalIP = autoDetectedIP;
+                    Debug.Print($"[StartTracking] Multi-adapter mode: Auto-detected LocalIP = {autoDetectedIP}");
+                    
+                    // Обновляем UI (но не вызываем TextChanged event)
+                    if (App.settingsForm.local_ip_textbox.Text != autoDetectedIP)
+                    {
+                        App.settingsForm.Invoke((Action)(() =>
+                        {
+                            App.settingsForm.local_ip_textbox.Text = autoDetectedIP;
+                        }));
+                    }
+                }
+                else
+                {
+                    // Fallback: используем текущее значение из настроек
+                    App.meterState.LocalIP = App.settingsForm.local_ip_textbox.Text;
+                    Debug.Print($"[StartTracking] Multi-adapter mode: Using configured LocalIP = {App.meterState.LocalIP}");
+                }
+            }
+            else
+            {
+                // В обычном режиме используем IP из настроек
+                App.meterState.LocalIP = App.settingsForm.local_ip_textbox.Text;
+            }
+            
             lastSelectedAdapterID = App.settingsForm.adapters_list.SelectedIndex;
             try
             {

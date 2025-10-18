@@ -187,6 +187,40 @@ namespace tickMeter.Classes
             if(activeProcess != newName)
             {
                 App.gui.targetKey = "";
+                
+                // При смене активного процесса в режиме мультиадаптера - обновляем локальный IP
+                bool captureAllEnabled = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
+                bool vpnBypassBasic = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
+                bool vpnBypassAdvanced = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+                
+                if (captureAllEnabled || vpnBypassBasic || vpnBypassAdvanced)
+                {
+                    // Сбрасываем кэш для немедленного определения IP нового процесса
+                    LocalIPDetector.ResetCache();
+                    
+                    string autoDetectedIP = LocalIPDetector.DetectLocalIPForActiveProcess(newName);
+                    if (!string.IsNullOrEmpty(autoDetectedIP) && App.meterState != null)
+                    {
+                        if (App.meterState.LocalIP != autoDetectedIP)
+                        {
+                            App.meterState.LocalIP = autoDetectedIP;
+                            Debug.Print($"[AutoDetect] Process changed to {newName}, LocalIP updated to {autoDetectedIP}");
+                            
+                            // Обновляем UI
+                            try
+                            {
+                                App.settingsForm?.Invoke((Action)(() =>
+                                {
+                                    if (App.settingsForm.local_ip_textbox.Text != autoDetectedIP)
+                                    {
+                                        App.settingsForm.local_ip_textbox.Text = autoDetectedIP;
+                                    }
+                                }));
+                            }
+                            catch (Exception) { }
+                        }
+                    }
+                }
             }
             activeProcess = newName;
             return activeProcess;

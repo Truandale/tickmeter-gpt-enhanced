@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Predator\\Documents\\tickmeter-master\\tickmeter-master — gpt-fixed tcp ping\\tickMeter\\SyntaxTest\\SyntaxTest.csproj": {}
+    "C:\\Users\\Predator\\Documents\\tickmeter-master\\tickmeter-master — gpt-fixed tcp ping — работае мониторинг полностью но без vpn\\tickMeter\\SyntaxTest\\SyntaxTest.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Predator\\Documents\\tickmeter-master\\tickmeter-master — gpt-fixed tcp ping\\tickMeter\\SyntaxTest\\SyntaxTest.csproj": {
+    "C:\\Users\\Predator\\Documents\\tickmeter-master\\tickmeter-master — gpt-fixed tcp ping — работае мониторинг полностью но без vpn\\tickMeter\\SyntaxTest\\SyntaxTest.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Predator\\Documents\\tickmeter-master\\tickmeter-master — gpt-fixed tcp ping\\tickMeter\\SyntaxTest\\SyntaxTest.csproj",
+        "projectUniqueName": "C:\\Users\\Predator\\Documents\\tickmeter-master\\tickmeter-master — gpt-fixed tcp ping — работае мониторинг полностью но без vpn\\tickMeter\\SyntaxTest\\SyntaxTest.csproj",
         "projectName": "SyntaxTest",
-        "projectPath": "C:\\Users\\Predator\\Documents\\tickmeter-master\\tickmeter-master — gpt-fixed tcp ping\\tickMeter\\SyntaxTest\\SyntaxTest.csproj",
+        "projectPath": "C:\\Users\\Predator\\Documents\\tickmeter-master\\tickmeter-master — gpt-fixed tcp ping — работае мониторинг полностью но без vpn\\tickMeter\\SyntaxTest\\SyntaxTest.csproj",
         "packagesPath": "C:\\Users\\Predator\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Predator\\Documents\\tickmeter-master\\tickmeter-master — gpt-fixed tcp ping\\tickMeter\\SyntaxTest\\obj\\",
+        "outputPath": "C:\\Users\\Predator\\Documents\\tickmeter-master\\tickmeter-master — gpt-fixed tcp ping — работае мониторинг полностью но без vpn\\tickMeter\\SyntaxTest\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
@@ -48,7 +48,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net9.0": {
@@ -69,7 +69,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.100-rc.2.25502.107/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

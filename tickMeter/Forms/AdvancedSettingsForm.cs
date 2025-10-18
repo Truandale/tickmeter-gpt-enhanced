@@ -127,9 +127,19 @@ namespace tickMeter.Forms
                 App.settingsManager.SetOption("bpf_filter_enabled", chkBpfFilter.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("capture_filter", captureFilterTextBox.Text, "ADVANCED");
                 
-                // Capture all adapters
+                // Capture all adapters - запоминаем старое значение перед сохранением
+                bool wasCaptureAllEnabled = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
+                bool isCaptureAllEnabled = chkCaptureAllAdapters.Checked;
+                
                 App.settingsManager.SetOption("capture_all_adapters", chkCaptureAllAdapters.Checked.ToString(), "SETTINGS");
                 App.settingsManager.SetOption("ignore_virtual_adapters", chkIgnoreVirtualAdapters.Checked.ToString(), "SETTINGS");
+                
+                // Если мультиадаптер только что включили - сбрасываем флаг ручной разблокировки
+                if (!wasCaptureAllEnabled && isCaptureAllEnabled)
+                {
+                    App.settingsManager.SetOption("manual_ip_unlocked", "False", "SETTINGS");
+                    System.Diagnostics.Debug.WriteLine("[AdvancedSettings] Мультиадаптер включен, сброшен флаг manual_ip_unlocked");
+                }
 
                 // Универсальные чекбоксы
                 App.settingsManager.SetOption("ping_bind_to_interface", chkPingBindToInterface.Checked.ToString(), "SETTINGS");

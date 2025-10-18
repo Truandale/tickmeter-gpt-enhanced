@@ -80,37 +80,14 @@ namespace tickMeter.Forms
         }
 
         /// <summary>
-        /// Обновляет состояния выпадающего списка адаптеров и поля локального IP на основе настройки capture_all_adapters
+        /// Обновляет состояние выпадающего списка адаптеров на основе настройки capture_all_adapters
         /// (чекбокс перенесён в AdvancedSettingsForm, поэтому здесь только читаем настройку)
         /// </summary>
         private void InitCaptureAllAdaptersState()
         {
-            bool captureAllEnabled = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
-            bool manualIpUnlocked = App.settingsManager.GetOption("manual_ip_unlocked", "False", "SETTINGS") == "True";
-            
+            bool enabled = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
             if (adapters_list != null)
-                adapters_list.Enabled = !captureAllEnabled;
-
-            // Управление состоянием поля локального IP и кнопки разблокировки
-            if (local_ip_textbox != null && btnUnlockLocalIP != null)
-            {
-                if (captureAllEnabled && !manualIpUnlocked)
-                {
-                    // Режим мультиадаптера: блокируем поле и показываем кнопку разблокировки
-                    local_ip_textbox.Enabled = false;
-                    btnUnlockLocalIP.Visible = true;
-                    btnUnlockLocalIP.Text = "🔓";
-                    
-                    // НЕ вызываем автоопределение здесь - IP определяется в StartTracking
-                }
-                else
-                {
-                    // Обычный режим или разблокировано вручную: разрешаем редактирование
-                    local_ip_textbox.Enabled = true;
-                    btnUnlockLocalIP.Visible = captureAllEnabled; // Показываем кнопку только в режиме мультиадаптера
-                    btnUnlockLocalIP.Text = "🔒";
-                }
-            }
+                adapters_list.Enabled = !enabled;
         }
 
         // Удалены методы и обработчики для универсальных чекбоксов — они перенесены в AdvancedSettingsForm
@@ -445,16 +422,7 @@ namespace tickMeter.Forms
         {
             if (adapters_list.SelectedIndex > -1)
             {
-                // Обновляем IP только если поле не заблокировано или мультиадаптер выключен
-                bool captureAllEnabled = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
-                bool manualIpUnlocked = App.settingsManager.GetOption("manual_ip_unlocked", "False", "SETTINGS") == "True";
-                
-                if (!captureAllEnabled || manualIpUnlocked)
-                {
-                    // В обычном режиме или при разблокированном поле - обновляем IP
-                    App.settingsForm.local_ip_textbox.Text = App.GetAdapterAddress(App.GetAdapters()[adapters_list.SelectedIndex]);
-                }
-                
+                App.settingsForm.local_ip_textbox.Text = App.GetAdapterAddress(App.GetAdapters()[adapters_list.SelectedIndex]);
                 App.gui.StartTracking();
             }
         }
@@ -516,52 +484,6 @@ namespace tickMeter.Forms
         private void rtss_dialog_FileOk(object sender, System.ComponentModel.CancelEventArgs e)
         {
 
-        }
-
-        /// <summary>
-        /// Обработчик кнопки разблокировки/блокировки поля локального IP
-        /// </summary>
-        private void btnUnlockLocalIP_Click(object sender, EventArgs e)
-        {
-            bool captureAllEnabled = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
-            
-            if (!captureAllEnabled)
-            {
-                // Если мультиадаптер отключен, кнопка не должна быть видна
-                btnUnlockLocalIP.Visible = false;
-                return;
-            }
-
-            bool currentlyUnlocked = App.settingsManager.GetOption("manual_ip_unlocked", "False", "SETTINGS") == "True";
-            bool newUnlockedState = !currentlyUnlocked;
-            
-            // Сохраняем новое состояние
-            App.settingsManager.SetOption("manual_ip_unlocked", newUnlockedState.ToString(), "SETTINGS");
-            
-            if (newUnlockedState)
-            {
-                // Разблокировка: разрешаем ручное редактирование
-                local_ip_textbox.Enabled = true;
-                btnUnlockLocalIP.Text = "🔒";
-                MessageBox.Show("Поле локального IP разблокировано для ручного редактирования.\n\nВНИМАНИЕ: В режиме мультиадаптера убедитесь, что указан правильный IP адаптера, через который проходит игровой трафик.", 
-                               "Локальный IP разблокирован", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            else
-            {
-                // Блокировка: возвращаемся к автоматическому определению
-                local_ip_textbox.Enabled = false;
-                btnUnlockLocalIP.Text = "🔓";
-                
-                // Автоопределение IP теперь происходит в StartTracking через LocalIPDetector
-                // Сбрасываем кэш для принудительного обновления
-                LocalIPDetector.ResetCache();
-                
-                MessageBox.Show("Поле локального IP заблокировано.\n\nIP адрес будет определяться автоматически при запуске мониторинга на основе активного процесса.", 
-                               "Локальный IP заблокирован", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                
-                // Перезапускаем мониторинг для применения изменений
-                App.gui.StartTracking();
-            }
         }
 
         // Сделайте ping_interval публичным свойством, чтобы к нему можно было обращаться из других классов

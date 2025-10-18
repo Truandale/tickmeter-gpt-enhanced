@@ -62,6 +62,7 @@ namespace tickMeter.Forms
             this.run_minimized = new System.Windows.Forms.CheckBox();
             this.local_ip_lbl = new System.Windows.Forms.Label();
             this.local_ip_textbox = new System.Windows.Forms.TextBox();
+            this.btnUnlockLocalIP = new System.Windows.Forms.Button();
             this.label8 = new System.Windows.Forms.Label();
             this.donate_lbl = new System.Windows.Forms.Label();
             this.updateLbl = new System.Windows.Forms.Label();
@@ -338,6 +339,13 @@ namespace tickMeter.Forms
             this.local_ip_textbox.Name = "local_ip_textbox";
             this.local_ip_textbox.TextChanged += new System.EventHandler(this.local_ip_textbox_TextChanged);
             // 
+            // btnUnlockLocalIP
+            // 
+            resources.ApplyResources(this.btnUnlockLocalIP, "btnUnlockLocalIP");
+            this.btnUnlockLocalIP.Name = "btnUnlockLocalIP";
+            this.btnUnlockLocalIP.UseVisualStyleBackColor = true;
+            this.btnUnlockLocalIP.Click += new System.EventHandler(this.btnUnlockLocalIP_Click);
+            // 
             // label8
             // 
             resources.ApplyResources(this.label8, "label8");
@@ -376,6 +384,7 @@ namespace tickMeter.Forms
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.btnAdvancedSettings);
+            this.Controls.Add(this.btnUnlockLocalIP);
             this.Controls.Add(this.local_ip_textbox);
             this.Controls.Add(this.local_ip_lbl);
             this.Controls.Add(this.run_minimized);
@@ -438,6 +447,7 @@ namespace tickMeter.Forms
         public CheckBox run_minimized;
         private Label local_ip_lbl;
         public TextBox local_ip_textbox;
+        private Button btnUnlockLocalIP;
         public ColorDialog colorDialog1;
         public CheckBox packet_drops_checkbox;
         public Label label8;
