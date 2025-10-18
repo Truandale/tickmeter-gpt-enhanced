@@ -76,7 +76,7 @@ namespace tickMeter.Classes
         }
         
         /// <summary>
-        /// Определяет локальный IP по активным соединениям конкретного процесса
+        /// Определяет локальный IP по активным соединениям конкретного процесса (TCP + UDP)
         /// </summary>
         private static string GetLocalIPFromProcessConnections(string processName)
         {
@@ -85,21 +85,38 @@ namespace tickMeter.Classes
                 // Используем существующий ConnectionsManager
                 if (App.connMngr == null) return null;
                 
+                var allIPs = new List<string>();
+                
+                // TCP соединения
                 var tcpConnections = App.connMngr.TcpActiveConnections;
-                if (tcpConnections == null || tcpConnections.Count == 0) return null;
+                if (tcpConnections != null && tcpConnections.Count > 0)
+                {
+                    var tcpIPs = tcpConnections
+                        .Where(c => c.ProcessName != null && 
+                                   c.ProcessName.Equals(processName, StringComparison.OrdinalIgnoreCase))
+                        .Where(c => c.State == MibTcpState.ESTABLISHED) // Только установленные соединения
+                        .Select(c => c.LocalAddress.ToString())
+                        .ToList();
+                    allIPs.AddRange(tcpIPs);
+                }
                 
-                // Ищем соединения процесса
-                var processConnections = tcpConnections
-                    .Where(c => c.ProcessName != null && 
-                               c.ProcessName.Equals(processName, StringComparison.OrdinalIgnoreCase))
-                    .Where(c => c.State == MibTcpState.ESTABLISHED) // Только установленные соединения
-                    .ToList();
+                // UDP соединения
+                var udpConnections = App.connMngr.UdpActiveConnections;
+                if (udpConnections != null && udpConnections.Count > 0)
+                {
+                    var udpIPs = udpConnections
+                        .Where(c => c.ProcessName != null && 
+                                   c.ProcessName.Equals(processName, StringComparison.OrdinalIgnoreCase))
+                        .Select(c => c.LocalAddress.ToString())
+                        .ToList();
+                    allIPs.AddRange(udpIPs);
+                }
                 
-                if (processConnections.Count == 0) return null;
+                if (allIPs.Count == 0) return null;
                 
                 // Группируем по локальному IP и выбираем наиболее частый
-                var ipGroups = processConnections
-                    .GroupBy(c => c.LocalAddress.ToString())
+                var ipGroups = allIPs
+                    .GroupBy(ip => ip)
                     .OrderByDescending(g => g.Count())
                     .ToList();
                 
@@ -108,7 +125,7 @@ namespace tickMeter.Classes
                     string ip = group.Key;
                     if (IsValidLocalIP(ip))
                     {
-                        Debug.WriteLine($"[LocalIPDetector] Процесс {processName} использует IP {ip} ({group.Count()} соединений)");
+                        Debug.WriteLine($"[LocalIPDetector] Процесс {processName} использует IP {ip} ({group.Count()} TCP+UDP соединений)");
                         return ip;
                     }
                 }
@@ -122,7 +139,7 @@ namespace tickMeter.Classes
         }
         
         /// <summary>
-        /// Определяет наиболее используемый локальный IP по всем активным соединениям
+        /// Определяет наиболее используемый локальный IP по всем активным соединениям (TCP + UDP)
         /// </summary>
         private static string GetLocalIPFromAllConnections()
         {
@@ -130,13 +147,34 @@ namespace tickMeter.Classes
             {
                 if (App.connMngr == null) return null;
                 
+                var allIPs = new List<string>();
+                
+                // TCP соединения
                 var tcpConnections = App.connMngr.TcpActiveConnections;
-                if (tcpConnections == null || tcpConnections.Count == 0) return null;
+                if (tcpConnections != null && tcpConnections.Count > 0)
+                {
+                    var tcpIPs = tcpConnections
+                        .Where(c => c.State == MibTcpState.ESTABLISHED)
+                        .Select(c => c.LocalAddress.ToString())
+                        .ToList();
+                    allIPs.AddRange(tcpIPs);
+                }
+                
+                // UDP соединения
+                var udpConnections = App.connMngr.UdpActiveConnections;
+                if (udpConnections != null && udpConnections.Count > 0)
+                {
+                    var udpIPs = udpConnections
+                        .Select(c => c.LocalAddress.ToString())
+                        .ToList();
+                    allIPs.AddRange(udpIPs);
+                }
+                
+                if (allIPs.Count == 0) return null;
                 
                 // Группируем по локальному IP
-                var ipStats = tcpConnections
-                    .Where(c => c.State == MibTcpState.ESTABLISHED)
-                    .GroupBy(c => c.LocalAddress.ToString())
+                var ipStats = allIPs
+                    .GroupBy(ip => ip)
                     .Select(g => new { IP = g.Key, Count = g.Count() })
                     .Where(x => IsValidLocalIP(x.IP))
                     .OrderByDescending(x => x.Count)
@@ -145,7 +183,7 @@ namespace tickMeter.Classes
                 if (ipStats.Count > 0)
                 {
                     var topIP = ipStats.First();
-                    Debug.WriteLine($"[LocalIPDetector] Наиболее используемый IP: {topIP.IP} ({topIP.Count} соединений)");
+                    Debug.WriteLine($"[LocalIPDetector] Наиболее используемый IP: {topIP.IP} ({topIP.Count} TCP+UDP соединений)");
                     return topIP.IP;
                 }
             }
