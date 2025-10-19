@@ -65,8 +65,15 @@ namespace tickMeter.Classes
                     return detectedIP;
                 }
                 
-                Debug.WriteLine("[LocalIPDetector] Не удалось определить IP автоматически");
-                return _lastDetectedIP; // Возвращаем последний известный
+                // Метод 4 (крайний fallback): Если ничего не нашли, но есть кэшированный IP - используем его
+                if (!string.IsNullOrEmpty(_lastDetectedIP))
+                {
+                    Debug.WriteLine($"[LocalIPDetector] Используем кэшированный IP: {_lastDetectedIP}");
+                    return _lastDetectedIP;
+                }
+                
+                Debug.WriteLine("[LocalIPDetector] КРИТИЧНО: Не удалось определить IP никаким методом!");
+                return null;
             }
             catch (Exception ex)
             {
@@ -83,7 +90,11 @@ namespace tickMeter.Classes
             try
             {
                 // Используем существующий ConnectionsManager
-                if (App.connMngr == null) return null;
+                if (App.connMngr == null)
+                {
+                    Debug.WriteLine("[LocalIPDetector] ConnectionsManager не инициализирован");
+                    return null;
+                }
                 
                 var allIPs = new List<string>();
                 

@@ -1501,6 +1501,13 @@ namespace tickMeter.Forms
                 App.pingManager.StartPinging();
             }
             
+            // Даём ConnectionsManager время собрать данные о соединениях (только при первом запуске)
+            if (App.connMngr != null && (App.connMngr.TcpActiveConnections.Count == 0 && App.connMngr.UdpActiveConnections.Count == 0))
+            {
+                Debug.Print("[StartTracking] Waiting 500ms for ConnectionsManager to gather initial connection data...");
+                System.Threading.Thread.Sleep(500);
+            }
+            
             // Проверяем настройки VPN обхода
             bool vpnBypassBasic = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
             bool vpnBypassAdvanced = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
@@ -1608,11 +1615,18 @@ namespace tickMeter.Forms
             // В режиме мультиадаптера автоматически определяем локальный IP активного процесса
             if (captureAll || vpnBypassBasic || vpnBypassAdvanced)
             {
-                string autoDetectedIP = LocalIPDetector.DetectLocalIPForActiveProcess();
+                // ВАЖНО: Сбрасываем кэш при запуске для свежего определения IP
+                LocalIPDetector.ResetCache();
+                
+                // Получаем имя активного процесса
+                string activeProcess = AutoDetectMngr.GetActiveProcessName();
+                Debug.Print($"[StartTracking] Active process: {activeProcess}");
+                
+                string autoDetectedIP = LocalIPDetector.DetectLocalIPForActiveProcess(activeProcess);
                 if (!string.IsNullOrEmpty(autoDetectedIP))
                 {
                     App.meterState.LocalIP = autoDetectedIP;
-                    Debug.Print($"[StartTracking] Multi-adapter mode: Auto-detected LocalIP = {autoDetectedIP}");
+                    Debug.Print($"[StartTracking] Multi-adapter mode: Auto-detected LocalIP = {autoDetectedIP} for process {activeProcess}");
                     
                     // Обновляем UI (но не вызываем TextChanged event)
                     if (App.settingsForm.local_ip_textbox.Text != autoDetectedIP)
@@ -1627,7 +1641,12 @@ namespace tickMeter.Forms
                 {
                     // Fallback: используем текущее значение из настроек
                     App.meterState.LocalIP = App.settingsForm.local_ip_textbox.Text;
-                    Debug.Print($"[StartTracking] Multi-adapter mode: Using configured LocalIP = {App.meterState.LocalIP}");
+                    Debug.Print($"[StartTracking] Multi-adapter mode: Could not auto-detect IP, using configured LocalIP = {App.meterState.LocalIP}");
+                    
+                    if (string.IsNullOrEmpty(App.meterState.LocalIP))
+                    {
+                        Debug.Print($"[StartTracking] WARNING: LocalIP is empty! Please configure manually or wait for connections to establish.");
+                    }
                 }
             }
             else
