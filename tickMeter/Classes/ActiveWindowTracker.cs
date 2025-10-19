@@ -246,5 +246,17 @@ namespace tickMeter.Classes
                 return sb.ToString();
             }
         }
+        
+        /// <summary>
+        /// Очищает статистику соединений (при смене активного процесса)
+        /// </summary>
+        public static void ClearConnectionStats()
+        {
+            lock (connectionsLock)
+            {
+                connections.Clear();
+                Debug.WriteLine("[ActiveWindowTracker] Connection stats cleared");
+            }
+        }
     }
 }

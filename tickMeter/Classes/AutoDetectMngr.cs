@@ -188,6 +188,23 @@ namespace tickMeter.Classes
             {
                 App.gui.targetKey = "";
                 
+                // Сбрасываем метрики при смене процесса
+                Debug.Print($"[AutoDetect] Process changed from '{activeProcess}' to '{newName}' - resetting all metrics");
+                if (App.meterState != null && App.meterState.IsTracking)
+                {
+                    // Полный сброс всех метрик при смене процесса
+                    App.gui.Invoke((Action)(() =>
+                    {
+                        App.gui.InitMeterState();
+                        App.meterState.IsTracking = true; // Восстанавливаем флаг трекинга
+                    }));
+                    
+                    // Очищаем статистику соединений
+                    ActiveWindowTracker.ClearConnectionStats();
+                    
+                    Debug.Print("[AutoDetect] All metrics reset, tracking continues for new process");
+                }
+                
                 // При смене активного процесса в режиме мультиадаптера - обновляем локальный IP
                 bool captureAllEnabled = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
                 bool vpnBypassBasic = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";

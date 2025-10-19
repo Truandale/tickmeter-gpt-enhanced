@@ -180,5 +180,17 @@ namespace tickMeter.Classes
         {
             return App.settingsManager.GetOption("autodetect") == "True";
         }
+        
+        /// <summary>
+        /// Очищает статистику соединений (при смене активного процесса)
+        /// </summary>
+        public static void ClearConnectionStats()
+        {
+            lock (connectionsLock)
+            {
+                connections.Clear();
+                System.Diagnostics.Debug.WriteLine("[ActiveWindowTracker] Connection stats cleared");
+            }
+        }
     }
 }

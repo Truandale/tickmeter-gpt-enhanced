@@ -740,6 +740,24 @@ namespace tickMeter.Forms
                                 });
                             }
                             
+                            //update process name
+                            {
+                                string processName = AutoDetectMngr.GetActiveProcessName();
+                                QueueUIUpdate(() =>
+                                {
+                                    if (!string.IsNullOrEmpty(processName) && processName != "n\\a")
+                                    {
+                                        process_val.Text = processName;
+                                        process_val.ForeColor = Color.LightGray;
+                                    }
+                                    else
+                                    {
+                                        process_val.Text = "n/a";
+                                        process_val.ForeColor = Color.Gray;
+                                    }
+                                });
+                            }
+                            
                             //update drops
                             if (App.settingsForm.packet_drops_checkbox.Checked)
                             {
@@ -2092,6 +2110,8 @@ namespace tickMeter.Forms
             ip_val.Text = string.Empty;
             countryLbl.ForeColor = _inactiveMetricColor;
             countryLbl.Text = string.Empty;
+            process_val.ForeColor = Color.Gray;
+            process_val.Text = "n/a";
             try { ResetTickrateChart(); } catch(Exception) {  }
             
             
