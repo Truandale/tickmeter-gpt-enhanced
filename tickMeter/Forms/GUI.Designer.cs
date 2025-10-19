@@ -286,7 +286,7 @@ namespace tickMeter.Forms
             // 
             this.gameProfilesButton.Cursor = System.Windows.Forms.Cursors.Hand;
             this.gameProfilesButton.Image = global::tickMeter.Properties.Resources.Board_Games_red;
-            this.gameProfilesButton.Location = new System.Drawing.Point(501, 405);
+            this.gameProfilesButton.Location = new System.Drawing.Point(503, 450);
             this.gameProfilesButton.Margin = new System.Windows.Forms.Padding(4);
             this.gameProfilesButton.Name = "gameProfilesButton";
             this.gameProfilesButton.Size = new System.Drawing.Size(64, 59);
@@ -299,7 +299,7 @@ namespace tickMeter.Forms
             // 
             this.packetStatsBtn.Cursor = System.Windows.Forms.Cursors.Hand;
             this.packetStatsBtn.Image = global::tickMeter.Properties.Resources._switch;
-            this.packetStatsBtn.Location = new System.Drawing.Point(501, 463);
+            this.packetStatsBtn.Location = new System.Drawing.Point(503, 508);
             this.packetStatsBtn.Margin = new System.Windows.Forms.Padding(4);
             this.packetStatsBtn.Name = "packetStatsBtn";
             this.packetStatsBtn.Size = new System.Drawing.Size(64, 59);
@@ -312,7 +312,7 @@ namespace tickMeter.Forms
             // 
             this.spikeAnalyticsBtn.Cursor = System.Windows.Forms.Cursors.Hand;
             this.spikeAnalyticsBtn.Image = global::tickMeter.Properties.Resources.bar;
-            this.spikeAnalyticsBtn.Location = new System.Drawing.Point(501, 521);
+            this.spikeAnalyticsBtn.Location = new System.Drawing.Point(503, 566);
             this.spikeAnalyticsBtn.Margin = new System.Windows.Forms.Padding(4);
             this.spikeAnalyticsBtn.Name = "spikeAnalyticsBtn";
             this.spikeAnalyticsBtn.Size = new System.Drawing.Size(64, 59);
@@ -325,7 +325,7 @@ namespace tickMeter.Forms
             // 
             this.SettingsButton.Cursor = System.Windows.Forms.Cursors.Hand;
             this.SettingsButton.Image = global::tickMeter.Properties.Resources.settings;
-            this.SettingsButton.Location = new System.Drawing.Point(501, 579);
+            this.SettingsButton.Location = new System.Drawing.Point(503, 624);
             this.SettingsButton.Margin = new System.Windows.Forms.Padding(4);
             this.SettingsButton.Name = "SettingsButton";
             this.SettingsButton.Size = new System.Drawing.Size(64, 59);
@@ -460,6 +460,7 @@ namespace tickMeter.Forms
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "tickMeter 2.4.0";
             this.TransparencyKey = System.Drawing.SystemColors.Info;
+            this.Activated += new System.EventHandler(this.GUI_Activated);
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.GUI_FormClosing);
             this.Load += new System.EventHandler(this.GUI_Load);
             this.Resize += new System.EventHandler(this.GUI_Resize);

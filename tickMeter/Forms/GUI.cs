@@ -88,6 +88,11 @@ namespace tickMeter.Forms
         public DbdStatsManager DbdMngr;
         public string targetKey = "";
         private int _gcCounter = 0; // Счётчик для периодической сборки мусора
+        
+        // Флаги для предотвращения рекурсии в событиях формы
+        private bool _isResizing = false;
+        private bool _isRestoring = false;
+        
     private const int InitialTickrateWindowSeconds = 120;
     private const string TickrateChartAreaName = "TickrateArea";
     private const string TickrateSeriesName = "Tickrate";
@@ -2293,16 +2298,19 @@ namespace tickMeter.Forms
                 App.settingsForm.SwitchToEnglish();
             }
             
-            // ИСПРАВЛЕНИЕ: Сворачиваем форму ДО её полной инициализации
-            // Используем WindowState вместо Hide() для корректной работы
+            ETW.init();
+            
+            // ИСПРАВЛЕНИЕ: Сворачиваем форму ПОСЛЕ полной инициализации
+            // Используем BeginInvoke для отложенного выполнения после отрисовки формы
             if(App.settingsForm.run_minimized.Checked)
             {
-                this.WindowState = FormWindowState.Minimized;
-                this.ShowInTaskbar = false;
-                Hide();
+                this.BeginInvoke(new Action(() =>
+                {
+                    this.WindowState = FormWindowState.Minimized;
+                    this.ShowInTaskbar = false;
+                    Hide();
+                }));
             }
-            
-            ETW.init();
         }
 
         private void SettingsButton_Click(object sender, EventArgs e)
@@ -2329,13 +2337,91 @@ namespace tickMeter.Forms
 
         private void GUI_Resize(object sender, EventArgs e)
         {
+            // Защита от рекурсии
+            if (_isResizing) return;
+            
+            try
+            {
+                _isResizing = true;
+                
+                // Когда окно сворачивается - скрываем его из панели задач
+                if (this.WindowState == FormWindowState.Minimized)
+                {
+                    this.ShowInTaskbar = false;
+                    Hide();
+                }
+            }
+            finally
+            {
+                _isResizing = false;
+            }
         }
 
         private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-            this.ShowInTaskbar = true;
-            this.WindowState = FormWindowState.Normal;
-            Show();
+            RestoreWindow();
+        }
+        
+        private void GUI_Activated(object sender, EventArgs e)
+        {
+            // Защита от рекурсии
+            if (_isRestoring) return;
+            
+            // Восстанавливаем только если окно действительно свернуто И не видно
+            // Это предотвращает рекурсию при активации уже видимого окна
+            if (this.WindowState == FormWindowState.Minimized && !this.Visible)
+            {
+                RestoreWindow();
+            }
+        }
+        
+        private void RestoreWindow()
+        {
+            // Защита от рекурсии
+            if (_isRestoring) return;
+            
+            // Проверяем, нужно ли вообще восстанавливать
+            if (this.WindowState == FormWindowState.Normal && this.Visible)
+            {
+                // Окно уже восстановлено, просто активируем
+                this.Activate();
+                return;
+            }
+            
+            try
+            {
+                _isRestoring = true;
+                
+                // Важно: сначала меняем состояние, потом показываем
+                if (this.WindowState != FormWindowState.Normal)
+                {
+                    this.WindowState = FormWindowState.Normal;
+                }
+                
+                if (!this.ShowInTaskbar)
+                {
+                    this.ShowInTaskbar = true;
+                }
+                
+                if (!this.Visible)
+                {
+                    Show();
+                }
+                
+                // Активация и вывод на передний план делаем вне блока _isRestoring
+                // чтобы не мешать событию Activated
+            }
+            finally
+            {
+                _isRestoring = false;
+            }
+            
+            // Активация после снятия флага, чтобы Activated мог отработать корректно
+            if (!this.Focused)
+            {
+                this.Activate();
+                this.BringToFront();
+            }
         }
 
         private void GUI_FormClosing(object sender, FormClosingEventArgs e)
