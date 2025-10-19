@@ -2272,10 +2272,16 @@ namespace tickMeter.Forms
             {
                 App.settingsForm.SwitchToEnglish();
             }
+            
+            // ИСПРАВЛЕНИЕ: Сворачиваем форму ДО её полной инициализации
+            // Используем WindowState вместо Hide() для корректной работы
             if(App.settingsForm.run_minimized.Checked)
             {
+                this.WindowState = FormWindowState.Minimized;
+                this.ShowInTaskbar = false;
                 Hide();
             }
+            
             ETW.init();
         }
 
@@ -2307,8 +2313,9 @@ namespace tickMeter.Forms
 
         private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-            Show();
+            this.ShowInTaskbar = true;
             this.WindowState = FormWindowState.Normal;
+            Show();
         }
 
         private void GUI_FormClosing(object sender, FormClosingEventArgs e)
