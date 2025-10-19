@@ -1,4 +1,4 @@
-﻿namespace tickMeter.Forms
+namespace tickMeter.Forms
 {
     partial class GUI
     {
@@ -30,9 +30,9 @@
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(GUI));
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea10 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Legend legend10 = new System.Windows.Forms.DataVisualization.Charting.Legend();
-            System.Windows.Forms.DataVisualization.Charting.Series series10 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
+            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.tickrate_lbl = new System.Windows.Forms.Label();
             this.ticksLoop = new System.Windows.Forms.Timer(this.components);
             this.tickrate_val = new System.Windows.Forms.Label();
@@ -75,7 +75,7 @@
             this.tickrate_lbl.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.tickrate_lbl.Font = new System.Drawing.Font("Unispace", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.tickrate_lbl.ForeColor = System.Drawing.Color.OrangeRed;
-            this.tickrate_lbl.Location = new System.Drawing.Point(16, 11);
+            this.tickrate_lbl.Location = new System.Drawing.Point(12, 152);
             this.tickrate_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.tickrate_lbl.Name = "tickrate_lbl";
             this.tickrate_lbl.Size = new System.Drawing.Size(203, 48);
@@ -95,7 +95,7 @@
             this.tickrate_val.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.tickrate_val.Font = new System.Drawing.Font("Unispace", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.tickrate_val.ForeColor = System.Drawing.Color.OrangeRed;
-            this.tickrate_val.Location = new System.Drawing.Point(237, 7);
+            this.tickrate_val.Location = new System.Drawing.Point(235, 152);
             this.tickrate_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.tickrate_val.Name = "tickrate_val";
             this.tickrate_val.Size = new System.Drawing.Size(45, 65);
@@ -111,7 +111,7 @@
             this.ping_val.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.ping_val.Font = new System.Drawing.Font("Unispace", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ping_val.ForeColor = System.Drawing.Color.OrangeRed;
-            this.ping_val.Location = new System.Drawing.Point(237, 113);
+            this.ping_val.Location = new System.Drawing.Point(235, 258);
             this.ping_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.ping_val.Name = "ping_val";
             this.ping_val.Size = new System.Drawing.Size(97, 48);
@@ -127,7 +127,7 @@
             this.ping_lbl.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.ping_lbl.Font = new System.Drawing.Font("Unispace", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ping_lbl.ForeColor = System.Drawing.Color.OrangeRed;
-            this.ping_lbl.Location = new System.Drawing.Point(16, 113);
+            this.ping_lbl.Location = new System.Drawing.Point(13, 258);
             this.ping_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.ping_lbl.Name = "ping_lbl";
             this.ping_lbl.Size = new System.Drawing.Size(139, 48);
@@ -142,7 +142,7 @@
             this.ip_lbl.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.ip_lbl.Font = new System.Drawing.Font("Unispace", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ip_lbl.ForeColor = System.Drawing.Color.OrangeRed;
-            this.ip_lbl.Location = new System.Drawing.Point(16, 65);
+            this.ip_lbl.Location = new System.Drawing.Point(12, 210);
             this.ip_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.ip_lbl.Name = "ip_lbl";
             this.ip_lbl.Size = new System.Drawing.Size(75, 48);
@@ -158,7 +158,7 @@
             this.ip_val.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.ip_val.Font = new System.Drawing.Font("Unispace", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ip_val.ForeColor = System.Drawing.Color.OrangeRed;
-            this.ip_val.Location = new System.Drawing.Point(237, 65);
+            this.ip_val.Location = new System.Drawing.Point(235, 210);
             this.ip_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.ip_val.Name = "ip_val";
             this.ip_val.Size = new System.Drawing.Size(330, 48);
@@ -175,11 +175,12 @@
             this.countryLbl.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.countryLbl.Font = new System.Drawing.Font("Verdana", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.countryLbl.ForeColor = System.Drawing.Color.OrangeRed;
-            this.countryLbl.Location = new System.Drawing.Point(331, 25);
+            this.countryLbl.Location = new System.Drawing.Point(14, 100);
             this.countryLbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.countryLbl.Name = "countryLbl";
-            this.countryLbl.Size = new System.Drawing.Size(0, 35);
+            this.countryLbl.Size = new System.Drawing.Size(207, 39);
             this.countryLbl.TabIndex = 29;
+            this.countryLbl.Text = "Country, City";
             this.countryLbl.UseCompatibleTextRendering = true;
             // 
             // retryLoop
@@ -195,7 +196,7 @@
             this.traffic_lbl.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.traffic_lbl.Font = new System.Drawing.Font("Unispace", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.traffic_lbl.ForeColor = System.Drawing.Color.OrangeRed;
-            this.traffic_lbl.Location = new System.Drawing.Point(15, 161);
+            this.traffic_lbl.Location = new System.Drawing.Point(12, 309);
             this.traffic_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.traffic_lbl.Name = "traffic_lbl";
             this.traffic_lbl.Size = new System.Drawing.Size(160, 48);
@@ -210,7 +211,7 @@
             this.traffic_val.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.traffic_val.Font = new System.Drawing.Font("Unispace", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.traffic_val.ForeColor = System.Drawing.Color.OrangeRed;
-            this.traffic_val.Location = new System.Drawing.Point(236, 161);
+            this.traffic_val.Location = new System.Drawing.Point(234, 306);
             this.traffic_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.traffic_val.Name = "traffic_val";
             this.traffic_val.Size = new System.Drawing.Size(182, 48);
@@ -226,7 +227,7 @@
             this.time_lbl.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.time_lbl.Font = new System.Drawing.Font("Unispace", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.time_lbl.ForeColor = System.Drawing.Color.OrangeRed;
-            this.time_lbl.Location = new System.Drawing.Point(16, 212);
+            this.time_lbl.Location = new System.Drawing.Point(12, 357);
             this.time_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.time_lbl.Name = "time_lbl";
             this.time_lbl.Size = new System.Drawing.Size(139, 48);
@@ -241,7 +242,7 @@
             this.time_val.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.time_val.Font = new System.Drawing.Font("Unispace", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.time_val.ForeColor = System.Drawing.Color.OrangeRed;
-            this.time_val.Location = new System.Drawing.Point(237, 212);
+            this.time_val.Location = new System.Drawing.Point(235, 357);
             this.time_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.time_val.Name = "time_val";
             this.time_val.Size = new System.Drawing.Size(118, 48);
@@ -255,12 +256,12 @@
             this.process_lbl.AutoSize = true;
             this.process_lbl.BackColor = System.Drawing.Color.Transparent;
             this.process_lbl.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.process_lbl.Font = new System.Drawing.Font("Unispace", 7F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.process_lbl.Font = new System.Drawing.Font("Unispace", 15F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.process_lbl.ForeColor = System.Drawing.Color.Gray;
-            this.process_lbl.Location = new System.Drawing.Point(331, 6);
+            this.process_lbl.Location = new System.Drawing.Point(14, 62);
             this.process_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.process_lbl.Name = "process_lbl";
-            this.process_lbl.Size = new System.Drawing.Size(63, 19);
+            this.process_lbl.Size = new System.Drawing.Size(135, 37);
             this.process_lbl.TabIndex = 44;
             this.process_lbl.Text = "Process:";
             this.process_lbl.UseCompatibleTextRendering = true;
@@ -270,12 +271,12 @@
             this.process_val.AutoSize = true;
             this.process_val.BackColor = System.Drawing.Color.Transparent;
             this.process_val.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.process_val.Font = new System.Drawing.Font("Unispace", 7F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.process_val.Font = new System.Drawing.Font("Unispace", 15F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.process_val.ForeColor = System.Drawing.Color.LightGray;
-            this.process_val.Location = new System.Drawing.Point(412, 6);
+            this.process_val.Location = new System.Drawing.Point(167, 62);
             this.process_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.process_val.Name = "process_val";
-            this.process_val.Size = new System.Drawing.Size(26, 19);
+            this.process_val.Size = new System.Drawing.Size(56, 37);
             this.process_val.TabIndex = 43;
             this.process_val.Text = "n/a";
             this.process_val.UseCompatibleTextRendering = true;
@@ -285,7 +286,7 @@
             // 
             this.gameProfilesButton.Cursor = System.Windows.Forms.Cursors.Hand;
             this.gameProfilesButton.Image = global::tickMeter.Properties.Resources.Board_Games_red;
-            this.gameProfilesButton.Location = new System.Drawing.Point(503, 260);
+            this.gameProfilesButton.Location = new System.Drawing.Point(501, 405);
             this.gameProfilesButton.Margin = new System.Windows.Forms.Padding(4);
             this.gameProfilesButton.Name = "gameProfilesButton";
             this.gameProfilesButton.Size = new System.Drawing.Size(64, 59);
@@ -298,7 +299,7 @@
             // 
             this.packetStatsBtn.Cursor = System.Windows.Forms.Cursors.Hand;
             this.packetStatsBtn.Image = global::tickMeter.Properties.Resources._switch;
-            this.packetStatsBtn.Location = new System.Drawing.Point(503, 318);
+            this.packetStatsBtn.Location = new System.Drawing.Point(501, 463);
             this.packetStatsBtn.Margin = new System.Windows.Forms.Padding(4);
             this.packetStatsBtn.Name = "packetStatsBtn";
             this.packetStatsBtn.Size = new System.Drawing.Size(64, 59);
@@ -311,7 +312,7 @@
             // 
             this.spikeAnalyticsBtn.Cursor = System.Windows.Forms.Cursors.Hand;
             this.spikeAnalyticsBtn.Image = global::tickMeter.Properties.Resources.bar;
-            this.spikeAnalyticsBtn.Location = new System.Drawing.Point(503, 376);
+            this.spikeAnalyticsBtn.Location = new System.Drawing.Point(501, 521);
             this.spikeAnalyticsBtn.Margin = new System.Windows.Forms.Padding(4);
             this.spikeAnalyticsBtn.Name = "spikeAnalyticsBtn";
             this.spikeAnalyticsBtn.Size = new System.Drawing.Size(64, 59);
@@ -324,7 +325,7 @@
             // 
             this.SettingsButton.Cursor = System.Windows.Forms.Cursors.Hand;
             this.SettingsButton.Image = global::tickMeter.Properties.Resources.settings;
-            this.SettingsButton.Location = new System.Drawing.Point(503, 434);
+            this.SettingsButton.Location = new System.Drawing.Point(501, 579);
             this.SettingsButton.Margin = new System.Windows.Forms.Padding(4);
             this.SettingsButton.Name = "SettingsButton";
             this.SettingsButton.Size = new System.Drawing.Size(64, 59);
@@ -366,7 +367,7 @@
             this.drops_lbl.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.drops_lbl.Font = new System.Drawing.Font("Unispace", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.drops_lbl.ForeColor = System.Drawing.Color.OrangeRed;
-            this.drops_lbl.Location = new System.Drawing.Point(16, 251);
+            this.drops_lbl.Location = new System.Drawing.Point(14, 396);
             this.drops_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.drops_lbl.Name = "drops_lbl";
             this.drops_lbl.Size = new System.Drawing.Size(139, 48);
@@ -381,7 +382,7 @@
             this.drops_lbl_val.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.drops_lbl_val.Font = new System.Drawing.Font("Unispace", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.drops_lbl_val.ForeColor = System.Drawing.Color.OrangeRed;
-            this.drops_lbl_val.Location = new System.Drawing.Point(237, 251);
+            this.drops_lbl_val.Location = new System.Drawing.Point(235, 396);
             this.drops_lbl_val.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.drops_lbl_val.Name = "drops_lbl_val";
             this.drops_lbl_val.Size = new System.Drawing.Size(54, 48);
@@ -392,16 +393,16 @@
             // 
             // TickrateChart1
             // 
-            chartArea10.Name = "ChartArea1";
-            this.TickrateChart1.ChartAreas.Add(chartArea10);
-            legend10.Name = "Legend1";
-            this.TickrateChart1.Legends.Add(legend10);
-            this.TickrateChart1.Location = new System.Drawing.Point(14, 302);
+            chartArea1.Name = "ChartArea1";
+            this.TickrateChart1.ChartAreas.Add(chartArea1);
+            legend1.Name = "Legend1";
+            this.TickrateChart1.Legends.Add(legend1);
+            this.TickrateChart1.Location = new System.Drawing.Point(12, 447);
             this.TickrateChart1.Name = "TickrateChart1";
-            series10.ChartArea = "ChartArea1";
-            series10.Legend = "Legend1";
-            series10.Name = "Series1";
-            this.TickrateChart1.Series.Add(series10);
+            series1.ChartArea = "ChartArea1";
+            series1.Legend = "Legend1";
+            series1.Name = "Series1";
+            this.TickrateChart1.Series.Add(series1);
             this.TickrateChart1.Size = new System.Drawing.Size(469, 236);
             this.TickrateChart1.TabIndex = 47;
             this.TickrateChart1.Text = "Tickrate Graph";
@@ -412,7 +413,7 @@
             this.webStatsButton.Cursor = System.Windows.Forms.Cursors.Hand;
             this.webStatsButton.Enabled = false;
             this.webStatsButton.Image = global::tickMeter.Properties.Resources.bar;
-            this.webStatsButton.Location = new System.Drawing.Point(500, 376);
+            this.webStatsButton.Location = new System.Drawing.Point(503, 5);
             this.webStatsButton.Margin = new System.Windows.Forms.Padding(4);
             this.webStatsButton.Name = "webStatsButton";
             this.webStatsButton.Size = new System.Drawing.Size(64, 59);
@@ -427,7 +428,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Control;
-            this.ClientSize = new System.Drawing.Size(577, 540);
+            this.ClientSize = new System.Drawing.Size(577, 740);
             this.Controls.Add(this.TickrateChart1);
             this.Controls.Add(this.drops_lbl_val);
             this.Controls.Add(this.drops_lbl);
@@ -453,8 +454,8 @@
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Fixed3D;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(4);
-            this.MaximumSize = new System.Drawing.Size(599, 591);
-            this.MinimumSize = new System.Drawing.Size(599, 529);
+            this.MaximumSize = new System.Drawing.Size(599, 791);
+            this.MinimumSize = new System.Drawing.Size(599, 791);
             this.Name = "GUI";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "tickMeter 2.4.0";
