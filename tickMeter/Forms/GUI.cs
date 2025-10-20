@@ -24,13 +24,13 @@ namespace tickMeter.Forms
     public partial class GUI : Form
     {
         
-        public PacketDevice selectedAdapter;
+        public LivePacketDevice selectedAdapter;
         public Thread PcapThread;
 
         public BackgroundWorker pcapWorker;
         
         // NEW: поля для мульти-адаптерного захвата
-        private readonly List<PacketDevice> _allSelectedAdapters = new List<PacketDevice>();
+        private readonly List<LivePacketDevice> _allSelectedAdapters = new List<LivePacketDevice>();
         private readonly List<BackgroundWorker> _pcapWorkers = new List<BackgroundWorker>();
         // простая защита от дублей на бриджах/VPN
         private readonly Dictionary<ulong, long> _dedup = new Dictionary<ulong, long>(capacity: 4096);
@@ -1059,56 +1059,127 @@ namespace tickMeter.Forms
                         bool processChanged = !string.IsNullOrEmpty(previousProcessName) && 
                                              previousProcessName != currentProcessName;
                         
-                        if (processChanged)
+                        // В режиме мультиадаптера переопределяем LocalIP 
+                        // - При смене процесса (немедленно с ResetCache)
+                        // - Для того же процесса (периодически, через встроенный интервал в LocalIPDetector)
+                        bool captureAll = App.settingsManager?.GetOption("capture_all_adapters", "False", "ADVANCED") == "True";
+                        bool vpnBypassBasic = App.settingsManager?.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
+                        bool vpnBypassAdvanced = App.settingsManager?.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+                        
+                        if (captureAll || vpnBypassBasic || vpnBypassAdvanced)
                         {
-                            Debug.Print($"[updateMetherStateFromActiveWindow] Process changed: {previousProcessName} -> {currentProcessName}");
-                            
-                            // В режиме мультиадаптера переопределяем LocalIP для нового процесса
-                            bool captureAll = App.settingsManager?.GetOption("capture_all_adapters", "False", "ADVANCED") == "True";
-                            bool vpnBypassBasic = App.settingsManager?.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
-                            bool vpnBypassAdvanced = App.settingsManager?.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
-                            
-                            if (captureAll || vpnBypassBasic || vpnBypassAdvanced)
+                            try
                             {
-                                try
+                                // При смене процесса - сбрасываем кэш для немедленного обновления
+                                if (processChanged)
                                 {
-                                    // Сбрасываем кэш и переопределяем IP для нового процесса
+                                    Debug.Print($"[updateMetherStateFromActiveWindow] Process changed: {previousProcessName} -> {currentProcessName}");
                                     Classes.LocalIPDetector.ResetCache();
-                                    string newLocalIP = Classes.LocalIPDetector.DetectLocalIPForActiveProcess(currentProcessName);
+                                }
+                                
+                                // Проверяем IP (для нового процесса - немедленно, для того же - по таймеру внутри метода)
+                                string newLocalIP = Classes.LocalIPDetector.DetectLocalIPForActiveProcess(currentProcessName);
+                                
+                                // Диагностика
+                                Debug.Print($"[updateMetherStateFromActiveWindow] Detected LocalIP: old={App.meterState.LocalIP}, new={newLocalIP}, changed={newLocalIP != App.meterState.LocalIP}");
+                                
+                                if (!string.IsNullOrEmpty(newLocalIP) && newLocalIP != App.meterState.LocalIP)
+                                {
+                                    Debug.Print($"[updateMetherStateFromActiveWindow] LocalIP changed: {App.meterState.LocalIP} -> {newLocalIP}");
+                                    App.meterState.LocalIP = newLocalIP;
+                                    Debug.Print($"[updateMetherStateFromActiveWindow] LocalIP changed: {App.meterState.LocalIP} -> {newLocalIP}");
+                                    App.meterState.LocalIP = newLocalIP;
                                     
-                                    if (!string.IsNullOrEmpty(newLocalIP) && newLocalIP != App.meterState.LocalIP)
+                                    // Диагностика состояния формы настроек
+                                    Debug.Print($"[updateMetherStateFromActiveWindow] SettingsForm state: IsNull={App.settingsForm == null}, IsHandleCreated={App.settingsForm?.IsHandleCreated}, IsDisposed={App.settingsForm?.IsDisposed}");
+                                    
+                                    // Обновляем UI (textbox и ComboBox адаптера)
+                                    if (App.settingsForm != null && App.settingsForm.IsHandleCreated && !App.settingsForm.IsDisposed)
                                     {
-                                        Debug.Print($"[updateMetherStateFromActiveWindow] LocalIP changed: {App.meterState.LocalIP} -> {newLocalIP}");
-                                        App.meterState.LocalIP = newLocalIP;
-                                        
-                                        // Обновляем UI (но не вызываем TextChanged event)
-                                        if (App.settingsForm?.local_ip_textbox != null && 
-                                            App.settingsForm.local_ip_textbox.Text != newLocalIP)
+                                        try
                                         {
-                                            try
+                                            App.settingsForm.Invoke((Action)(() =>
                                             {
-                                                App.settingsForm.Invoke((Action)(() =>
+                                                // Обновляем textbox LocalIP
+                                                if (App.settingsForm.local_ip_textbox != null && 
+                                                    App.settingsForm.local_ip_textbox.Text != newLocalIP)
                                                 {
                                                     App.settingsForm.local_ip_textbox.Text = newLocalIP;
-                                                }));
-                                            }
-                                            catch (Exception ex)
-                                            {
-                                                Debug.Print($"[updateMetherStateFromActiveWindow] UI update error: {ex.Message}");
-                                            }
+                                                }
+                                                
+                                                // Обновляем выбранный адаптер в ComboBox (с защитой от рекурсии)
+                                                if (App.settingsForm.adapters_list != null && App.settingsForm.adapters_list.Items.Count > 0)
+                                                {
+                                                    Debug.Print($"[updateMetherStateFromActiveWindow] Searching for adapter with IP: {newLocalIP}");
+                                                    var adapters = App.GetAdapters();
+                                                    Debug.Print($"[updateMetherStateFromActiveWindow] Total adapters: {adapters.Count}, Current ComboBox index: {App.settingsForm.adapters_list.SelectedIndex}");
+                                                    
+                                                    bool found = false;
+                                                    for (int i = 0; i < adapters.Count; i++)
+                                                    {
+                                                        string adapterIP = App.GetAdapterAddress(adapters[i]);
+                                                        Debug.Print($"[updateMetherStateFromActiveWindow] Adapter[{i}] IP: {adapterIP}, Match: {adapterIP == newLocalIP}");
+                                                        
+                                                        if (adapterIP == newLocalIP)
+                                                        {
+                                                            found = true;
+                                                            if (App.settingsForm.adapters_list.SelectedIndex != i)
+                                                            {
+                                                                Debug.Print($"[updateMetherStateFromActiveWindow] ✓ Found! Updating adapter ComboBox index: {App.settingsForm.adapters_list.SelectedIndex} -> {i}");
+                                                                
+                                                                // Устанавливаем флаг чтобы избежать рекурсивного обновления
+                                                                App.settingsForm.IsUpdatingAdapter = true;
+                                                                try
+                                                                {
+                                                                    App.settingsForm.adapters_list.SelectedIndex = i;
+                                                                    Debug.Print($"[updateMetherStateFromActiveWindow] ✓ ComboBox updated successfully. New index: {App.settingsForm.adapters_list.SelectedIndex}");
+                                                                }
+                                                                finally
+                                                                {
+                                                                    App.settingsForm.IsUpdatingAdapter = false;
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                Debug.Print($"[updateMetherStateFromActiveWindow] Adapter already selected (index {i})");
+                                                            }
+                                                            break;
+                                                        }
+                                                    }
+                                                    
+                                                    if (!found)
+                                                    {
+                                                        Debug.Print($"[updateMetherStateFromActiveWindow] ⚠ WARNING: No adapter found with IP {newLocalIP}!");
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    Debug.Print($"[updateMetherStateFromActiveWindow] ⚠ ComboBox is null or empty");
+                                                }
+                                            }));
                                         }
-                                        
-                                        Debug.Print($"[updateMetherStateFromActiveWindow] ✓ Successfully updated LocalIP for process '{currentProcessName}' to {newLocalIP}");
+                                        catch (Exception ex)
+                                        {
+                                            Debug.Print($"[updateMetherStateFromActiveWindow] UI update error: {ex.Message}");
+                                        }
                                     }
-                                    else if (string.IsNullOrEmpty(newLocalIP))
+                                    
+                                    Debug.Print($"[updateMetherStateFromActiveWindow] ✓ Successfully updated LocalIP for process '{currentProcessName}' to {newLocalIP}");
+                                    
+                                    // НОВОЕ: Автоматическое переключение адаптера при активном мониторинге
+                                    if (App.meterState.IsTracking)
                                     {
-                                        Debug.Print($"[updateMetherStateFromActiveWindow] WARNING: Could not auto-detect LocalIP for process '{currentProcessName}'");
+                                        SwitchAdapterIfNeeded(newLocalIP);
                                     }
                                 }
-                                catch (Exception ex)
+                                else if (string.IsNullOrEmpty(newLocalIP))
                                 {
-                                    Debug.Print($"[updateMetherStateFromActiveWindow] Error updating LocalIP: {ex.Message}");
+                                    Debug.Print($"[updateMetherStateFromActiveWindow] WARNING: Could not auto-detect LocalIP for process '{currentProcessName}'");
                                 }
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.Print($"[updateMetherStateFromActiveWindow] Error updating LocalIP: {ex.Message}");
                             }
                         }
                         
@@ -2032,6 +2103,179 @@ namespace tickMeter.Forms
             pcapWorker.DoWork += PcapWorkerDoWork;
             pcapWorker.RunWorkerCompleted += PcapWorkerCompleted;
             pcapWorker.RunWorkerAsync();
+        }
+
+        /// <summary>
+        /// Автоматически переключает адаптер захвата пакетов при изменении LocalIP
+        /// </summary>
+        private void SwitchAdapterIfNeeded(string newLocalIP)
+        {
+            try
+            {
+                Debug.Print($"[SwitchAdapterIfNeeded] Checking if adapter switch needed for IP: {newLocalIP}");
+                
+                // Получаем текущий адаптер захвата
+                string currentAdapterIP = selectedAdapter != null ? App.GetAdapterAddress(selectedAdapter) : null;
+                
+                // Проверяем, нужно ли переключать
+                if (currentAdapterIP == newLocalIP)
+                {
+                    Debug.Print($"[SwitchAdapterIfNeeded] Adapter already correct: {currentAdapterIP}");
+                    return;
+                }
+                
+                Debug.Print($"[SwitchAdapterIfNeeded] Adapter switch required: {currentAdapterIP} -> {newLocalIP}");
+                
+                // Находим новый адаптер по IP
+                var devices = App.GetAdapters();
+                LivePacketDevice newAdapter = null;
+                int newAdapterIndex = -1;
+                
+                for (int i = 0; i < devices.Count; i++)
+                {
+                    string adapterIP = App.GetAdapterAddress(devices[i]);
+                    if (adapterIP == newLocalIP)
+                    {
+                        newAdapter = devices[i];
+                        newAdapterIndex = i;
+                        break;
+                    }
+                }
+                
+                if (newAdapter == null)
+                {
+                    Debug.Print($"[SwitchAdapterIfNeeded] ⚠ WARNING: No adapter found with IP {newLocalIP}");
+                    return;
+                }
+                
+                Debug.Print($"[SwitchAdapterIfNeeded] Found new adapter: {newAdapter.Name} (index {newAdapterIndex})");
+                
+                // Проверяем режимы работы
+                bool captureAll = App.settingsManager?.GetOption("capture_all_adapters", "False", "ADVANCED") == "True";
+                bool vpnBypassBasic = App.settingsManager?.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
+                bool vpnBypassAdvanced = App.settingsManager?.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+                
+                if (captureAll || vpnBypassBasic || vpnBypassAdvanced)
+                {
+                    // В мультиадаптерном режиме обновляем список адаптеров
+                    Debug.Print($"[SwitchAdapterIfNeeded] Multi-adapter mode - updating adapter list");
+                    
+                    // Останавливаем старые workers
+                    Debug.Print($"[SwitchAdapterIfNeeded] Stopping {_pcapWorkers.Count} old workers");
+                    foreach (var worker in _pcapWorkers)
+                    {
+                        if (worker != null && worker.IsBusy)
+                        {
+                            worker.CancelAsync();
+                        }
+                    }
+                    
+                    // Ждем немного для корректной остановки
+                    System.Threading.Thread.Sleep(100);
+                    
+                    // Пересоздаем список адаптеров с новым приоритетом
+                    _allSelectedAdapters.Clear();
+                    
+                    if (vpnBypassAdvanced || vpnBypassBasic)
+                    {
+                        var allDevices = App.GetAdapters();
+                        var vpnAdapters = new List<LivePacketDevice>();
+                        var regularAdapters = new List<LivePacketDevice>();
+                        
+                        foreach (var d in allDevices)
+                        {
+                            bool isVpn = IsVpnAdapter(d);
+                            if (isVpn) vpnAdapters.Add(d);
+                            else regularAdapters.Add(d);
+                        }
+                        
+                        _allSelectedAdapters.AddRange(vpnAdapters);
+                        if (!vpnBypassAdvanced)
+                            _allSelectedAdapters.AddRange(regularAdapters);
+                    }
+                    else if (captureAll)
+                    {
+                        _allSelectedAdapters.AddRange(App.GetAdapters());
+                    }
+                    
+                    // Запускаем новые workers
+                    _pcapWorkers.Clear();
+                    int workerIndex = 0;
+                    
+                    foreach (var dev in _allSelectedAdapters)
+                    {
+                        var worker = new BackgroundWorker();
+                        worker.WorkerSupportsCancellation = true;
+                        int currentWorkerIndex = workerIndex;
+                        
+                        worker.DoWork += (s, e) => {
+                            var bgWorker = s as BackgroundWorker;
+                            SetHighPriorityThread(Thread.CurrentThread, $"PCAP-Multi-{currentWorkerIndex}");
+                            
+                            using (var comm = dev.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 10))
+                            {
+                                TryOptimizePcapCommunicator(comm);
+                                ApplyBpfFilterSafely(comm);
+                                
+                                while (!bgWorker?.CancellationPending == true && App.meterState.IsTracking)
+                                {
+                                    Packet packet;
+                                    var result = comm.ReceivePacket(out packet);
+                                    if (result == PacketCommunicatorReceiveResult.Ok && packet != null)
+                                    {
+                                        PacketHandler(packet);
+                                    }
+                                    else
+                                    {
+                                        Thread.Sleep(1);
+                                    }
+                                }
+                                
+                                if (bgWorker?.CancellationPending == true)
+                                {
+                                    e.Cancel = true;
+                                }
+                            }
+                        };
+                        
+                        worker.RunWorkerCompleted += PcapWorkerCompleted;
+                        _pcapWorkers.Add(worker);
+                        Debug.Print($"[SwitchAdapterIfNeeded] Starting new worker {workerIndex} for device {dev.Name}");
+                        worker.RunWorkerAsync();
+                        workerIndex++;
+                    }
+                    
+                    Debug.Print($"[SwitchAdapterIfNeeded] ✓ Multi-adapter mode restarted with {_pcapWorkers.Count} workers");
+                }
+                else
+                {
+                    // Одноадаптерный режим - переключаем selectedAdapter
+                    Debug.Print($"[SwitchAdapterIfNeeded] Single-adapter mode - switching adapter");
+                    
+                    selectedAdapter = newAdapter;
+                    lastSelectedAdapterID = newAdapterIndex;
+                    
+                    // Останавливаем старый worker
+                    if (pcapWorker != null && pcapWorker.IsBusy)
+                    {
+                        Debug.Print($"[SwitchAdapterIfNeeded] Stopping old single worker");
+                        pcapWorker.CancelAsync();
+                        System.Threading.Thread.Sleep(100);
+                    }
+                    
+                    // Запускаем новый worker
+                    Debug.Print($"[SwitchAdapterIfNeeded] Starting new single worker for {selectedAdapter.Name}");
+                    InitPcapWorker();
+                    
+                    Debug.Print($"[SwitchAdapterIfNeeded] ✓ Single-adapter mode restarted on {selectedAdapter.Name}");
+                }
+                
+                Debug.Print($"[SwitchAdapterIfNeeded] ✅ Adapter switched successfully to {newLocalIP}");
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[SwitchAdapterIfNeeded] ❌ Error: {ex.Message}");
+            }
         }
 
         public void StopTracking()

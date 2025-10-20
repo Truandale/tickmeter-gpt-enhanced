@@ -27,6 +27,9 @@ namespace tickMeter.Forms
     // Флаг чтобы избежать дублирования write-through обработчиков (больше не используется на главной форме)
     private bool universalHandlersInitialized = false; // kept for compatibility; no longer used
     private bool captureAllAdaptersHandlerInitialized = false; // kept for compatibility; no longer used
+    
+    // Флаг для предотвращения рекурсивного обновления при программном изменении адаптера
+    public bool IsUpdatingAdapter = false;
 
         public SettingsForm()
         {
@@ -282,6 +285,49 @@ namespace tickMeter.Forms
             
             // NEW: инициализация состояния чекбокса после загрузки всех настроек
             InitCaptureAllAdaptersState();
+            
+            // Синхронизируем ComboBox с текущим LocalIP при открытии формы
+            SyncAdapterComboBoxToCurrentIP();
+        }
+        
+        /// <summary>
+        /// Синхронизирует выбранный адаптер в ComboBox с текущим LocalIP из App.meterState
+        /// </summary>
+        private void SyncAdapterComboBoxToCurrentIP()
+        {
+            try
+            {
+                string currentIP = App.meterState?.LocalIP;
+                if (string.IsNullOrEmpty(currentIP)) return;
+                if (adapters_list == null || adapters_list.Items.Count == 0) return;
+                
+                Debug.Print($"[SettingsForm] Syncing adapter ComboBox to current IP: {currentIP}");
+                
+                var adapters = App.GetAdapters();
+                for (int i = 0; i < adapters.Count; i++)
+                {
+                    string adapterIP = App.GetAdapterAddress(adapters[i]);
+                    if (adapterIP == currentIP && adapters_list.SelectedIndex != i)
+                    {
+                        Debug.Print($"[SettingsForm] Initial sync: ComboBox {adapters_list.SelectedIndex} -> {i} ({currentIP})");
+                        
+                        IsUpdatingAdapter = true;
+                        try
+                        {
+                            adapters_list.SelectedIndex = i;
+                        }
+                        finally
+                        {
+                            IsUpdatingAdapter = false;
+                        }
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[SettingsForm] Error syncing adapter ComboBox: {ex.Message}");
+            }
         }
 
         public void SaveToConfig()
@@ -443,6 +489,10 @@ namespace tickMeter.Forms
 
         private void adapters_list_SelectedIndexChanged(object sender, EventArgs e)
         {
+            // Игнорируем событие если мы сами программно меняем адаптер
+            if (IsUpdatingAdapter)
+                return;
+                
             if (adapters_list.SelectedIndex > -1)
             {
                 // Обновляем IP только если поле не заблокировано или мультиадаптер выключен

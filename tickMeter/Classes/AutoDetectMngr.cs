@@ -222,19 +222,53 @@ namespace tickMeter.Classes
                         {
                             App.meterState.LocalIP = autoDetectedIP;
                             Debug.Print($"[AutoDetect] Process changed to {newName}, LocalIP updated to {autoDetectedIP}");
-                            
-                            // Обновляем UI
+                        }
+                        
+                        // Обновляем UI формы настроек (textbox + ComboBox адаптера)
+                        if (App.settingsForm != null && App.settingsForm.IsHandleCreated && !App.settingsForm.IsDisposed)
+                        {
                             try
                             {
-                                App.settingsForm?.Invoke((Action)(() =>
+                                App.settingsForm.Invoke((Action)(() =>
                                 {
+                                    // Обновляем LocalIP textbox
                                     if (App.settingsForm.local_ip_textbox.Text != autoDetectedIP)
                                     {
                                         App.settingsForm.local_ip_textbox.Text = autoDetectedIP;
                                     }
+                                    
+                                    // Синхронизируем ComboBox с текущим IP
+                                    if (App.settingsForm.adapters_list != null && App.settingsForm.adapters_list.Items.Count > 0)
+                                    {
+                                        Debug.Print($"[AutoDetect] Syncing adapter ComboBox for IP: {autoDetectedIP}");
+                                        var adapters = App.GetAdapters();
+                                        
+                                        for (int i = 0; i < adapters.Count; i++)
+                                        {
+                                            string adapterIP = App.GetAdapterAddress(adapters[i]);
+                                            if (adapterIP == autoDetectedIP && App.settingsForm.adapters_list.SelectedIndex != i)
+                                            {
+                                                Debug.Print($"[AutoDetect] Updating ComboBox: {App.settingsForm.adapters_list.SelectedIndex} -> {i} ({autoDetectedIP})");
+                                                
+                                                App.settingsForm.IsUpdatingAdapter = true;
+                                                try
+                                                {
+                                                    App.settingsForm.adapters_list.SelectedIndex = i;
+                                                }
+                                                finally
+                                                {
+                                                    App.settingsForm.IsUpdatingAdapter = false;
+                                                }
+                                                break;
+                                            }
+                                        }
+                                    }
                                 }));
                             }
-                            catch (Exception) { }
+                            catch (InvalidOperationException ex)
+                            {
+                                Debug.Print($"[AutoDetect] Cannot update settings form UI: {ex.Message}");
+                            }
                         }
                     }
                 }

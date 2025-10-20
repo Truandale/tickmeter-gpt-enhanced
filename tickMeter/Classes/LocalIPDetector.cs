@@ -15,7 +15,9 @@ namespace tickMeter.Classes
     {
         private static string _lastDetectedIP = string.Empty;
         private static DateTime _lastDetectionTime = DateTime.MinValue;
+        private static string _lastProcessName = string.Empty;
         private static readonly TimeSpan DetectionCooldown = TimeSpan.FromSeconds(5); // Не обновлять чаще раз в 5 секунд
+        private static readonly TimeSpan PeriodicCheckInterval = TimeSpan.FromSeconds(30); // Периодическая проверка для одного процесса
         
         /// <summary>
         /// Определяет оптимальный локальный IP для текущего активного процесса
@@ -26,12 +28,23 @@ namespace tickMeter.Classes
         {
             try
             {
+                bool isSameProcess = !string.IsNullOrEmpty(processName) && 
+                                    processName == _lastProcessName;
+                
                 // Защита от слишком частых вызовов
+                // Для ТОГО ЖЕ процесса: проверяем по PeriodicCheckInterval (30 сек)
+                // Для РАЗНЫХ процессов: проверяем по DetectionCooldown (5 сек)
+                TimeSpan checkInterval = isSameProcess ? PeriodicCheckInterval : DetectionCooldown;
+                
                 if (!string.IsNullOrEmpty(_lastDetectedIP) && 
-                    (DateTime.Now - _lastDetectionTime) < DetectionCooldown)
+                    isSameProcess &&
+                    (DateTime.Now - _lastDetectionTime) < checkInterval)
                 {
+                    Debug.WriteLine($"[LocalIPDetector] Using cached IP for same process '{processName}': {_lastDetectedIP} (last check: {(DateTime.Now - _lastDetectionTime).TotalSeconds:F1}s ago)");
                     return _lastDetectedIP;
                 }
+                
+                Debug.WriteLine($"[LocalIPDetector] Starting IP detection for process '{processName}' (same process: {isSameProcess})");
                 
                 string detectedIP = null;
                 
@@ -42,7 +55,7 @@ namespace tickMeter.Classes
                     if (!string.IsNullOrEmpty(detectedIP))
                     {
                         Debug.WriteLine($"[LocalIPDetector] Определен IP по соединениям процесса {processName}: {detectedIP}");
-                        UpdateCache(detectedIP);
+                        UpdateCache(detectedIP, processName);
                         return detectedIP;
                     }
                 }
@@ -52,7 +65,7 @@ namespace tickMeter.Classes
                 if (!string.IsNullOrEmpty(detectedIP))
                 {
                     Debug.WriteLine($"[LocalIPDetector] Определен IP по всем активным соединениям: {detectedIP}");
-                    UpdateCache(detectedIP);
+                    UpdateCache(detectedIP, processName);
                     return detectedIP;
                 }
                 
@@ -61,7 +74,7 @@ namespace tickMeter.Classes
                 if (!string.IsNullOrEmpty(detectedIP))
                 {
                     Debug.WriteLine($"[LocalIPDetector] Определен IP по активному адаптеру: {detectedIP}");
-                    UpdateCache(detectedIP);
+                    UpdateCache(detectedIP, processName);
                     return detectedIP;
                 }
                 
@@ -289,10 +302,11 @@ namespace tickMeter.Classes
         /// <summary>
         /// Обновляет кэш определенного IP
         /// </summary>
-        private static void UpdateCache(string ip)
+        private static void UpdateCache(string ip, string processName = null)
         {
             _lastDetectedIP = ip;
             _lastDetectionTime = DateTime.Now;
+            _lastProcessName = processName ?? string.Empty;
         }
         
         /// <summary>
@@ -302,6 +316,7 @@ namespace tickMeter.Classes
         {
             _lastDetectedIP = string.Empty;
             _lastDetectionTime = DateTime.MinValue;
+            _lastProcessName = string.Empty;
             Debug.WriteLine("[LocalIPDetector] Кэш сброшен");
         }
         
