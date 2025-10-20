@@ -984,6 +984,8 @@ namespace tickMeter.Forms
 
         private void updateMetherStateFromActiveWindow()
         {
+            string previousProcessName = App.meterState.Game;
+            
             if(!isValidToTrack(targetKey))
             {
                 try
@@ -1051,6 +1053,65 @@ namespace tickMeter.Forms
                             System.Diagnostics.Debug.Print($"[updateMetherStateFromActiveWindow] Error adding ticktime to spike detector: {ex.Message}");
                         }
                         App.meterState.CurrentTimestamp = DateTime.Now;
+                        
+                        // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Проверяем смену активного процесса
+                        string currentProcessName = procStats.name;
+                        bool processChanged = !string.IsNullOrEmpty(previousProcessName) && 
+                                             previousProcessName != currentProcessName;
+                        
+                        if (processChanged)
+                        {
+                            Debug.Print($"[updateMetherStateFromActiveWindow] Process changed: {previousProcessName} -> {currentProcessName}");
+                            
+                            // В режиме мультиадаптера переопределяем LocalIP для нового процесса
+                            bool captureAll = App.settingsManager?.GetOption("capture_all_adapters", "False", "ADVANCED") == "True";
+                            bool vpnBypassBasic = App.settingsManager?.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
+                            bool vpnBypassAdvanced = App.settingsManager?.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+                            
+                            if (captureAll || vpnBypassBasic || vpnBypassAdvanced)
+                            {
+                                try
+                                {
+                                    // Сбрасываем кэш и переопределяем IP для нового процесса
+                                    Classes.LocalIPDetector.ResetCache();
+                                    string newLocalIP = Classes.LocalIPDetector.DetectLocalIPForActiveProcess(currentProcessName);
+                                    
+                                    if (!string.IsNullOrEmpty(newLocalIP) && newLocalIP != App.meterState.LocalIP)
+                                    {
+                                        Debug.Print($"[updateMetherStateFromActiveWindow] LocalIP changed: {App.meterState.LocalIP} -> {newLocalIP}");
+                                        App.meterState.LocalIP = newLocalIP;
+                                        
+                                        // Обновляем UI (но не вызываем TextChanged event)
+                                        if (App.settingsForm?.local_ip_textbox != null && 
+                                            App.settingsForm.local_ip_textbox.Text != newLocalIP)
+                                        {
+                                            try
+                                            {
+                                                App.settingsForm.Invoke((Action)(() =>
+                                                {
+                                                    App.settingsForm.local_ip_textbox.Text = newLocalIP;
+                                                }));
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                Debug.Print($"[updateMetherStateFromActiveWindow] UI update error: {ex.Message}");
+                                            }
+                                        }
+                                        
+                                        Debug.Print($"[updateMetherStateFromActiveWindow] ✓ Successfully updated LocalIP for process '{currentProcessName}' to {newLocalIP}");
+                                    }
+                                    else if (string.IsNullOrEmpty(newLocalIP))
+                                    {
+                                        Debug.Print($"[updateMetherStateFromActiveWindow] WARNING: Could not auto-detect LocalIP for process '{currentProcessName}'");
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.Print($"[updateMetherStateFromActiveWindow] Error updating LocalIP: {ex.Message}");
+                                }
+                            }
+                        }
+                        
                         App.meterState.Game = procStats.name;
                         App.meterState.Server.Ip = procStats.remoteIp.ToString();
                         App.meterState.DownloadTraffic = procStats.downloaded;
