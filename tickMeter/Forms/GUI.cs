@@ -1088,18 +1088,18 @@ namespace tickMeter.Forms
                                 {
                                     Debug.Print($"[updateMetherStateFromActiveWindow] LocalIP changed: {App.meterState.LocalIP} -> {newLocalIP}");
                                     App.meterState.LocalIP = newLocalIP;
-                                    Debug.Print($"[updateMetherStateFromActiveWindow] LocalIP changed: {App.meterState.LocalIP} -> {newLocalIP}");
-                                    App.meterState.LocalIP = newLocalIP;
                                     
                                     // Диагностика состояния формы настроек
                                     Debug.Print($"[updateMetherStateFromActiveWindow] SettingsForm state: IsNull={App.settingsForm == null}, IsHandleCreated={App.settingsForm?.IsHandleCreated}, IsDisposed={App.settingsForm?.IsDisposed}");
                                     
-                                    // Обновляем UI (textbox и ComboBox адаптера)
+                                    // Обновляем UI (textbox и ComboBox адаптера) АСИНХРОННО
                                     if (App.settingsForm != null && App.settingsForm.IsHandleCreated && !App.settingsForm.IsDisposed)
                                     {
                                         try
                                         {
-                                            App.settingsForm.Invoke((Action)(() =>
+                                            // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: используем BeginInvoke вместо Invoke
+                                            // чтобы НЕ блокировать текущий поток
+                                            App.settingsForm.BeginInvoke((Action)(() =>
                                             {
                                                 // Обновляем textbox LocalIP
                                                 if (App.settingsForm.local_ip_textbox != null && 
@@ -1168,9 +1168,10 @@ namespace tickMeter.Forms
                                     Debug.Print($"[updateMetherStateFromActiveWindow] ✓ Successfully updated LocalIP for process '{currentProcessName}' to {newLocalIP}");
                                     
                                     // НОВОЕ: Автоматическое переключение адаптера при активном мониторинге
+                                    // ВАЖНО: запускаем в фоновом потоке чтобы не блокировать UI
                                     if (App.meterState.IsTracking)
                                     {
-                                        SwitchAdapterIfNeeded(newLocalIP);
+                                        Task.Run(() => SwitchAdapterIfNeeded(newLocalIP));
                                     }
                                 }
                                 else if (string.IsNullOrEmpty(newLocalIP))
@@ -1784,10 +1785,10 @@ namespace tickMeter.Forms
                     App.meterState.LocalIP = autoDetectedIP;
                     Debug.Print($"[StartTracking] Multi-adapter mode: Auto-detected LocalIP = {autoDetectedIP} for process {activeProcess}");
                     
-                    // Обновляем UI (но не вызываем TextChanged event)
+                    // Обновляем UI асинхронно (не блокируем текущий поток)
                     if (App.settingsForm.local_ip_textbox.Text != autoDetectedIP)
                     {
-                        App.settingsForm.Invoke((Action)(() =>
+                        App.settingsForm.BeginInvoke((Action)(() =>
                         {
                             App.settingsForm.local_ip_textbox.Text = autoDetectedIP;
                         }));
@@ -2177,7 +2178,9 @@ namespace tickMeter.Forms
                     
                     // Останавливаем старые workers
                     Debug.Print($"[SwitchAdapterIfNeeded] Stopping {_pcapWorkers.Count} old workers");
-                    var workersToStop = _pcapWorkers.ToList(); // Копируем список
+                    var workersToStop = _pcapWorkers.ToList(); // Копируем список для безопасной итерации
+                    
+                    // Сначала запрашиваем отмену всех workers
                     foreach (var worker in workersToStop)
                     {
                         if (worker != null && worker.IsBusy)
@@ -2186,14 +2189,26 @@ namespace tickMeter.Forms
                         }
                     }
                     
-                    // Ждем завершения workers (асинхронно, с таймаутом)
+                    // Ждем реального завершения workers БЕЗ блокировки UI
                     var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                    while (workersToStop.Any(w => w != null && w.IsBusy) && stopwatch.ElapsedMilliseconds < 500)
+                    int waitedMs = 0;
+                    int busyCount = workersToStop.Count(w => w != null && w.IsBusy);
+                    
+                    while (busyCount > 0 && waitedMs < 1000) // Увеличиваем таймаут до 1 секунды
                     {
-                        System.Threading.Thread.Sleep(10);
-                        System.Windows.Forms.Application.DoEvents(); // Предотвращаем зависание UI
+                        System.Threading.Thread.Sleep(50); // Увеличенный интервал
+                        waitedMs += 50;
+                        int newBusyCount = workersToStop.Count(w => w != null && w.IsBusy);
+                        if (newBusyCount != busyCount)
+                        {
+                            Debug.Print($"[SwitchAdapterIfNeeded] {newBusyCount} workers still busy ({busyCount - newBusyCount} stopped)");
+                            busyCount = newBusyCount;
+                        }
                     }
-                    Debug.Print($"[SwitchAdapterIfNeeded] Workers stopped in {stopwatch.ElapsedMilliseconds}ms");
+                    Debug.Print($"[SwitchAdapterIfNeeded] Workers stopped in {stopwatch.ElapsedMilliseconds}ms, {busyCount} still busy");
+                    
+                    // КРИТИЧЕСКИ: Очищаем список только ПОСЛЕ остановки всех workers
+                    _pcapWorkers.Clear();
                     
                     // Пересоздаем список адаптеров с новым приоритетом
                     _allSelectedAdapters.Clear();
@@ -2283,17 +2298,25 @@ namespace tickMeter.Forms
                         Debug.Print($"[SwitchAdapterIfNeeded] Stopping old single worker");
                         pcapWorker.CancelAsync();
                         
-                        // Ждем завершения с таймаутом
+                        // Ждем РЕАЛЬНОГО завершения с таймаутом БЕЗ блокировки UI
                         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                        while (pcapWorker.IsBusy && stopwatch.ElapsedMilliseconds < 500)
+                        int waitedMs = 0;
+                        while (pcapWorker.IsBusy && waitedMs < 1000) // Увеличиваем таймаут до 1 сек
                         {
-                            System.Threading.Thread.Sleep(10);
-                            System.Windows.Forms.Application.DoEvents();
+                            System.Threading.Thread.Sleep(50);
+                            waitedMs += 50;
                         }
-                        Debug.Print($"[SwitchAdapterIfNeeded] Worker stopped in {stopwatch.ElapsedMilliseconds}ms");
+                        
+                        bool stopped = !pcapWorker.IsBusy;
+                        Debug.Print($"[SwitchAdapterIfNeeded] Worker stopped in {stopwatch.ElapsedMilliseconds}ms, success={stopped}");
+                        
+                        if (!stopped)
+                        {
+                            Debug.Print($"[SwitchAdapterIfNeeded] ⚠ WARNING: Worker didn't stop in time, forcing restart anyway");
+                        }
                     }
                     
-                    // Запускаем новый worker
+                    // Запускаем новый worker ТОЛЬКО ПОСЛЕ остановки старого
                     Debug.Print($"[SwitchAdapterIfNeeded] Starting new single worker for {selectedAdapter.Name}");
                     InitPcapWorker();
                     
@@ -3041,7 +3064,11 @@ namespace tickMeter.Forms
         /// </summary>
         private void ProcessUIUpdates(object state)
         {
-            if (_uiProcessingActive || !InvokeRequired) return;
+            // Анти-реэнтерабельность
+            if (_uiProcessingActive) return;
+            
+            // Проверяем что форма готова принимать вызовы
+            if (this.IsDisposed || !this.IsHandleCreated) return;
             
             _uiProcessingActive = true;
             try
@@ -3057,13 +3084,21 @@ namespace tickMeter.Forms
                 if (updates.Count > 0)
                 {
                     // Выполняем все обновления в UI потоке одним блоком
-                    BeginInvoke(new Action(() => {
-                        foreach (var update in updates)
-                        {
-                            try { update?.Invoke(); }
-                            catch (Exception ex) { Debug.Print($"[UI] Update error: {ex.Message}"); }
-                        }
-                    }));
+                    try
+                    {
+                        BeginInvoke(new Action(() => {
+                            foreach (var update in updates)
+                            {
+                                try { update?.Invoke(); }
+                                catch (Exception ex) { Debug.Print($"[UI] Update error: {ex.Message}"); }
+                            }
+                        }));
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // Форма была закрыта/disposed во время BeginInvoke
+                        Debug.Print($"[UI] BeginInvoke failed - form disposed");
+                    }
                 }
             }
             catch (Exception ex)
