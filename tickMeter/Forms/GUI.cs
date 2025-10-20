@@ -75,6 +75,7 @@ namespace tickMeter.Forms
         // Анти-реэнтерабельность для StartTracking/StopTracking (предотвращение роста воркеров)
         private int _startTrackingBusy = 0;
         private int _stopTrackingBusy = 0;
+        private int _switchAdapterBusy = 0; // Защита от повторного переключения адаптера
         
         public Boolean allowClose = false;
         int restarts = 0;
@@ -2110,9 +2111,23 @@ namespace tickMeter.Forms
         /// </summary>
         private void SwitchAdapterIfNeeded(string newLocalIP)
         {
+            // Анти-реэнтерабельность: если уже идет переключение - выходим
+            if (Interlocked.Exchange(ref _switchAdapterBusy, 1) == 1)
+            {
+                Debug.Print("[SwitchAdapterIfNeeded] Already in progress, skipping");
+                return;
+            }
+            
             try
             {
                 Debug.Print($"[SwitchAdapterIfNeeded] Checking if adapter switch needed for IP: {newLocalIP}");
+                
+                // Проверяем что мониторинг активен
+                if (!App.meterState.IsTracking)
+                {
+                    Debug.Print($"[SwitchAdapterIfNeeded] Monitoring not active, skipping");
+                    return;
+                }
                 
                 // Получаем текущий адаптер захвата
                 string currentAdapterIP = selectedAdapter != null ? App.GetAdapterAddress(selectedAdapter) : null;
@@ -2162,7 +2177,8 @@ namespace tickMeter.Forms
                     
                     // Останавливаем старые workers
                     Debug.Print($"[SwitchAdapterIfNeeded] Stopping {_pcapWorkers.Count} old workers");
-                    foreach (var worker in _pcapWorkers)
+                    var workersToStop = _pcapWorkers.ToList(); // Копируем список
+                    foreach (var worker in workersToStop)
                     {
                         if (worker != null && worker.IsBusy)
                         {
@@ -2170,8 +2186,14 @@ namespace tickMeter.Forms
                         }
                     }
                     
-                    // Ждем немного для корректной остановки
-                    System.Threading.Thread.Sleep(100);
+                    // Ждем завершения workers (асинхронно, с таймаутом)
+                    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                    while (workersToStop.Any(w => w != null && w.IsBusy) && stopwatch.ElapsedMilliseconds < 500)
+                    {
+                        System.Threading.Thread.Sleep(10);
+                        System.Windows.Forms.Application.DoEvents(); // Предотвращаем зависание UI
+                    }
+                    Debug.Print($"[SwitchAdapterIfNeeded] Workers stopped in {stopwatch.ElapsedMilliseconds}ms");
                     
                     // Пересоздаем список адаптеров с новым приоритетом
                     _allSelectedAdapters.Clear();
@@ -2260,7 +2282,15 @@ namespace tickMeter.Forms
                     {
                         Debug.Print($"[SwitchAdapterIfNeeded] Stopping old single worker");
                         pcapWorker.CancelAsync();
-                        System.Threading.Thread.Sleep(100);
+                        
+                        // Ждем завершения с таймаутом
+                        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                        while (pcapWorker.IsBusy && stopwatch.ElapsedMilliseconds < 500)
+                        {
+                            System.Threading.Thread.Sleep(10);
+                            System.Windows.Forms.Application.DoEvents();
+                        }
+                        Debug.Print($"[SwitchAdapterIfNeeded] Worker stopped in {stopwatch.ElapsedMilliseconds}ms");
                     }
                     
                     // Запускаем новый worker
@@ -2275,6 +2305,13 @@ namespace tickMeter.Forms
             catch (Exception ex)
             {
                 Debug.Print($"[SwitchAdapterIfNeeded] ❌ Error: {ex.Message}");
+                Debug.Print($"[SwitchAdapterIfNeeded] Stack trace: {ex.StackTrace}");
+            }
+            finally
+            {
+                // Освобождаем блокировку
+                Interlocked.Exchange(ref _switchAdapterBusy, 0);
+                Debug.Print($"[SwitchAdapterIfNeeded] Lock released");
             }
         }
 
