@@ -33,6 +33,7 @@ namespace tickMeter
 
         private System.Timers.Timer MngrTimer;
         private bool _isFastMode = false;
+    private readonly SemaphoreSlim _refreshGate = new SemaphoreSlim(1, 1);
 
 
         private void SetConnectionsManagerTimer()
@@ -55,95 +56,139 @@ namespace tickMeter
 
         private async void MngrTimerTick(Object source, System.Timers.ElapsedEventArgs e)
         {
-            await Task.Run(() =>
-            {
-                lock (_processInfoLock)
-                {
-                    ProcessInfoList = Process.GetProcesses();
-                }
-
-                lock (_tcpLock)
-                {
-                    TcpActiveConnections = GetAllTcpConnections();
-                }
-
-                lock (_udpLock)
-                {
-                    UdpActiveConnections = GetAllUdpConnections();
-                }
-
-                Process[] proccArray;
-
-                lock (_tcpLock)
-                {
-                    var tcpConnectionsCopy = TcpActiveConnections.ToList();
-                
-                    foreach (var record in tcpConnectionsCopy)
-                    {
-                        lock (_processInfoLock)
-                        {
-                            proccArray = ProcessInfoList.Where(process => record.ProcessId == process.Id).ToArray();
-                        }
-
-                        if (proccArray.Length > 0)
-                        {
-                            record.ProcessName = proccArray.First().ProcessName;
-                        }
-                        else
-                        {
-                            List<ETW.ProcessNetworkData> processList;
-                            lock (ETW.processes)
-                            {
-                                processList = ETW.processes.Values.ToList();
-                            }
-                            // Исправлено: убран .Value, т.к. processList - это List<ETW.ProcessNetworkData>
-                            ETW.ProcessNetworkData procData = processList.Where(processData => record.ProcessId == processData.pId).FirstOrDefault();
-                            if (procData != null)
-                            {
-                                record.ProcessName = procData.pName;
-                            }
-                        }
-                    }
-                }
-
-                lock (_udpLock)
-                {
-                    var udpConnectionsCopy = UdpActiveConnections.ToList();
-                
-                    foreach (var record in udpConnectionsCopy)
-                    {
-                        lock (_processInfoLock)
-                        {
-                            proccArray = ProcessInfoList.Where(process => record.ProcessId == process.Id).ToArray();
-                        }
-
-                        if (proccArray.Length > 0)
-                        {
-                            record.ProcessName = proccArray.First().ProcessName;
-                        }
-                        else
-                        {
-                            List<ETW.ProcessNetworkData> processList;
-                            lock (ETW.processes)
-                            {
-                                processList = ETW.processes.Values.ToList();
-                            }
-                            // Исправлено: убран .Value, т.к. processList - это List<ETW.ProcessNetworkData>
-                            ETW.ProcessNetworkData procData = processList.Where(processData => record.ProcessId == processData.pId).FirstOrDefault();
-                            if (procData != null)
-                            {
-                                record.ProcessName = procData.pName;
-                            }
-                        }
-                    }
-                }
-            });
+            await RefreshConnectionsAsync(waitForGate: false);
         }
 
         public ConnectionsManager(int timerInt = 5000)
         {
             timerInterval = timerInt;
             SetConnectionsManagerTimer();
+        }
+
+        private void RefreshConnectionsCore()
+        {
+            Process[] processSnapshot;
+            lock (_processInfoLock)
+            {
+                ProcessInfoList = Process.GetProcesses();
+                processSnapshot = ProcessInfoList;
+            }
+
+            var tcpRecords = GetAllTcpConnections();
+            var udpRecords = GetAllUdpConnections();
+
+            lock (_tcpLock)
+            {
+                TcpActiveConnections = tcpRecords;
+            }
+
+            lock (_udpLock)
+            {
+                UdpActiveConnections = udpRecords;
+            }
+
+            List<TcpProcessRecord> tcpConnectionsCopy;
+            lock (_tcpLock)
+            {
+                tcpConnectionsCopy = TcpActiveConnections.ToList();
+            }
+
+            foreach (var record in tcpConnectionsCopy)
+            {
+                var procArray = processSnapshot.Where(process => record.ProcessId == process.Id).ToArray();
+
+                if (procArray.Length > 0)
+                {
+                    record.ProcessName = procArray.First().ProcessName;
+                }
+                else
+                {
+                    List<ETW.ProcessNetworkData> processList;
+                    lock (ETW.processes)
+                    {
+                        processList = ETW.processes.Values.ToList();
+                    }
+                    ETW.ProcessNetworkData procData = processList.FirstOrDefault(processData => record.ProcessId == processData.pId);
+                    if (procData != null)
+                    {
+                        record.ProcessName = procData.pName;
+                    }
+                }
+            }
+
+            List<UdpProcessRecord> udpConnectionsCopy;
+            lock (_udpLock)
+            {
+                udpConnectionsCopy = UdpActiveConnections.ToList();
+            }
+
+            foreach (var record in udpConnectionsCopy)
+            {
+                var procArray = processSnapshot.Where(process => record.ProcessId == process.Id).ToArray();
+
+                if (procArray.Length > 0)
+                {
+                    record.ProcessName = procArray.First().ProcessName;
+                }
+                else
+                {
+                    List<ETW.ProcessNetworkData> processList;
+                    lock (ETW.processes)
+                    {
+                        processList = ETW.processes.Values.ToList();
+                    }
+                    ETW.ProcessNetworkData procData = processList.FirstOrDefault(processData => record.ProcessId == processData.pId);
+                    if (procData != null)
+                    {
+                        record.ProcessName = procData.pName;
+                    }
+                }
+            }
+        }
+
+        private async Task RefreshConnectionsAsync(bool waitForGate)
+        {
+            bool lockTaken = false;
+            try
+            {
+                if (waitForGate)
+                {
+                    await _refreshGate.WaitAsync();
+                    lockTaken = true;
+                }
+                else
+                {
+                    if (!await _refreshGate.WaitAsync(0))
+                    {
+                        return;
+                    }
+                    lockTaken = true;
+                }
+
+                await Task.Run(() =>
+                {
+                    try
+                    {
+                        RefreshConnectionsCore();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Print($"[ConnectionsManager] Refresh error: {ex.Message}");
+                    }
+                });
+            }
+            finally
+            {
+                if (lockTaken)
+                {
+                    _refreshGate.Release();
+                }
+            }
+        }
+
+        public Task ForceImmediateRefreshAsync(bool waitForGate = true)
+        {
+            return RefreshConnectionsAsync(waitForGate);
         }
 
         /// <summary>

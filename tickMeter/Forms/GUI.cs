@@ -95,6 +95,16 @@ namespace tickMeter.Forms
         private TimeSpan _searchCooldown = TimeSpan.FromSeconds(1); // Обычный режим
         private bool _metricsActive = false;
         private int _fastStartCounter = 0; // Счетчик проверок в режиме быстрого старта
+    // Для предотвращения флапа при быстром переключении окон
+    private int _invalidTargetCount = 0; // Требуется 2 подряд невалидных проверки чтобы деактивировать
+    // Отслеживание времени включения быстрого режима ConnectionsManager
+    private DateTime _fastModeEnabledAt = DateTime.MinValue;
+    // Stopwatch для измерения времени поиска соединения при fast start
+    private Stopwatch _searchStopwatch = new Stopwatch();
+    private DateTime _lastConnRefreshRequest = DateTime.MinValue;
+    private static readonly TimeSpan ConnectionRefreshCooldown = TimeSpan.FromMilliseconds(350);
+    private DateTime _lastMetricsApplied = DateTime.MinValue;
+    private DateTime _lastPeriodicConnRefresh = DateTime.MinValue;
         
         // Флаги для предотвращения рекурсии в событиях формы
         private bool _isResizing = false;
@@ -577,6 +587,16 @@ namespace tickMeter.Forms
             //form overlay isn't visible, but still update ping data for both GUI and RTSS
             bool refreshWhileHidden = App.settingsManager.GetOption("ui_refresh_hidden", "False", "SETTINGS") == "True";
             bool skipGUIUpdate = !OnScreen && !refreshWhileHidden;
+
+            if (App.connMngr != null)
+            {
+                var periodicNow = DateTime.Now;
+                if ((periodicNow - _lastPeriodicConnRefresh) > TimeSpan.FromSeconds(30))
+                {
+                    RequestConnectionsRefresh(false);
+                    _lastPeriodicConnRefresh = periodicNow;
+                }
+            }
 
             // === ChatGPT ENHANCED: Snapshot-based unified zoning ===
             // Use SAME snapshot as RTSS for perfect consistency
@@ -1136,6 +1156,32 @@ namespace tickMeter.Forms
             string previousProcessName = App.meterState.Game;
             string currentActiveProcess = AutoDetectMngr.GetActiveProcessName();
             
+            // Обновляем Game сразу чтобы отражать текущий активный процесс
+            // Даже если метрики еще не найдены
+            if (currentActiveProcess != previousProcessName)
+            {
+                App.meterState.Game = currentActiveProcess;
+            }
+            
+            if (_metricsActive && _lastMetricsApplied != DateTime.MinValue)
+            {
+                TimeSpan idleDuration = DateTime.Now - _lastMetricsApplied;
+                if (idleDuration > TimeSpan.FromSeconds(10))
+                {
+                    Debug.Print($"[Metrics] ⚠️ Metrics idle for {idleDuration.TotalSeconds:F1}s, forcing re-sync");
+                    _metricsActive = false;
+                    _invalidTargetCount = 0;
+                    _searchCooldown = TimeSpan.FromMilliseconds(100);
+                    _fastStartCounter = 0;
+                    _lastConnectionSearch = DateTime.MinValue;
+                    _lastMetricsApplied = DateTime.MinValue;
+                    App.connMngr?.SetFastMode(true);
+                    _fastModeEnabledAt = DateTime.Now;
+                    RequestConnectionsRefresh(true);
+                    try { ActiveWindowTracker.ClearConnectionStats(); } catch { }
+                }
+            }
+
             // === ПРОВЕРКА СМЕНЫ АКТИВНОГО ОКНА/ПРОЦЕССА ===
             // КРИТИЧНО: Проверяем ДО любых других проверок!
             if (!string.IsNullOrEmpty(previousProcessName) && 
@@ -1146,12 +1192,48 @@ namespace tickMeter.Forms
                 // ВСЕГДА сбрасываем состояние при смене процесса
                 _metricsActive = false;
                 _searchCooldown = TimeSpan.FromMilliseconds(100); // Ультрабыстрый режим для первых попыток
-                _fastStartCounter = 0;
+                _fastStartCounter = 0; // КРИТИЧНО: сброс счетчика при каждой смене окна!
                 _lastConnectionSearch = DateTime.MinValue; // Сброс cooldown для немедленного поиска
                 targetKey = ""; // Сбрасываем текущее соединение
                 
+                // Очищаем старые соединения из словаря для нового процесса
+                try
+                {
+                    lock(ActiveWindowTracker.connectionsLock)
+                    {
+                        // Удаляем соединения для старого процесса чтобы не мешали
+                        var keysToRemove = new List<string>();
+                        foreach(var kvp in ActiveWindowTracker.connections)
+                        {
+                            if (kvp.Value.name == previousProcessName)
+                            {
+                                keysToRemove.Add(kvp.Key);
+                            }
+                        }
+                        
+                        foreach(var key in keysToRemove)
+                        {
+                            ActiveWindowTracker.connections.Remove(key);
+                        }
+                        
+                        if (keysToRemove.Count > 0)
+                        {
+                            Debug.Print($"[Metrics] Cleaned {keysToRemove.Count} old connections for '{previousProcessName}'");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.Print($"[Metrics] Error cleaning old connections: {ex.Message}");
+                }
+                // Полный сброс connection stats на смене процесса
+                try { ActiveWindowTracker.ClearConnectionStats(); } catch { }
+                
                 // Активируем быстрый режим ConnectionsManager для быстрого обнаружения новых соединений
                 App.connMngr?.SetFastMode(true);
+                _fastModeEnabledAt = DateTime.Now;
+                _searchStopwatch.Restart();
+                RequestConnectionsRefresh(true);
                 
                 Debug.Print($"[Metrics] ⚡ Fast start activated for new window: {currentActiveProcess}");
             }
@@ -1171,17 +1253,56 @@ namespace tickMeter.Forms
             {
                 // Метрики не идут ИЛИ targetKey невалиден
                 
-                // Если метрики были активны, но targetKey невалиден - деактивируем для активного поиска
+                // Если метрики были активны, но targetKey невалиден - применяем HYSTERESIS
                 if (_metricsActive && !string.IsNullOrEmpty(targetKey))
                 {
-                    Debug.Print($"[Metrics] ⚠️ TargetKey '{targetKey}' became invalid, deactivating metrics");
+                    _invalidTargetCount++;
+                    Debug.Print($"[Metrics] ⚠️ TargetKey '{targetKey}' invalid. InvalidCount={_invalidTargetCount}/2");
+
+                    // На первой невалидной проверке просто триггерим немедленный поиск, но не деактивируем метрики
+                    if (_invalidTargetCount < 2)
+                    {
+                        _lastConnectionSearch = DateTime.MinValue; // Бросаем немедленный поиск
+                        App.connMngr?.SetFastMode(true);
+                        _fastModeEnabledAt = DateTime.Now;
+                        return; // ждем следующей итерации, возможно это временный флап
+                    }
+
+                    // Два раза подряд — деактивируем и очищаем связанные данные
+                    Debug.Print($"[Metrics] ⚠️ TargetKey '{targetKey}' invalid twice, deactivating metrics and clearing caches");
+                    _invalidTargetCount = 0;
                     _metricsActive = false;
                     _searchCooldown = TimeSpan.FromMilliseconds(100); // Ультрабыстрый режим
                     _fastStartCounter = 0;
                     _lastConnectionSearch = DateTime.MinValue; // Немедленный поиск!
-                    
+                    _lastMetricsApplied = DateTime.MinValue;
+
                     // Включаем быстрый режим ConnectionsManager
                     App.connMngr?.SetFastMode(true);
+                    _fastModeEnabledAt = DateTime.Now;
+                    _searchStopwatch.Restart();
+                    RequestConnectionsRefresh(true);
+
+                    // Очищаем соединение targetKey из словаря - возможно оно помешало
+                    try
+                    {
+                        lock(ActiveWindowTracker.connectionsLock)
+                        {
+                            if (!string.IsNullOrEmpty(targetKey) && ActiveWindowTracker.connections.ContainsKey(targetKey))
+                            {
+                                ActiveWindowTracker.connections.Remove(targetKey);
+                                Debug.Print($"[Metrics] Removed stale targetKey entry: {targetKey}");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Print($"[Metrics] Error removing stale targetKey: {ex.Message}");
+                    }
+                        
+                        // Также очищаем все connection stats чтобы гарантировать свежий поиск
+                        try { ActiveWindowTracker.ClearConnectionStats(); } catch { }
+                    
                 }
                 
                 // Проверяем cooldown для поиска соединений
@@ -1191,6 +1312,17 @@ namespace tickMeter.Forms
                 {
                     // Слишком рано для повторного поиска
                     Debug.Print($"[Metrics] Cooldown active, waiting {(_searchCooldown - timeSinceLastSearch).TotalMilliseconds:F0}ms");
+                    // Но перед возвратом проверим, не включён ли fast mode слишком долго
+                    try
+                    {
+                        if (App.connMngr != null && _fastModeEnabledAt != DateTime.MinValue && (DateTime.Now - _fastModeEnabledAt) > TimeSpan.FromSeconds(12))
+                        {
+                            App.connMngr.SetFastMode(false);
+                            _fastModeEnabledAt = DateTime.MinValue;
+                            Debug.Print("[ConnectionsManager] Fast mode auto-disabled after 12s watchdog");
+                        }
+                    }
+                    catch { }
                     return;
                 }
                 
@@ -1199,6 +1331,11 @@ namespace tickMeter.Forms
                 // Если метрики не активны - включаем режим быстрого старта
                 if (!_metricsActive)
                 {
+                    if (!_searchStopwatch.IsRunning)
+                    {
+                        _searchStopwatch.Restart();
+                    }
+
                     // Градиентный cooldown для максимальной скорости:
                     // - Первые 10 попыток: 100ms (ультрабыстрый режим)
                     // - Следующие 40 попыток: 200ms (быстрый режим)
@@ -1219,13 +1356,48 @@ namespace tickMeter.Forms
                     _fastStartCounter++;
                     Debug.Print($"[Metrics] ⚡ Fast start mode: check #{_fastStartCounter}, cooldown={_searchCooldown.TotalMilliseconds}ms");
                     
+                    if (_fastStartCounter == 1)
+                    {
+                        RequestConnectionsRefresh(false);
+                    }
+                    else if (_fastStartCounter % 5 == 0)
+                    {
+                        RequestConnectionsRefresh(false);
+                    }
+
                     if (_fastStartCounter == 10)
                     {
                         Debug.Print($"[Metrics] ⚡ Ultra-fast phase complete (1 sec), switching to fast mode");
                     }
-                    else if (_fastStartCounter > 50)
+                    else if (_fastStartCounter == 50)
                     {
                         Debug.Print($"[Metrics] Fast start timeout (10 sec), switching to normal mode");
+                    }
+                    else if (_fastStartCounter > 100)
+                    {
+                        // Если уже 100+ попыток (20+ секунд) и ничего не нашли - возможно застряли
+                        // Сбрасываем состояние и очищаем старые соединения
+                        Debug.Print($"[Metrics] ⚠️ Too many search attempts ({_fastStartCounter}), resetting state");
+                        _fastStartCounter = 0;
+                        targetKey = "";
+                        
+                        // Очищаем все старые соединения - возможно там накопился мусор
+                        try
+                        {
+                            lock(ActiveWindowTracker.connectionsLock)
+                            {
+                                int oldCount = ActiveWindowTracker.connections.Count;
+                                ActiveWindowTracker.connections.Clear();
+                                Debug.Print($"[Metrics] Cleared {oldCount} stale connections");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.Print($"[Metrics] Error clearing connections: {ex.Message}");
+                        }
+                        
+                        // После массовой очистки - убедимся что и спустили глобальную статистику
+                        try { ActiveWindowTracker.ClearConnectionStats(); } catch { }
                     }
                 }
             } // Закрываем блок else
@@ -1261,6 +1433,13 @@ namespace tickMeter.Forms
                     {
                         Debug.Print($"[Metrics] ❌ No valid connections found!");
                         LogConnectionsDebugInfo(); // Детальная диагностика
+
+                        RequestConnectionsRefresh(false);
+                        if (_searchStopwatch.IsRunning && _searchStopwatch.ElapsedMilliseconds > 2000)
+                        {
+                            RequestConnectionsRefresh(true);
+                            _searchStopwatch.Restart();
+                        }
                         
                         // Сбрасываем targetKey если ничего не найдено
                         if (!string.IsNullOrEmpty(targetKey))
@@ -1284,6 +1463,8 @@ namespace tickMeter.Forms
                 // Нашли соединение - активируем метрики и переходим в нормальный режим
                 if (!_metricsActive)
                 {
+                        // Останавливаем таймер поиска и логируем время
+                        try { if (_searchStopwatch.IsRunning) { _searchStopwatch.Stop(); Debug.Print($"[Metrics] ⚡ FOUND in {_searchStopwatch.ElapsedMilliseconds}ms"); } } catch { }
                     _metricsActive = true;
                     _searchCooldown = TimeSpan.FromSeconds(1);
                     _fastStartCounter = 0;
@@ -1303,6 +1484,7 @@ namespace tickMeter.Forms
                     
                     // Включаем быстрый режим ConnectionsManager для поиска нового соединения
                     App.connMngr?.SetFastMode(true);
+                    _lastMetricsApplied = DateTime.MinValue;
                     
                     Debug.Print($"[Metrics] ⚠️ Metrics deactivated - connection lost, activating fast search");
                 }
@@ -1359,6 +1541,7 @@ namespace tickMeter.Forms
                             _searchCooldown = TimeSpan.FromMilliseconds(200); // Быстрый режим
                             _fastStartCounter = 0;
                             targetKey = ""; // Сбрасываем текущее соединение
+                            _lastMetricsApplied = DateTime.MinValue;
                             
                             Debug.Print($"[Metrics] ⚡ Fast start activated for new process");
                         }
@@ -1515,6 +1698,7 @@ namespace tickMeter.Forms
                         App.meterState.IsTracking = true;
                         App.meterState.loss = procStats.loss;
                         App.meterState.totalTicksCnt = procStats.totalTicksCnt;
+                        _lastMetricsApplied = DateTime.Now;
                     }
                 }
                 catch (InvalidOperationException)
@@ -3422,6 +3606,32 @@ namespace tickMeter.Forms
             if (updateAction != null)
             {
                 _uiUpdateQueue.Enqueue(updateAction);
+            }
+        }
+
+        private void RequestConnectionsRefresh(bool highPriority)
+        {
+            if (App.connMngr == null)
+            {
+                return;
+            }
+
+            DateTime now = DateTime.Now;
+            if (!highPriority && (now - _lastConnRefreshRequest) < ConnectionRefreshCooldown)
+            {
+                return;
+            }
+
+            _lastConnRefreshRequest = now;
+
+            try
+            {
+                _ = App.connMngr.ForceImmediateRefreshAsync(highPriority);
+                Debug.Print($"[ConnectionsManager] Refresh requested (highPriority={highPriority})");
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[ConnectionsManager] Refresh request failed: {ex.Message}");
             }
         }
         
