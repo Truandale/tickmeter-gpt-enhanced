@@ -90,6 +90,12 @@ namespace tickMeter.Forms
         public string targetKey = "";
         private int _gcCounter = 0; // Счётчик для периодической сборки мусора
         
+        // Механизм быстрого старта для ускорения обнаружения метрик
+        private DateTime _lastConnectionSearch = DateTime.MinValue;
+        private TimeSpan _searchCooldown = TimeSpan.FromSeconds(1); // Обычный режим
+        private bool _metricsActive = false;
+        private int _fastStartCounter = 0; // Счетчик проверок в режиме быстрого старта
+        
         // Флаги для предотвращения рекурсии в событиях формы
         private bool _isResizing = false;
         private bool _isRestoring = false;
@@ -957,7 +963,7 @@ namespace tickMeter.Forms
             }
         }
 
-        private bool isValidToTrack(string key)
+        private bool isValidToTrack(string key, bool strict = true)
         {
             if(string.IsNullOrEmpty(key)) return false;
             
@@ -968,54 +974,274 @@ namespace tickMeter.Forms
                     if(!ActiveWindowTracker.connections.ContainsKey(key)) return false;
                     
                     ProcessNetworkStats connection = ActiveWindowTracker.connections[key];
-                    return
-                        AutoDetectMngr.GetActiveProcessName() == connection.name
-                        && connection.TrackingDelta() > 3
-                        && connection.LastUpdateDelta() < 2
-                        && connection.remoteIp != App.meterState.LocalIP
-                        && connection.ticksIn > 3
-                        && connection.downloaded > 0;
+                    
+                    // ОБЯЗАТЕЛЬНЫЕ условия (всегда проверяем):
+                    bool nameMatches = AutoDetectMngr.GetActiveProcessName() == connection.name;
+                    bool notLocalIP = string.IsNullOrEmpty(App.meterState.LocalIP) || connection.remoteIp != App.meterState.LocalIP;
+                    
+                    if (!nameMatches)
+                    {
+                        Debug.Print($"[isValidToTrack] {key}: Name mismatch. Expected: {AutoDetectMngr.GetActiveProcessName()}, Got: {connection.name}");
+                        return false;
+                    }
+                    
+                    if (!notLocalIP)
+                    {
+                        Debug.Print($"[isValidToTrack] {key}: Remote IP is local. RemoteIP: {connection.remoteIp}, LocalIP: {App.meterState.LocalIP}");
+                        return false;
+                    }
+                    
+                    // СТРОГИЙ режим (используется по умолчанию для стабильных соединений):
+                    if (strict)
+                    {
+                        bool result = connection.TrackingDelta() > 3
+                            && connection.LastUpdateDelta() < 2
+                            && connection.ticksIn > 3
+                            && connection.downloaded > 0;
+                        
+                        if (!result)
+                        {
+                            Debug.Print($"[isValidToTrack] {key}: Strict mode FAILED. " +
+                                $"TrackingDelta={connection.TrackingDelta():F1} (need >3), " +
+                                $"LastUpdate={connection.LastUpdateDelta():F1} (need <2), " +
+                                $"TicksIn={connection.ticksIn} (need >3), " +
+                                $"Downloaded={connection.downloaded} (need >0)");
+                        }
+                        
+                        return result;
+                    }
+                    
+                    // МЯГКИЙ режим (fallback для проблемных случаев):
+                    // Требуем хотя бы МИНИМАЛЬНУЮ активность
+                    bool hasAnyActivity = connection.ticksIn > 0 || connection.downloaded > 0 || connection.sent > 0;
+                    bool isRecent = connection.LastUpdateDelta() < 10; // Обновление за последние 10 сек
+                    bool isTracked = connection.TrackingDelta() > 0;   // Хоть какое-то время отслеживается
+                    
+                    bool result2 = isTracked && isRecent && hasAnyActivity;
+                    
+                    if (result2)
+                    {
+                        Debug.Print($"[isValidToTrack] {key}: ⚠️ Relaxed mode OK. " +
+                            $"TrackingDelta={connection.TrackingDelta():F1}, " +
+                            $"LastUpdate={connection.LastUpdateDelta():F1}, " +
+                            $"TicksIn={connection.ticksIn}, " +
+                            $"Downloaded={connection.downloaded}, " +
+                            $"Sent={connection.sent}");
+                    }
+                    else
+                    {
+                        Debug.Print($"[isValidToTrack] {key}: Relaxed mode FAILED. " +
+                            $"IsTracked={isTracked}, IsRecent={isRecent}, HasActivity={hasAnyActivity}");
+                    }
+                    
+                    return result2;
                 }
             }
-            catch (InvalidOperationException)
+            catch (InvalidOperationException ex)
             {
+                Debug.Print($"[isValidToTrack] Exception: {ex.Message}");
                 return false;
+            }
+        }
+
+        
+        /// <summary>
+        /// Находит лучшее соединение для отслеживания
+        /// </summary>
+        private string FindBestConnection(bool strict)
+        {
+            string bestConnection = "";
+            int bestTicks = 0;
+            
+            try
+            {
+                lock(ActiveWindowTracker.connectionsLock)
+                {
+                    foreach(var kvp in ActiveWindowTracker.connections)
+                    {
+                        if (kvp.Value.ticksIn > bestTicks && isValidToTrack(kvp.Key, strict))
+                        {
+                            bestTicks = kvp.Value.ticksIn;
+                            bestConnection = kvp.Key;
+                        }
+                    }
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                Debug.Print($"[FindBestConnection] Exception: {ex.Message}");
+            }
+            
+            return bestConnection;
+        }
+        
+        /// <summary>
+        /// Логирует информацию обо всех соединениях для диагностики
+        /// </summary>
+        private void LogConnectionsDebugInfo()
+        {
+            try
+            {
+                lock(ActiveWindowTracker.connectionsLock)
+                {
+                    Debug.Print($"[Metrics] === Connections Debug Info ===");
+                    Debug.Print($"[Metrics] Active process: {AutoDetectMngr.GetActiveProcessName()}");
+                    Debug.Print($"[Metrics] LocalIP: {App.meterState.LocalIP}");
+                    Debug.Print($"[Metrics] Total connections: {ActiveWindowTracker.connections.Count}");
+                    Debug.Print($"[Metrics] Current targetKey: '{targetKey}'");
+                    
+                    if (ActiveWindowTracker.connections.Count == 0)
+                    {
+                        Debug.Print($"[Metrics] ⚠️ NO CONNECTIONS AVAILABLE!");
+                    }
+                    
+                    foreach(var kvp in ActiveWindowTracker.connections)
+                    {
+                        var conn = kvp.Value;
+                        Debug.Print($"[Metrics] Connection: {kvp.Key}");
+                        Debug.Print($"  - Name: {conn.name}");
+                        Debug.Print($"  - RemoteIP: {conn.remoteIp}:{conn.remotePort}");
+                        Debug.Print($"  - TicksIn: {conn.ticksIn}");
+                        Debug.Print($"  - Downloaded: {conn.downloaded} bytes");
+                        Debug.Print($"  - Sent: {conn.sent} bytes");
+                        Debug.Print($"  - TrackingDelta: {conn.TrackingDelta():F1} sec");
+                        Debug.Print($"  - LastUpdateDelta: {conn.LastUpdateDelta():F1} sec");
+                        Debug.Print($"  - Matches name: {conn.name == AutoDetectMngr.GetActiveProcessName()}");
+                        Debug.Print($"  - Not local IP: {conn.remoteIp != App.meterState.LocalIP}");
+                    }
+                    Debug.Print($"[Metrics] ==============================");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[Metrics] Error logging connections: {ex.Message}");
             }
         }
 
         private void updateMetherStateFromActiveWindow()
         {
             string previousProcessName = App.meterState.Game;
+            string currentActiveProcess = AutoDetectMngr.GetActiveProcessName();
             
-            if(!isValidToTrack(targetKey))
+            // === ПРОВЕРКА СМЕНЫ АКТИВНОГО ОКНА/ПРОЦЕССА ===
+            // Если процесс изменился - активируем быстрый старт для нового процесса
+            if (!string.IsNullOrEmpty(previousProcessName) && 
+                previousProcessName != currentActiveProcess &&
+                _metricsActive)
             {
-                try
+                Debug.Print($"[Metrics] ⚡ ACTIVE WINDOW CHANGED: {previousProcessName} -> {currentActiveProcess}");
+                
+                // Сбрасываем состояние метрик для быстрого обнаружения нового процесса
+                _metricsActive = false;
+                _searchCooldown = TimeSpan.FromMilliseconds(200); // Быстрый режим
+                _fastStartCounter = 0;
+                targetKey = ""; // Сбрасываем текущее соединение
+                
+                Debug.Print($"[Metrics] ⚡ Fast start activated for new window: {currentActiveProcess}");
+            }
+            
+            // === МЕХАНИЗМ БЫСТРОГО СТАРТА ===
+            // Если метрики уже идут - быстрая проверка текущего соединения
+            if (_metricsActive && !string.IsNullOrEmpty(targetKey) && isValidToTrack(targetKey, strict: true))
+            {
+                // Быстрый путь - просто обновляем метрики без поиска
+                // (код обработки метрик выполнится ниже)
+            }
+            else
+            {
+                // Метрики не идут - проверяем cooldown для поиска соединений
+                TimeSpan timeSinceLastSearch = DateTime.Now - _lastConnectionSearch;
+                
+                if (timeSinceLastSearch < _searchCooldown)
                 {
-                    // Оптимизированный поиск без полного копирования словаря
-                    string bestConnection = "";
-                    int bestTicks = 0;
+                    // Слишком рано для повторного поиска
+                    return;
+                }
+                
+                _lastConnectionSearch = DateTime.Now;
+                
+                // Если метрики не активны - включаем режим быстрого старта
+                if (!_metricsActive)
+                {
+                    _searchCooldown = TimeSpan.FromMilliseconds(200); // Проверяем каждые 200ms!
+                    _fastStartCounter++;
+                    Debug.Print($"[Metrics] ⚡ Fast start mode: check #{_fastStartCounter}");
                     
-                    lock(ActiveWindowTracker.connectionsLock)
+                    // После 50 попыток (10 секунд) переходим на нормальную частоту
+                    if (_fastStartCounter > 50)
                     {
-                        foreach(var kvp in ActiveWindowTracker.connections)
-                        {
-                            if (kvp.Value.ticksIn > bestTicks && isValidToTrack(kvp.Key))
-                            {
-                                bestTicks = kvp.Value.ticksIn;
-                                bestConnection = kvp.Key;
-                            }
-                        }
+                        _searchCooldown = TimeSpan.FromSeconds(1);
+                        Debug.Print($"[Metrics] Fast start timeout, switching to normal mode");
                     }
+                }
+            } // Закрываем блок else
+            
+            // === ТРЕХУРОВНЕВАЯ СТРАТЕГИЯ ПОИСКА СОЕДИНЕНИЯ ===
+            
+            // УРОВЕНЬ 1: Проверяем текущий targetKey (строгий режим)
+            if(!isValidToTrack(targetKey, strict: true))
+            {
+                Debug.Print($"[Metrics] Current targetKey '{targetKey}' invalid (strict), searching for best connection...");
+                
+                // УРОВЕНЬ 2: Ищем лучшее соединение (строгий режим)
+                string bestConnection = FindBestConnection(strict: true);
+                
+                if (!string.IsNullOrEmpty(bestConnection))
+                {
+                    targetKey = bestConnection;
+                    Debug.Print($"[Metrics] ✓ Found strict match: {targetKey}");
+                }
+                else
+                {
+                    // УРОВЕНЬ 3: Fallback с мягкими условиями
+                    Debug.Print($"[Metrics] No strict match found, trying relaxed mode...");
+                    bestConnection = FindBestConnection(strict: false);
                     
                     if (!string.IsNullOrEmpty(bestConnection))
                     {
                         targetKey = bestConnection;
+                        Debug.Print($"[Metrics] ⚠️ Using relaxed match: {targetKey}");
+                    }
+                    else
+                    {
+                        Debug.Print($"[Metrics] ❌ No valid connections found!");
+                        LogConnectionsDebugInfo(); // Детальная диагностика
+                        
+                        // Сбрасываем targetKey если ничего не найдено
+                        if (!string.IsNullOrEmpty(targetKey))
+                        {
+                            targetKey = "";
+                            Debug.Print($"[Metrics] Reset targetKey to empty");
+                        }
+                        return;
                     }
                 }
-                catch (InvalidOperationException)
+            }
+            else
+            {
+                // targetKey валидный, используем его
+                Debug.Print($"[Metrics] Using valid targetKey: {targetKey}");
+            }
+            
+            // === АКТИВАЦИЯ МЕТРИК ===
+            if(!string.IsNullOrEmpty(targetKey))
+            {
+                // Нашли соединение - активируем метрики и переходим в нормальный режим
+                if (!_metricsActive)
                 {
-                    // Коллекция была изменена, пропускаем этот цикл
-                    return;
+                    _metricsActive = true;
+                    _searchCooldown = TimeSpan.FromSeconds(1);
+                    _fastStartCounter = 0;
+                    Debug.Print($"[Metrics] ✅ Metrics activated! Switching to normal mode (1 sec cooldown)");
+                }
+            }
+            else
+            {
+                // Соединение потеряно - деактивируем метрики
+                if (_metricsActive)
+                {
+                    _metricsActive = false;
+                    Debug.Print($"[Metrics] ⚠️ Metrics deactivated - connection lost");
                 }
             }
             
@@ -1059,6 +1285,20 @@ namespace tickMeter.Forms
                         string currentProcessName = procStats.name;
                         bool processChanged = !string.IsNullOrEmpty(previousProcessName) && 
                                              previousProcessName != currentProcessName;
+                        
+                        // === БЫСТРЫЙ СТАРТ ПРИ СМЕНЕ ПРОЦЕССА ===
+                        if (processChanged)
+                        {
+                            Debug.Print($"[Metrics] ⚡ Process changed: {previousProcessName} -> {currentProcessName}");
+                            
+                            // Сбрасываем состояние метрик для быстрого обнаружения нового процесса
+                            _metricsActive = false;
+                            _searchCooldown = TimeSpan.FromMilliseconds(200); // Быстрый режим
+                            _fastStartCounter = 0;
+                            targetKey = ""; // Сбрасываем текущее соединение
+                            
+                            Debug.Print($"[Metrics] ⚡ Fast start activated for new process");
+                        }
                         
                         // В режиме мультиадаптера переопределяем LocalIP 
                         // - При смене процесса (немедленно с ResetCache)
