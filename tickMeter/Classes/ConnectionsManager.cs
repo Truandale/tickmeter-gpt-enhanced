@@ -22,6 +22,9 @@ namespace tickMeter
         private const int AF_INET = 2;
         public const string dllFile = "iphlpapi.dll";
         public int timerInterval = 500;
+        private const int FAST_INTERVAL = 250;    // Быстрый режим для поиска метрик
+        private const int NORMAL_INTERVAL = 500;  // Нормальный режим когда метрики активны
+        
         public List<TcpProcessRecord> TcpActiveConnections = new List<TcpProcessRecord>();
 
         public List<UdpProcessRecord> UdpActiveConnections = new List<UdpProcessRecord>();
@@ -29,6 +32,7 @@ namespace tickMeter
         public Process[] ProcessInfoList;
 
         private System.Timers.Timer MngrTimer;
+        private bool _isFastMode = false;
 
 
         private void SetConnectionsManagerTimer()
@@ -140,6 +144,25 @@ namespace tickMeter
         {
             timerInterval = timerInt;
             SetConnectionsManagerTimer();
+        }
+
+        /// <summary>
+        /// Переключает ConnectionsManager в быстрый или нормальный режим обновления.
+        /// Быстрый режим (250ms) используется при поиске новых соединений.
+        /// Нормальный режим (500ms) используется когда метрики уже активны.
+        /// </summary>
+        public void SetFastMode(bool enabled)
+        {
+            if (_isFastMode == enabled) return; // Уже в нужном режиме
+            
+            _isFastMode = enabled;
+            
+            if (MngrTimer != null)
+            {
+                int newInterval = enabled ? FAST_INTERVAL : NORMAL_INTERVAL;
+                MngrTimer.Interval = newInterval;
+                Debug.Print($"[ConnectionsManager] ⚡ Mode switched: {(enabled ? "FAST" : "NORMAL")} ({newInterval}ms interval)");
+            }
         }
 
         [DllImport(dllFile, CharSet = CharSet.Auto, SetLastError = true)]
