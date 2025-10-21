@@ -27,6 +27,8 @@ namespace tickMeter.Classes
         // Настройки интервала и портов
         private int _pingInterval => _settingsManager.GetInt("ping_interval", 5000);
         private string _pingPorts => _settingsManager.GetString("ping_ports", "80,443");
+        private bool _keepAliveEnabled => _settingsManager.GetBool("ping_keepalive_enabled", true);
+        private string _keepAliveHosts => _settingsManager.GetString("ping_keepalive_hosts", "1.1.1.1,8.8.8.8");
         
         public event EventHandler<PingResultEventArgs> PingResultReceived;
         
@@ -93,22 +95,50 @@ namespace tickMeter.Classes
         private List<PingTarget> GetPingTargets()
         {
             var targets = new List<PingTarget>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            
+            void TryAddTarget(PingTarget target)
+            {
+                if (target == null || string.IsNullOrWhiteSpace(target.Address))
+                    return;
+                
+                var key = $"{target.Address}:{target.Port}";
+                if (seen.Add(key))
+                {
+                    targets.Add(target);
+                }
+            }
             
             if (_targetActiveOnly)
             {
-                // Получаем цели из активных соединений
-                targets.AddRange(GetActiveConnectionTargets());
+                foreach (var target in GetActiveConnectionTargets())
+                {
+                    TryAddTarget(target);
+                }
             }
             else
             {
-                // Используем текущий сервер из App.meterState
-                if (!string.IsNullOrEmpty(App.meterState.Server.Ip))
+                foreach (var target in GetServerTargets())
                 {
-                    var ports = ParsePorts(_pingPorts);
-                    foreach (var port in ports)
-                    {
-                        targets.Add(new PingTarget { Address = App.meterState.Server.Ip, Port = port });
-                    }
+                    TryAddTarget(target);
+                }
+            }
+            
+            // Фолбек: даже в режиме targetActiveOnly пробуем текущий сервер
+            if (targets.Count == 0)
+            {
+                foreach (var target in GetServerTargets())
+                {
+                    TryAddTarget(target);
+                }
+            }
+            
+            // Keep-alive: если целей всё ещё нет, используем запасные хосты
+            if (targets.Count == 0 && _keepAliveEnabled)
+            {
+                foreach (var target in GetKeepAliveTargets())
+                {
+                    TryAddTarget(target);
                 }
             }
             
@@ -135,21 +165,98 @@ namespace tickMeter.Classes
             
             // UDP соединения (используем только информацию о том, что процесс активен)
             // UDP не имеет удалённых адресов, поэтому пингуем текущий сервер
+            var serverIp = App.meterState?.Server?.Ip;
             if (_connectionsManager.UdpActiveConnections.Count > 0 && 
-                !string.IsNullOrEmpty(App.meterState.Server.Ip))
+                !string.IsNullOrEmpty(serverIp))
             {
                 var ports = ParsePorts(_pingPorts);
                 foreach (var port in ports)
                 {
                     targets.Add(new PingTarget 
                     { 
-                        Address = App.meterState.Server.Ip, 
+                        Address = serverIp, 
                         Port = port 
                     });
                 }
             }
             
             return targets;
+        }
+        
+        private IEnumerable<PingTarget> GetServerTargets()
+        {
+            var serverIp = App.meterState?.Server?.Ip;
+            if (string.IsNullOrWhiteSpace(serverIp))
+                yield break;
+            
+            foreach (var target in CreateTargets(serverIp, ParsePorts(_pingPorts)))
+            {
+                yield return target;
+            }
+        }
+        
+        private IEnumerable<PingTarget> GetKeepAliveTargets()
+        {
+            if (string.IsNullOrWhiteSpace(_keepAliveHosts))
+                yield break;
+            
+            var hosts = _keepAliveHosts.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var defaultPorts = ParsePorts(_pingPorts);
+            if (defaultPorts.Count == 0)
+            {
+                defaultPorts.Add(443); // разумный дефолт для TCP keep-alive
+            }
+            
+            foreach (var rawHost in hosts)
+            {
+                if (string.IsNullOrWhiteSpace(rawHost))
+                    continue;
+                
+                var entry = rawHost.Trim();
+                string address = entry;
+                List<int> portsOverride = null;
+                var colonIndex = entry.LastIndexOf(':');
+                if (colonIndex > 0 && colonIndex < entry.Length - 1)
+                {
+                    var portPart = entry.Substring(colonIndex + 1);
+                    if (int.TryParse(portPart, out var explicitPort) && explicitPort > 0 && explicitPort <= 65535)
+                    {
+                        address = entry.Substring(0, colonIndex);
+                        portsOverride = new List<int> { explicitPort };
+                    }
+                }
+                
+                var ports = portsOverride ?? defaultPorts;
+                foreach (var target in CreateTargets(address, ports))
+                {
+                    yield return target;
+                }
+            }
+        }
+        
+        private IEnumerable<PingTarget> CreateTargets(string address, List<int> ports)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+                yield break;
+            
+            if (ports == null || ports.Count == 0)
+            {
+                yield return new PingTarget
+                {
+                    Address = address,
+                    Port = 443
+                };
+                yield break;
+            }
+            
+            foreach (var port in ports)
+            {
+                yield return new PingTarget
+                {
+                    Address = address,
+                    Port = port
+                };
+            }
         }
         
         private async Task<PingResult> PingTargetAsync(PingTarget target)

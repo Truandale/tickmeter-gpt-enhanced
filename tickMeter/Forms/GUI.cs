@@ -18,6 +18,7 @@ using System.Net.Sockets;
 using System.Linq;
 using System.Reflection;
 using System.Collections.Concurrent;
+using Classes = tickMeter.Classes;
 
 namespace tickMeter.Forms
 {
@@ -71,6 +72,50 @@ namespace tickMeter.Forms
                 return DefaultNeutralActiveColor;
             }
         }
+
+        private void ScheduleCaptureRestart()
+        {
+            if (!IsHandleCreated || IsDisposed)
+            {
+                return;
+            }
+
+            if (DateTime.Now - _lastHardRestart < HardRestartCooldown)
+            {
+                Debug.Print("[Metrics] ⏱ Hard restart cooldown active, skipping");
+                return;
+            }
+
+            _lastHardRestart = DateTime.Now;
+
+            BeginInvoke(new Action(() =>
+            {
+                if (!IsHandleCreated || IsDisposed)
+                {
+                    return;
+                }
+
+                Debug.Print("[Metrics] 🔄 Performing capture restart");
+
+                try
+                {
+                    StopTracking();
+                }
+                catch (Exception ex)
+                {
+                    Debug.Print($"[Metrics] ❌ StopTracking failed: {ex.Message}");
+                }
+
+                try
+                {
+                    StartTracking();
+                }
+                catch (Exception ex)
+                {
+                    Debug.Print($"[Metrics] ❌ StartTracking failed: {ex.Message}");
+                }
+            }));
+        }
         
         // Анти-реэнтерабельность для StartTracking/StopTracking (предотвращение роста воркеров)
         private int _startTrackingBusy = 0;
@@ -105,6 +150,13 @@ namespace tickMeter.Forms
     private static readonly TimeSpan ConnectionRefreshCooldown = TimeSpan.FromMilliseconds(350);
     private DateTime _lastMetricsApplied = DateTime.MinValue;
     private DateTime _lastPeriodicConnRefresh = DateTime.MinValue;
+    private int _idleRecoveryAttempts = 0;
+    private DateTime _lastHardRestart = DateTime.MinValue;
+    private static readonly TimeSpan IdleDetectionThreshold = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan HardRestartThreshold = TimeSpan.FromSeconds(30);
+    // Кулдаун уменьшен, чтобы не блокировать повторные рестарты при затянувшемся простое
+    private static readonly TimeSpan HardRestartCooldown = TimeSpan.FromSeconds(25);
+    private static readonly TimeSpan StaleConnectionGrace = TimeSpan.FromMinutes(5);
         
         // Флаги для предотвращения рекурсии в событиях формы
         private bool _isResizing = false;
@@ -983,7 +1035,7 @@ namespace tickMeter.Forms
             }
         }
 
-        private bool isValidToTrack(string key, bool strict = true)
+        private bool isValidToTrack(string key, bool strict = true, bool allowStale = false)
         {
             if(string.IsNullOrEmpty(key)) return false;
             
@@ -1012,10 +1064,11 @@ namespace tickMeter.Forms
                     }
                     
                     // СТРОГИЙ режим (используется по умолчанию для стабильных соединений):
+                    double lastUpdate = connection.LastUpdateDelta();
                     if (strict)
                     {
                         bool result = connection.TrackingDelta() > 3
-                            && connection.LastUpdateDelta() < 2
+                            && lastUpdate < 2
                             && connection.ticksIn > 3
                             && connection.downloaded > 0;
                         
@@ -1023,7 +1076,7 @@ namespace tickMeter.Forms
                         {
                             Debug.Print($"[isValidToTrack] {key}: Strict mode FAILED. " +
                                 $"TrackingDelta={connection.TrackingDelta():F1} (need >3), " +
-                                $"LastUpdate={connection.LastUpdateDelta():F1} (need <2), " +
+                                $"LastUpdate={lastUpdate:F1} (need <2), " +
                                 $"TicksIn={connection.ticksIn} (need >3), " +
                                 $"Downloaded={connection.downloaded} (need >0)");
                         }
@@ -1034,24 +1087,31 @@ namespace tickMeter.Forms
                     // МЯГКИЙ режим (fallback для проблемных случаев):
                     // Требуем хотя бы МИНИМАЛЬНУЮ активность
                     bool hasAnyActivity = connection.ticksIn > 0 || connection.downloaded > 0 || connection.sent > 0;
-                    bool isRecent = connection.LastUpdateDelta() < 10; // Обновление за последние 10 сек
+                    bool hasHistoricalActivity = connection.totalTicksCnt > 0 || connection.downloaded > 0 || connection.sent > 0;
+                    bool isRecent = lastUpdate < 10; // Обновление за последние 10 сек
+                    bool withinStaleGrace = allowStale && lastUpdate < StaleConnectionGrace.TotalSeconds;
                     bool isTracked = connection.TrackingDelta() > 0;   // Хоть какое-то время отслеживается
                     
-                    bool result2 = isTracked && isRecent && hasAnyActivity;
+                    bool result2 = isTracked && hasHistoricalActivity && (isRecent || withinStaleGrace);
+                    if (!allowStale)
+                    {
+                        result2 = result2 && hasAnyActivity;
+                    }
                     
                     if (result2)
                     {
-                        Debug.Print($"[isValidToTrack] {key}: ⚠️ Relaxed mode OK. " +
+                        string mode = allowStale && !isRecent ? "STALE" : "relaxed";
+                        Debug.Print($"[isValidToTrack] {key}: ⚠️ {mode} mode OK. " +
                             $"TrackingDelta={connection.TrackingDelta():F1}, " +
-                            $"LastUpdate={connection.LastUpdateDelta():F1}, " +
-                            $"TicksIn={connection.ticksIn}, " +
+                            $"LastUpdate={lastUpdate:F1}, " +
+                            $"HistoricalTicks={connection.totalTicksCnt}, " +
                             $"Downloaded={connection.downloaded}, " +
                             $"Sent={connection.sent}");
                     }
                     else
                     {
                         Debug.Print($"[isValidToTrack] {key}: Relaxed mode FAILED. " +
-                            $"IsTracked={isTracked}, IsRecent={isRecent}, HasActivity={hasAnyActivity}");
+                            $"IsTracked={isTracked}, IsRecent={isRecent}, WithinStaleGrace={withinStaleGrace}, HasActivity={hasAnyActivity}, HasHistorical={hasHistoricalActivity}");
                     }
                     
                     return result2;
@@ -1166,9 +1226,10 @@ namespace tickMeter.Forms
             if (_metricsActive && _lastMetricsApplied != DateTime.MinValue)
             {
                 TimeSpan idleDuration = DateTime.Now - _lastMetricsApplied;
-                if (idleDuration > TimeSpan.FromSeconds(10))
+                if (idleDuration > IdleDetectionThreshold)
                 {
                     Debug.Print($"[Metrics] ⚠️ Metrics idle for {idleDuration.TotalSeconds:F1}s, forcing re-sync");
+                    _idleRecoveryAttempts++;
                     _metricsActive = false;
                     _invalidTargetCount = 0;
                     _searchCooldown = TimeSpan.FromMilliseconds(100);
@@ -1179,6 +1240,12 @@ namespace tickMeter.Forms
                     _fastModeEnabledAt = DateTime.Now;
                     RequestConnectionsRefresh(true);
                     try { ActiveWindowTracker.ClearConnectionStats(); } catch { }
+
+                    if (idleDuration > HardRestartThreshold && _idleRecoveryAttempts <= 3)
+                    {
+                        Debug.Print($"[Metrics] ⚠️ Idle for {idleDuration.TotalSeconds:F1}s, scheduling capture restart (attempt {_idleRecoveryAttempts})");
+                        ScheduleCaptureRestart();
+                    }
                 }
             }
 
@@ -1242,6 +1309,15 @@ namespace tickMeter.Forms
             // Если метрики уже идут - быстрая проверка текущего соединения
             // Кэшируем результат валидации чтобы не проверять дважды
             bool targetKeyValid = !string.IsNullOrEmpty(targetKey) && isValidToTrack(targetKey, strict: true);
+            if (!targetKeyValid && _metricsActive && !string.IsNullOrEmpty(targetKey))
+            {
+                // В режиме простоя допускаем "черствые" соединения, чтобы мониторинг не засыпал
+                targetKeyValid = isValidToTrack(targetKey, strict: false, allowStale: true);
+                if (targetKeyValid)
+                {
+                    Debug.Print($"[Metrics] ♻ Keeping stale targetKey '{targetKey}' alive during idle");
+                }
+            }
             
             if (_metricsActive && targetKeyValid)
             {
@@ -1468,6 +1544,7 @@ namespace tickMeter.Forms
                     _metricsActive = true;
                     _searchCooldown = TimeSpan.FromSeconds(1);
                     _fastStartCounter = 0;
+                    _idleRecoveryAttempts = 0;
                     
                     // Выключаем быстрый режим ConnectionsManager - метрики найдены, экономим CPU
                     App.connMngr?.SetFastMode(false);
