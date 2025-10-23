@@ -184,9 +184,10 @@ namespace tickMeter.Classes
                 Process p = Process.GetProcessById((int)pid);
                 newName = p.ProcessName != null ? p.ProcessName : pid.ToString();
             } catch (Exception) { }
-            if(activeProcess != newName)
+            if (activeProcess != newName)
             {
                 App.gui.targetKey = "";
+                Debug.Print($"[AutoDetect] Active process changed: '{activeProcess}' -> '{newName}'");
                 
                 // Сбрасываем метрики при смене процесса
                 Debug.Print($"[AutoDetect] Process changed from '{activeProcess}' to '{newName}' - resetting all metrics");
@@ -215,7 +216,7 @@ namespace tickMeter.Classes
                     // Сбрасываем кэш для немедленного определения IP нового процесса
                     LocalIPDetector.ResetCache();
                     
-                    string autoDetectedIP = LocalIPDetector.DetectLocalIPForActiveProcess(newName);
+                    string autoDetectedIP = LocalIPDetector.DetectLocalIPForActiveProcess(newName, allowFallbackToSharedSources: false);
                     if (!string.IsNullOrEmpty(autoDetectedIP) && App.meterState != null)
                     {
                         if (App.meterState.LocalIP != autoDetectedIP)
@@ -269,6 +270,10 @@ namespace tickMeter.Classes
                             {
                                 Debug.Print($"[AutoDetect] Cannot update settings form UI: {ex.Message}");
                             }
+                        }
+                        else
+                        {
+                            Debug.Print("[AutoDetect] Settings form not ready (handle missing or disposed), skipping UI sync");
                         }
                     }
                 }

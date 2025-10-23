@@ -227,6 +227,7 @@
     <Compile Include="Classes\App.cs" />
     <Compile Include="Classes\ActiveWinowTracker.cs" />
     <Compile Include="Classes\AutoDetectMngr.cs" />
+    <Compile Include="Classes\CaptureService.cs" />
     <Compile Include="Classes\ConnectionsManager.cs" />
     <Compile Include="Classes\ETW.cs" />
     <Compile Include="Classes\GameProfile.cs" />
@@ -235,10 +236,22 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Classes\DebugLogger.cs" />
+    <Compile Include="Classes\LocalIPDetector.cs" />
     <Compile Include="Classes\PacketFilter.cs" />
     <Compile Include="Classes\DbdStatsManager.cs" />
+    <Compile Include="Classes\PingManager.cs" />
     <Compile Include="Classes\ProcessNetworkStats.cs" />
     <Compile Include="Classes\PubgStatsManager.cs" />
+    <Compile Include="Classes\SmoothingManager.cs" />
+    <Compile Include="Classes\SpikeDetection\ISpikeDetector.cs" />
+    <Compile Include="Classes\SpikeDetection\SpikeDetector.cs" />
+    <Compile Include="Classes\SpikeDetection\SpikeDetectionManager.cs" />
+    <Compile Include="Classes\AlertManager.cs" />
+    <Compile Include="Classes\NetworkQualityAnalyzer.cs" />
+    <Compile Include="Classes\NetworkOptimizer.cs" />
+    <Compile Include="Classes\ColorZoneEvaluator.cs" />
+    <Compile Include="Classes\Zoner.cs" />
+    <Compile Include="Classes\VpnBypass.cs" />
     <Compile Include="Classes\WebStatsManager.cs" />
     <Compile Include="Forms\GUI.cs">
       <SubType>Form</SubType>
@@ -286,6 +299,19 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
     <Compile Include="Classes\RivaTuner.cs" />
+    <Compile Include="Classes\StunClient.cs" />
+    <Compile Include="Forms\AdvancedSettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\AdvancedSettingsForm.Designer.cs">
+      <DependentUpon>AdvancedSettingsForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\SpikeAnalyticsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\SpikeAnalyticsForm.Designer.cs">
+      <DependentUpon>SpikeAnalyticsForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\SettingsForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -294,6 +320,7 @@
     </Compile>
     <Compile Include="Classes\SettingsManager.cs" />
     <Compile Include="Classes\TickMeterState.cs" />
+    <Compile Include="Classes\TickrateSmoothing.cs" />
     <EmbeddedResource Include="Forms\GUI.resx">
       <DependentUpon>GUI.cs</DependentUpon>
     </EmbeddedResource>
@@ -327,8 +354,14 @@
       <LastGenOutput>en.Designer.cs</LastGenOutput>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="Forms\AdvancedSettingsForm.resx">
+      <DependentUpon>AdvancedSettingsForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Forms\SettingsForm.resx">
       <DependentUpon>SettingsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\SpikeAnalyticsForm.resx">
+      <DependentUpon>SpikeAnalyticsForm.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="packages.config" />
     <None Include="Properties\app.manifest" />

@@ -13,12 +13,15 @@ using System.Runtime.InteropServices;
 using System.Globalization;
 using System.Diagnostics;
 using tickMeter.Classes;
+using tickMeter.Classes.SpikeDetection;
 using System.Threading;
+using System.Net;
 using System.Net.Sockets;
 using System.Linq;
 using System.Reflection;
 using System.Collections.Concurrent;
-using Classes = tickMeter.Classes;
+using System.Text;
+using Newtonsoft.Json;
 
 namespace tickMeter.Forms
 {
@@ -116,6 +119,492 @@ namespace tickMeter.Forms
                 }
             }));
         }
+
+        internal void HandleSeverePingLoss(string targetIp, int failureCount, int lastPingMs, int icmpPingMs)
+        {
+            string message = $"[PingGuard] {failureCount} consecutive ping failures for {targetIp} (lastTcp={lastPingMs}ms, lastIcmp={icmpPingMs}ms) - scheduling restart";
+            Debug.Print(message);
+            DebugLogger.log(message);
+
+            if (!IsHandleCreated || IsDisposed)
+            {
+                return;
+            }
+
+            BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    _metricsActive = false;
+                    _invalidTargetCount = 0;
+                    _fastStartCounter = 0;
+                    _idleRecoveryAttempts = 0;
+                    _lastPacketTimestamp = DateTime.MinValue;
+
+                    ActiveWindowTracker.ClearConnectionStats();
+
+                    if (App.meterState?.Server != null)
+                    {
+                        App.meterState.Server.Reset();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    string prepError = $"[PingGuard] Error preparing restart: {ex.Message}";
+                    Debug.Print(prepError);
+                    DebugLogger.log(prepError);
+                }
+
+                ScheduleCaptureRestart();
+            }));
+        }
+
+        private void InitializeAutomationInfrastructure()
+        {
+            EnsureStateDirectory();
+
+            _selfHealTimer?.Dispose();
+            _selfHealTimer = new System.Threading.Timer(SelfHealTick, null, Timeout.Infinite, Timeout.Infinite);
+
+            _keepAliveTimer?.Dispose();
+            _keepAliveTimer = new System.Threading.Timer(KeepAliveTick, null, Timeout.Infinite, Timeout.Infinite);
+        }
+
+        private void EnsureStateDirectory()
+        {
+            try
+            {
+                if (!Directory.Exists(StateDirectory))
+                {
+                    Directory.CreateDirectory(StateDirectory);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[Automation] State directory creation failed: {ex.Message}");
+            }
+        }
+
+        private void StartAutomationTimers()
+        {
+            try
+            {
+                int healPeriodMs = (int)Math.Max(1000d, SelfHealCheckPeriod.TotalMilliseconds);
+                _selfHealTimer?.Change(healPeriodMs, healPeriodMs);
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[Automation] Self-heal timer start failed: {ex.Message}");
+            }
+
+            try
+            {
+                int keepAliveMs = (int)Math.Max(1000d, KeepAlivePeriod.TotalMilliseconds);
+                _keepAliveTimer?.Change(keepAliveMs, keepAliveMs);
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[Automation] Keep-alive timer start failed: {ex.Message}");
+            }
+        }
+
+        private void StopAutomationTimers()
+        {
+            try
+            {
+                _selfHealTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+            }
+            catch (Exception)
+            {
+                // ignore
+            }
+
+            try
+            {
+                _keepAliveTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+            }
+            catch (Exception)
+            {
+                // ignore
+            }
+        }
+
+        private void SelfHealTick(object state)
+        {
+            try
+            {
+                if (IsDisposed || !IsHandleCreated)
+                {
+                    return;
+                }
+
+                var meterState = App.meterState;
+                if (meterState == null)
+                {
+                    return;
+                }
+
+                var nowUtc = DateTime.UtcNow;
+
+                WriteHeartbeatIfNeeded(nowUtc);
+                PersistMonitoringSnapshot(nowUtc);
+
+                if (!meterState.IsTracking)
+                {
+                    if (!string.IsNullOrEmpty(_pendingRestoreTargetKey) && nowUtc - _lastSelfHealAttempt > SelfHealCooldown)
+                    {
+                        _lastSelfHealAttempt = nowUtc;
+                        BeginInvoke(new Action(() =>
+                        {
+                            if (App.meterState != null && !App.meterState.IsTracking)
+                            {
+                                Debug.Print("[SelfHeal] Attempting auto-resume after unexpected stop");
+                                try
+                                {
+                                    StartTracking();
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.Print($"[SelfHeal] Auto-resume failed: {ex.Message}");
+                                }
+                            }
+                        }));
+                    }
+                    return;
+                }
+
+                var lastPacket = _lastPacketTimestamp;
+                if (lastPacket == DateTime.MinValue)
+                {
+                    return;
+                }
+
+                var idle = nowUtc - lastPacket;
+                if (idle > MetricStallThreshold && nowUtc - _lastSelfHealAttempt > SelfHealCooldown)
+                {
+                    _lastSelfHealAttempt = nowUtc;
+                    BeginInvoke(new Action(() =>
+                    {
+                        if (App.meterState != null && App.meterState.IsTracking)
+                        {
+                            Debug.Print($"[SelfHeal] Metrics stalled for {idle.TotalSeconds:F1}s, scheduling restart");
+                            ScheduleCaptureRestart();
+                        }
+                    }));
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                // Form disposed, nothing to do
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[SelfHeal] Error: {ex.Message}");
+            }
+        }
+
+        private void KeepAliveTick(object state)
+        {
+            try
+            {
+                var meterState = App.meterState;
+                if (meterState == null || !meterState.IsTracking)
+                {
+                    return;
+                }
+
+                var lastPacket = _lastPacketTimestamp;
+                var nowUtc = DateTime.UtcNow;
+                if (lastPacket != DateTime.MinValue && (nowUtc - lastPacket) < KeepAliveIdleThreshold)
+                {
+                    return;
+                }
+
+                Debug.Print("[KeepAlive] No packets observed recently, sending keep-alive pulse");
+
+                App.pingManager?.RequestImmediatePing();
+                Task.Run(() =>
+                {
+                    SendKeepAlivePulse();
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[KeepAlive] Error: {ex.Message}");
+            }
+        }
+
+        private void WriteHeartbeatIfNeeded(DateTime timestampUtc, bool force = false)
+        {
+            if (!force && _lastHeartbeatWrite != DateTime.MinValue)
+            {
+                var delta = timestampUtc - _lastHeartbeatWrite;
+                if (delta < HeartbeatPeriod)
+                {
+                    return;
+                }
+            }
+
+            try
+            {
+                EnsureStateDirectory();
+                var payload = timestampUtc.ToString("o");
+                lock (_snapshotLock)
+                {
+                    File.WriteAllText(HeartbeatFilePath, payload);
+                }
+                _lastHeartbeatWrite = timestampUtc;
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[Heartbeat] Write failed: {ex.Message}");
+            }
+        }
+
+        private void PersistMonitoringSnapshot(DateTime timestampUtc, bool force = false)
+        {
+            if (!force && _lastSnapshotWrite != DateTime.MinValue)
+            {
+                var delta = timestampUtc - _lastSnapshotWrite;
+                if (delta < HeartbeatPeriod)
+                {
+                    return;
+                }
+            }
+
+            var meterState = App.meterState;
+            if (meterState == null)
+            {
+                return;
+            }
+
+            var snapshot = new MonitoringSnapshot
+            {
+                TimestampUtc = timestampUtc,
+                WasTracking = meterState.IsTracking,
+                TargetKey = targetKey,
+                SelectedAdapter = GetSelectedAdapterIndexSafe(),
+                LocalIp = meterState.LocalIP,
+                Game = meterState.Game
+            };
+
+            try
+            {
+                EnsureStateDirectory();
+                var json = JsonConvert.SerializeObject(snapshot, Formatting.Indented);
+                lock (_snapshotLock)
+                {
+                    File.WriteAllText(SnapshotFilePath, json);
+                }
+                _lastSnapshotWrite = timestampUtc;
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[Snapshot] Write failed: {ex.Message}");
+            }
+        }
+
+        private MonitoringSnapshot LoadMonitoringSnapshot()
+        {
+            try
+            {
+                if (!File.Exists(SnapshotFilePath))
+                {
+                    return null;
+                }
+
+                lock (_snapshotLock)
+                {
+                    var json = File.ReadAllText(SnapshotFilePath);
+                    if (string.IsNullOrWhiteSpace(json))
+                    {
+                        return null;
+                    }
+
+                    return JsonConvert.DeserializeObject<MonitoringSnapshot>(json);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[Snapshot] Read failed: {ex.Message}");
+                return null;
+            }
+        }
+
+        private int GetSelectedAdapterIndexSafe()
+        {
+            var adaptersList = App.settingsForm?.adapters_list;
+            if (adaptersList == null)
+            {
+                return -1;
+            }
+
+            try
+            {
+                if (adaptersList.InvokeRequired)
+                {
+                    return (int)adaptersList.Invoke(new Func<int>(() => adaptersList.SelectedIndex));
+                }
+
+                return adaptersList.SelectedIndex;
+            }
+            catch (InvalidOperationException ex)
+            {
+                Debug.Print($"[Automation] Adapter index read cross-thread error: {ex.Message}");
+                return -1;
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[Automation] Adapter index read failed: {ex.Message}");
+                return -1;
+            }
+        }
+
+        private void AutoResumeMonitoringIfNeeded()
+        {
+            try
+            {
+                var snapshot = LoadMonitoringSnapshot();
+                if (snapshot == null)
+                {
+                    return;
+                }
+
+                if (snapshot.TimestampUtc != DateTime.MinValue)
+                {
+                    var age = DateTime.UtcNow - snapshot.TimestampUtc;
+                    if (age > SnapshotMaxAge)
+                    {
+                        Debug.Print("[Automation] Snapshot is too old, skipping auto-resume");
+                        return;
+                    }
+                }
+
+                if (!snapshot.WasTracking)
+                {
+                    return;
+                }
+
+                ApplySnapshotToUi(snapshot);
+                targetKey = snapshot.TargetKey ?? string.Empty;
+                _pendingRestoreTargetKey = string.IsNullOrEmpty(snapshot.TargetKey)
+                    ? "__auto_resume__"
+                    : snapshot.TargetKey;
+
+                if (App.meterState != null && !App.meterState.IsTracking)
+                {
+                    Debug.Print("[Automation] Auto-resuming monitoring session from snapshot");
+                    StartTracking();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[Automation] Auto-resume failed: {ex.Message}");
+            }
+        }
+
+        private void ApplySnapshotToUi(MonitoringSnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                return;
+            }
+
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(snapshot.LocalIp))
+                {
+                    if (App.meterState != null)
+                    {
+                        App.meterState.LocalIP = snapshot.LocalIp;
+                    }
+
+                    if (App.settingsForm?.local_ip_textbox != null)
+                    {
+                        App.settingsForm.local_ip_textbox.Text = snapshot.LocalIp;
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(snapshot.Game) && App.meterState != null)
+                {
+                    App.meterState.Game = snapshot.Game;
+                }
+
+                if (snapshot.SelectedAdapter >= 0 && App.settingsForm?.adapters_list != null &&
+                    snapshot.SelectedAdapter < App.settingsForm.adapters_list.Items.Count)
+                {
+                    App.settingsForm.adapters_list.SelectedIndex = snapshot.SelectedAdapter;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[Automation] Apply snapshot failed: {ex.Message}");
+            }
+        }
+
+        private void SendKeepAlivePulse()
+        {
+            try
+            {
+                var meterState = App.meterState;
+                if (meterState == null || meterState.Server == null)
+                {
+                    return;
+                }
+
+                var server = meterState.Server;
+                if (string.IsNullOrWhiteSpace(server.Ip))
+                {
+                    return;
+                }
+
+                int targetPort = server.GamePort > 0 ? server.GamePort : server.PingPort;
+                if (targetPort <= 0)
+                {
+                    return;
+                }
+
+                using (var udpClient = new UdpClient())
+                {
+                    udpClient.Client.SendTimeout = 1000;
+
+                    if (!string.IsNullOrWhiteSpace(meterState.LocalIP) && IPAddress.TryParse(meterState.LocalIP, out var localIp))
+                    {
+                        try
+                        {
+                            udpClient.Client.Bind(new IPEndPoint(localIp, 0));
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.Print($"[KeepAlive] Bind failed: {ex.Message}");
+                        }
+                    }
+
+                    udpClient.Connect(server.Ip, targetPort);
+                    udpClient.Send(KeepAlivePayload, KeepAlivePayload.Length);
+                }
+
+                _lastPacketTimestamp = DateTime.UtcNow;
+            }
+            catch (SocketException ex)
+            {
+                Debug.Print($"[KeepAlive] UDP send socket error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[KeepAlive] UDP keep-alive failed: {ex.Message}");
+            }
+        }
+
+        private sealed class MonitoringSnapshot
+        {
+            public DateTime TimestampUtc { get; set; }
+            public bool WasTracking { get; set; }
+            public string TargetKey { get; set; }
+            public int SelectedAdapter { get; set; }
+            public string LocalIp { get; set; }
+            public string Game { get; set; }
+        }
         
         // Анти-реэнтерабельность для StartTracking/StopTracking (предотвращение роста воркеров)
         private int _startTrackingBusy = 0;
@@ -157,6 +646,27 @@ namespace tickMeter.Forms
     // Кулдаун уменьшен, чтобы не блокировать повторные рестарты при затянувшемся простое
     private static readonly TimeSpan HardRestartCooldown = TimeSpan.FromSeconds(25);
     private static readonly TimeSpan StaleConnectionGrace = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan SelfHealCheckPeriod = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan MetricStallThreshold = TimeSpan.FromSeconds(20);
+    private static readonly TimeSpan SelfHealCooldown = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan KeepAlivePeriod = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan KeepAliveIdleThreshold = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan HeartbeatPeriod = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan SnapshotMaxAge = TimeSpan.FromMinutes(15);
+    private static readonly string StateDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "monitoring_state");
+    private static readonly string HeartbeatFilePath = Path.Combine(StateDirectory, "heartbeat.txt");
+    private static readonly string SnapshotFilePath = Path.Combine(StateDirectory, "snapshot.json");
+    private static readonly byte[] KeepAlivePayload = Encoding.ASCII.GetBytes("tickmeter-keepalive");
+    private const string AutoResumeSentinel = "__auto_resume__";
+    private DateTime _lastPacketTimestamp = DateTime.MinValue;
+    private System.Threading.Timer _selfHealTimer;
+    private System.Threading.Timer _keepAliveTimer;
+    private readonly object _snapshotLock = new object();
+    private DateTime _lastSelfHealAttempt = DateTime.MinValue;
+    private DateTime _lastHeartbeatWrite = DateTime.MinValue;
+    private DateTime _lastSnapshotWrite = DateTime.MinValue;
+    private string _pendingRestoreTargetKey = string.Empty;
+    private int _manualStopRequestedFlag = 0;
         
         // Флаги для предотвращения рекурсии в событиях формы
         private bool _isResizing = false;
@@ -225,6 +735,8 @@ namespace tickMeter.Forms
                 InitializeComponent();
                 App.Init();
                 App.gui = this;
+                InitializeAutomationInfrastructure();
+                StartAutomationTimers();
                 _neutralActiveColor = LoadNeutralActiveColor();
                 ConfigureTickrateChart();
 
@@ -479,6 +991,7 @@ namespace tickMeter.Forms
                 }
                 
                 if (IsDuplicate(packet)) return; // NEW: проверка дублей
+                _lastPacketTimestamp = DateTime.UtcNow;
             
             // VPN bypass mode handling
             bool vpnBypassAdvanced = App.settingsManager?.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
@@ -1642,7 +2155,9 @@ namespace tickMeter.Forms
                                 }
                                 
                                 // Проверяем IP (для нового процесса - немедленно, для того же - по таймеру внутри метода)
-                                string newLocalIP = Classes.LocalIPDetector.DetectLocalIPForActiveProcess(currentProcessName);
+                                string newLocalIP = Classes.LocalIPDetector.DetectLocalIPForActiveProcess(
+                                    currentProcessName,
+                                    allowFallbackToSharedSources: !processChanged);
                                 
                                 // Диагностика
                                 Debug.Print($"[updateMetherStateFromActiveWindow] Detected LocalIP: old={App.meterState.LocalIP}, new={newLocalIP}, changed={newLocalIP != App.meterState.LocalIP}");
@@ -2191,6 +2706,8 @@ namespace tickMeter.Forms
             try
             {
                 Debug.Print("StartTracking");
+                var restoreTargetKey = _pendingRestoreTargetKey;
+                bool hadPendingRestore = !string.IsNullOrEmpty(restoreTargetKey);
                 
                 // Диагностика CaptureService ПЕРЕД стартом
                 if (App.Capture != null)
@@ -2214,12 +2731,21 @@ namespace tickMeter.Forms
                     StopTracking();
                 InitMeterState();
                 App.meterState.IsTracking = true;
+                var startTimestampUtc = DateTime.UtcNow;
+                _lastPacketTimestamp = startTimestampUtc;
+                _lastSelfHealAttempt = DateTime.MinValue;
+                WriteHeartbeatIfNeeded(startTimestampUtc, force: true);
+                PersistMonitoringSnapshot(startTimestampUtc, force: true);
                 ticksLoop.Enabled = true;
             
             // Запускаем ping manager
             if (App.pingManager != null)
             {
                 App.pingManager.StartPinging();
+                if (hadPendingRestore)
+                {
+                    App.pingManager.RequestImmediatePing();
+                }
             }
             
             // Даём ConnectionsManager время собрать данные о соединениях (только при первом запуске)
@@ -2302,6 +2828,7 @@ namespace tickMeter.Forms
                 
                 if (_allSelectedAdapters.Count == 0)
                 {
+                    _pendingRestoreTargetKey = string.Empty;
                     MessageBox.Show("Не найдено подходящих сетевых адаптеров");
                     return;
                 }
@@ -2329,6 +2856,7 @@ namespace tickMeter.Forms
                     {
                         Debug.Print($"[StartTracking] ERROR: Invalid deviceId {deviceId} for {devices.Count} devices");
                     }
+                    _pendingRestoreTargetKey = string.Empty;
                     return;
                 }
             }
@@ -2350,18 +2878,30 @@ namespace tickMeter.Forms
                     Debug.Print($"[StartTracking] Multi-adapter mode: Auto-detected LocalIP = {autoDetectedIP} for process {activeProcess}");
                     
                     // Обновляем UI асинхронно (не блокируем текущий поток)
-                    if (App.settingsForm.local_ip_textbox.Text != autoDetectedIP)
+                    var settingsForm = App.settingsForm;
+                    if (settingsForm != null && !settingsForm.IsDisposed && settingsForm.local_ip_textbox != null)
                     {
-                        App.settingsForm.BeginInvoke((Action)(() =>
+                        if (!settingsForm.IsHandleCreated)
                         {
-                            App.settingsForm.local_ip_textbox.Text = autoDetectedIP;
-                        }));
+                            Debug.Print("[StartTracking] Settings form handle not ready, skipping async LocalIP update");
+                        }
+                        else if (settingsForm.local_ip_textbox.Text != autoDetectedIP)
+                        {
+                            settingsForm.BeginInvoke((Action)(() =>
+                            {
+                                if (!settingsForm.IsDisposed && settingsForm.local_ip_textbox != null)
+                                {
+                                    settingsForm.local_ip_textbox.Text = autoDetectedIP;
+                                }
+                            }));
+                        }
                     }
                 }
                 else
                 {
                     // Fallback: используем текущее значение из настроек
-                    App.meterState.LocalIP = App.settingsForm.local_ip_textbox.Text;
+                    string manualLocalIP = App.settingsForm?.local_ip_textbox?.Text ?? App.meterState.LocalIP;
+                    App.meterState.LocalIP = manualLocalIP;
                     Debug.Print($"[StartTracking] Multi-adapter mode: Could not auto-detect IP, using configured LocalIP = {App.meterState.LocalIP}");
                     
                     if (string.IsNullOrEmpty(App.meterState.LocalIP))
@@ -2373,7 +2913,7 @@ namespace tickMeter.Forms
             else
             {
                 // В обычном режиме используем IP из настроек
-                App.meterState.LocalIP = App.settingsForm.local_ip_textbox.Text;
+                App.meterState.LocalIP = App.settingsForm?.local_ip_textbox?.Text ?? App.meterState.LocalIP;
             }
             
             lastSelectedAdapterID = App.settingsForm.adapters_list.SelectedIndex;
@@ -2495,6 +3035,36 @@ namespace tickMeter.Forms
             {
                 Debug.Print("[StartTracking] WARNING: App.Capture is NULL after worker start!");
             }
+
+            if (hadPendingRestore)
+            {
+                try
+                {
+                    if (restoreTargetKey != AutoResumeSentinel)
+                    {
+                        targetKey = restoreTargetKey;
+                        Debug.Print($"[StartTracking] Restored targetKey '{targetKey}' from pending state");
+                    }
+                    else
+                    {
+                        Debug.Print("[StartTracking] Pending auto-resume without explicit targetKey; staying in aggressive discovery mode");
+                    }
+
+                    RequestConnectionsRefresh(true);
+                }
+                catch (Exception ex)
+                {
+                    Debug.Print($"[StartTracking] Restore assistance failed: {ex.Message}");
+                }
+                finally
+                {
+                    _pendingRestoreTargetKey = string.Empty;
+                }
+            }
+            else
+            {
+                _pendingRestoreTargetKey = string.Empty;
+            }
             }
             catch (Exception ex)
             {
@@ -2573,8 +3143,12 @@ namespace tickMeter.Forms
                 restarts++;
                 if (restarts > restartLimit)
                 {
-                    Debug.Print("[PcapWorkerCompleted] Too many restarts, stopping tracking");
-                    StopTracking();
+                    Debug.Print("[PcapWorkerCompleted] Too many restarts, scheduling capture restart");
+                    restarts = 0;
+                    if (App.meterState != null && App.meterState.IsTracking)
+                    {
+                        ScheduleCaptureRestart();
+                    }
                     return;
                 }
             }
@@ -2921,6 +3495,20 @@ namespace tickMeter.Forms
                 {
                     App.meterState.IsTracking = false; // Устанавливаем СРАЗУ
                 }
+
+                bool manualStop = Interlocked.CompareExchange(ref _manualStopRequestedFlag, 0, 0) == 1;
+                var stopTimestampUtc = DateTime.UtcNow;
+                if (manualStop)
+                {
+                    _pendingRestoreTargetKey = string.Empty;
+                }
+                else if (string.IsNullOrEmpty(_pendingRestoreTargetKey))
+                {
+                    _pendingRestoreTargetKey = string.IsNullOrEmpty(targetKey) ? AutoResumeSentinel : targetKey;
+                }
+                _lastPacketTimestamp = DateTime.MinValue;
+                WriteHeartbeatIfNeeded(stopTimestampUtc, force: true);
+                PersistMonitoringSnapshot(stopTimestampUtc, force: true);
                 
                 if (App.meterState == null) return;
             
@@ -3118,6 +3706,19 @@ namespace tickMeter.Forms
             }
         }
 
+        public void StopTrackingManual()
+        {
+            try
+            {
+                Interlocked.Exchange(ref _manualStopRequestedFlag, 1);
+                StopTracking();
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _manualStopRequestedFlag, 0);
+            }
+        }
+
         private void GUI_FormClosed(object sender, FormClosedEventArgs e)
         {
             try
@@ -3228,6 +3829,7 @@ namespace tickMeter.Forms
             }
             
             ETW.init();
+            AutoResumeMonitoringIfNeeded();
             
             // ИСПРАВЛЕНИЕ: Сворачиваем форму ПОСЛЕ полной инициализации
             // Используем BeginInvoke для отложенного выполнения после отрисовки формы
@@ -3364,9 +3966,19 @@ namespace tickMeter.Forms
             {
                 // Принудительно останавливаем все воркеры при закрытии формы
                 Debug.Print("[GUI_FormClosing] Force stopping all workers");
+                StopAutomationTimers();
                 try
                 {
-                    StopTracking();
+                    _selfHealTimer?.Dispose();
+                    _keepAliveTimer?.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    Debug.Print($"[GUI_FormClosing] Timer disposal error: {ex.Message}");
+                }
+                try
+                {
+                    StopTrackingManual();
                 }
                 catch (Exception ex)
                 {
@@ -3377,7 +3989,7 @@ namespace tickMeter.Forms
 
         private void icon_menu_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
-            StopTracking();
+            StopTrackingManual();
             
             // Phase 3: Очистка UI Processing Timer
             try

@@ -366,6 +366,8 @@ namespace tickMeter
             public string ExternalIp { get; set; } = "";
 
             private const int PingLimitMilliseconds = 1000;
+            private const int SeverePingFailureThreshold = 12;
+            private static readonly TimeSpan SeverePingFailureCooldown = TimeSpan.FromSeconds(20);
             private int _ping = 0;
             public int AvgPing { get; set; } = 0;
             public string Location { get; set; } = "";
@@ -375,6 +377,7 @@ namespace tickMeter
             private int currentFallbackPortIndex = -1;
 
             private int consecutivePingFails = 0;
+            private DateTime lastSeverePingFailureUtc = DateTime.MinValue;
 
             private bool isPinging = false;
 
@@ -1493,6 +1496,25 @@ namespace tickMeter
 
                     if (finalPingTime < PingLimitMilliseconds) consecutivePingFails = 0;
 
+                }
+
+                if (consecutivePingFails >= SeverePingFailureThreshold)
+                {
+                    DateTime nowUtc = DateTime.UtcNow;
+                    if (nowUtc - lastSeverePingFailureUtc > SeverePingFailureCooldown)
+                    {
+                        lastSeverePingFailureUtc = nowUtc;
+                        string guardMessage = $"[PingGuard] {consecutivePingFails} consecutive ping failures for {Ip} (ICMPfails={ICMPfails}, lastTcp={finalPingTime}ms, lastIcmp={IcmpPing}ms)";
+                        Debug.Print(guardMessage);
+                        DebugLogger.log(guardMessage);
+
+                        if (App.meterState?.IsTracking == true && App.gui != null)
+                        {
+                            App.gui.HandleSeverePingLoss(Ip, consecutivePingFails, finalPingTime, IcmpPing);
+                        }
+
+                        consecutivePingFails = 0;
+                    }
                 }
 
                 Ping = finalPingTime;

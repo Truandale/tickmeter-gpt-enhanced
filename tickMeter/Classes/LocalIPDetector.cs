@@ -22,9 +22,10 @@ namespace tickMeter.Classes
         /// <summary>
         /// Определяет оптимальный локальный IP для текущего активного процесса
         /// </summary>
-        /// <param name="processName">Имя отслеживаемого процесса (опционально)</param>
+    /// <param name="processName">Имя отслеживаемого процесса (опционально)</param>
+    /// <param name="allowFallbackToSharedSources">Разрешает использование общих эвристик (всех соединений / активных адаптеров), если не найдено прямых соединений процесса.</param>
         /// <returns>Локальный IP или null если не удалось определить</returns>
-        public static string DetectLocalIPForActiveProcess(string processName = null)
+    public static string DetectLocalIPForActiveProcess(string processName = null, bool allowFallbackToSharedSources = true)
         {
             try
             {
@@ -58,6 +59,12 @@ namespace tickMeter.Classes
                         UpdateCache(detectedIP, processName);
                         return detectedIP;
                     }
+                }
+
+                if (!allowFallbackToSharedSources && !string.IsNullOrEmpty(processName))
+                {
+                    Debug.WriteLine($"[LocalIPDetector] Нет прямого IP для процесса '{processName}', пропускаем fallback источники");
+                    return null;
                 }
                 
                 // Метод 2: Поиск по активным соединениям всех процессов

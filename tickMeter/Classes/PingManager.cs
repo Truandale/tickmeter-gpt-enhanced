@@ -17,6 +17,7 @@ namespace tickMeter.Classes
         private Timer _pingTimer;
         private readonly Dictionary<string, PingResult> _lastPingResults = new Dictionary<string, PingResult>();
         private readonly object _pingLock = new object();
+    private int _immediatePingActive = 0;
         
         // Настройки ping из универсальных флагов
         private bool _bindToInterface => _settingsManager.GetBool("ping_bind_to_interface", true);
@@ -52,6 +53,30 @@ namespace tickMeter.Classes
         {
             _pingTimer?.Dispose();
             _pingTimer = null;
+        }
+
+        public void RequestImmediatePing()
+        {
+            if (Interlocked.Exchange(ref _immediatePingActive, 1) == 1)
+            {
+                return;
+            }
+
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await PerformPingAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.Print($"[PingManager] Immediate ping failed: {ex.Message}");
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref _immediatePingActive, 0);
+                }
+            });
         }
         
         private async void OnPingTimer(object state)
