@@ -91,10 +91,11 @@ namespace tickMeter.Forms
 
             _lastHardRestart = DateTime.Now;
 
-            BeginInvoke(new Action(() =>
+            Action restartAction = () =>
             {
                 if (!IsHandleCreated || IsDisposed)
                 {
+                    Debug.Print("[Metrics] Restart aborted: form not ready");
                     return;
                 }
 
@@ -112,12 +113,31 @@ namespace tickMeter.Forms
                 try
                 {
                     StartTracking();
+                    Debug.Print("[Metrics] ✅ StartTracking completed (no exception)");
                 }
                 catch (Exception ex)
                 {
                     Debug.Print($"[Metrics] ❌ StartTracking failed: {ex.Message}");
+                    DebugLogger.log($"[Metrics] StartTracking exception: {ex.Message}\n{ex.StackTrace}");
                 }
-            }));
+            };
+
+            try
+            {
+                if (this.IsHandleCreated)
+                {
+                    this.BeginInvoke(restartAction);
+                }
+                else
+                {
+                    // Run on ThreadPool if form handle missing — action will check handle again
+                    System.Threading.ThreadPool.QueueUserWorkItem(_ => restartAction());
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[Metrics] Failed to schedule restart action: {ex.Message}");
+            }
         }
 
         internal void HandleSeverePingLoss(string targetIp, int failureCount, int lastPingMs, int icmpPingMs)
@@ -626,8 +646,9 @@ namespace tickMeter.Forms
         
         // Механизм быстрого старта для ускорения обнаружения метрик
         private DateTime _lastConnectionSearch = DateTime.MinValue;
-        private TimeSpan _searchCooldown = TimeSpan.FromSeconds(1); // Обычный режим
-        private bool _metricsActive = false;
+    private TimeSpan _searchCooldown = TimeSpan.FromSeconds(1); // Обычный режим
+    private bool _metricsActive = false;
+    private bool _metricsStateCleared = true;
         private int _fastStartCounter = 0; // Счетчик проверок в режиме быстрого старта
     // Для предотвращения флапа при быстром переключении окон
     private int _invalidTargetCount = 0; // Требуется 2 подряд невалидных проверки чтобы деактивировать
@@ -1182,151 +1203,133 @@ namespace tickMeter.Forms
                                     !string.IsNullOrEmpty(App.meterState.Server.Ip);
             
             // ChatGPT Enhancement: Snapshot-based diagnostic for perfect consistency
-            System.Diagnostics.Debug.Print($"[ZONER GUI] {zoner.GetDiagnostic(snap)}");
+            string zonerDiagnostic = zoner.GetDiagnostic(snap);
+            System.Diagnostics.Debug.Print($"[ZONER GUI] {zonerDiagnostic}");
             
             await Task.Run(
                     () => {
+                        var server = App.meterState.Server;
+                        string activeProcessName = AutoDetectMngr.GetActiveProcessName();
+                        bool hasLocation = hasActiveSession && server != null && !string.IsNullOrEmpty(server.Location);
+
+                        // Определяем источник и значение пинга
+                        int rawPing = 0;
+                        string pingSource = "none";
+                        if (server != null)
+                        {
+                            if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
+                            {
+                                rawPing = (int)Math.Round(server.UdpPing);
+                                pingSource = "udp";
+                            }
+                            else if (server.Ping > 0 && server.Ping < 10000)
+                            {
+                                rawPing = server.Ping;
+                                pingSource = "tcp";
+                            }
+                            else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
+                            {
+                                rawPing = App.meterState.IcmpPing;
+                                pingSource = "icmp";
+                            }
+                        }
+
+                        int displayPing = rawPing > 0 ? Classes.SmoothingManager.SmoothPingValueGui(rawPing) : 0;
+                        string pingText = rawPing > 0 ? $"{displayPing} ms" : "n/a ms";
+
+                        bool showSpikeIndicator = App.settingsManager?.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
+                        bool pingSpikeActive = hasActiveSession && showSpikeIndicator && server?.HasPingSpike == true;
+                        Debug.Print($"[GUI] Spike check: HasPingSpike={server?.HasPingSpike ?? false}, ShowSetting={showSpikeIndicator}, OnScreen={OnScreen}");
+                        if (pingSpikeActive)
+                        {
+                            pingText += " (!)";
+                            Debug.Print($"[GUI] Spike indicator added with zone color: {pingText}");
+                        }
+
+                        string pingDisplayText = hasActiveSession ? pingText : "n/a ms";
+                        Color finalPingColor = hasActiveSession ? PingColor : _inactiveMetricColor;
+
+                        int rawTickrate = App.meterState.OutputTickRate;
+                        bool showTickrateSpikes = App.settingsManager?.GetOption("show_tickrate_spikes", "True", "ADVANCED") == "True";
+                        bool tickrateSpikeActive = hasActiveSession && showTickrateSpikes && App.meterState.HasTickRateSpike;
+                        string tickrateText = rawTickrate.ToString();
+                        if (tickrateSpikeActive)
+                        {
+                            tickrateText += " (!)";
+                            Debug.Print($"[GUI] Tickrate spike indicator added with zone color: {tickrateText}");
+                        }
+                        Color finalTickRateColor = hasActiveSession ? TickRateColor : _inactiveMetricColor;
+
+                        double uploadMb = App.meterState.UploadTraffic / (1024d * 1024d);
+                        double downloadMb = App.meterState.DownloadTraffic / (1024d * 1024d);
+                        string trafficDisplayText = hasActiveSession
+                            ? $"{uploadMb:N2} / {downloadMb:N2} mb"
+                            : $"{0f:N2} / {0f:N2} mb";
+
+                        string ipDisplayText = hasActiveSession ? server?.Ip ?? string.Empty : string.Empty;
+
+                        TimeSpan sessionDuration = hasActiveSession && !string.IsNullOrEmpty(ipDisplayText)
+                            ? DateTime.Now.Subtract(App.meterState.SessionStart)
+                            : TimeSpan.Zero;
+                        string sessionDurationText = sessionDuration.ToString("mm':'ss");
+                        float dropsPercent = App.meterState.GetDropsNumber();
+                        string dropsText = dropsPercent.ToString("n2") + "%";
+
                         // Always update PING (including spike indicators) for both GUI and RTSS overlay
                         if (App.settingsForm.settings_ping_checkbox.Checked)
                         {
-                            // Phase 3: Single Consumer Pattern - queue UI updates instead of direct Invoke
                             QueueUIUpdate(() =>
                             {
-                                var server = App.meterState.Server;
-                                if (hasActiveSession && server != null && !string.IsNullOrEmpty(server.Location))
-                                {
-                                    countryLbl.Text = server.Location;
-                                    countryLbl.ForeColor = _neutralActiveColor;
-                                }
-                                else
-                                {
-                                    countryLbl.Text = string.Empty;
-                                    countryLbl.ForeColor = _inactiveMetricColor;
-                                }
+                                countryLbl.Text = hasLocation ? server.Location : string.Empty;
+                                countryLbl.ForeColor = hasLocation ? _neutralActiveColor : _inactiveMetricColor;
                             });
-                            QueueUIUpdate(() => {
-                                var server = App.meterState.Server;
-                                string pingText;
-                                int rawPing = 0;
-                                
-                                // Определяем сырое значение пинга UDP > TCP > ICMP
-                                if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
-                                {
-                                    rawPing = (int)Math.Round(server.UdpPing);
-                                }
-                                else if (server.Ping > 0 && server.Ping < 10000)
-                                {
-                                    rawPing = server.Ping;
-                                }
-                                else if (App.meterState.IcmpPing > 0 && App.meterState.IcmpPing < 1000)
-                                {
-                                    rawPing = App.meterState.IcmpPing;
-                                }
-                                
-                                // Применяем сглаживание если включено и есть валидные данные
-                                if (rawPing > 0)
-                                {
-                                    int displayPing = Classes.SmoothingManager.SmoothPingValueGui(rawPing);
-                                    pingText = $"{displayPing} ms";
-                                }
-                                else
-                                {
-                                    pingText = "n/a ms";
-                                }
-                                
-                                // Применяем цвет на основе зоны (ПРИОРИТЕТ ЗОНЫ)
-                                Color finalPingColor = hasActiveSession ? PingColor : _inactiveMetricColor;
-                                
-                                // Добавляем индикатор спайка если включена соответствующая настройка
-                                // ВАЖНО: индикатор наследует цвет зоны, а не перезаписывает его
-                                bool showSpikeIndicator = App.settingsManager?.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
-                                Debug.Print($"[GUI] Spike check: HasPingSpike={server.HasPingSpike}, ShowSetting={showSpikeIndicator}, OnScreen={OnScreen}");
-                                if (hasActiveSession && showSpikeIndicator && server.HasPingSpike)
-                                {
-                                    pingText += " (!)";
-                                    // Сохраняем цвет зоны - индикатор спайка того же цвета что и значение
-                                    Debug.Print($"[GUI] Spike indicator added with zone color: {pingText}");
-                                }
-                                
-                                // Применяем финальный цвет (цвет зоны сохраняется)
+
+                            QueueUIUpdate(() =>
+                            {
                                 ping_val.ForeColor = finalPingColor;
-                                ping_val.Text = hasActiveSession ? pingText : "n/a ms";
+                                ping_val.Text = pingDisplayText;
                             });
                         }
-                        
+
                         // Only update other GUI elements if GUI overlay is visible
                         if (!skipGUIUpdate)
                         {
-                            // Phase 3: Single Consumer Pattern - queue UI updates
-                            QueueUIUpdate(() => {
-                                string tickrateText = App.meterState.OutputTickRate.ToString();
-                                Color finalTickRateColor = hasActiveSession
-                                    ? TickRateColor
-                                    : _inactiveMetricColor;
-                                
-                                // Добавляем индикатор спайка для tickrate если включена соответствующая настройка
-                                bool showTickrateSpikes = App.settingsManager?.GetOption("show_tickrate_spikes", "True", "ADVANCED") == "True";
-                                if (hasActiveSession && showTickrateSpikes && App.meterState.HasTickRateSpike)
-                                {
-                                    tickrateText += " (!)";
-                                    // Сохраняем цвет зоны - индикатор спайка того же цвета что и значение
-                                    // finalTickRateColor остается TickRateColor (цвет зоны)
-                                    Debug.Print($"[GUI] Tickrate spike indicator added with zone color: {tickrateText}");
-                                }
-                                
+                            QueueUIUpdate(() =>
+                            {
                                 tickrate_val.Text = tickrateText;
                                 tickrate_val.ForeColor = finalTickRateColor;
                             });
-                            
-                            //update tickrate chart
+
                             if (App.settingsForm.settings_chart_checkbox.Checked)
                             {
                                 QueueUIUpdate(() => UpdateTickrateChart(App.meterState.TicksHistory, App.meterState.TickTimestamps));
                             }
-                            
-                            //update traffic
+
                             if (App.settingsForm.settings_traffic_checkbox.Checked)
                             {
-                                float formatedUpload = (float)App.meterState.UploadTraffic / (1024 * 1024);
-                                float formatedDownload = (float)App.meterState.DownloadTraffic / (1024 * 1024);
-                                string activeTrafficText = formatedUpload.ToString("N2") + " / " + formatedDownload.ToString("N2") + " mb";
                                 QueueUIUpdate(() =>
                                 {
-                                    if (hasActiveSession)
-                                    {
-                                        traffic_val.Text = activeTrafficText;
-                                        traffic_val.ForeColor = _neutralActiveColor;
-                                    }
-                                    else
-                                    {
-                                        traffic_val.Text = 0f.ToString("N2") + " / " + 0f.ToString("N2") + " mb";
-                                        traffic_val.ForeColor = _inactiveMetricColor;
-                                    }
+                                    traffic_val.Text = trafficDisplayText;
+                                    traffic_val.ForeColor = hasActiveSession ? _neutralActiveColor : _inactiveMetricColor;
                                 });
                             }
-                            
-                            //update IP
+
                             if (App.settingsForm.settings_ip_checkbox.Checked)
                             {
                                 QueueUIUpdate(() =>
                                 {
-                                    ip_val.Text = hasActiveSession ? App.meterState.Server.Ip : string.Empty;
+                                    ip_val.Text = ipDisplayText;
                                     ip_val.ForeColor = hasActiveSession ? _neutralActiveColor : _inactiveMetricColor;
                                 });
                             }
-                            
-                            //update time
+
                             if (App.settingsForm.settings_session_time_checkbox.Checked)
                             {
-                                TimeSpan result = hasActiveSession
-                                    ? DateTime.Now.Subtract(App.meterState.SessionStart)
-                                    : TimeSpan.Zero;
-                                string duration = result.ToString("mm':'ss");
                                 QueueUIUpdate(() =>
                                 {
-                                    if (hasActiveSession && !string.IsNullOrEmpty(App.meterState.Server.Ip))
+                                    if (hasActiveSession && !string.IsNullOrEmpty(ipDisplayText))
                                     {
-                                        time_val.Text = duration;
+                                        time_val.Text = sessionDurationText;
                                         time_val.ForeColor = _neutralActiveColor;
                                     }
                                     else
@@ -1336,10 +1339,10 @@ namespace tickMeter.Forms
                                     }
                                 });
                             }
-                            
+
                             //update process name
                             {
-                                string processName = AutoDetectMngr.GetActiveProcessName();
+                                string processName = activeProcessName;
                                 QueueUIUpdate(() =>
                                 {
                                     if (!string.IsNullOrEmpty(processName) && processName != "n\\a")
@@ -1360,10 +1363,9 @@ namespace tickMeter.Forms
                             {
                                 QueueUIUpdate(() =>
                                 {
-                                    float dropsPercent = App.meterState.GetDropsNumber();
                                     if (hasActiveSession)
                                     {
-                                        drops_lbl_val.Text = App.meterState.GetDrops() + "%";
+                                        drops_lbl_val.Text = dropsText;
                                         drops_lbl_val.ForeColor = GetDropsColor(dropsPercent);
                                     }
                                     else
@@ -1374,6 +1376,86 @@ namespace tickMeter.Forms
                                 });
                             }
                         }
+
+                        var diagnosticPayload = new MetricDiagnosticPayload
+                        {
+                            Game = App.meterState.Game,
+                            ActiveProcess = activeProcessName,
+                            TargetKey = targetKey ?? string.Empty,
+                            LocalIp = App.meterState.LocalIP,
+                            IsTracking = App.meterState.IsTracking,
+                            GuiVisible = OnScreen,
+                            Server = new ServerMetrics
+                            {
+                                Ip = server?.Ip,
+                                PingPort = server?.PingPort ?? 0,
+                                Location = server?.Location,
+                                OutputTickRate = App.meterState.OutputTickRate,
+                                AvgTickrate = server?.AvgTickrate ?? 0,
+                                AvgStableTickrate = server?.AvgStableTickrate ?? 0,
+                                TotalTicks = server?.TotalTicksCount ?? 0,
+                                LostTicks = server?.LostTicks ?? 0,
+                                PacketLossPercent = dropsPercent,
+                                AvgPingMs = snap.PingAvgMs,
+                                UdpPingMs = server?.UdpPing ?? 0,
+                                TcpPingMs = server?.Ping ?? 0,
+                                IcmpPingMs = App.meterState.IcmpPing
+                            },
+                            Gui = new GuiMetrics
+                            {
+                                Ping = new PingMetrics
+                                {
+                                    RawMs = rawPing,
+                                    GuiDisplayedMs = displayPing,
+                                    OverlaySnapshotMs = snap.PingAvgMs,
+                                    Source = pingSource,
+                                    DisplayText = pingDisplayText,
+                                    ColorHex = MetricDiagnostics.ToHex(finalPingColor)
+                                },
+                                Tickrate = new TickrateMetrics
+                                {
+                                    Raw = rawTickrate,
+                                    GuiDisplayText = tickrateText,
+                                    ColorHex = MetricDiagnostics.ToHex(finalTickRateColor),
+                                    SnapshotAvgHz = snap.TickrateAvgHz
+                                },
+                                Traffic = new TrafficMetrics
+                                {
+                                    UploadMb = uploadMb,
+                                    DownloadMb = downloadMb
+                                },
+                                SessionDuration = sessionDurationText
+                            },
+                            Overlay = new OverlaySnapshot
+                            {
+                                PingMs = snap.PingAvgMs,
+                                TickrateAvgHz = snap.TickrateAvgHz,
+                                TicktimeAvgMs = snap.TicktimeAvgMs,
+                                TargetHz = snap.TargetHz
+                            },
+                            Zones = new ZoneMetrics
+                            {
+                                Ping = pingZone.ToString(),
+                                Tickrate = tickrateZone.ToString(),
+                                Ticktime = ticktimeZone.ToString()
+                            },
+                            Spikes = new SpikeMetrics
+                            {
+                                Ping = pingSpikeActive,
+                                Tickrate = tickrateSpikeActive,
+                                Ticktime = App.meterState.HasTickTimeSpike
+                            },
+                            Smoothing = new SmoothingFlags
+                            {
+                                PingGuiEnabled = SmoothingManager.IsPingValueGuiEnabled(),
+                                PingOverlayEnabled = SmoothingManager.IsPingValueOverlayEnabled(),
+                                TickrateOverlayEnabled = SmoothingManager.IsTickrateValueOverlayEnabled(),
+                                TrafficOverlayEnabled = SmoothingManager.IsTrafficValueOverlayEnabled()
+                            },
+                            Diagnostic = zonerDiagnostic
+                        };
+
+                        MetricDiagnostics.TryLog(diagnosticPayload);
                     });
             
             // Stage 6: Обновляем анализатор качества сети
@@ -1724,6 +1806,41 @@ namespace tickMeter.Forms
             }
         }
 
+        private void ResetMetricsState(string currentProcessName)
+        {
+            if (App.meterState == null)
+            {
+                return;
+            }
+
+            string targetProcess = currentProcessName ?? AutoDetectMngr.GetActiveProcessName() ?? string.Empty;
+
+            if (_metricsStateCleared && string.IsNullOrEmpty(App.meterState.Server?.Ip) && !App.meterState.IsTracking &&
+                App.meterState.TickRate == 0 && App.meterState.OutputTickRate == 0 &&
+                App.meterState.DownloadTraffic == 0 && App.meterState.UploadTraffic == 0)
+            {
+                App.meterState.Game = targetProcess;
+                _metricsStateCleared = true;
+                return;
+            }
+
+            try
+            {
+                App.meterState.Reset();
+                Classes.SmoothingManager.ResetValueEmas();
+                Classes.TickrateSmoothingManager.Reset();
+                Classes.SpikeDetection.SpikeDetectionManager.Reset();
+
+                App.meterState.Game = targetProcess;
+                _lastMetricsApplied = DateTime.MinValue;
+                _metricsStateCleared = true;
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[Metrics] Error resetting meter state: {ex.Message}");
+            }
+        }
+
         private void updateMetherStateFromActiveWindow()
         {
             string previousProcessName = App.meterState.Game;
@@ -1775,6 +1892,7 @@ namespace tickMeter.Forms
                 _fastStartCounter = 0; // КРИТИЧНО: сброс счетчика при каждой смене окна!
                 _lastConnectionSearch = DateTime.MinValue; // Сброс cooldown для немедленного поиска
                 targetKey = ""; // Сбрасываем текущее соединение
+                ResetMetricsState(currentActiveProcess);
                 
                 // Очищаем старые соединения из словаря для нового процесса
                 try
@@ -1865,6 +1983,7 @@ namespace tickMeter.Forms
                     _fastStartCounter = 0;
                     _lastConnectionSearch = DateTime.MinValue; // Немедленный поиск!
                     _lastMetricsApplied = DateTime.MinValue;
+                    ResetMetricsState(currentActiveProcess);
 
                     // Включаем быстрый режим ConnectionsManager
                     App.connMngr?.SetFastMode(true);
@@ -1969,6 +2088,7 @@ namespace tickMeter.Forms
                         Debug.Print($"[Metrics] ⚠️ Too many search attempts ({_fastStartCounter}), resetting state");
                         _fastStartCounter = 0;
                         targetKey = "";
+                        ResetMetricsState(currentActiveProcess);
                         
                         // Очищаем все старые соединения - возможно там накопился мусор
                         try
@@ -2036,6 +2156,7 @@ namespace tickMeter.Forms
                             targetKey = "";
                             Debug.Print($"[Metrics] Reset targetKey to empty");
                         }
+                        ResetMetricsState(currentActiveProcess);
                         return;
                     }
                 }
@@ -2078,6 +2199,8 @@ namespace tickMeter.Forms
                     
                     Debug.Print($"[Metrics] ⚠️ Metrics deactivated - connection lost, activating fast search");
                 }
+
+                ResetMetricsState(currentActiveProcess);
             }
             
             
@@ -2089,6 +2212,7 @@ namespace tickMeter.Forms
                         if(!ActiveWindowTracker.connections.ContainsKey(targetKey))
                         {
                             targetKey = "";
+                            ResetMetricsState(currentActiveProcess);
                             return;
                         }
                         ProcessNetworkStats procStats = ActiveWindowTracker.connections[targetKey];
@@ -2171,78 +2295,79 @@ namespace tickMeter.Forms
                                     Debug.Print($"[updateMetherStateFromActiveWindow] SettingsForm state: IsNull={App.settingsForm == null}, IsHandleCreated={App.settingsForm?.IsHandleCreated}, IsDisposed={App.settingsForm?.IsDisposed}");
                                     
                                     // Обновляем UI (textbox и ComboBox адаптера) АСИНХРОННО
-                                    if (App.settingsForm != null && App.settingsForm.IsHandleCreated && !App.settingsForm.IsDisposed)
+                                    // Используем SafeInvokeOnSettings чтобы избежать исключений при отсутствии Handle
+                                    App.SafeInvokeOnSettings(() =>
                                     {
                                         try
                                         {
-                                            // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: используем BeginInvoke вместо Invoke
-                                            // чтобы НЕ блокировать текущий поток
-                                            App.settingsForm.BeginInvoke((Action)(() =>
+                                            var settings = App.settingsForm;
+                                            if (settings == null || settings.IsDisposed)
                                             {
-                                                // Обновляем textbox LocalIP
-                                                if (App.settingsForm.local_ip_textbox != null && 
-                                                    App.settingsForm.local_ip_textbox.Text != newLocalIP)
+                                                Debug.Print("[updateMetherStateFromActiveWindow] Settings form became unavailable during UI sync");
+                                                return;
+                                            }
+
+                                            // Обновляем textbox LocalIP
+                                            if (settings.local_ip_textbox != null && settings.local_ip_textbox.Text != newLocalIP)
+                                            {
+                                                settings.local_ip_textbox.Text = newLocalIP;
+                                            }
+
+                                            // Обновляем выбранный адаптер в ComboBox (с защитой от рекурсии)
+                                            if (settings.adapters_list != null && settings.adapters_list.Items.Count > 0)
+                                            {
+                                                Debug.Print($"[updateMetherStateFromActiveWindow] Searching for adapter with IP: {newLocalIP}");
+                                                var adapters = App.GetAdapters();
+                                                Debug.Print($"[updateMetherStateFromActiveWindow] Total adapters: {adapters.Count}, Current ComboBox index: {settings.adapters_list.SelectedIndex}");
+
+                                                bool found = false;
+                                                for (int i = 0; i < adapters.Count; i++)
                                                 {
-                                                    App.settingsForm.local_ip_textbox.Text = newLocalIP;
-                                                }
-                                                
-                                                // Обновляем выбранный адаптер в ComboBox (с защитой от рекурсии)
-                                                if (App.settingsForm.adapters_list != null && App.settingsForm.adapters_list.Items.Count > 0)
-                                                {
-                                                    Debug.Print($"[updateMetherStateFromActiveWindow] Searching for adapter with IP: {newLocalIP}");
-                                                    var adapters = App.GetAdapters();
-                                                    Debug.Print($"[updateMetherStateFromActiveWindow] Total adapters: {adapters.Count}, Current ComboBox index: {App.settingsForm.adapters_list.SelectedIndex}");
-                                                    
-                                                    bool found = false;
-                                                    for (int i = 0; i < adapters.Count; i++)
+                                                    string adapterIP = App.GetAdapterAddress(adapters[i]);
+                                                    Debug.Print($"[updateMetherStateFromActiveWindow] Adapter[{i}] IP: {adapterIP}, Match: {adapterIP == newLocalIP}");
+
+                                                    if (adapterIP == newLocalIP)
                                                     {
-                                                        string adapterIP = App.GetAdapterAddress(adapters[i]);
-                                                        Debug.Print($"[updateMetherStateFromActiveWindow] Adapter[{i}] IP: {adapterIP}, Match: {adapterIP == newLocalIP}");
-                                                        
-                                                        if (adapterIP == newLocalIP)
+                                                        found = true;
+                                                        if (settings.adapters_list.SelectedIndex != i)
                                                         {
-                                                            found = true;
-                                                            if (App.settingsForm.adapters_list.SelectedIndex != i)
+                                                            Debug.Print($"[updateMetherStateFromActiveWindow] ✓ Found! Updating adapter ComboBox index: {settings.adapters_list.SelectedIndex} -> {i}");
+
+                                                            settings.IsUpdatingAdapter = true;
+                                                            try
                                                             {
-                                                                Debug.Print($"[updateMetherStateFromActiveWindow] ✓ Found! Updating adapter ComboBox index: {App.settingsForm.adapters_list.SelectedIndex} -> {i}");
-                                                                
-                                                                // Устанавливаем флаг чтобы избежать рекурсивного обновления
-                                                                App.settingsForm.IsUpdatingAdapter = true;
-                                                                try
-                                                                {
-                                                                    App.settingsForm.adapters_list.SelectedIndex = i;
-                                                                    Debug.Print($"[updateMetherStateFromActiveWindow] ✓ ComboBox updated successfully. New index: {App.settingsForm.adapters_list.SelectedIndex}");
-                                                                }
-                                                                finally
-                                                                {
-                                                                    App.settingsForm.IsUpdatingAdapter = false;
-                                                                }
+                                                                settings.adapters_list.SelectedIndex = i;
+                                                                Debug.Print($"[updateMetherStateFromActiveWindow] ✓ ComboBox updated successfully. New index: {settings.adapters_list.SelectedIndex}");
                                                             }
-                                                            else
+                                                            finally
                                                             {
-                                                                Debug.Print($"[updateMetherStateFromActiveWindow] Adapter already selected (index {i})");
+                                                                settings.IsUpdatingAdapter = false;
                                                             }
-                                                            break;
                                                         }
-                                                    }
-                                                    
-                                                    if (!found)
-                                                    {
-                                                        Debug.Print($"[updateMetherStateFromActiveWindow] ⚠ WARNING: No adapter found with IP {newLocalIP}!");
+                                                        else
+                                                        {
+                                                            Debug.Print($"[updateMetherStateFromActiveWindow] Adapter already selected (index {i})");
+                                                        }
+                                                        break;
                                                     }
                                                 }
-                                                else
+
+                                                if (!found)
                                                 {
-                                                    Debug.Print($"[updateMetherStateFromActiveWindow] ⚠ ComboBox is null or empty");
+                                                    Debug.Print($"[updateMetherStateFromActiveWindow] ⚠ WARNING: No adapter found with IP {newLocalIP}!");
                                                 }
-                                            }));
+                                            }
+                                            else
+                                            {
+                                                Debug.Print("[updateMetherStateFromActiveWindow] ⚠ ComboBox is null or empty");
+                                            }
                                         }
                                         catch (Exception ex)
                                         {
                                             Debug.Print($"[updateMetherStateFromActiveWindow] UI update error: {ex.Message}");
                                         }
-                                    }
-                                    
+                                    });
+
                                     Debug.Print($"[updateMetherStateFromActiveWindow] ✓ Successfully updated LocalIP for process '{currentProcessName}' to {newLocalIP}");
                                     
                                     // НОВОЕ: Автоматическое переключение адаптера при активном мониторинге
@@ -2291,12 +2416,14 @@ namespace tickMeter.Forms
                         App.meterState.loss = procStats.loss;
                         App.meterState.totalTicksCnt = procStats.totalTicksCnt;
                         _lastMetricsApplied = DateTime.Now;
+                        _metricsStateCleared = false;
                     }
                 }
                 catch (InvalidOperationException)
                 {
                     // Коллекция была изменена, пропускаем
                     targetKey = "";
+                    ResetMetricsState(currentActiveProcess);
                     return;
                 }
             }
@@ -2881,19 +3008,27 @@ namespace tickMeter.Forms
                     var settingsForm = App.settingsForm;
                     if (settingsForm != null && !settingsForm.IsDisposed && settingsForm.local_ip_textbox != null)
                     {
-                        if (!settingsForm.IsHandleCreated)
+                        try
                         {
-                            Debug.Print("[StartTracking] Settings form handle not ready, skipping async LocalIP update");
-                        }
-                        else if (settingsForm.local_ip_textbox.Text != autoDetectedIP)
-                        {
-                            settingsForm.BeginInvoke((Action)(() =>
+                            App.SafeInvokeOnSettings(() =>
                             {
-                                if (!settingsForm.IsDisposed && settingsForm.local_ip_textbox != null)
+                                try
                                 {
-                                    settingsForm.local_ip_textbox.Text = autoDetectedIP;
+                                    if (!settingsForm.IsDisposed && settingsForm.local_ip_textbox != null && settingsForm.local_ip_textbox.Text != autoDetectedIP)
+                                    {
+                                        settingsForm.local_ip_textbox.Text = autoDetectedIP;
+                                        Debug.Print($"[StartTracking] Settings LocalIP textbox updated to {autoDetectedIP}");
+                                    }
                                 }
-                            }));
+                                catch (Exception ex)
+                                {
+                                    Debug.Print($"[StartTracking] Error updating LocalIP textbox inside SafeInvoke: {ex.Message}");
+                                }
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.Print($"[StartTracking] SafeInvokeOnSettings failed: {ex.Message}");
                         }
                     }
                 }

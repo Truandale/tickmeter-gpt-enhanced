@@ -193,16 +193,40 @@ namespace tickMeter.Classes
                 Debug.Print($"[AutoDetect] Process changed from '{activeProcess}' to '{newName}' - resetting all metrics");
                 if (App.meterState != null && App.meterState.IsTracking)
                 {
-                    // Полный сброс всех метрик при смене процесса
-                    App.gui.Invoke((Action)(() =>
+                    // Полный сброс всех метрик при смене процесса — делаем это безопасно через SafeInvokeOnSettings
+                    try
                     {
-                        App.gui.InitMeterState();
-                        App.meterState.IsTracking = true; // Восстанавливаем флаг трекинга
-                    }));
-                    
+                        App.SafeInvokeOnSettings(() =>
+                        {
+                            try
+                            {
+                                App.gui.InitMeterState();
+                                App.meterState.IsTracking = true; // Восстанавливаем флаг трекинга
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.Print($"[AutoDetect] InitMeterState failed inside SafeInvoke: {ex.Message}");
+                            }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Print($"[AutoDetect] SafeInvokeOnSettings failed: {ex.Message}");
+                        // Fallback: try to call InitMeterState directly if possible
+                        try
+                        {
+                            App.gui?.InitMeterState();
+                            App.meterState.IsTracking = true;
+                        }
+                        catch (Exception inner)
+                        {
+                            Debug.Print($"[AutoDetect] Fallback InitMeterState also failed: {inner.Message}");
+                        }
+                    }
+
                     // Очищаем статистику соединений
                     ActiveWindowTracker.ClearConnectionStats();
-                    
+
                     Debug.Print("[AutoDetect] All metrics reset, tracking continues for new process");
                 }
                 
@@ -225,55 +249,61 @@ namespace tickMeter.Classes
                             Debug.Print($"[AutoDetect] Process changed to {newName}, LocalIP updated to {autoDetectedIP}");
                         }
                         
-                        // Обновляем UI формы настроек (textbox + ComboBox адаптера)
-                        if (App.settingsForm != null && App.settingsForm.IsHandleCreated && !App.settingsForm.IsDisposed)
+                        // Обновляем UI формы настроек (textbox + ComboBox адаптера) безопасно
+                        if (App.settingsForm != null && !App.settingsForm.IsDisposed)
                         {
-                            try
+                            App.SafeInvokeOnSettings(() =>
                             {
-                                App.settingsForm.Invoke((Action)(() =>
+                                try
                                 {
-                                    // Обновляем LocalIP textbox
-                                    if (App.settingsForm.local_ip_textbox.Text != autoDetectedIP)
+                                    var settings = App.settingsForm;
+                                    if (settings == null || settings.IsDisposed)
                                     {
-                                        App.settingsForm.local_ip_textbox.Text = autoDetectedIP;
+                                        return;
                                     }
-                                    
+
+                                    // Обновляем LocalIP textbox
+                                    if (settings.local_ip_textbox != null && settings.local_ip_textbox.Text != autoDetectedIP)
+                                    {
+                                        settings.local_ip_textbox.Text = autoDetectedIP;
+                                    }
+
                                     // Синхронизируем ComboBox с текущим IP
-                                    if (App.settingsForm.adapters_list != null && App.settingsForm.adapters_list.Items.Count > 0)
+                                    if (settings.adapters_list != null && settings.adapters_list.Items.Count > 0)
                                     {
                                         Debug.Print($"[AutoDetect] Syncing adapter ComboBox for IP: {autoDetectedIP}");
                                         var adapters = App.GetAdapters();
-                                        
+
                                         for (int i = 0; i < adapters.Count; i++)
                                         {
                                             string adapterIP = App.GetAdapterAddress(adapters[i]);
-                                            if (adapterIP == autoDetectedIP && App.settingsForm.adapters_list.SelectedIndex != i)
+                                            if (adapterIP == autoDetectedIP && settings.adapters_list.SelectedIndex != i)
                                             {
-                                                Debug.Print($"[AutoDetect] Updating ComboBox: {App.settingsForm.adapters_list.SelectedIndex} -> {i} ({autoDetectedIP})");
-                                                
-                                                App.settingsForm.IsUpdatingAdapter = true;
+                                                Debug.Print($"[AutoDetect] Updating ComboBox: {settings.adapters_list.SelectedIndex} -> {i} ({autoDetectedIP})");
+
+                                                settings.IsUpdatingAdapter = true;
                                                 try
                                                 {
-                                                    App.settingsForm.adapters_list.SelectedIndex = i;
+                                                    settings.adapters_list.SelectedIndex = i;
                                                 }
                                                 finally
                                                 {
-                                                    App.settingsForm.IsUpdatingAdapter = false;
+                                                    settings.IsUpdatingAdapter = false;
                                                 }
                                                 break;
                                             }
                                         }
                                     }
-                                }));
-                            }
-                            catch (InvalidOperationException ex)
-                            {
-                                Debug.Print($"[AutoDetect] Cannot update settings form UI: {ex.Message}");
-                            }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.Print($"[AutoDetect] Settings UI update error: {ex.Message}");
+                                }
+                            });
                         }
                         else
                         {
-                            Debug.Print("[AutoDetect] Settings form not ready (handle missing or disposed), skipping UI sync");
+                            Debug.Print("[AutoDetect] Settings form not ready (null or disposed), skipping UI sync");
                         }
                     }
                 }

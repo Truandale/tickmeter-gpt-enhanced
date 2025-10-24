@@ -84,6 +84,43 @@ namespace tickMeter.Classes
             return AdaptersList;
         }
 
+            /// <summary>
+            /// Safely invoke an action on the Settings form. If the form handle is not yet created,
+            /// the action is queued to run once HandleCreated fires. If the form is null or disposed,
+            /// the action is skipped.
+            /// </summary>
+            public static void SafeInvokeOnSettings(Action action)
+            {
+                try
+                {
+                    var f = settingsForm;
+                    if (f == null || f.IsDisposed || action == null) return;
+
+                    if (f.IsHandleCreated)
+                    {
+                        try { f.BeginInvoke(action); } catch { /* best-effort */ }
+                        return;
+                    }
+
+                    EventHandler handler = null;
+                    handler = (s, e) =>
+                    {
+                        try
+                        {
+                            f.HandleCreated -= handler;
+                            if (!f.IsDisposed)
+                            {
+                                try { f.BeginInvoke(action); } catch { }
+                            }
+                        }
+                        catch { }
+                    };
+
+                    f.HandleCreated += handler;
+                }
+                catch { }
+            }
+
         public static string GetAdapterAddress(LivePacketDevice Adapter)
         {
             if (Adapter.Description != null)
