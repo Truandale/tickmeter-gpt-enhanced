@@ -1201,6 +1201,7 @@ namespace tickMeter.Forms
             bool hasActiveSession = App.meterState.IsTracking &&
                                     App.meterState.Server != null &&
                                     !string.IsNullOrEmpty(App.meterState.Server.Ip);
+            bool showNoTrafficPlaceholder = !hasActiveSession;
             
             // ChatGPT Enhancement: Snapshot-based diagnostic for perfect consistency
             string zonerDiagnostic = zoner.GetDiagnostic(snap);
@@ -1246,8 +1247,16 @@ namespace tickMeter.Forms
                             Debug.Print($"[GUI] Spike indicator added with zone color: {pingText}");
                         }
 
-                        string pingDisplayText = hasActiveSession ? pingText : "n/a ms";
-                        Color finalPingColor = hasActiveSession ? PingColor : _inactiveMetricColor;
+                        string pingDisplayText = hasActiveSession ? pingText : "NO TRAFFIC!";
+                        Color finalPingColor;
+                        if (showNoTrafficPlaceholder)
+                        {
+                            finalPingColor = Color.Red;
+                        }
+                        else
+                        {
+                            finalPingColor = hasActiveSession ? PingColor : _inactiveMetricColor;
+                        }
 
                         int rawTickrate = App.meterState.OutputTickRate;
                         bool showTickrateSpikes = App.settingsManager?.GetOption("show_tickrate_spikes", "True", "ADVANCED") == "True";
@@ -1310,7 +1319,7 @@ namespace tickMeter.Forms
                                 QueueUIUpdate(() =>
                                 {
                                     traffic_val.Text = trafficDisplayText;
-                                    traffic_val.ForeColor = hasActiveSession ? _neutralActiveColor : _inactiveMetricColor;
+                                    traffic_val.ForeColor = hasActiveSession ? _neutralActiveColor : (showNoTrafficPlaceholder ? Color.Red : _inactiveMetricColor);
                                 });
                             }
 
@@ -3755,9 +3764,9 @@ namespace tickMeter.Forms
             
             tickrate_val.ForeColor = _inactiveMetricColor;
             tickrate_val.Text = "0";
-            ping_val.ForeColor = _inactiveMetricColor;
-            ping_val.Text = "n/a ms";
-            traffic_val.ForeColor = _inactiveMetricColor;
+            ping_val.ForeColor = Color.Red;
+            ping_val.Text = "NO TRAFFIC!";
+            traffic_val.ForeColor = Color.Red;
             traffic_val.Text = 0f.ToString("N2") + " / " + 0f.ToString("N2") + " mb";
             time_val.ForeColor = _inactiveMetricColor;
             time_val.Text = "00:00";
@@ -3793,7 +3802,7 @@ namespace tickMeter.Forms
                // WebStatsManager.uploadTickrate(); //no no no. not today
             }
 
-            try { RivaTuner.PrintData(""); } catch (Exception exc) { MessageBox.Show(exc.Message); }
+            try { RivaTuner.ShowNoTrafficPlaceholder(); } catch (Exception exc) { MessageBox.Show(exc.Message); }
             if(App.meterState.Server.Ip != "")
             {
                 if (!Directory.Exists("logs"))

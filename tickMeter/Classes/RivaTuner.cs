@@ -326,13 +326,16 @@ namespace tickMeter.Classes
                 if (antiReentrancy) _buildRivaOutputInProgress = true;
                 
                 string output = "";
-                if(App.meterState.TickRate == 0 && App.meterState.Game == "")
-            {
-                PrintData(output, true);
-                return;
-            }
-            chartOffset = 0;
-            meterState = App.meterState;
+                var state = App.meterState;
+
+                if (!HasActiveMetrics(state))
+                {
+                    PrintData(FormatNoTrafficPlaceholder(), true);
+                    return;
+                }
+
+                chartOffset = 0;
+                meterState = state;
             if(App.settingsForm.settings_tickrate_show.Checked)
             {
                 output += FormatTickrate();
@@ -570,6 +573,65 @@ namespace tickMeter.Classes
                     _buildRivaOutputInProgress = false;
                 }
             }
+        }
+
+        private static bool HasActiveMetrics(TickMeterState state)
+        {
+            if (state == null || !state.IsTracking)
+            {
+                return false;
+            }
+
+            var server = state.Server;
+            if (server == null || string.IsNullOrEmpty(server.Ip))
+            {
+                return false;
+            }
+
+            bool hasPing = false;
+            if (server.IsUdpPingValid)
+            {
+                hasPing = true;
+            }
+            else if (server.Ping > 0 && server.Ping < 10000)
+            {
+                hasPing = true;
+            }
+
+            if (!hasPing && state.IcmpPing > 0 && state.IcmpPing < 1000)
+            {
+                hasPing = true;
+            }
+
+            bool hasTickrate = state.OutputTickRate > 0 || state.TickRate > 0 || (server.TicksHistory?.Count ?? 0) > 0;
+            bool hasTraffic = server.UploadTraffic > 0 || server.DownloadTraffic > 0;
+
+            if (!(hasPing || hasTickrate || hasTraffic))
+            {
+                try
+                {
+                    var snapshot = Classes.UnifiedDataSource.Snapshot();
+                    hasPing |= snapshot.PingAvgMs > 0;
+                    hasTickrate |= snapshot.TickrateAvgHz > 0;
+                    hasTraffic |= snapshot.TicktimeAvgMs > 0; // Non-zero ticktime implies packets detected
+                }
+                catch
+                {
+                    // Ignore snapshot errors, rely on existing indicators
+                }
+            }
+
+            return hasPing || hasTickrate || hasTraffic;
+        }
+
+        private static string FormatNoTrafficPlaceholder()
+        {
+            return "<S><C1>NO TRAFFIC!<C>" + Environment.NewLine;
+        }
+
+        public static void ShowNoTrafficPlaceholder()
+        {
+            PrintData(FormatNoTrafficPlaceholder(), true);
         }
 
         // Hysteresis для предотвращения дребезга рейтинга
