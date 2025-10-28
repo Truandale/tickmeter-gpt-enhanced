@@ -1051,7 +1051,30 @@ namespace tickMeter.Forms
                             if (App.connectionTracker.TryResolve(proto, srcIP, srcPort, dstIP, dstPort, out var info))
                             {
                                 Debug.Print($"VPN bypass: packet {srcIP}:{srcPort} -> {dstIP}:{dstPort} resolved to PID {info.Pid} ({info.Exe})");
-                                // TODO: подменить данные пакета для отображения реального процесса
+                                DebugLogger.log($"[VPN-BYPASS] RESOLVED proto={proto} local={srcIP}:{srcPort} remote={dstIP}:{dstPort} pid={info.Pid} exe={info.Exe}");
+                                Classes.VpnBypassResolver.Register(proto, srcIP, srcPort, dstIP, dstPort, info);
+                            }
+                            else
+                            {
+                                var localOwner = App.connectionTracker.QueryLocalOwner(proto, srcIP, srcPort);
+                                var localTuple = (ip: srcIP, port: srcPort, remoteIp: dstIP, remotePort: dstPort);
+
+                                if (!localOwner.HasValue)
+                                {
+                                    var altOwner = App.connectionTracker.QueryLocalOwner(proto, dstIP, dstPort);
+                                    if (altOwner.HasValue)
+                                    {
+                                        localOwner = altOwner;
+                                        localTuple = (ip: dstIP, port: dstPort, remoteIp: srcIP, remotePort: srcPort);
+                                    }
+                                }
+
+                                string ownerText = localOwner.HasValue ? $"pid={localOwner.Value.Pid} exe={localOwner.Value.Exe}" : "pid=?";
+                                DebugLogger.log($"[VPN-BYPASS] MISS proto={proto} local={srcIP}:{srcPort} remote={dstIP}:{dstPort} owner={ownerText}");
+                                if (localOwner.HasValue)
+                                {
+                                    Classes.VpnBypassResolver.Register(proto, localTuple.ip, localTuple.port, localTuple.remoteIp, localTuple.remotePort, localOwner.Value);
+                                }
                             }
                         }
                     }
@@ -1059,6 +1082,7 @@ namespace tickMeter.Forms
                 catch (Exception ex)
                 {
                     Debug.Print($"VPN bypass error: {ex.Message}");
+                    DebugLogger.log($"[VPN-BYPASS] ERROR {ex.Message}");
                 }
             }
             
