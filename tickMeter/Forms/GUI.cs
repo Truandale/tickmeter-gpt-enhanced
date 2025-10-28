@@ -484,6 +484,20 @@ namespace tickMeter.Forms
         {
             try
             {
+                // Проверяем настройки VPN bypass - если включены, запускаем мониторинг принудительно
+                bool vpnBypassBasic = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
+                bool vpnBypassAdvanced = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+                
+                if (vpnBypassBasic || vpnBypassAdvanced)
+                {
+                    Debug.Print("[Automation] VPN bypass mode detected - starting monitoring automatically");
+                    if (App.meterState == null || !App.meterState.IsTracking)
+                    {
+                        StartTracking();
+                    }
+                    return;
+                }
+                
                 var snapshot = LoadMonitoringSnapshot();
                 if (snapshot == null)
                 {
@@ -1153,6 +1167,65 @@ namespace tickMeter.Forms
                 // Глобальная защита от любых ошибок в PacketHandler
                 Debug.Print($"[PacketHandler] Unexpected error: {ex.GetType().Name}: {ex.Message}");
                 return;
+            }
+        }
+
+        /// <summary>
+        /// Обработчик событий ConnectionTracker для режима VPN bypass
+        /// Позволяет отслеживать соединения и обновлять метрики в режиме антимаскировки VPN
+        /// </summary>
+        private void HandleTunnelConnectionForTracking(ConnectionTracker.Key connectionKey, ConnectionTracker.Info connectionInfo)
+        {
+            try
+            {
+                // Проверяем валидность входных параметров
+                if (connectionKey.Local == null || connectionKey.Remote == null)
+                {
+                    Debug.Print("[VPN-Tracking] Warning: connectionKey contains null IP addresses");
+                    return;
+                }
+
+                // Логируем новое соединение
+                Debug.Print($"[VPN-Tracking] New connection: {connectionKey.Local}:{connectionKey.LocalPort} -> {connectionKey.Remote}:{connectionKey.RemotePort} process={connectionInfo.Exe ?? "unknown"}/{connectionInfo.Pid}");
+                
+                // Проверяем, что это соединение связано с отслеживаемым процессом
+                if (App.meterState != null && App.meterState.IsTracking)
+                {
+                    string activeProcess = null;
+                    try
+                    {
+                        activeProcess = AutoDetectMngr.GetActiveProcessName();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Print($"[VPN-Tracking] Error getting active process: {ex.Message}");
+                        return;
+                    }
+                    
+                    // Если процесс совпадает с активным - потенциально игровой трафик
+                    if (!string.IsNullOrEmpty(connectionInfo.Exe) && 
+                        !string.IsNullOrEmpty(activeProcess) &&
+                        connectionInfo.Exe.Equals(activeProcess, StringComparison.OrdinalIgnoreCase))
+                    {
+                        Debug.Print($"[VPN-Tracking] Game traffic detected: {connectionInfo.Exe} -> {connectionKey.Remote}:{connectionKey.RemotePort}");
+                        
+                        // Обновляем информацию о сервере если это новое соединение
+                        if (App.meterState.Server != null && string.IsNullOrEmpty(App.meterState.Server.Ip))
+                        {
+                            string remoteIp = connectionKey.Remote?.ToString();
+                            if (!string.IsNullOrEmpty(remoteIp))
+                            {
+                                App.meterState.Server.Ip = remoteIp;
+                                App.meterState.Server.GamePort = connectionKey.RemotePort;
+                                Debug.Print($"[VPN-Tracking] Updated server info: IP={App.meterState.Server.Ip}, Port={App.meterState.Server.GamePort}");
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[VPN-Tracking] Error in HandleTunnelConnectionForTracking: {ex.Message}");
             }
         }
 
@@ -2919,6 +2992,13 @@ namespace tickMeter.Forms
             bool vpnBypassBasic = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
             bool vpnBypassAdvanced = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
             
+            // ИСПРАВЛЕНИЕ: В режиме VPN bypass подписываемся на события ConnectionTracker
+            if ((vpnBypassBasic || vpnBypassAdvanced) && App.connectionTracker != null)
+            {
+                Debug.Print("[StartTracking] VPN bypass mode detected - subscribing to ConnectionTracker events");
+                App.connectionTracker.OnNewTunnelConnection += HandleTunnelConnectionForTracking;
+            }
+            
             string captureAllSetting = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS");
             var captureAll = captureAllSetting == "True";
             Debug.Print($"[StartTracking] Settings debug - capture_all_adapters raw: '{captureAllSetting}', converted: {captureAll}");
@@ -3656,6 +3736,20 @@ namespace tickMeter.Forms
             try
             {
                 Debug.Print("StopTracking - entry point");
+
+                // ИСПРАВЛЕНИЕ: Отписываемся от событий ConnectionTracker в режиме VPN bypass
+                if (App.connectionTracker != null)
+                {
+                    try
+                    {
+                        App.connectionTracker.OnNewTunnelConnection -= HandleTunnelConnectionForTracking;
+                        Debug.Print("[StopTracking] Unsubscribed from ConnectionTracker events");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Print($"[StopTracking] Error unsubscribing from ConnectionTracker: {ex.Message}");
+                    }
+                }
 
                 // КРИТИЧЕСКИ ВАЖНО: Сначала отключаем все флаги чтобы предотвратить перезапуск
                 ticksLoop.Enabled = false;

@@ -80,6 +80,7 @@ namespace tickMeter.Classes
     private readonly Thread _thread;
     private volatile bool _stop;
     private readonly int _ttlMs = 3000; // срок жизни записи
+    private volatile int _eventInvokeCount = 0; // Счетчик вызовов событий для защиты от переполнения
 
         public ConnectionTracker()
         {
@@ -270,10 +271,18 @@ namespace tickMeter.Classes
 
         private void RefreshTcp(int af)
         {
-            int len = 0;
-            uint ret = GetExtendedTcpTable(IntPtr.Zero, ref len, true, af, TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_ALL, 0);
-            if (ret != 0x7A) return; // ERROR_INSUFFICIENT_BUFFER
-            var buf = Marshal.AllocHGlobal(len);
+            try
+            {
+                // Проверяем, что объект не disposed и коллекции инициализированы
+                if (_map == null || _reportedKeys == null || _stop)
+                {
+                    return;
+                }
+
+                int len = 0;
+                uint ret = GetExtendedTcpTable(IntPtr.Zero, ref len, true, af, TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_ALL, 0);
+                if (ret != 0x7A) return; // ERROR_INSUFFICIENT_BUFFER
+                var buf = Marshal.AllocHGlobal(len);
             try
             {
                 ret = GetExtendedTcpTable(buf, ref len, true, af, TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_ALL, 0);
@@ -285,27 +294,75 @@ namespace tickMeter.Classes
                     IntPtr p = buf + 4;
                     for (int i = 0; i < count; i++)
                     {
-                        var row = Marshal.PtrToStructure<MIB_TCPROW_OWNER_PID>(p);
-                        p += Marshal.SizeOf<MIB_TCPROW_OWNER_PID>();
-                        var l = ToIPv4(row.localAddr);
-                        var r = ToIPv4(row.remoteAddr);
-                        int lp = ReadPort(row.localPort_be);
-                        int rp = ReadPort(row.remotePort_be);
-                        var info = new Info((int)row.owningPid, TryGetExe((int)row.owningPid));
-                        var key = new Key(6, l, lp, r, rp);
-                        _map[key] = (info, now);
-
-                        if (IsTunnelIP(l) && _reportedKeys.Add(key))
+                        try
                         {
-                            if (OnNewTunnelConnection != null)
+                            var row = Marshal.PtrToStructure<MIB_TCPROW_OWNER_PID>(p);
+                            p += Marshal.SizeOf<MIB_TCPROW_OWNER_PID>();
+                            var l = ToIPv4(row.localAddr);
+                            var r = ToIPv4(row.remoteAddr);
+                            
+                            // Дополнительная проверка на null
+                            if (l == null || r == null)
                             {
-                                DebugLogger.log($"[Tracker] NewTunnel IPv4: {l}:{lp} -> {r}:{rp} proc={info.Exe ?? "?"}/{info.Pid}");
-                                OnNewTunnelConnection.Invoke(key, info);
+                                DebugLogger.log($"[Tracker] Warning: ToIPv4 returned null - localAddr={row.localAddr}, remoteAddr={row.remoteAddr}");
+                                continue;
                             }
-                            else
+                            
+                            int lp = ReadPort(row.localPort_be);
+                            int rp = ReadPort(row.remotePort_be);
+                            var info = new Info((int)row.owningPid, TryGetExe((int)row.owningPid));
+                            var key = new Key(6, l, lp, r, rp);
+                            _map[key] = (info, now);
+
+                            if (IsTunnelIP(l) && _reportedKeys.Add(key))
                             {
-                                DebugLogger.log($"[Tracker] NewTunnel IPv4 NO subscribers: {l}:{lp} -> {r}:{rp}");
+                                if (OnNewTunnelConnection != null)
+                                {
+                                    try
+                                    {
+                                        string logMessage = $"[Tracker] NewTunnel IPv4: {l}:{lp} -> {r}:{rp} proc={info.Exe ?? "?"}/{info.Pid}";
+                                        DebugLogger.log(logMessage);
+                                        
+                                        // Дополнительная проверка параметров перед вызовом события
+                                        if (key.Local != null && key.Remote != null && OnNewTunnelConnection != null)
+                                        {
+                                            // Защита от переполнения вызовов событий
+                                            if (System.Threading.Interlocked.Increment(ref _eventInvokeCount) > 1000)
+                                            {
+                                                DebugLogger.log($"[Tracker] Warning: Event invoke limit reached, resetting counter");
+                                                System.Threading.Interlocked.Exchange(ref _eventInvokeCount, 0);
+                                            }
+                                            
+                                            try 
+                                            {
+                                                OnNewTunnelConnection.Invoke(key, info);
+                                            }
+                                            catch (Exception invokeEx)
+                                            {
+                                                DebugLogger.log($"[Tracker] Error invoking OnNewTunnelConnection: {invokeEx.Message}");
+                                            }
+                                        }
+                                        else
+                                        {
+                                            DebugLogger.log($"[Tracker] Warning: Skipping event invoke due to null parameters - Local={key.Local != null}, Remote={key.Remote != null}, Event={OnNewTunnelConnection != null}");
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        DebugLogger.log($"[Tracker] Error in OnNewTunnelConnection handler: {ex.Message}");
+                                    }
+                                }
+                                else
+                                {
+                                    DebugLogger.log($"[Tracker] NewTunnel IPv4 NO subscribers: {l}:{lp} -> {r}:{rp}");
+                                }
                             }
+                        }
+                        catch (Exception ex)
+                        {
+                            DebugLogger.log($"[Tracker] Error processing TCP row {i}: {ex.Message}");
+                            // Сдвигаем указатель даже при ошибке
+                            p += Marshal.SizeOf<MIB_TCPROW_OWNER_PID>();
                         }
                     }
                 }
@@ -315,32 +372,85 @@ namespace tickMeter.Classes
                     IntPtr p = buf + 4;
                     for (int i = 0; i < count; i++)
                     {
-                        var row = Marshal.PtrToStructure<MIB_TCP6ROW_OWNER_PID>(p);
-                        p += Marshal.SizeOf<MIB_TCP6ROW_OWNER_PID>();
-                        var l = new IPAddress(row.localAddr, (long)row.localScopeId);
-                        var r = new IPAddress(row.remoteAddr, (long)row.remoteScopeId);
-                        int lp = ReadPort(row.localPort_be);
-                        int rp = ReadPort(row.remotePort_be);
-                        var info = new Info((int)row.owningPid, TryGetExe((int)row.owningPid));
-                        var key = new Key(6, l, lp, r, rp);
-                        _map[key] = (info, now);
-
-                        if (IsTunnelIP(l) && _reportedKeys.Add(key))
+                        try
                         {
-                            if (OnNewTunnelConnection != null)
+                            var row = Marshal.PtrToStructure<MIB_TCP6ROW_OWNER_PID>(p);
+                            p += Marshal.SizeOf<MIB_TCP6ROW_OWNER_PID>();
+                            var l = new IPAddress(row.localAddr, (long)row.localScopeId);
+                            var r = new IPAddress(row.remoteAddr, (long)row.remoteScopeId);
+                            
+                            // Дополнительная проверка на null
+                            if (l == null || r == null)
                             {
-                                DebugLogger.log($"[Tracker] NewTunnel IPv6: {l}:{lp} -> {r}:{rp} proc={info.Exe ?? "?"}/{info.Pid}");
-                                OnNewTunnelConnection.Invoke(key, info);
+                                DebugLogger.log($"[Tracker] Warning: IPv6 address creation failed for row {i}");
+                                continue;
                             }
-                            else
+                            
+                            int lp = ReadPort(row.localPort_be);
+                            int rp = ReadPort(row.remotePort_be);
+                            var info = new Info((int)row.owningPid, TryGetExe((int)row.owningPid));
+                            var key = new Key(6, l, lp, r, rp);
+                            _map[key] = (info, now);
+
+                            if (IsTunnelIP(l) && _reportedKeys.Add(key))
                             {
-                                DebugLogger.log($"[Tracker] NewTunnel IPv6 NO subscribers: {l}:{lp} -> {r}:{rp}");
+                                if (OnNewTunnelConnection != null)
+                                {
+                                    try
+                                    {
+                                        string logMessage = $"[Tracker] NewTunnel IPv6: {l}:{lp} -> {r}:{rp} proc={info.Exe ?? "?"}/{info.Pid}";
+                                        DebugLogger.log(logMessage);
+                                        
+                                        // Дополнительная проверка параметров перед вызовом события
+                                        if (key.Local != null && key.Remote != null)
+                                        {
+                                            // Защита от переполнения вызовов событий
+                                            if (System.Threading.Interlocked.Increment(ref _eventInvokeCount) > 1000)
+                                            {
+                                                DebugLogger.log($"[Tracker] Warning: IPv6 Event invoke limit reached, resetting counter");
+                                                System.Threading.Interlocked.Exchange(ref _eventInvokeCount, 0);
+                                            }
+                                            OnNewTunnelConnection.Invoke(key, info);
+                                        }
+                                        else
+                                        {
+                                            DebugLogger.log($"[Tracker] Warning: Skipping IPv6 event invoke due to null key fields");
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        DebugLogger.log($"[Tracker] Error in OnNewTunnelConnection handler (IPv6): {ex.Message}");
+                                    }
+                                }
+                                else
+                                {
+                                    DebugLogger.log($"[Tracker] NewTunnel IPv6 NO subscribers: {l}:{lp} -> {r}:{rp}");
+                                }
                             }
+                        }
+                        catch (Exception ex)
+                        {
+                            DebugLogger.log($"[Tracker] Error processing TCP6 row {i}: {ex.Message}");
+                            // Сдвигаем указатель даже при ошибке
+                            p += Marshal.SizeOf<MIB_TCP6ROW_OWNER_PID>();
                         }
                     }
                 }
             }
             finally { Marshal.FreeHGlobal(buf); }
+            }
+            catch (Exception ex)
+            {
+                // Логируем глобальные ошибки в RefreshTcp
+                try
+                {
+                    DebugLogger.log($"[Tracker] Critical error in RefreshTcp(af={af}): {ex.Message}");
+                }
+                catch
+                {
+                    // Если даже логирование не работает - не падаем
+                }
+            }
         }
 
         private void RefreshUdp(int af)
