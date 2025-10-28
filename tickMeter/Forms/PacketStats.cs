@@ -48,10 +48,10 @@ namespace tickMeter
     
     public partial class PacketStats : Form
     {
-        List<Packet> PacketBuffer;
-        private readonly object _packetBufferLock = new object();  // Thread synchronization lock
-        private const int MAX_PACKET_BUFFER_SIZE = 100;  // Максимальный размер буфера для Live View (уменьшен с 1000)
-        private const int CRITICAL_BUFFER_SIZE = 200;    // Критический размер для экстренной очистки
+    List<Packet> PacketBuffer;
+    private readonly object _packetBufferLock = new object();  // Thread synchronization lock
+    private const int MAX_PACKET_BUFFER_SIZE = 100;  // Максимальный размер буфера для Live View (уменьшен с 1000)
+    private const int CRITICAL_BUFFER_SIZE = 200;    // Критический размер для экстренной очистки
         private int _refreshCounter = 0;                  // Счётчик для периодической очистки памяти
         public int inPackets = 0;
         public int outPackets = 0;
@@ -65,36 +65,40 @@ namespace tickMeter
         public BackgroundWorker pcapWorker;
         public PacketFilter packetFilter;
 
-        // Multi-adapter support - DEPRECATED: переходим на CaptureService
-        private readonly List<BackgroundWorker> _pcapWorkers = new List<BackgroundWorker>();
-        private bool CaptureAll => App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
-        private bool _ignoreVirtual => App.settingsManager.GetOption("ignore_virtual_adapters", "True", "SETTINGS") == "True";
+    // Multi-adapter support - DEPRECATED: переходим на CaptureService
+    private readonly List<BackgroundWorker> _pcapWorkers = new List<BackgroundWorker>();
+    private bool CaptureAll => App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
+    private bool _ignoreVirtual => App.settingsManager.GetOption("ignore_virtual_adapters", "True", "SETTINGS") == "True";
 
-        // CaptureService integration - ОСНОВНАЯ СИСТЕМА
-        private tickMeter.Classes.CaptureService.Subscription _captureSub;
-        private bool _captureRunning;
-        private long _lastStartMs;
-        
-        // Анти-реэнтерабельность для предотвращения роста воркеров
-        private int _subBusy = 0;
-        private readonly object _restartLock = new object();
+    // CaptureService integration - ОСНОВНАЯ СИСТЕМА
+    private tickMeter.Classes.CaptureService.Subscription _captureSub;
+    private bool _captureRunning;
+    private long _lastStartMs;
 
-        // VirtualMode ListView support
-        private readonly object _ringLock = new object();
-        private PacketRow[] _ring;
-        private int _ringHead = 0, _ringCount = 0; // head — индекс самого старого
-        private bool _useVirtual = false;
-        private int _packetIdCounter = 0;
+    // Анти-реэнтерабельность для предотвращения роста воркеров
+    private int _subBusy = 0;
+    private readonly object _restartLock = new object();
+
+    // VirtualMode ListView support
+    private readonly object _ringLock = new object();
+    private PacketRow[] _ring;
+    private int _ringHead = 0, _ringCount = 0; // head — индекс самого старого
+    private bool _useVirtual = false;
+    private int _packetIdCounter = 0;
+
+    // Synthetic tunnel/live view state
+    private bool _vpnSyntheticEnabled;
+    private bool _vpnSubscriptionAttached;
 
         public PacketStats()
         {
             InitializeComponent();
             packetFilter = new PacketFilter();
-            
+
             // Инициализация VirtualMode на основе настроек
             _useVirtual = App.settingsManager?.GetOption("live_virtual_list", "False", "ADVANCED") == "True";
             int maxRows = Math.Max(1000, int.Parse(App.settingsManager?.GetOption("live_max_rows", "5000", "ADVANCED") ?? "5000"));
-            
+
             if (_useVirtual)
             {
                 _ring = new PacketRow[maxRows];
@@ -114,6 +118,41 @@ namespace tickMeter
             pcapWorker.DoWork += PcapWorkerDoWork;
             pcapWorker.RunWorkerCompleted += PcapWorkerCompleted;
             pcapWorker.RunWorkerAsync();
+
+            InitVpnComponents();
+        }
+
+        private void InitVpnComponents()
+        {
+            try
+            {
+                bool advanced = App.settingsManager?.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+                bool basic = App.settingsManager?.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
+                _vpnSyntheticEnabled = advanced || basic;
+
+                if (!_vpnSyntheticEnabled)
+                {
+                    DebugLogger.log("[LiveView] VPN synthetic mode disabled (flags off)");
+                    return;
+                }
+
+                if (App.connectionTracker == null)
+                {
+                    DebugLogger.log("[LiveView] WARNING: ConnectionTracker unavailable, synthetic entries postponed");
+                    return;
+                }
+
+                if (_vpnSubscriptionAttached)
+                    return;
+
+                App.connectionTracker.OnNewTunnelConnection += HandleTunnelConnection;
+                _vpnSubscriptionAttached = true;
+                DebugLogger.log("[LiveView] Subscribed to ConnectionTracker.OnNewTunnelConnection");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[LiveView] InitVpnComponents error: {ex.GetType().Name} {ex.Message}");
+            }
         }
 
         
@@ -140,6 +179,8 @@ namespace tickMeter
             
             try
             {
+                InitVpnComponents();
+
                 // Debounce: не чаще чем раз в 500мс
                 long now = Environment.TickCount;
                 if (now - _lastStartMs < 500)
@@ -439,6 +480,191 @@ namespace tickMeter
                 Debug.Print($"[PacketStats] StopSubscription error: {ex.Message}");
             }
         }
+
+        private void HandleTunnelConnection(ConnectionTracker.Key key, ConnectionTracker.Info info)
+        {
+            if (!_vpnSyntheticEnabled || !tracking)
+                return;
+
+            try
+            {
+                string sourceIP = key.Local?.ToString() ?? string.Empty;
+                string destIP = key.Remote?.ToString() ?? string.Empty;
+
+                if (string.IsNullOrEmpty(sourceIP) || string.IsNullOrEmpty(destIP))
+                    return;
+
+                var timestamp = DateTime.Now;
+                string protocol = key.Proto == 6 ? "TCP" : (key.Proto == 17 ? "UDP" : $"Proto{key.Proto}");
+                string processName = !string.IsNullOrWhiteSpace(info.Exe) ? info.Exe : $"PID{info.Pid}";
+
+                const int ESTIMATED_PACKET_SIZE = 1400;
+
+                bool sourceIsLocal = IsLocalIP(sourceIP);
+                bool destIsLocal = IsLocalIP(destIP);
+
+                int tickIn = 0;
+                int tickOut = 0;
+
+                if (sourceIsLocal && !destIsLocal)
+                {
+                    Interlocked.Increment(ref outPackets);
+                    Interlocked.Add(ref outTraffic, ESTIMATED_PACKET_SIZE);
+                    tickOut = 1;
+                }
+                else if (!sourceIsLocal && destIsLocal)
+                {
+                    Interlocked.Increment(ref inPackets);
+                    Interlocked.Add(ref inTraffic, ESTIMATED_PACKET_SIZE);
+                    tickIn = 1;
+                }
+                else
+                {
+                    Interlocked.Increment(ref outPackets);
+                    Interlocked.Add(ref outTraffic, ESTIMATED_PACKET_SIZE);
+                    tickOut = 1;
+                }
+
+                if (key.Proto == 6 || key.Proto == 17)
+                {
+                    try
+                    {
+                        string protoToken = key.Proto == 6 ? "tcp" : "udp";
+                        string localIp = sourceIsLocal ? sourceIP : destIP;
+                        uint localPort = (uint)Math.Max(0, sourceIsLocal ? key.LocalPort : key.RemotePort);
+                        string remoteIp = sourceIsLocal ? destIP : sourceIP;
+                        uint remotePort = (uint)Math.Max(0, sourceIsLocal ? key.RemotePort : key.LocalPort);
+
+                        ActiveWindowTracker.trackTick(
+                            processName,
+                            protoToken,
+                            localIp,
+                            localPort,
+                            remoteIp,
+                            remotePort,
+                            tickIn,
+                            tickOut,
+                            (uint)ESTIMATED_PACKET_SIZE,
+                            timestamp,
+                            0u);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Print($"[PacketStats] HandleTunnelConnection trackTick error: {ex.Message}");
+                    }
+                }
+
+                if (_useVirtual)
+                {
+                    var row = new PacketRow(
+                        timestamp,
+                        Interlocked.Increment(ref _packetIdCounter),
+                        sourceIP,
+                        (uint)Math.Max(0, key.LocalPort),
+                        destIP,
+                        (uint)Math.Max(0, key.RemotePort),
+                        0,
+                        protocol,
+                        processName);
+
+                    RingAdd(row);
+
+                    try
+                    {
+                        if (InvokeRequired)
+                        {
+                            BeginInvoke(new MethodInvoker(UpdateVirtualSyntheticView));
+                        }
+                        else
+                        {
+                            UpdateVirtualSyntheticView();
+                        }
+                    }
+                    catch { }
+                }
+                else
+                {
+                    void AddClassic()
+                    {
+                        AddSyntheticClassic(
+                            timestamp,
+                            sourceIP,
+                            (uint)Math.Max(0, key.LocalPort),
+                            destIP,
+                            (uint)Math.Max(0, key.RemotePort),
+                            protocol,
+                            processName);
+                    }
+
+                    if (InvokeRequired)
+                    {
+                        try { BeginInvoke(new MethodInvoker(AddClassic)); } catch { }
+                    }
+                    else
+                    {
+                        AddClassic();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[Synthetic] ERROR: {ex.GetType().Name} {ex.Message}");
+            }
+        }
+
+        private void UpdateVirtualSyntheticView()
+        {
+            try
+            {
+                lock (_ringLock)
+                {
+                    listView1.VirtualListSize = _ringCount;
+                    if (_ringCount > 0 && autoscroll.Checked)
+                    {
+                        listView1.EnsureVisible(_ringCount - 1);
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private void AddSyntheticClassic(DateTime timestamp, string sourceIp, uint sourcePort, string destIp, uint destPort, string protocol, string processName)
+        {
+            var item = new ListViewItem(timestamp.ToString("HH:mm:ss.fff"));
+            var id = Interlocked.Increment(ref _packetIdCounter);
+            item.SubItems.Add(id.ToString());
+            item.SubItems.Add(sourceIp);
+            item.SubItems.Add(sourcePort.ToString());
+            item.SubItems.Add(destIp);
+            item.SubItems.Add(destPort.ToString());
+            item.SubItems.Add("0");
+            item.SubItems.Add(protocol);
+            item.SubItems.Add(processName);
+
+            listView1.Items.Add(item);
+
+            bool limitRows = App.settingsManager?.GetOption("live_max_rows_enabled", "False", "ADVANCED") == "True";
+            int maxRows = 1000;
+            if (limitRows)
+            {
+                var rowsStr = App.settingsManager?.GetOption("live_max_rows", "1000", "ADVANCED");
+                if (!string.IsNullOrEmpty(rowsStr) && int.TryParse(rowsStr, out int parsed) && parsed > 0)
+                    maxRows = parsed;
+
+                while (listView1.Items.Count > maxRows)
+                    listView1.Items.RemoveAt(0);
+            }
+            else if (listView1.Items.Count > 5000)
+            {
+                listView1.Items.RemoveAt(0);
+            }
+
+            if (autoscroll.Checked && listView1.Items.Count > 0)
+            {
+                listView1.EnsureVisible(listView1.Items.Count - 1);
+            }
+        }
+
 
         private void PacketStats_Shown(object sender, EventArgs e)
         {

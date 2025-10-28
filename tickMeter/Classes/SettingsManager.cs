@@ -203,7 +203,7 @@ namespace tickMeter
         public ColorZoneProfile GetColorZoneProfile()
         {
             string profileName = GetOption("color_zone_profile", "Medium", "ZONES");
-            return ColorZoneProfile.GetProfile(profileName);
+            return ColorZoneProfile.GetProfile(profileName, this);
         }
 
         public void SetColorZoneProfile(string profileName)
@@ -234,7 +234,7 @@ namespace tickMeter
         public float TicktimeGreenRatio { get; set; }
         public float TicktimeYellowRatio { get; set; }
 
-        public static ColorZoneProfile GetProfile(string name)
+        public static ColorZoneProfile GetProfile(string name, SettingsManager settings = null)
         {
             switch (name.ToLower())
             {
@@ -245,8 +245,8 @@ namespace tickMeter
                         Name = "Very Low",
                         PingGreenMs = 50f,          // 0-50ms = зеленый (идеально для VPN gaming)
                         PingYellowMs = 150f,        // 50-150ms = желтый (терпимо для VPN)
-                        TickrateGreenRatio = 0.95f, // Очень мягкие требования к серверу
-                        TickrateYellowRatio = 0.90f,
+                        TickrateGreenRatio = 120f / 128f, // Зеленая зона ~120 Гц
+                        TickrateYellowRatio = 60f / 128f, // Желтая зона ~60-90 Гц
                         TicktimeGreenRatio = 0.80f, // Толерантность к медленной обработке
                         TicktimeYellowRatio = 1.20f  // Даже +20% от целевого времени = желтый
                     };
@@ -273,7 +273,7 @@ namespace tickMeter
                         TicktimeYellowRatio = 0.85f
                     };
                 case "custom":
-                    return LoadCustomProfile();
+                    return LoadCustomProfile(settings);
                 default: // Medium
                     return new ColorZoneProfile
                     {
@@ -288,19 +288,64 @@ namespace tickMeter
             }
         }
 
-        private static ColorZoneProfile LoadCustomProfile()
+        private static ColorZoneProfile LoadCustomProfile(SettingsManager settings)
         {
-            // Return Medium profile as fallback - custom settings will be handled in the main app
+            const float defaultPingGreen = 40f;
+            const float defaultPingYellow = 80f;
+            const float defaultTickrateGreen = 0.98f;
+            const float defaultTickrateYellow = 0.95f;
+            const float defaultTicktimeGreen = 0.60f;
+            const float defaultTicktimeYellow = 0.90f;
+
+            var manager = settings ?? tickMeter.Classes.App.settingsManager;
+
+            float pingGreen = defaultPingGreen;
+            float pingYellow = defaultPingYellow;
+            float tickrateGreen = defaultTickrateGreen;
+            float tickrateYellow = defaultTickrateYellow;
+            float ticktimeGreen = defaultTicktimeGreen;
+            float ticktimeYellow = defaultTicktimeYellow;
+
+            if (manager != null)
+            {
+                pingGreen = manager.GetFloat("ping_green_threshold", defaultPingGreen, "ZONES");
+                pingYellow = manager.GetFloat("ping_yellow_threshold", defaultPingYellow, "ZONES");
+                tickrateGreen = manager.GetFloat("tickrate_green_ratio", defaultTickrateGreen, "ZONES");
+                tickrateYellow = manager.GetFloat("tickrate_yellow_ratio", defaultTickrateYellow, "ZONES");
+                ticktimeGreen = manager.GetFloat("ticktime_green_ratio", defaultTicktimeGreen, "ZONES");
+                ticktimeYellow = manager.GetFloat("ticktime_yellow_ratio", defaultTicktimeYellow, "ZONES");
+
+                // На всякий случай защитимся от нулевых/отрицательных значений
+                pingGreen = Math.Max(1f, pingGreen);
+                pingYellow = Math.Max(pingGreen, pingYellow);
+                tickrateGreen = ClampRatio(tickrateGreen);
+                tickrateYellow = ClampRatio(tickrateYellow);
+                ticktimeGreen = ClampRatio(ticktimeGreen, upperBound: 2f);
+                ticktimeYellow = ClampRatio(ticktimeYellow, upperBound: 2f);
+            }
+
             return new ColorZoneProfile
             {
                 Name = "Custom",
-                PingGreenMs = 40f,
-                PingYellowMs = 80f,
-                TickrateGreenRatio = 0.98f,
-                TickrateYellowRatio = 0.95f,
-                TicktimeGreenRatio = 0.60f,
-                TicktimeYellowRatio = 0.90f
+                PingGreenMs = pingGreen,
+                PingYellowMs = pingYellow,
+                TickrateGreenRatio = tickrateGreen,
+                TickrateYellowRatio = tickrateYellow,
+                TicktimeGreenRatio = ticktimeGreen,
+                TicktimeYellowRatio = ticktimeYellow
             };
+        }
+
+        private static float ClampRatio(float value, float lowerBound = 0.1f, float upperBound = 1.5f)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                return lowerBound;
+            }
+
+            if (value < lowerBound) return lowerBound;
+            if (value > upperBound) return upperBound;
+            return value;
         }
 
         public static string[] GetProfileNames()

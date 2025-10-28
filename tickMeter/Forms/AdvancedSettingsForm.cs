@@ -8,11 +8,49 @@ namespace tickMeter.Forms
 {
     public partial class AdvancedSettingsForm : Form
     {
+        private struct VpnPresetSnapshot
+        {
+            public bool CaptureAll;
+            public bool IgnoreVirtual;
+            public bool DedupMultiNic;
+            public bool BasicMode;
+            public bool HasValue;
+        }
+
+        private const string VpnRestoreCaptureAllKey = "vpn_bypass_restore_capture_all";
+        private const string VpnRestoreIgnoreVirtualKey = "vpn_bypass_restore_ignore_virtual";
+        private const string VpnRestoreDedupKey = "vpn_bypass_restore_dedup";
+        private const string VpnRestoreBasicKey = "vpn_bypass_restore_basic";
+
+        private bool _isLoadingSettings;
+        private bool _suppressVpnPresetUpdates;
+        private VpnPresetSnapshot _vpnPresetSnapshot;
+
         public AdvancedSettingsForm()
         {
+            _isLoadingSettings = true;
+
             InitializeComponent();
             InitializeExtendedOverlayControls(); // Создаем контролы расширенной информации
+            AttachEventHandlers();
+
             LoadSettings();
+            _isLoadingSettings = false;
+
+            if (chkVpnBypassAdvanced.Checked)
+            {
+                if (!TryLoadVpnPresetSnapshot(out _vpnPresetSnapshot))
+                {
+                    _vpnPresetSnapshot = default;
+                }
+
+                ApplyVpnBypassAdvancedPreset(captureSnapshot: false);
+            }
+            else
+            {
+                SetVpnPresetControlsEnabled(true);
+                _vpnPresetSnapshot = default;
+            }
         }
 
         private void LoadSettings()
@@ -22,8 +60,6 @@ namespace tickMeter.Forms
                 // Live View настройки
                 chkLiveMaxRows.Checked = App.settingsManager.GetOption("live_max_rows_enabled", "False", "ADVANCED") == "True";
                 liveMaxRowsNumeric.Value = int.Parse(App.settingsManager.GetOption("live_max_rows", "1000", "ADVANCED"));
-                
-                // RTSS настройки
                 chkOverlayFps.Checked = App.settingsManager.GetOption("overlay_fps_enabled", "False", "ADVANCED") == "True";
                 overlayFpsNumeric.Value = int.Parse(App.settingsManager.GetOption("overlay_fps", "60", "ADVANCED"));
                 
@@ -111,6 +147,208 @@ namespace tickMeter.Forms
             }
         }
 
+        private void AttachEventHandlers()
+        {
+            chkVpnBypassAdvanced.CheckedChanged += chkVpnBypassAdvanced_CheckedChanged;
+        }
+
+        private void chkVpnBypassAdvanced_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_isLoadingSettings || _suppressVpnPresetUpdates)
+            {
+                return;
+            }
+
+            if (chkVpnBypassAdvanced.Checked)
+            {
+                ApplyVpnBypassAdvancedPreset(captureSnapshot: true);
+                PersistVpnPresetSnapshot(_vpnPresetSnapshot);
+            }
+            else
+            {
+                RestoreVpnBypassSnapshot();
+            }
+        }
+
+        private void ApplyVpnBypassAdvancedPreset(bool captureSnapshot)
+        {
+            if (captureSnapshot && !_vpnPresetSnapshot.HasValue)
+            {
+                _vpnPresetSnapshot = CaptureCurrentVpnPresetSnapshot();
+            }
+
+            _suppressVpnPresetUpdates = true;
+            chkVpnBypassBasic.Checked = true;
+            chkCaptureAllAdapters.Checked = true;
+            chkIgnoreVirtualAdapters.Checked = false;
+            chkDedupMultiNic.Checked = true;
+            _suppressVpnPresetUpdates = false;
+
+            SetVpnPresetControlsEnabled(false);
+        }
+
+        private void RestoreVpnBypassSnapshot()
+        {
+            var snapshot = _vpnPresetSnapshot;
+
+            if (!snapshot.HasValue)
+            {
+                if (!TryLoadVpnPresetSnapshot(out snapshot))
+                {
+                    snapshot = GetDefaultVpnPresetSnapshot();
+                }
+            }
+
+            SetVpnPresetControlsEnabled(true);
+
+            _suppressVpnPresetUpdates = true;
+            chkCaptureAllAdapters.Checked = snapshot.CaptureAll;
+            chkIgnoreVirtualAdapters.Checked = snapshot.IgnoreVirtual;
+            chkDedupMultiNic.Checked = snapshot.DedupMultiNic;
+            chkVpnBypassBasic.Checked = snapshot.BasicMode;
+            _suppressVpnPresetUpdates = false;
+
+            _vpnPresetSnapshot = default;
+        }
+
+        private VpnPresetSnapshot CaptureCurrentVpnPresetSnapshot()
+        {
+            return new VpnPresetSnapshot
+            {
+                CaptureAll = chkCaptureAllAdapters.Checked,
+                IgnoreVirtual = chkIgnoreVirtualAdapters.Checked,
+                DedupMultiNic = chkDedupMultiNic.Checked,
+                BasicMode = chkVpnBypassBasic.Checked,
+                HasValue = true
+            };
+        }
+
+        private static VpnPresetSnapshot GetDefaultVpnPresetSnapshot()
+        {
+            return new VpnPresetSnapshot
+            {
+                CaptureAll = false,
+                IgnoreVirtual = true,
+                DedupMultiNic = true,
+                BasicMode = false,
+                HasValue = true
+            };
+        }
+
+        private void SetVpnPresetControlsEnabled(bool enabled)
+        {
+            chkCaptureAllAdapters.Enabled = enabled;
+            chkIgnoreVirtualAdapters.Enabled = enabled;
+            chkDedupMultiNic.Enabled = enabled;
+            chkVpnBypassBasic.Enabled = enabled;
+        }
+
+        private bool TryLoadVpnPresetSnapshot(out VpnPresetSnapshot snapshot)
+        {
+            snapshot = default;
+
+            var manager = App.settingsManager;
+            if (manager == null)
+            {
+                return false;
+            }
+
+            string captureAll = manager.GetOption(VpnRestoreCaptureAllKey, null, "ADVANCED");
+            string ignoreVirtual = manager.GetOption(VpnRestoreIgnoreVirtualKey, null, "ADVANCED");
+            string dedup = manager.GetOption(VpnRestoreDedupKey, null, "ADVANCED");
+            string basic = manager.GetOption(VpnRestoreBasicKey, null, "ADVANCED");
+
+            if (string.IsNullOrEmpty(captureAll) &&
+                string.IsNullOrEmpty(ignoreVirtual) &&
+                string.IsNullOrEmpty(dedup) &&
+                string.IsNullOrEmpty(basic))
+            {
+                return false;
+            }
+
+            snapshot = new VpnPresetSnapshot
+            {
+                CaptureAll = ParseBoolOrDefault(captureAll, false),
+                IgnoreVirtual = ParseBoolOrDefault(ignoreVirtual, true),
+                DedupMultiNic = ParseBoolOrDefault(dedup, true),
+                BasicMode = ParseBoolOrDefault(basic, false),
+                HasValue = true
+            };
+
+            return true;
+        }
+
+        private void PersistVpnPresetSnapshot(VpnPresetSnapshot snapshot)
+        {
+            var manager = App.settingsManager;
+            if (manager == null || !snapshot.HasValue)
+            {
+                return;
+            }
+
+            manager.SetOption(VpnRestoreCaptureAllKey, snapshot.CaptureAll.ToString(), "ADVANCED");
+            manager.SetOption(VpnRestoreIgnoreVirtualKey, snapshot.IgnoreVirtual.ToString(), "ADVANCED");
+            manager.SetOption(VpnRestoreDedupKey, snapshot.DedupMultiNic.ToString(), "ADVANCED");
+            manager.SetOption(VpnRestoreBasicKey, snapshot.BasicMode.ToString(), "ADVANCED");
+        }
+
+        private void ClearPersistedVpnPresetSnapshot()
+        {
+            var manager = App.settingsManager;
+            if (manager == null)
+            {
+                return;
+            }
+
+            manager.SetOption(VpnRestoreCaptureAllKey, string.Empty, "ADVANCED");
+            manager.SetOption(VpnRestoreIgnoreVirtualKey, string.Empty, "ADVANCED");
+            manager.SetOption(VpnRestoreDedupKey, string.Empty, "ADVANCED");
+            manager.SetOption(VpnRestoreBasicKey, string.Empty, "ADVANCED");
+        }
+
+        private void PersistVpnPresetSnapshotForSave()
+        {
+            if (chkVpnBypassAdvanced.Checked)
+            {
+                if (!_vpnPresetSnapshot.HasValue)
+                {
+                    TryLoadVpnPresetSnapshot(out _vpnPresetSnapshot);
+                }
+
+                PersistVpnPresetSnapshot(_vpnPresetSnapshot);
+            }
+            else
+            {
+                ClearPersistedVpnPresetSnapshot();
+                _vpnPresetSnapshot = default;
+            }
+        }
+
+        private static bool ParseBoolOrDefault(string value, bool defaultValue)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return defaultValue;
+            }
+
+            if (bool.TryParse(value, out bool parsed))
+            {
+                return parsed;
+            }
+
+            if (value == "1")
+            {
+                return true;
+            }
+
+            if (value == "0")
+            {
+                return false;
+            }
+
+            return defaultValue;
+        }
+
         private void SaveSettings()
         {
             try
@@ -170,6 +408,7 @@ namespace tickMeter.Forms
                 // VPN bypass настройки
                 App.settingsManager.SetOption("vpn_bypass_basic", chkVpnBypassBasic.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("vpn_bypass_advanced", chkVpnBypassAdvanced.Checked.ToString(), "ADVANCED");
+                PersistVpnPresetSnapshotForSave();
                 
                 // Performance Optimization Phase 1-3 настройки  
                 App.settingsManager.SetOption("anti_reentrancy", chkAntiReentrancy.Checked.ToString(), "ADVANCED");

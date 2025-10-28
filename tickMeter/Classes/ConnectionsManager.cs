@@ -114,6 +114,9 @@ namespace tickMeter
                         record.ProcessName = procData.pName;
                     }
                 }
+
+                // VPN bypass overrides
+                VpnBypassResolver.TryOverrideTcp(record);
             }
 
             List<UdpProcessRecord> udpConnectionsCopy;
@@ -143,6 +146,9 @@ namespace tickMeter
                         record.ProcessName = procData.pName;
                     }
                 }
+
+                // VPN bypass overrides
+                VpnBypassResolver.TryOverrideUdp(record);
             }
         }
 
