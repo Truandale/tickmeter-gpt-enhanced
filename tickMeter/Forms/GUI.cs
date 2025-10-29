@@ -1283,9 +1283,20 @@ namespace tickMeter.Forms
             try
             {
                 AutoDetectMngr.GetActiveProcessName(true);
-                if(!App.meterState.isBuiltInProfileActive && !App.meterState.isCustomProfileActive)
+                
+                // Диагностика для VPN bypass
+                bool builtInActive = App.meterState.isBuiltInProfileActive;
+                bool customActive = App.meterState.isCustomProfileActive;
+                DebugLogger.log($"[TickLoop] Profiles: BuiltIn={builtInActive}, Custom={customActive}, WillUpdate={!builtInActive && !customActive}");
+                
+                if(!builtInActive && !customActive)
                 {
+                    DebugLogger.log("[TickLoop] Calling updateMetherStateFromActiveWindow");
                     updateMetherStateFromActiveWindow();
+                }
+                else
+                {
+                    DebugLogger.log("[TickLoop] Skipping updateMetherStateFromActiveWindow due to active profiles");
                 }
                 
                 // Троттлинг RTSS: обновляем не каждый тик, а по таймеру
