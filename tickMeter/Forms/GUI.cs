@@ -1230,15 +1230,30 @@ namespace tickMeter.Forms
                     {
                         DebugLogger.log($"[VPN-Tracking] Processing game traffic: {connectionInfo.Exe} -> {connectionKey.Remote}:{connectionKey.RemotePort}");
                         
-                        // Обновляем информацию о сервере если это новое соединение
-                        if (App.meterState.Server != null && string.IsNullOrEmpty(App.meterState.Server.Ip))
+                        // Обновляем информацию о сервере только если IP пустой или если прошло достаточно времени
+                        if (App.meterState.Server != null)
                         {
                             string remoteIp = connectionKey.Remote?.ToString();
-                            if (!string.IsNullOrEmpty(remoteIp))
+                            bool shouldUpdate = false;
+                            
+                            // Обновляем если IP пустой (первый раз)
+                            if (string.IsNullOrEmpty(App.meterState.Server.Ip))
+                            {
+                                shouldUpdate = true;
+                                DebugLogger.log($"[VPN-Tracking] Server IP empty, setting to: {remoteIp}");
+                            }
+                            // Или если текущий IP стал недоступен и нужен новый (можно добавить логику проверки доступности)
+                            // Пока что не меняем IP если он уже установлен
+                            
+                            if (shouldUpdate && !string.IsNullOrEmpty(remoteIp))
                             {
                                 App.meterState.Server.Ip = remoteIp;
                                 App.meterState.Server.GamePort = connectionKey.RemotePort;
                                 DebugLogger.log($"[VPN-Tracking] Updated server info: IP={App.meterState.Server.Ip}, Port={App.meterState.Server.GamePort}");
+                            }
+                            else if (!string.IsNullOrEmpty(App.meterState.Server.Ip))
+                            {
+                                DebugLogger.log($"[VPN-Tracking] Keeping existing server: {App.meterState.Server.Ip} (new: {remoteIp})");
                             }
                         }
                     }
