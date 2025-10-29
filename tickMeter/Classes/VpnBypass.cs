@@ -310,7 +310,21 @@ namespace tickMeter.Classes
                             
                             int lp = ReadPort(row.localPort_be);
                             int rp = ReadPort(row.remotePort_be);
+                            
+                            // Улучшенное разрешение процесса для VPN bypass
                             var info = new Info((int)row.owningPid, TryGetExe((int)row.owningPid));
+                            
+                            // Если процесс определился как Idle/0 и это туннельное соединение - используем fallback
+                            if (IsTunnelIP(l) && (info.Pid == 0 || string.Equals(info.Exe, "Idle", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(info.Exe)))
+                            {
+                                var fallbackInfo = TryResolveWithVpnFallback(6, l, lp, r, rp, null);
+                                if (!string.IsNullOrEmpty(fallbackInfo.Exe) && !string.Equals(fallbackInfo.Exe, "Unknown", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    info = fallbackInfo;
+                                    DebugLogger.log($"[Tracker] VPN fallback applied: {l}:{lp} -> {r}:{rp} changed from Idle/0 to {info.Exe}/{info.Pid}");
+                                }
+                            }
+                            
                             var key = new Key(6, l, lp, r, rp);
                             _map[key] = (info, now);
 
@@ -403,7 +417,21 @@ namespace tickMeter.Classes
                             
                             int lp = ReadPort(row.localPort_be);
                             int rp = ReadPort(row.remotePort_be);
+                            
+                            // Улучшенное разрешение процесса для VPN bypass (IPv6)
                             var info = new Info((int)row.owningPid, TryGetExe((int)row.owningPid));
+                            
+                            // Если процесс определился как Idle/0 и это туннельное соединение - используем fallback
+                            if (IsTunnelIP(l) && (info.Pid == 0 || string.Equals(info.Exe, "Idle", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(info.Exe)))
+                            {
+                                var fallbackInfo = TryResolveWithVpnFallback(6, l, lp, r, rp, null);
+                                if (!string.IsNullOrEmpty(fallbackInfo.Exe) && !string.Equals(fallbackInfo.Exe, "Unknown", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    info = fallbackInfo;
+                                    DebugLogger.log($"[Tracker] VPN fallback applied (IPv6): {l}:{lp} -> {r}:{rp} changed from Idle/0 to {info.Exe}/{info.Pid}");
+                                }
+                            }
+                            
                             var key = new Key(6, l, lp, r, rp);
                             _map[key] = (info, now);
 
@@ -801,6 +829,55 @@ namespace tickMeter.Classes
                 }
             }
             catch { return string.Empty; }
+        }
+
+        // Улучшенный resolve для VPN bypass - добавляет fallback к активному процессу
+        public static Info TryResolveWithVpnFallback(byte proto, IPAddress local, int lport, IPAddress remote, int rport, ConnectionTracker tracker)
+        {
+            // Сначала пробуем стандартное разрешение
+            if (tracker != null && tracker.TryResolve(proto, local, lport, remote, rport, out var standardInfo))
+            {
+                // Если нашли валидный процесс (не Idle/0)
+                if (standardInfo.Pid > 0 && !string.IsNullOrEmpty(standardInfo.Exe) && 
+                    !string.Equals(standardInfo.Exe, "Idle", StringComparison.OrdinalIgnoreCase))
+                {
+                    DebugLogger.log($"[VpnFallback] Standard resolve success: {standardInfo.Exe}/{standardInfo.Pid}");
+                    return standardInfo;
+                }
+            }
+
+            // Fallback для VPN: используем активный процесс
+            try
+            {
+                string activeProcessName = AutoDetectMngr.GetActiveProcessName();
+                if (!string.IsNullOrEmpty(activeProcessName))
+                {
+                    // Попытаемся найти PID активного процесса
+                    int activePid = 0;
+                    try
+                    {
+                        var processes = Process.GetProcessesByName(activeProcessName);
+                        if (processes.Length > 0)
+                        {
+                            activePid = processes[0].Id;
+                            processes[0].Dispose();
+                            foreach (var p in processes.Skip(1)) p.Dispose();
+                        }
+                    }
+                    catch { }
+
+                    var fallbackInfo = new Info(activePid, activeProcessName);
+                    DebugLogger.log($"[VpnFallback] Using active process fallback: {activeProcessName}/{activePid} for {local}:{lport}->{remote}:{rport}");
+                    return fallbackInfo;
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[VpnFallback] Error getting active process: {ex.Message}");
+            }
+
+            // Последний fallback - возвращаем пустую информацию
+            return new Info(0, "Unknown");
         }
     }
 }

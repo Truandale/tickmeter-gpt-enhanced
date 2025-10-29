@@ -1210,8 +1210,7 @@ namespace tickMeter.Forms
                         return;
                     }
                     
-                    // В режиме VPN bypass принимаем любые соединения как игровой трафик
-                    // поскольку процесс-владелец может быть неопределен из-за туннелирования
+                    // В режиме VPN bypass показываем только соединения активного процесса
                     bool isGameTraffic = false;
                     
                     // Проверяем точное совпадение процессов
@@ -1222,11 +1221,9 @@ namespace tickMeter.Forms
                         isGameTraffic = true;
                         DebugLogger.log($"[VPN-Tracking] Game traffic detected by process match: {connectionInfo.Exe}");
                     }
-                    // В VPN bypass режиме также принимаем соединения с неопределенным процессом
-                    else if (string.IsNullOrEmpty(connectionInfo.Exe) || connectionInfo.Exe == "Idle" || connectionInfo.Pid <= 0)
+                    else
                     {
-                        isGameTraffic = true;
-                        DebugLogger.log($"[VPN-Tracking] Game traffic detected by VPN bypass (unknown process): {connectionInfo.Exe}/{connectionInfo.Pid}");
+                        DebugLogger.log($"[VPN-Tracking] Ignoring connection from different process: {connectionInfo.Exe} (active: {activeProcess})");
                     }
                     
                     if (isGameTraffic)
