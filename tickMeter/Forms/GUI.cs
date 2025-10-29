@@ -1243,7 +1243,6 @@ namespace tickMeter.Forms
                                     name = connectionInfo.Exe ?? "Unknown",
                                     localIp = connectionKey.Local?.ToString() ?? "0.0.0.0",
                                     remoteIp = connectionKey.Remote?.ToString() ?? "0.0.0.0",
-                                    ticksIn = 5, // Устанавливаем > 3 для прохождения валидации
                                     downloaded = 1024, // Устанавливаем > 0 для прохождения валидации
                                     sent = 512,
                                     tickTimeBuffer = new List<float>()
@@ -1251,7 +1250,12 @@ namespace tickMeter.Forms
                                 
                                 // Устанавливаем время создания в прошлое для TrackingDelta > 3
                                 vpnConnection.startTrack = DateTime.Now.AddSeconds(-5);
+                                
+                                // ВАЖНО: Сначала устанавливаем lastUpdate, который сбрасывает ticksIn в 0
                                 vpnConnection.lastUpdate = DateTime.Now;
+                                
+                                // ПОТОМ устанавливаем ticksIn > 3 для прохождения валидации
+                                vpnConnection.ticksIn = 5;
                                 
                                 ActiveWindowTracker.connections[connectionId] = vpnConnection;
                                 DebugLogger.log($"[VPN-Tracking] Added VPN connection to tracker: {connectionId} (ticks: {vpnConnection.ticksIn}, downloaded: {vpnConnection.downloaded})");
@@ -1260,9 +1264,12 @@ namespace tickMeter.Forms
                             {
                                 // Обновляем существующее соединение
                                 var existing = ActiveWindowTracker.connections[connectionId];
+                                
+                                // ВАЖНО: Сначала обновляем lastUpdate, потом ticksIn и downloaded
+                                existing.lastUpdate = DateTime.Now;
                                 existing.ticksIn += 1; // Увеличиваем приоритет при повторном использовании
                                 existing.downloaded += 512; // Увеличиваем "загрузки"
-                                existing.lastUpdate = DateTime.Now;
+                                
                                 DebugLogger.log($"[VPN-Tracking] Updated VPN connection priority: {connectionId} (ticks: {existing.ticksIn}, downloaded: {existing.downloaded})");
                             }
                         }
