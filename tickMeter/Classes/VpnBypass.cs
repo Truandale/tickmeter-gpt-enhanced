@@ -323,6 +323,21 @@ namespace tickMeter.Classes
                                         string logMessage = $"[Tracker] NewTunnel IPv4: {l}:{lp} -> {r}:{rp} proc={info.Exe ?? "?"}/{info.Pid}";
                                         DebugLogger.log(logMessage);
                                         
+                                        // Дополнительная диагностика подписчиков (с защитой от null)
+                                        try 
+                                        {
+                                            var eventCopy = OnNewTunnelConnection; // Копируем ссылку для thread-safety
+                                            if (eventCopy != null)
+                                            {
+                                                var invocationList = eventCopy.GetInvocationList();
+                                                DebugLogger.log($"[Tracker] Event has {invocationList?.Length ?? 0} subscribers");
+                                            }
+                                        }
+                                        catch (Exception diagEx)
+                                        {
+                                            DebugLogger.log($"[Tracker] Error getting invocation list: {diagEx.Message}");
+                                        }
+                                        
                                         // Дополнительная проверка параметров перед вызовом события
                                         if (key.Local != null && key.Remote != null && OnNewTunnelConnection != null)
                                         {

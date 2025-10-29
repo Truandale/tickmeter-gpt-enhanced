@@ -1181,12 +1181,19 @@ namespace tickMeter.Forms
                 // Проверяем валидность входных параметров
                 if (connectionKey.Local == null || connectionKey.Remote == null)
                 {
-                    Debug.Print("[VPN-Tracking] Warning: connectionKey contains null IP addresses");
+                    DebugLogger.log("[VPN-Tracking] Warning: connectionKey contains null IP addresses");
                     return;
                 }
 
                 // Логируем новое соединение
-                Debug.Print($"[VPN-Tracking] New connection: {connectionKey.Local}:{connectionKey.LocalPort} -> {connectionKey.Remote}:{connectionKey.RemotePort} process={connectionInfo.Exe ?? "unknown"}/{connectionInfo.Pid}");
+                DebugLogger.log($"[VPN-Tracking] New connection: {connectionKey.Local}:{connectionKey.LocalPort} -> {connectionKey.Remote}:{connectionKey.RemotePort} process={connectionInfo.Exe ?? "unknown"}/{connectionInfo.Pid}");
+                
+                // ИСПРАВЛЕНИЕ: В режиме VPN bypass принудительно активируем отслеживание
+                if (App.meterState != null && !App.meterState.IsTracking)
+                {
+                    DebugLogger.log("[VPN-Tracking] Forcing IsTracking=true for VPN bypass mode");
+                    App.meterState.IsTracking = true;
+                }
                 
                 // Проверяем, что это соединение связано с отслеживаемым процессом
                 if (App.meterState != null && App.meterState.IsTracking)
@@ -1195,19 +1202,36 @@ namespace tickMeter.Forms
                     try
                     {
                         activeProcess = AutoDetectMngr.GetActiveProcessName();
+                        DebugLogger.log($"[VPN-Tracking] Active process: '{activeProcess}' vs connection process: '{connectionInfo.Exe}'");
                     }
                     catch (Exception ex)
                     {
-                        Debug.Print($"[VPN-Tracking] Error getting active process: {ex.Message}");
+                        DebugLogger.log($"[VPN-Tracking] Error getting active process: {ex.Message}");
                         return;
                     }
                     
-                    // Если процесс совпадает с активным - потенциально игровой трафик
+                    // В режиме VPN bypass принимаем любые соединения как игровой трафик
+                    // поскольку процесс-владелец может быть неопределен из-за туннелирования
+                    bool isGameTraffic = false;
+                    
+                    // Проверяем точное совпадение процессов
                     if (!string.IsNullOrEmpty(connectionInfo.Exe) && 
                         !string.IsNullOrEmpty(activeProcess) &&
                         connectionInfo.Exe.Equals(activeProcess, StringComparison.OrdinalIgnoreCase))
                     {
-                        Debug.Print($"[VPN-Tracking] Game traffic detected: {connectionInfo.Exe} -> {connectionKey.Remote}:{connectionKey.RemotePort}");
+                        isGameTraffic = true;
+                        DebugLogger.log($"[VPN-Tracking] Game traffic detected by process match: {connectionInfo.Exe}");
+                    }
+                    // В VPN bypass режиме также принимаем соединения с неопределенным процессом
+                    else if (string.IsNullOrEmpty(connectionInfo.Exe) || connectionInfo.Exe == "Idle" || connectionInfo.Pid <= 0)
+                    {
+                        isGameTraffic = true;
+                        DebugLogger.log($"[VPN-Tracking] Game traffic detected by VPN bypass (unknown process): {connectionInfo.Exe}/{connectionInfo.Pid}");
+                    }
+                    
+                    if (isGameTraffic)
+                    {
+                        DebugLogger.log($"[VPN-Tracking] Processing game traffic: {connectionInfo.Exe} -> {connectionKey.Remote}:{connectionKey.RemotePort}");
                         
                         // Обновляем информацию о сервере если это новое соединение
                         if (App.meterState.Server != null && string.IsNullOrEmpty(App.meterState.Server.Ip))
@@ -1217,7 +1241,7 @@ namespace tickMeter.Forms
                             {
                                 App.meterState.Server.Ip = remoteIp;
                                 App.meterState.Server.GamePort = connectionKey.RemotePort;
-                                Debug.Print($"[VPN-Tracking] Updated server info: IP={App.meterState.Server.Ip}, Port={App.meterState.Server.GamePort}");
+                                DebugLogger.log($"[VPN-Tracking] Updated server info: IP={App.meterState.Server.Ip}, Port={App.meterState.Server.GamePort}");
                             }
                         }
                     }
@@ -1225,7 +1249,7 @@ namespace tickMeter.Forms
             }
             catch (Exception ex)
             {
-                Debug.Print($"[VPN-Tracking] Error in HandleTunnelConnectionForTracking: {ex.Message}");
+                DebugLogger.log($"[VPN-Tracking] Error in HandleTunnelConnectionForTracking: {ex.Message}");
             }
         }
 
