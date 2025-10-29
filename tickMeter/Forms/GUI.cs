@@ -1230,30 +1230,34 @@ namespace tickMeter.Forms
                     {
                         DebugLogger.log($"[VPN-Tracking] Processing game traffic: {connectionInfo.Exe} -> {connectionKey.Remote}:{connectionKey.RemotePort}");
                         
-                        // Обновляем информацию о сервере только если IP пустой или если прошло достаточно времени
-                        if (App.meterState.Server != null)
+                        // Создаем запись в ActiveWindowTracker для VPN bypass соединений
+                        // чтобы они участвовали в стандартной логике выбора лучшего соединения
+                        string connectionId = $"{connectionKey.Local}:{connectionKey.LocalPort}:{connectionKey.Remote}:{connectionKey.RemotePort}";
+                        
+                        lock (ActiveWindowTracker.connectionsLock)
                         {
-                            string remoteIp = connectionKey.Remote?.ToString();
-                            bool shouldUpdate = false;
-                            
-                            // Обновляем если IP пустой (первый раз)
-                            if (string.IsNullOrEmpty(App.meterState.Server.Ip))
+                            if (!ActiveWindowTracker.connections.ContainsKey(connectionId))
                             {
-                                shouldUpdate = true;
-                                DebugLogger.log($"[VPN-Tracking] Server IP empty, setting to: {remoteIp}");
+                                var vpnConnection = new ProcessNetworkStats
+                                {
+                                    name = connectionInfo.Exe ?? "Unknown",
+                                    localIp = connectionKey.Local?.ToString() ?? "0.0.0.0",
+                                    remoteIp = connectionKey.Remote?.ToString() ?? "0.0.0.0",
+                                    ticksIn = 1, // Минимальное значение для участия в выборе лучшего соединения
+                                    downloaded = 0,
+                                    sent = 0,
+                                    tickTimeBuffer = new List<float>()
+                                };
+                                
+                                ActiveWindowTracker.connections[connectionId] = vpnConnection;
+                                DebugLogger.log($"[VPN-Tracking] Added VPN connection to tracker: {connectionId}");
                             }
-                            // Или если текущий IP стал недоступен и нужен новый (можно добавить логику проверки доступности)
-                            // Пока что не меняем IP если он уже установлен
-                            
-                            if (shouldUpdate && !string.IsNullOrEmpty(remoteIp))
+                            else
                             {
-                                App.meterState.Server.Ip = remoteIp;
-                                App.meterState.Server.GamePort = connectionKey.RemotePort;
-                                DebugLogger.log($"[VPN-Tracking] Updated server info: IP={App.meterState.Server.Ip}, Port={App.meterState.Server.GamePort}");
-                            }
-                            else if (!string.IsNullOrEmpty(App.meterState.Server.Ip))
-                            {
-                                DebugLogger.log($"[VPN-Tracking] Keeping existing server: {App.meterState.Server.Ip} (new: {remoteIp})");
+                                // Обновляем существующее соединение
+                                var existing = ActiveWindowTracker.connections[connectionId];
+                                existing.ticksIn += 1; // Увеличиваем приоритет при повторном использовании
+                                DebugLogger.log($"[VPN-Tracking] Updated VPN connection priority: {connectionId} (ticks: {existing.ticksIn})");
                             }
                         }
                     }
