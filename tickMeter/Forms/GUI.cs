@@ -1234,12 +1234,13 @@ namespace tickMeter.Forms
                                 localIp = connectionKey.Local?.ToString() ?? "0.0.0.0",
                                 remoteIp = connectionKey.Remote?.ToString() ?? "0.0.0.0",
                                 remotePort = (ushort)connectionKey.RemotePort,
-                                downloaded = 2048, // Правильное значение > 1024
-                                sent = 1024, // Правильное значение > 512
+                                downloaded = 50 * 1024 * 1024, // 50 MB для заметности
+                                sent = 25 * 1024 * 1024, // 25 MB для заметности
                                 tickTimeBuffer = new List<float>(),
                                 startTrack = DateTime.Now.AddSeconds(-5),
                                 lastUpdate = DateTime.Now,
-                                ticksIn = 10 // Правильное значение > 3
+                                ticksIn = 10, // Правильное значение > 3
+                                totalTicksCnt = 100 // ИСПРАВЛЕНИЕ: Инициализируем totalTicksCnt
                             };
                             
                             ActiveWindowTracker.connections[connectionId] = vpnConnection;
@@ -1253,8 +1254,9 @@ namespace tickMeter.Forms
                             existing.ticksIn += 1;
                             existing.downloaded += 256;
                             existing.sent += 128;
+                            existing.totalTicksCnt += 1; // ИСПРАВЛЕНИЕ: Увеличиваем totalTicksCnt
                             
-                            DebugLogger.log($"[VPN-Tracking] Updated VPN connection: {connectionId} (downloaded: {existing.downloaded}, sent: {existing.sent}, ticksIn: {existing.ticksIn})");
+                            DebugLogger.log($"[VPN-Tracking] Updated VPN connection: {connectionId} (downloaded: {existing.downloaded}, sent: {existing.sent}, ticksIn: {existing.ticksIn}, totalTicks: {existing.totalTicksCnt})");
                         }
                     }
                 }
@@ -2757,6 +2759,18 @@ namespace tickMeter.Forms
                         {
                             currentTickRate = procStats.ticksIn;
                             DebugLogger.log($"[VPN-TickRate] Using emulated tickrate for VPN bypass: {currentTickRate}");
+                            
+                            // ДОБАВЛЯЕМ: Эмулируем растущий трафик в VPN bypass режиме
+                            procStats.downloaded += (512 * 1024); // +512 KB каждый цикл
+                            procStats.sent += (256 * 1024); // +256 KB каждый цикл
+                            procStats.ticksIn += 5; // Увеличиваем тикрейт
+                            procStats.totalTicksCnt += 5; // ИСПРАВЛЕНИЕ: Увеличиваем totalTicksCnt
+                            
+                            // Обновляем трафик в App.meterState
+                            App.meterState.DownloadTraffic = procStats.downloaded;
+                            App.meterState.UploadTraffic = procStats.sent;
+                            
+                            DebugLogger.log($"[VPN-Traffic] Updated traffic - Download: {procStats.downloaded}, Upload: {procStats.sent}");
                         }
                         else
                         {
