@@ -2282,6 +2282,22 @@ namespace tickMeter.Forms
                 {
                     Debug.Print($"[Metrics] Error cleaning old connections: {ex.Message}");
                 }
+                
+                // КРИТИЧНО: Дополнительный сброс для VPN bypass режима
+                // В VPN bypass старые соединения могут продолжать эмулировать метрики
+                bool vpnBypassBasic = App.settingsManager?.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
+                bool vpnBypassAdvanced = App.settingsManager?.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+                
+                if (vpnBypassBasic || vpnBypassAdvanced)
+                {
+                    // Принудительно сбрасываем состояние трекинга для VPN bypass
+                    if (App.meterState != null)
+                    {
+                        App.meterState.IsTracking = false;
+                        App.meterState.Server = null;
+                        Debug.Print($"[VPN-Bypass] Force reset tracking state on process switch: {previousProcessName} -> {currentActiveProcess}");
+                    }
+                }
                 // Полный сброс connection stats на смене процесса
                 try { ActiveWindowTracker.ClearConnectionStats(); } catch { }
                 
