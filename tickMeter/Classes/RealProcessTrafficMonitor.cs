@@ -591,5 +591,81 @@ namespace tickMeter.Classes
             // Стандартные игры
             return 64;
         }
+
+        /// <summary>
+        /// Получает реальные сетевые подключения для указанного процесса
+        /// Заменяет эмулированные ProcessNetworkStats на данные реальных подключений
+        /// </summary>
+        public static List<ProcessNetworkStats> GetRealProcessConnections(string processName)
+        {
+            var realConnections = new List<ProcessNetworkStats>();
+            
+            try
+            {
+                // Получаем TCP подключения
+                var tcpConnections = App.connMngr?.GetAllTcpConnections();
+                if (tcpConnections != null)
+                {
+                    var processTcpConnections = tcpConnections.Where(conn => 
+                        conn.ProcessName.Equals(processName, StringComparison.OrdinalIgnoreCase)).ToList();
+                    
+                    foreach (var tcpConn in processTcpConnections)
+                    {
+                        var realConnection = new ProcessNetworkStats
+                        {
+                            name = tcpConn.ProcessName,
+                            localIp = tcpConn.LocalAddress.ToString(),
+                            remoteIp = tcpConn.RemoteAddress.ToString(),
+                            remotePort = (ushort)tcpConn.RemotePort,
+                            downloaded = 0, // Будет обновляться через RealProcessTrafficMonitor
+                            sent = 0, // Будет обновляться через RealProcessTrafficMonitor
+                            tickTimeBuffer = new List<float>(),
+                            startTrack = DateTime.Now,
+                            lastUpdate = DateTime.Now,
+                            ticksIn = 0, // Будет обновляться реальными данными
+                            totalTicksCnt = 0
+                        };
+                        
+                        realConnections.Add(realConnection);
+                    }
+                }
+                
+                // Получаем UDP подключения
+                var udpConnections = App.connMngr?.GetAllUdpConnections();
+                if (udpConnections != null)
+                {
+                    var processUdpConnections = udpConnections.Where(conn => 
+                        conn.ProcessName.Equals(processName, StringComparison.OrdinalIgnoreCase)).ToList();
+                    
+                    foreach (var udpConn in processUdpConnections)
+                    {
+                        var realConnection = new ProcessNetworkStats
+                        {
+                            name = udpConn.ProcessName,
+                            localIp = udpConn.LocalAddress.ToString(),
+                            remoteIp = "0.0.0.0", // UDP может не иметь удалённого адреса
+                            remotePort = 0,
+                            downloaded = 0, // Будет обновляться через RealProcessTrafficMonitor
+                            sent = 0, // Будет обновляться через RealProcessTrafficMonitor
+                            tickTimeBuffer = new List<float>(),
+                            startTrack = DateTime.Now,
+                            lastUpdate = DateTime.Now,
+                            ticksIn = 0, // Будет обновляться реальными данными
+                            totalTicksCnt = 0
+                        };
+                        
+                        realConnections.Add(realConnection);
+                    }
+                }
+                
+                DebugLogger.log($"[RealConnections] Found {realConnections.Count} real connections for process {processName}");
+                return realConnections;
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[RealConnections] Error getting real connections for {processName}: {ex.Message}");
+                return new List<ProcessNetworkStats>();
+            }
+        }
     }
 }

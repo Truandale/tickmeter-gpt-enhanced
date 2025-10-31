@@ -5295,24 +5295,52 @@ namespace tickMeter.Forms
                     return null;
                 }
                 
-                // Для игровых процессов создаем минимальные реальные данные
-                // TODO: В будущем интегрировать с реальными VPN статистиками
-                var vpnStats = new ProcessNetworkStats
-                {
-                    name = processName,
-                    localIp = "192.168.1.100", // Пример локального IP
-                    remoteIp = "185.25.151.159", // Пример игрового сервера
-                    remotePort = 27015, // Пример игрового порта
-                    downloaded = 5120, // Реальный трафик > 1024
-                    sent = 2048, // Реальный трафик > 512
-                    tickTimeBuffer = new List<float>(),
-                    startTrack = DateTime.Now.AddSeconds(-10),
-                    lastUpdate = DateTime.Now,
-                    ticksIn = 15 // Реальное значение > 5
-                };
+                // ЭТАП 4: Используем реальные подключения вместо эмулированных
+                var realConnections = Classes.RealProcessTrafficMonitor.GetRealProcessConnections(processName);
                 
-                DebugLogger.log($"[GetRealVpnStats] Gaming process {processName} - returning real VPN data");
-                return vpnStats;
+                if (realConnections.Count > 0)
+                {
+                    // Возвращаем первое найденное реальное подключение
+                    var realConnection = realConnections[0];
+                    
+                    // Обновляем реальными данными трафика
+                    var realTraffic = Classes.RealProcessTrafficMonitor.GetRealProcessTrafficWithPing(
+                        processName, 
+                        realConnection.remoteIp, 
+                        (int)realConnection.remotePort
+                    );
+                    
+                    if (realTraffic != null)
+                    {
+                        realConnection.downloaded = (int)(realTraffic.BytesReceivedPerSec * 10); // Примерное накопление за 10 сек
+                        realConnection.sent = (int)(realTraffic.BytesSentPerSec * 10);
+                        realConnection.ticksIn = realTraffic.CalculatedTickrate; // РЕАЛЬНЫЙ тикрейт вместо эмуляции!
+                        
+                        DebugLogger.log($"[GetRealVpnStats] Using REAL connection for {processName}: {realConnection.remoteIp}:{realConnection.remotePort}, tickrate={realConnection.ticksIn}");
+                    }
+                    
+                    return realConnection;
+                }
+                else
+                {
+                    // Fallback: если реальные подключения не найдены, создаём минимальную заглушку
+                    DebugLogger.log($"[GetRealVpnStats] No real connections found for {processName}, creating minimal fallback");
+                    var vpnStats = new ProcessNetworkStats
+                    {
+                        name = processName,
+                        localIp = "192.168.1.100", // Пример локального IP
+                        remoteIp = "0.0.0.0", // Неизвестный сервер
+                        remotePort = 0,
+                        downloaded = 1024, // Минимальный трафик для активности
+                        sent = 512, 
+                        tickTimeBuffer = new List<float>(),
+                        startTrack = DateTime.Now.AddSeconds(-10),
+                        lastUpdate = DateTime.Now,
+                        ticksIn = 1 // Минимальное значение
+                    };
+                    
+                    return vpnStats;
+                }
             }
             catch (Exception ex)
             {
