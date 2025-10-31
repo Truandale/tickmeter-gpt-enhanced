@@ -1053,6 +1053,9 @@ namespace tickMeter.Forms
                             proto = 17; // UDP
                             srcPort = ipv4.Udp.SourcePort;
                             dstPort = ipv4.Udp.DestinationPort;
+
+                            // ДОБАВЛЕНО: Обработка UDP ping для VPN bypass
+                            HandleVpnBypassUdpPing(packet, ipv4.Udp, ipv4.Source.ToString(), ipv4.Destination.ToString());
                         }
                         
                         if (proto > 0 && App.connectionTracker != null)
@@ -1548,6 +1551,70 @@ namespace tickMeter.Forms
                 
             // Дефолтное значение для неизвестных процессов
             return 64;
+        }
+        
+        /// <summary>
+        /// Обрабатывает UDP ping для VPN bypass на основе интервалов пакетов
+        /// </summary>
+        private void HandleVpnBypassUdpPing(PcapDotNet.Packets.Packet packet, PcapDotNet.Packets.Transport.UdpDatagram udp, string srcIp, string dstIp)
+        {
+            try
+            {
+                // Получаем информацию о сервере из текущего состояния
+                if (App.meterState?.Server?.Ip == null)
+                    return;
+
+                string serverIp = App.meterState.Server.Ip;
+                
+                // Используем LocalIPDetector для получения локального IP
+                string localIp = null;
+                try
+                {
+                    var processName = App.meterState.Game ?? "unknown";
+                    var localIPAddr = Classes.LocalIPDetector.DetectLocalIPForActiveProcess(processName);
+                    localIp = localIPAddr?.ToString();
+                }
+                catch
+                {
+                    // Fallback - используем кешированный IP
+                    localIp = Classes.LocalIPDetector.GetCachedIP();
+                    if (string.IsNullOrEmpty(localIp))
+                    {
+                        // Последний fallback - любой локальный IP
+                        localIp = System.Net.NetworkInformation.NetworkInterface
+                            .GetAllNetworkInterfaces()
+                        .Where(n => n.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up)
+                        .SelectMany(n => n.GetIPProperties().UnicastAddresses)
+                        .FirstOrDefault(a => a.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && !System.Net.IPAddress.IsLoopback(a.Address))
+                        ?.Address?.ToString();
+                    }
+                }
+                
+                if (string.IsNullOrEmpty(localIp))
+                    return;
+
+                // Проверяем, что это пакет ОТ сервера К нам (входящий)
+                if (srcIp == serverIp && dstIp == localIp)
+                {
+                    // Обновляем UDP ping через анализ интервалов в RealProcessTrafficMonitor
+                    var processName = App.meterState.Game ?? "unknown";
+                    Classes.RealProcessTrafficMonitor.UpdateUdpPingFromPacket(
+                        processName, 
+                        serverIp, 
+                        udp.SourcePort, 
+                        srcIp, 
+                        udp.SourcePort, 
+                        dstIp, 
+                        udp.DestinationPort, 
+                        DateTime.Now);
+                    
+                    DebugLogger.log($"[VPN-UdpPing] Processed packet from {srcIp}:{udp.SourcePort} -> {dstIp}:{udp.DestinationPort}");
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[VPN-UdpPing] Error processing UDP ping: {ex.Message}");
+            }
         }
         
         /// <summary>

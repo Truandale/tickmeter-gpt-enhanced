@@ -30,9 +30,12 @@ namespace tickMeter.Classes
             public int RealPingMs { get; set; } = -1;  // -1 означает недоступен
             public int TcpPingMs { get; set; } = -1;   // TCP ping к серверу
             public int IcmpPingMs { get; set; } = -1;  // ICMP ping как backup
+            public int UdpPingMs { get; set; } = -1;   // UDP ping через анализ интервалов (как в обычном режиме)
             public double JitterMs { get; set; } = 0;  // Вариации ping
-            public int PacketLoss { get; set; } = 0;   // % потерь пакетов
+            public int PacketLoss { get; set; } = 0;   // Потеря пакетов %
             public List<int> PingHistory { get; set; } = new List<int>(); // История для jitter
+            public List<float> UdpIntervals { get; set; } = new List<float>(); // Интервалы для UDP ping
+            public DateTime LastUdpPacketTime { get; set; } = DateTime.MinValue; // Время последнего UDP пакета
         }
 
         private static readonly Dictionary<string, RealTrafficData> _processTrafficCache = new Dictionary<string, RealTrafficData>();
@@ -305,10 +308,13 @@ namespace tickMeter.Classes
                     }
                 }
 
+                // Вычисляем UDP ping на основе интервалов (пассивное измерение)
+                CalculateUdpPingFromIntervals(trafficData);
+
                 // Обновляем историю и вычисляем jitter
                 UpdatePingHistory(trafficData);
                 
-                DebugLogger.log($"[RealPing] Updated ping to {targetIP}:{targetPort} - TCP: {trafficData.TcpPingMs}ms, ICMP: {trafficData.IcmpPingMs}ms, Jitter: {trafficData.JitterMs:F1}ms");
+                DebugLogger.log($"[RealPing] Updated ping to {targetIP}:{targetPort} - TCP: {trafficData.TcpPingMs}ms, ICMP: {trafficData.IcmpPingMs}ms, UDP: {trafficData.UdpPingMs}ms, Jitter: {trafficData.JitterMs:F1}ms");
             }
             catch (Exception ex)
             {
@@ -391,6 +397,125 @@ namespace tickMeter.Classes
                     double variance = trafficData.PingHistory.Select(x => Math.Pow(x - mean, 2)).Average();
                     trafficData.JitterMs = Math.Sqrt(variance);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Вычисляет UDP ping на основе интервалов между пакетами (пассивное измерение)
+        /// Использует тот же алгоритм, что и в обычном режиме
+        /// </summary>
+        private static void CalculateUdpPingFromIntervals(RealTrafficData trafficData)
+        {
+            try
+            {
+                // Если есть данные об интервалах UDP пакетов
+                if (trafficData.UdpIntervals.Count > 0)
+                {
+                    // Фильтруем интервалы (5ms < interval < 1000ms), как в обычном режиме
+                    var validIntervals = trafficData.UdpIntervals
+                        .Where(interval => interval > 5 && interval < 1000)
+                        .ToList();
+
+                    if (validIntervals.Count > 0)
+                    {
+                        // UDP ping = среднее значение интервалов
+                        trafficData.UdpPingMs = (int)Math.Round(validIntervals.Average());
+                        
+                        // Ограничиваем размер окна (как в обычном режиме - 10 значений)
+                        if (trafficData.UdpIntervals.Count > 10)
+                        {
+                            trafficData.UdpIntervals.RemoveAt(0);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[RealPing] Error calculating UDP ping from intervals: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Добавляет интервал UDP пакета для расчёта UDP ping
+        /// Вызывается из VPN bypass логики при обработке UDP пакетов
+        /// </summary>
+        public static void AddUdpPacketInterval(string processName, float intervalMs)
+        {
+            try
+            {
+                lock (_lock)
+                {
+                    if (_processTrafficCache.ContainsKey(processName))
+                    {
+                        var trafficData = _processTrafficCache[processName];
+                        
+                        // Добавляем интервал в список
+                        trafficData.UdpIntervals.Add(intervalMs);
+                        
+                        // Пересчитываем UDP ping
+                        CalculateUdpPingFromIntervals(trafficData);
+                        
+                        DebugLogger.log($"[RealPing] Added UDP interval {intervalMs:F1}ms for {processName}, UDP ping: {trafficData.UdpPingMs}ms");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[RealPing] Error adding UDP interval: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Обновляет UDP ping на основе анализа пакетов (для VPN bypass)
+        /// </summary>
+        public static void UpdateUdpPingFromPacket(string processName, string serverIp, int serverPort, string srcIp, int srcPort, string dstIp, int dstPort, DateTime packetTime)
+        {
+            try
+            {
+                // Получаем данные для процесса
+                if (!_processTrafficCache.ContainsKey(processName))
+                {
+                    _processTrafficCache[processName] = new RealTrafficData();
+                }
+
+                var trafficData = _processTrafficCache[processName];
+
+                // Анализируем UDP пакеты ОТ сервера К нам (входящие)
+                if (srcIp.Equals(serverIp, StringComparison.OrdinalIgnoreCase) && srcPort == serverPort)
+                {
+                    // Вычисляем интервал между пакетами
+                    if (trafficData.LastUdpPacketTime != DateTime.MinValue)
+                    {
+                        double intervalMs = (packetTime - trafficData.LastUdpPacketTime).TotalMilliseconds;
+                        
+                        // Фильтруем разумные интервалы (5ms - 1000ms)
+                        if (intervalMs > 5 && intervalMs < 1000)
+                        {
+                            // Добавляем интервал в список
+                            trafficData.UdpIntervals.Add((float)intervalMs);
+                            
+                            // Ограничиваем размер истории (последние 10 измерений)
+                            if (trafficData.UdpIntervals.Count > 10)
+                            {
+                                trafficData.UdpIntervals.RemoveAt(0);
+                            }
+                            
+                            // Вычисляем UDP ping как среднее значение интервалов
+                            if (trafficData.UdpIntervals.Count > 0)
+                            {
+                                trafficData.UdpPingMs = (int)trafficData.UdpIntervals.Average();
+                            }
+                            
+                            DebugLogger.log($"[VPN-UdpPing] {processName}: interval={intervalMs:F1}ms, avgPing={trafficData.UdpPingMs}ms");
+                        }
+                    }
+                    
+                    trafficData.LastUdpPacketTime = packetTime;
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[RealUdpPing] Error updating UDP ping for {processName}: {ex.Message}");
             }
         }
     }
