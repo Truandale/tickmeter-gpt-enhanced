@@ -36,6 +36,7 @@ namespace tickMeter.Classes
             public List<int> PingHistory { get; set; } = new List<int>(); // История для jitter
             public List<float> UdpIntervals { get; set; } = new List<float>(); // Интервалы для UDP ping
             public DateTime LastUdpPacketTime { get; set; } = DateTime.MinValue; // Время последнего UDP пакета
+            public int CalculatedTickrate { get; set; } = 0; // Реальный тикрейт на основе трафика
         }
 
         private static readonly Dictionary<string, RealTrafficData> _processTrafficCache = new Dictionary<string, RealTrafficData>();
@@ -49,10 +50,17 @@ namespace tickMeter.Classes
         public static RealTrafficData GetRealProcessTrafficWithPing(string processName, string targetIP, int targetPort)
         {
             var trafficData = GetRealProcessTraffic(processName);
-            if (trafficData != null && !string.IsNullOrEmpty(targetIP))
+            if (trafficData != null)
             {
-                // Добавляем реальные ping измерения
-                UpdateRealPingData(trafficData, targetIP, targetPort);
+                // Рассчитываем реальный тикрейт на основе трафика
+                long totalTrafficPerSec = trafficData.BytesReceivedPerSec + trafficData.BytesSentPerSec;
+                trafficData.CalculatedTickrate = CalculateTickrateFromTraffic(totalTrafficPerSec, processName);
+                
+                if (!string.IsNullOrEmpty(targetIP))
+                {
+                    // Добавляем реальные ping измерения
+                    UpdateRealPingData(trafficData, targetIP, targetPort);
+                }
             }
             return trafficData;
         }
@@ -517,6 +525,71 @@ namespace tickMeter.Classes
             {
                 DebugLogger.log($"[RealUdpPing] Error updating UDP ping for {processName}: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Конвертирует реальный трафик в тикрейт на основе активности сети
+        /// </summary>
+        private static int CalculateTickrateFromTraffic(long totalBytesPerSec, string processName)
+        {
+            try
+            {
+                // Базовый тикрейт для процесса
+                int baseTickrate = DetermineBaseTickrateForProcess(processName);
+                
+                // Алгоритм расчёта тикрейта на основе трафика:
+                // Низкая активность (< 1KB/s) = низкий тикрейт
+                // Средняя активность (1KB - 100KB/s) = средний тикрейт  
+                // Высокая активность (> 100KB/s) = высокий тикрейт
+                
+                if (totalBytesPerSec < 1024) // < 1KB/s
+                {
+                    return Math.Max(baseTickrate / 8, 5); // Минимальная активность
+                }
+                else if (totalBytesPerSec < 10240) // < 10KB/s
+                {
+                    return Math.Max(baseTickrate / 4, 15); // Низкая активность
+                }
+                else if (totalBytesPerSec < 102400) // < 100KB/s
+                {
+                    return Math.Max(baseTickrate / 2, 30); // Средняя активность
+                }
+                else
+                {
+                    return baseTickrate; // Высокая активность = полный тикрейт
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[RealTrafficMonitor] Error calculating tickrate from traffic: {ex.Message}");
+                return DetermineBaseTickrateForProcess(processName) / 4; // Безопасный fallback
+            }
+        }
+
+        /// <summary>
+        /// Определяет базовый тикрейт для процесса на основе его типа
+        /// </summary>
+        private static int DetermineBaseTickrateForProcess(string processName)
+        {
+            if (string.IsNullOrEmpty(processName))
+                return 64; // Стандартный тикрейт
+
+            string lowerName = processName.ToLower();
+
+            // Игры с высоким тикрейтом
+            if (lowerName.Contains("csgo") || lowerName.Contains("cs2"))
+                return 128;
+            if (lowerName.Contains("pubg") || lowerName.Contains("tslgame"))
+                return 60;
+            if (lowerName.Contains("deadbydaylight"))
+                return 60;
+            if (lowerName.Contains("valorant") || lowerName.Contains("valorant-win64-shipping"))
+                return 128;
+            if (lowerName.Contains("apexlegends"))
+                return 60;
+
+            // Стандартные игры
+            return 64;
         }
     }
 }

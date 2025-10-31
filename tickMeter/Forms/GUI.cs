@@ -2987,12 +2987,27 @@ namespace tickMeter.Forms
                         // Обновляем TickRate и добавляем в детектор спайков
                         int currentTickRate;
                         
-                        // В VPN bypass режиме используем эмулированный тикрейт из текущего ticksIn
-                        // (до того как lastUpdate сеттер сбросит его в 0)
+                        // В VPN bypass режиме используем РЕАЛЬНЫЙ тикрейт из RealProcessTrafficMonitor
+                        // (вместо эмулированного ticksIn)
                         if (vpnBypassBasic || vpnBypassAdvanced)
                         {
-                            currentTickRate = procStats.ticksIn;
-                            DebugLogger.log($"[VPN-TickRate] Using emulated tickrate for VPN bypass: {currentTickRate}");
+                            // Получаем реальные данные трафика с расчётом тикрейта
+                            var realTraffic = Classes.RealProcessTrafficMonitor.GetRealProcessTrafficWithPing(
+                                procStats.name, 
+                                procStats.remoteIp?.ToString(), 
+                                (int)procStats.remotePort);
+                            
+                            if (realTraffic != null && realTraffic.CalculatedTickrate > 0)
+                            {
+                                currentTickRate = realTraffic.CalculatedTickrate;
+                                DebugLogger.log($"[VPN-TickRate] Using REAL tickrate for VPN bypass: {currentTickRate} (from traffic analysis)");
+                            }
+                            else
+                            {
+                                // Fallback: если нет реальных данных, используем минимальный базовый тикрейт
+                                currentTickRate = Math.Max(procStats.ticksIn / 4, 10);
+                                DebugLogger.log($"[VPN-TickRate] Using fallback tickrate for VPN bypass: {currentTickRate} (no real data available)");
+                            }
                             
                             // РЕАЛЬНЫЙ ТРАФИК вместо эмуляции в VPN bypass режиме
                             UpdateRealVpnTraffic(procStats);
