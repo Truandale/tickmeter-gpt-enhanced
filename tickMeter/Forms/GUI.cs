@@ -1441,8 +1441,14 @@ namespace tickMeter.Forms
         {
             try
             {
-                // Получаем реальные данные трафика
-                var realTraffic = Classes.RealProcessTrafficMonitor.GetRealProcessTraffic(procStats.name);
+                // Получаем IP адрес сервера для ping измерений
+                string serverIP = App.meterState.Server?.Ip;
+                int serverPort = App.meterState.Server?.GamePort > 0 ? App.meterState.Server.GamePort : 80;
+                
+                // Получаем реальные данные трафика с ping измерениями
+                var realTraffic = !string.IsNullOrEmpty(serverIP) 
+                    ? Classes.RealProcessTrafficMonitor.GetRealProcessTrafficWithPing(procStats.name, serverIP, serverPort)
+                    : Classes.RealProcessTrafficMonitor.GetRealProcessTraffic(procStats.name);
                 
                 if (realTraffic != null)
                 {
@@ -1463,6 +1469,13 @@ namespace tickMeter.Forms
                     // Обновляем отображение в главном окне
                     App.meterState.DownloadTraffic = procStats.downloaded;
                     App.meterState.UploadTraffic = procStats.sent;
+                    
+                    // Обновляем PING данные в VPN режиме
+                    if (realTraffic.RealPingMs > 0)
+                    {
+                        App.meterState.Server.Ping = realTraffic.RealPingMs;
+                        DebugLogger.log($"[VPN-RealPing] Updated REAL ping: {realTraffic.RealPingMs}ms (jitter: {realTraffic.JitterMs:F1}ms)");
+                    }
                     
                     DebugLogger.log($"[VPN-RealTraffic] Updated REAL traffic - Download: +{downloadIncrement} (total: {procStats.downloaded}), Upload: +{uploadIncrement} (total: {procStats.sent}), TickRate: +{realTickrateBoost}");
                 }
@@ -3734,9 +3747,15 @@ namespace tickMeter.Forms
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                MessageBox.Show("PCAP Thread init error");
+                string errorDetails = $"PCAP Thread init error: {ex.Message}";
+                DebugLogger.log($"[PCAP-Error] {errorDetails}");
+                DebugLogger.log($"[PCAP-Error] StackTrace: {ex.StackTrace}");
+                
+                // Более информативное сообщение для пользователя
+                MessageBox.Show($"PCAP Thread init error\n\nDetails: {ex.Message}\n\nTry running as Administrator or check network adapters.", 
+                               "Network Capture Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             
             // Диагностика CaptureService ПОСЛЕ стартов воркеров

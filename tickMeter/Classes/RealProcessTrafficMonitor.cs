@@ -4,6 +4,9 @@ using System.Diagnostics;
 using System.Net.NetworkInformation;
 using System.Linq;
 using System.Threading;
+using System.Net.Sockets;
+using System.Net;
+using System.Threading.Tasks;
 
 namespace tickMeter.Classes
 {
@@ -22,12 +25,34 @@ namespace tickMeter.Classes
             public DateTime LastUpdate { get; set; }
             public int ActiveConnections { get; set; }
             public double AverageLatency { get; set; }
+            
+            // Новые поля для реального ping
+            public int RealPingMs { get; set; } = -1;  // -1 означает недоступен
+            public int TcpPingMs { get; set; } = -1;   // TCP ping к серверу
+            public int IcmpPingMs { get; set; } = -1;  // ICMP ping как backup
+            public double JitterMs { get; set; } = 0;  // Вариации ping
+            public int PacketLoss { get; set; } = 0;   // % потерь пакетов
+            public List<int> PingHistory { get; set; } = new List<int>(); // История для jitter
         }
 
         private static readonly Dictionary<string, RealTrafficData> _processTrafficCache = new Dictionary<string, RealTrafficData>();
         private static readonly Dictionary<string, NetworkInterface> _networkInterfaces = new Dictionary<string, NetworkInterface>();
         private static DateTime _lastGlobalUpdate = DateTime.MinValue;
         private static readonly object _lock = new object();
+
+        /// <summary>
+        /// Получает реальные данные трафика для указанного процесса с ping измерениями
+        /// </summary>
+        public static RealTrafficData GetRealProcessTrafficWithPing(string processName, string targetIP, int targetPort)
+        {
+            var trafficData = GetRealProcessTraffic(processName);
+            if (trafficData != null && !string.IsNullOrEmpty(targetIP))
+            {
+                // Добавляем реальные ping измерения
+                UpdateRealPingData(trafficData, targetIP, targetPort);
+            }
+            return trafficData;
+        }
 
         /// <summary>
         /// Получает реальные данные трафика для указанного процесса
@@ -251,6 +276,120 @@ namespace tickMeter.Classes
                 foreach (var key in keysToRemove)
                 {
                     _processTrafficCache.Remove(key);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Обновляет реальные ping данные для указанного IP и порта
+        /// </summary>
+        private static void UpdateRealPingData(RealTrafficData trafficData, string targetIP, int targetPort)
+        {
+            try
+            {
+                // Пытаемся сделать TCP ping к серверу (более точный для VPN)
+                int tcpPing = PerformTcpPing(targetIP, targetPort);
+                if (tcpPing > 0)
+                {
+                    trafficData.TcpPingMs = tcpPing;
+                    trafficData.RealPingMs = tcpPing; // Основной ping
+                }
+                else
+                {
+                    // Fallback на ICMP ping
+                    int icmpPing = PerformIcmpPing(targetIP);
+                    trafficData.IcmpPingMs = icmpPing;
+                    if (icmpPing > 0)
+                    {
+                        trafficData.RealPingMs = icmpPing;
+                    }
+                }
+
+                // Обновляем историю и вычисляем jitter
+                UpdatePingHistory(trafficData);
+                
+                DebugLogger.log($"[RealPing] Updated ping to {targetIP}:{targetPort} - TCP: {trafficData.TcpPingMs}ms, ICMP: {trafficData.IcmpPingMs}ms, Jitter: {trafficData.JitterMs:F1}ms");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[RealPing] Error updating ping data: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Выполняет TCP ping к указанному хосту и порту
+        /// </summary>
+        private static int PerformTcpPing(string host, int port)
+        {
+            try
+            {
+                var stopwatch = Stopwatch.StartNew();
+                using (var tcpClient = new TcpClient())
+                {
+                    // Устанавливаем таймаут
+                    var connectTask = tcpClient.ConnectAsync(host, port);
+                    if (connectTask.Wait(3000)) // 3 секунды таймаут
+                    {
+                        stopwatch.Stop();
+                        return (int)stopwatch.ElapsedMilliseconds;
+                    }
+                    else
+                    {
+                        return -1; // Таймаут
+                    }
+                }
+            }
+            catch
+            {
+                return -1; // Ошибка соединения
+            }
+        }
+
+        /// <summary>
+        /// Выполняет ICMP ping к указанному хосту
+        /// </summary>
+        private static int PerformIcmpPing(string host)
+        {
+            try
+            {
+                using (var ping = new Ping())
+                {
+                    var reply = ping.Send(host, 3000); // 3 секунды таймаут
+                    if (reply.Status == IPStatus.Success)
+                    {
+                        return (int)reply.RoundtripTime;
+                    }
+                    return -1;
+                }
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+
+        /// <summary>
+        /// Обновляет историю ping и вычисляет jitter
+        /// </summary>
+        private static void UpdatePingHistory(RealTrafficData trafficData)
+        {
+            if (trafficData.RealPingMs > 0)
+            {
+                // Добавляем в историю
+                trafficData.PingHistory.Add(trafficData.RealPingMs);
+                
+                // Ограничиваем размер истории (последние 10 измерений)
+                if (trafficData.PingHistory.Count > 10)
+                {
+                    trafficData.PingHistory.RemoveAt(0);
+                }
+
+                // Вычисляем jitter (стандартное отклонение)
+                if (trafficData.PingHistory.Count >= 2)
+                {
+                    double mean = trafficData.PingHistory.Average();
+                    double variance = trafficData.PingHistory.Select(x => Math.Pow(x - mean, 2)).Average();
+                    trafficData.JitterMs = Math.Sqrt(variance);
                 }
             }
         }
