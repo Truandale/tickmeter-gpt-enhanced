@@ -3802,15 +3802,32 @@ namespace tickMeter.Forms
                                     // Вместо этого делаем цикл с проверками отмены
                                     while (!bgWorker?.CancellationPending == true && App.meterState.IsTracking)
                                     {
-                                        Packet packet;
-                                        var result = comm.ReceivePacket(out packet);
-                                        if (result == PacketCommunicatorReceiveResult.Ok && packet != null)
+                                        try
                                         {
-                                            PacketHandler(packet);
+                                            Packet packet;
+                                            var result = comm.ReceivePacket(out packet);
+                                            if (result == PacketCommunicatorReceiveResult.Ok && packet != null)
+                                            {
+                                                PacketHandler(packet);
+                                            }
+                                            else
+                                            {
+                                                Thread.Sleep(1); // Небольшая пауза если пакетов нет
+                                            }
                                         }
-                                        else
+                                        catch (InvalidOperationException ex) when (ex.Message.Contains("interface disappeared") || ex.Message.Contains("DEVICE_REMOVED"))
                                         {
-                                            Thread.Sleep(1); // Небольшая пауза если пакетов нет
+                                            Debug.Print($"[PCAP-Multi-{currentWorkerIndex}] Network adapter removed/disconnected: {ex.Message}");
+                                            DebugLogger.log($"[PCAP-Multi-{currentWorkerIndex}] Adapter disconnected: {dev.Name} - {ex.Message}");
+                                            
+                                            // Выходим из цикла, чтобы worker завершился корректно
+                                            break;
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            Debug.Print($"[PCAP-Multi-{currentWorkerIndex}] Unexpected error: {ex.Message}");
+                                            DebugLogger.log($"[PCAP-Multi-{currentWorkerIndex}] Unexpected error in packet capture: {ex.Message}");
+                                            Thread.Sleep(10); // Небольшая пауза при ошибках
                                         }
                                     }
                                     
@@ -4059,15 +4076,32 @@ namespace tickMeter.Forms
                 // Основной цикл захвата с проверкой отмены
                 while (!bgWorker?.CancellationPending == true && App.meterState.IsTracking)
                 {
-                    Packet packet;
-                    var result = communicator.ReceivePacket(out packet);
-                    if (result == PacketCommunicatorReceiveResult.Ok && packet != null)
+                    try
                     {
-                        PacketHandler(packet);
+                        Packet packet;
+                        var result = communicator.ReceivePacket(out packet);
+                        if (result == PacketCommunicatorReceiveResult.Ok && packet != null)
+                        {
+                            PacketHandler(packet);
+                        }
+                        else
+                        {
+                            Thread.Sleep(1);
+                        }
                     }
-                    else
+                    catch (InvalidOperationException ex) when (ex.Message.Contains("interface disappeared") || ex.Message.Contains("DEVICE_REMOVED"))
                     {
-                        Thread.Sleep(1);
+                        Debug.Print($"[PCAP-Single] Network adapter removed/disconnected: {ex.Message}");
+                        DebugLogger.log($"[PCAP-Single] Adapter disconnected: {selectedAdapter.Name} - {ex.Message}");
+                        
+                        // Выходим из цикла, чтобы worker завершился корректно
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Print($"[PCAP-Single] Unexpected error: {ex.Message}");
+                        DebugLogger.log($"[PCAP-Single] Unexpected error in packet capture: {ex.Message}");
+                        Thread.Sleep(10); // Небольшая пауза при ошибках
                     }
                 }
                 
@@ -4235,15 +4269,32 @@ namespace tickMeter.Forms
                                 
                                 while (!bgWorker?.CancellationPending == true && App.meterState.IsTracking)
                                 {
-                                    Packet packet;
-                                    var result = comm.ReceivePacket(out packet);
-                                    if (result == PacketCommunicatorReceiveResult.Ok && packet != null)
+                                    try
                                     {
-                                        PacketHandler(packet);
+                                        Packet packet;
+                                        var result = comm.ReceivePacket(out packet);
+                                        if (result == PacketCommunicatorReceiveResult.Ok && packet != null)
+                                        {
+                                            PacketHandler(packet);
+                                        }
+                                        else
+                                        {
+                                            Thread.Sleep(1);
+                                        }
                                     }
-                                    else
+                                    catch (InvalidOperationException ex) when (ex.Message.Contains("interface disappeared") || ex.Message.Contains("DEVICE_REMOVED"))
                                     {
-                                        Thread.Sleep(1);
+                                        Debug.Print($"[PCAP-Worker-{currentWorkerIndex}] Network adapter removed/disconnected: {ex.Message}");
+                                        DebugLogger.log($"[PCAP-Worker-{currentWorkerIndex}] Adapter disconnected: {dev.Name} - {ex.Message}");
+                                        
+                                        // Выходим из цикла, чтобы worker завершился корректно
+                                        break;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Debug.Print($"[PCAP-Worker-{currentWorkerIndex}] Unexpected error: {ex.Message}");
+                                        DebugLogger.log($"[PCAP-Worker-{currentWorkerIndex}] Unexpected error in packet capture: {ex.Message}");
+                                        Thread.Sleep(10); // Небольшая пауза при ошибках
                                     }
                                 }
                                 
