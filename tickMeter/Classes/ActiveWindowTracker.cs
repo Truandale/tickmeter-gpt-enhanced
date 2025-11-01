@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
+using System.Net.NetworkInformation;
 using PcapDotNet.Packets;
 using PcapDotNet.Packets.IpV4;
 using PcapDotNet.Packets.Transport;
@@ -13,6 +14,12 @@ namespace tickMeter.Classes
     {
         public static Dictionary<string, ProcessNetworkStats> connections = new Dictionary<string, ProcessNetworkStats>();
         public static readonly object connectionsLock = new object();
+        
+        // Кэш для Windows Statistics в обычном режиме
+        private static long _lastTotalDownloaded = 0;
+        private static long _lastTotalUploaded = 0;
+        private static DateTime _lastStatsUpdate = DateTime.MinValue;
+        private static readonly object _statsLock = new object();
 
         public static void AnalyzePacket(Packet packet)
         {
@@ -192,6 +199,9 @@ namespace tickMeter.Classes
 
         public static void trackTick(string name, string protocol, string localIp, uint localPort, string remoteIp, uint remotePort, int tickIn, int tickOut, uint traffic, DateTime tickTime, uint id)
         {
+            // Проверяем настройку - использовать ли Windows Statistics вместо PCAP трафика
+            bool useWindowsStats = App.settingsManager?.GetOption("use_windows_stats", "True", "ADVANCED") == "True";
+            
             string hash = Hash(name, remoteIp, remotePort);
             lock(connectionsLock)
             {
@@ -218,18 +228,32 @@ namespace tickMeter.Classes
                 {
                     connections[hash].updateTicktimeBuffer(tickTime.Ticks);
                     connections[hash].lastUpdate = tickTime;
-                    connections[hash].downloaded += (int)traffic;
                     connections[hash].id = id;
 
                     if (App.meterState.Server.Ip != remoteIp)
                         App.meterState.Server.Ip = remoteIp; // триггерит DetectLocation()
 
-                    App.meterState.DownloadTraffic += (int)traffic;
+                    // Выбираем источник трафика
+                    if (useWindowsStats)
+                    {
+                        // Используем Windows Statistics - обновим трафик позже через UpdateTrafficFromWindowsStats
+                        // Здесь только отмечаем что есть активность
+                    }
+                    else
+                    {
+                        // Используем PCAP трафик (старый метод)
+                        connections[hash].downloaded += (int)traffic;
+                        App.meterState.DownloadTraffic += (int)traffic;
+                    }
                 }
                 if (tickOut > 0)
                 {
-                    connections[hash].sent += (int)traffic;
-                    App.meterState.UploadTraffic += (int)traffic;
+                    if (!useWindowsStats)
+                    {
+                        // Используем PCAP трафик (старый метод)
+                        connections[hash].sent += (int)traffic;
+                        App.meterState.UploadTraffic += (int)traffic;
+                    }
                 }
             }
         }
@@ -244,6 +268,103 @@ namespace tickMeter.Classes
                 foreach (byte b in hashData)
                     sb.Append(b.ToString("x2"));
                 return sb.ToString();
+            }
+        }
+        
+        /// <summary>
+        /// Получение реального трафика через Windows Statistics (альтернатива PCAP)
+        /// </summary>
+        public static (long downloadDelta, long uploadDelta) GetWindowsNetworkStats()
+        {
+            lock (_statsLock)
+            {
+                try
+                {
+                    long currentDownloaded = 0;
+                    long currentUploaded = 0;
+                    
+                    // Получаем статистику всех активных сетевых интерфейсов
+                    foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
+                    {
+                        // Пропускаем loopback и неактивные интерфейсы
+                        if (ni.NetworkInterfaceType == NetworkInterfaceType.Loopback || 
+                            ni.OperationalStatus != OperationalStatus.Up)
+                            continue;
+                        
+                        // Получаем статистику интерфейса
+                        IPv4InterfaceStatistics stats = ni.GetIPv4Statistics();
+                        currentDownloaded += stats.BytesReceived;
+                        currentUploaded += stats.BytesSent;
+                    }
+                    
+                    // Первый запуск - инициализация
+                    if (_lastStatsUpdate == DateTime.MinValue)
+                    {
+                        _lastTotalDownloaded = currentDownloaded;
+                        _lastTotalUploaded = currentUploaded;
+                        _lastStatsUpdate = DateTime.Now;
+                        return (0, 0);
+                    }
+                    
+                    // Подсчет дельты
+                    long downloadDelta = Math.Max(0, currentDownloaded - _lastTotalDownloaded);
+                    long uploadDelta = Math.Max(0, currentUploaded - _lastTotalUploaded);
+                    
+                    // Обновляем кэш
+                    _lastTotalDownloaded = currentDownloaded;
+                    _lastTotalUploaded = currentUploaded;
+                    _lastStatsUpdate = DateTime.Now;
+                    
+                    // Логирование для отладки
+                    if (downloadDelta > 0 || uploadDelta > 0)
+                    {
+                        Debug.Print($"[WindowsStats] Delta: download={downloadDelta}, upload={uploadDelta}");
+                    }
+                    
+                    return (downloadDelta, uploadDelta);
+                }
+                catch (Exception ex)
+                {
+                    Debug.Print($"[WindowsStats] Error: {ex.Message}");
+                    return (0, 0);
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Обновляет трафик через Windows Statistics (вызывается периодически)
+        /// </summary>
+        public static void UpdateTrafficFromWindowsStats()
+        {
+            bool useWindowsStats = App.settingsManager?.GetOption("use_windows_stats", "True", "ADVANCED") == "True";
+            if (!useWindowsStats) return;
+            
+            var (downloadDelta, uploadDelta) = GetWindowsNetworkStats();
+            
+            if (downloadDelta > 0 || uploadDelta > 0)
+            {
+                // Масштабируем значения для реалистичного отображения
+                int scaledDownload = (int)(downloadDelta / 1000); // Делим на 1000 для более разумных значений
+                int scaledUpload = (int)(uploadDelta / 1000);
+                
+                // Обновляем глобальный трафик
+                App.meterState.DownloadTraffic += scaledDownload;
+                App.meterState.UploadTraffic += scaledUpload;
+                
+                // Обновляем трафик активных соединений
+                lock (connectionsLock)
+                {
+                    foreach (var connection in connections.Values)
+                    {
+                        if (connection.lastUpdate > DateTime.Now.AddSeconds(-5)) // Только активные соединения
+                        {
+                            connection.downloaded += scaledDownload / Math.Max(1, connections.Count);
+                            connection.sent += scaledUpload / Math.Max(1, connections.Count);
+                        }
+                    }
+                }
+                
+                Debug.Print($"[WindowsStats] Applied traffic: download={scaledDownload}, upload={scaledUpload} (from delta: {downloadDelta}/{uploadDelta})");
             }
         }
         
