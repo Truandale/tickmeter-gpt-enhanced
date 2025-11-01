@@ -1218,8 +1218,8 @@ namespace tickMeter.Forms
                 }
                 else
                 {
-                    DebugLogger.log($"[VPN-Tracking] Ignoring non-active process: {connectionInfo.Exe} (active: {activeProcess})");
-                    return;
+                    DebugLogger.log($"[VPN-Tracking] Non-active process: {connectionInfo.Exe} (active: {activeProcess}) - will handle separately");
+                    // НЕ возвращаемся! Позволяем обработать для показа "NO TRAFFIC"
                 }
                 
                 if (isGameTraffic)
@@ -1262,6 +1262,11 @@ namespace tickMeter.Forms
                             DebugLogger.log($"[VPN-Tracking] Updated VPN connection: {connectionId} (downloaded: {existing.downloaded}, sent: {existing.sent}, ticksIn: {existing.ticksIn}, totalTicks: {existing.totalTicksCnt})");
                         }
                     }
+                }
+                else
+                {
+                    // Для неактивных процессов не создаем соединения - это позволит показать "NO TRAFFIC"
+                    DebugLogger.log($"[VPN-Tracking] Non-active process {connectionInfo.Exe} - not creating VPN connection to allow NO TRAFFIC display");
                 }
             }
             catch (Exception ex)
@@ -2436,6 +2441,23 @@ namespace tickMeter.Forms
                 if (currentActiveProcess != previousProcessName)
                 {
                     App.meterState.Game = currentActiveProcess;
+                    
+                    // Для системных процессов в VPN режиме очищаем соединения чтобы показать "NO TRAFFIC"
+                    string[] systemProcesses = { "cmd", "notepad", "calculator", "mspaint", "wordpad", "powershell", "powershell_ise" };
+                    if (systemProcesses.Any(proc => proc.Equals(currentActiveProcess, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        DebugLogger.log($"[VPN-Clear] Clearing connections for system process: {currentActiveProcess}");
+                        try 
+                        { 
+                            ActiveWindowTracker.ClearConnectionStats(); 
+                            App.meterState.IsTracking = false;
+                            _metricsStateCleared = true;
+                        } 
+                        catch (Exception ex) 
+                        { 
+                            DebugLogger.log($"[VPN-Clear] Error clearing connections: {ex.Message}"); 
+                        }
+                    }
                 }
             
             if (_metricsActive && _lastMetricsApplied != DateTime.MinValue)
@@ -3050,7 +3072,7 @@ namespace tickMeter.Forms
                         
                         // Третья проверка: для системных процессов требуем РАСТУЩИЙ трафик
                         bool hasGrowingTraffic = true; // По умолчанию считаем что трафик растет
-                        string[] systemProcesses = { "explorer", "dwm", "winlogon", "csrss", "lsass", "services", "svchost", "taskhostw", "taskmgr", "notepad", "calculator" };
+                        string[] systemProcesses = { "explorer", "dwm", "winlogon", "csrss", "lsass", "services", "svchost", "taskhostw", "taskmgr", "notepad", "calculator", "cmd", "powershell", "powershell_ise", "mspaint", "wordpad" };
                         bool isSystemProcess = systemProcesses.Any(proc => proc.Equals(procStats.name, StringComparison.OrdinalIgnoreCase));
                         
                         if (isSystemProcess)

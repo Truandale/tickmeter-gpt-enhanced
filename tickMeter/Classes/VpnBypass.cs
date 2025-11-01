@@ -846,37 +846,9 @@ namespace tickMeter.Classes
                 }
             }
 
-            // Fallback для VPN: используем активный процесс
-            try
-            {
-                string activeProcessName = AutoDetectMngr.GetActiveProcessName();
-                if (!string.IsNullOrEmpty(activeProcessName))
-                {
-                    // Попытаемся найти PID активного процесса
-                    int activePid = 0;
-                    try
-                    {
-                        var processes = Process.GetProcessesByName(activeProcessName);
-                        if (processes.Length > 0)
-                        {
-                            activePid = processes[0].Id;
-                            processes[0].Dispose();
-                            foreach (var p in processes.Skip(1)) p.Dispose();
-                        }
-                    }
-                    catch { }
-
-                    var fallbackInfo = new Info(activePid, activeProcessName);
-                    DebugLogger.log($"[VpnFallback] Using active process fallback: {activeProcessName}/{activePid} for {local}:{lport}->{remote}:{rport}");
-                    return fallbackInfo;
-                }
-            }
-            catch (Exception ex)
-            {
-                DebugLogger.log($"[VpnFallback] Error getting active process: {ex.Message}");
-            }
-
-            // Последний fallback - возвращаем пустую информацию
+            // Если соединение не опознано - НЕ присваиваем его никому
+            // Это позволит показать "NO TRAFFIC" для процессов без реального трафика
+            DebugLogger.log($"[VpnFallback] Connection not resolved: {local}:{lport}->{remote}:{rport} - returning Unknown");
             return new Info(0, "Unknown");
         }
     }
