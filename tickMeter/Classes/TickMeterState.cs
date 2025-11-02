@@ -1231,18 +1231,6 @@ namespace tickMeter
                 TickTimestamps = downsampledTimestamps;
             }
 
-            private class IpInfo
-            {
-                [JsonProperty("ip")] public string Ip { get; set; }
-                [JsonProperty("hostname")] public string Hostname { get; set; }
-                [JsonProperty("city")] public string City { get; set; }
-                [JsonProperty("region")] public string Region { get; set; }
-                [JsonProperty("country")] public string Country { get; set; }
-                [JsonProperty("loc")] public string Loc { get; set; }
-                [JsonProperty("org")] public string Org { get; set; }
-                [JsonProperty("postal")] public string Postal { get; set; }
-            }
-
             private async void DetectLocation()
             {
                 if (string.IsNullOrEmpty(Ip)) { Location = "N/A"; return; }
@@ -1267,43 +1255,35 @@ namespace tickMeter
                     }
                 }
                 
-                await Task.Run(() =>
+                // Используем новый robust геолокационный сервис с fallback'ами
+                try
                 {
-                    IpInfo ipInfo = new IpInfo();
-                    try
-                    {
-                        using (WebClient webClient = new WebClient())
-                        {
-                            webClient.Headers.Add("User-Agent", "tickMeter/" + System.Windows.Forms.Application.ProductVersion); // ИСПРАВЛЕНО
-                            string info = webClient.DownloadString("http://ipinfo.io/" + ipToDetect + "/json");
-                            ipInfo = JsonConvert.DeserializeObject<IpInfo>(info);
-                            if (!string.IsNullOrEmpty(ipInfo.Country))
-                            {
-                                RegionInfo myRI1 = new RegionInfo(ipInfo.Country);
-                                ipInfo.Country = myRI1.EnglishName;
-                            }
-                        }
-                    }
-                    catch (WebException wex)
-                    {
-                        DebugLogger.log($"DetectLocation WebException for IP {ipToDetect}: {wex.Message} (Status: {wex.Status})");
-                        ipInfo.Country = "Error";
-                    }
-                    catch (Exception ex)
-                    {
-                        DebugLogger.log($"DetectLocation Exception for IP {ipToDetect}: {ex.Message}");
-                        ipInfo.Country = "Error";
-                    }
-
+                    DebugLogger.log($"[DetectLocation] Starting geolocation for IP: {ipToDetect}");
+                    
+                    var locationInfo = await GeolocationService.GetLocationAsync(ipToDetect);
+                    
                     if (this.CurrentIP == ipToDetect)
                     {
-                        Location = ipInfo.Country ?? "N/A";
-                        if (!string.IsNullOrEmpty(ipInfo.City) && ipInfo.Country != "Error" && ipInfo.Country != "N/A")
+                        Location = locationInfo?.FormattedLocation ?? "N/A";
+                        
+                        DebugLogger.log($"[DetectLocation] Location detected: {Location} (Source: {locationInfo?.Source})");
+                        
+                        // Дополнительная информация для дебага
+                        if (locationInfo != null && !string.IsNullOrEmpty(locationInfo.Isp))
                         {
-                            Location += ", " + ipInfo.City;
+                            DebugLogger.log($"[DetectLocation] ISP: {locationInfo.Isp}");
                         }
                     }
-                }).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    DebugLogger.log($"[DetectLocation] Geolocation failed for IP {ipToDetect}: {ex.Message}");
+                    
+                    if (this.CurrentIP == ipToDetect)
+                    {
+                        Location = "Error";
+                    }
+                }
             }
 
             public static IPEndPoint CreateIPEndPoint(string endPoint, int port)

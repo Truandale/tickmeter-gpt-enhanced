@@ -3,6 +3,7 @@ using System;
 using System.Diagnostics;
 using System.Windows.Forms;
 using tickMeter.Forms;
+using tickMeter.Classes;
 
 namespace tickMeter
 {
@@ -26,9 +27,38 @@ namespace tickMeter
             }
             AppDomain currentDomain = AppDomain.CurrentDomain;
             currentDomain.UnhandledException += new UnhandledExceptionEventHandler(MyHandler);
+            
+            // Добавляем обработчик завершения для очистки ресурсов
+            Application.ApplicationExit += Application_ApplicationExit;
+            currentDomain.ProcessExit += CurrentDomain_ProcessExit;
+            
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new GUI());
+        }
+
+        static void Application_ApplicationExit(object sender, EventArgs e)
+        {
+            try
+            {
+                RealProcessTrafficMonitor.DisposeAll();
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[Program] Error during application exit cleanup: {ex.Message}");
+            }
+        }
+
+        static void CurrentDomain_ProcessExit(object sender, EventArgs e)
+        {
+            try
+            {
+                RealProcessTrafficMonitor.DisposeAll();
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[Program] Error during process exit cleanup: {ex.Message}");
+            }
         }
 
         static void MyHandler(object sender, UnhandledExceptionEventArgs args)
