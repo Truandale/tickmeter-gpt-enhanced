@@ -505,14 +505,16 @@ namespace tickMeter.Forms
         private void btnReset_Click(object sender, EventArgs e)
         {
             var result = MessageBox.Show(
-                "Установить оптимальные настройки для повседневного использования?\n\n" +
-                "Это установит рекомендуемые значения для:\n" +
-                "• Основных настроек сети и захвата пакетов\n" +
-                "• Сглаживания показателей\n" +
-                "• Детекции спайков (ping, tickrate)\n" +
-                "• Расширенного оверлея (активный процесс, время сессии)\n" +
-                "• Оптимизации производительности\n\n" +
-                "Все параметры будут оптимизированы для стабильной работы.",
+                "Установить проверенные оптимальные настройки?\n\n" +
+                "Эти настройки протестированы для стабильной работы:\n" +
+                "• Обновление каждую секунду (ping_interval = 1000 мс)\n" +
+                "• Гибридный режим PCAP+Windows Stats\n" +
+                "• Мульти-адаптерный захват с игнорированием виртуальных\n" +
+                "• Все виды сглаживания включены\n" +
+                "• Детекция спайков ping и tickrate\n" +
+                "• Оптимизированные буферы (8MB PCAP, 10K ring buffer)\n" +
+                "• Минимальный расширенный оверлей (процесс + время сессии)\n\n" +
+                "Все параметры настроены для повседневного использования.",
                 "Сброс к оптимальным настройкам",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question);
@@ -521,13 +523,15 @@ namespace tickMeter.Forms
             {
                 SetOptimalSettings();
                 MessageBox.Show(
-                    "Оптимальные настройки успешно установлены!\n\n" +
-                    "✓ Основные настройки: включены все рекомендуемые опции\n" +
-                    "✓ Сглаживание: активировано для стабильных показателей\n" +
-                    "✓ Детекция спайков: включена для ping и tickrate\n" +
-                    "✓ Расширенный оверлей: показывает ключевую информацию\n" +
-                    "✓ Производительность: оптимизирована для стабильной работы\n\n" +
-                    "Перезапустите программу для применения всех изменений.",
+                    "Проверенные оптимальные настройки успешно установлены!\n\n" +
+                    "✓ Обновление: каждую секунду для точности\n" +
+                    "✓ Гибридный режим: PCAP точность + Windows Stats реализм\n" +
+                    "✓ Сглаживание: все виды активированы для стабильности\n" +
+                    "✓ Детекция спайков: настроена для ping (150мс) и tickrate\n" +
+                    "✓ Мульти-адаптер: с игнорированием виртуальных устройств\n" +
+                    "✓ Производительность: оптимизированные буферы и потоки\n" +
+                    "✓ Оверлей: минимальная полезная информация\n\n" +
+                    "Настройки сохранены. Рекомендуется перезапустить программу.",
                     "Настройки обновлены",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
@@ -543,15 +547,15 @@ namespace tickMeter.Forms
             chkLiveMaxRows.Checked = true;
             liveMaxRowsNumeric.Value = 1000;
             
-            // RTSS - отключаем FPS ограничение, используем ping_interval
+            // RTSS - отключаем FPS ограничение, используем ping_interval = 1000 мс
             chkOverlayFps.Checked = false;
-            overlayFpsNumeric.Value = 60;
+            overlayFpsNumeric.Value = 60;  // Устанавливаем разумное значение в допустимом диапазоне (15-144)
             
             // BPF фильтр - отключен для простоты
             chkBpfFilter.Checked = false;
             captureFilterTextBox.Text = "ip or ip6";
             
-            // Основные настройки - все активные
+            // Основные настройки - все активные (ваши оптимальные значения)
             chkCaptureAllAdapters.Checked = true;
             chkIgnoreVirtualAdapters.Checked = true;
             chkPingBindToInterface.Checked = true;
@@ -562,10 +566,10 @@ namespace tickMeter.Forms
             chkDedupMultiNic.Checked = true;
             chkEnableIPv6.Checked = true;
             chkRtssOnlyActive.Checked = true;
-            chkUiRefreshHidden.Checked = false;
+            chkUiRefreshHidden.Checked = true;  // Ваша настройка
             chkStunEnable.Checked = true;
             
-            // Smoothing - включены для стабильности
+            // Smoothing - включены для стабильности (все ваши значения True)
             chkPingGraphOverlaySmoothing.Checked = true;
             chkTickrateGraphOverlaySmoothing.Checked = true;
             chkTicktimeGraphOverlaySmoothing.Checked = true;
@@ -574,29 +578,27 @@ namespace tickMeter.Forms
             chkTickrateValueOverlaySmoothing.Checked = true;
             chkTrafficValueOverlaySmoothing.Checked = true;
             
-            // Ping Spikes - полезно для геймеров + НОВАЯ продвинутая детекция
+            // Ping Spikes - ваши оптимальные настройки
             chkShowPingSpikes.Checked = true;
             numPingSpikeThreshold.Value = 150;
-            // TODO: раскомментировать когда добавим checkbox в designer
-            // chkAdvancedSpikeDetection.Checked = true; // Включаем улучшенную детекцию
             
-            // VPN bypass - отключен по умолчанию
+            // VPN bypass - отключен по умолчанию (ваши настройки)
             chkVpnBypassBasic.Checked = false;
             chkVpnBypassAdvanced.Checked = false;
             
-            // === PHASE 1: Anti-reentrancy (ВКЛЮЧЕНЫ) ===
+            // === PHASE 1: Anti-reentrancy (ваши настройки) ===
             chkAntiReentrancy.Checked = true;
             chkRtssThrottling.Checked = true;
             chkPcapOptimization.Checked = true;
             
-            // === PHASE 2: PCAP optimization (ОПТИМАЛЬНЫЕ ЗНАЧЕНИЯ) ===
-            numPcapKernelBufferMb.Value = 8;  // 8MB для хорошей производительности
-            numPcapMinToCopy.Value = 4096;    // Оптимальный размер
+            // === PHASE 2: PCAP optimization (ваши оптимальные значения) ===
+            numPcapKernelBufferMb.Value = 8;
+            numPcapMinToCopy.Value = 4096;
             
-            // === PHASE 3: Virtual Mode & Priorities (СБАЛАНСИРОВАННЫЕ) ===
+            // === PHASE 3: Virtual Mode & Priorities (ваши настройки) ===
             chkVirtualModeListView.Checked = true;
-            numVirtualModeThreshold.Value = 1000; // Умеренный порог
-            numRingBufferSize.Value = 10000;      // Достаточный буфер
+            numVirtualModeThreshold.Value = 1000;
+            numRingBufferSize.Value = 10000;
             chkShowVirtualModeStats.Checked = true;
             
             // === PHASE 3: Thread Management (КОНСЕРВАТИВНЫЕ) ===
@@ -638,8 +640,114 @@ namespace tickMeter.Forms
             // Применяем настройки детекции спайков
             SaveSpikeDetectionSettings();
             
+            // === ОСНОВНЫЕ НАСТРОЙКИ [SETTINGS] - ваши оптимальные значения ===
+            
+            // Output - что отображать
+            App.settingsManager.SetOption("rtss", "True", "SETTINGS");              // Вывод через RTSS ✓
+            App.settingsManager.SetOption("tickrate", "True", "SETTINGS");          // Отображать Tickrate ✓
+            App.settingsManager.SetOption("ip", "True", "SETTINGS");                // Отображать IP ✓
+            App.settingsManager.SetOption("ping", "True", "SETTINGS");              // Отображать Ping и страну ✓
+            App.settingsManager.SetOption("traffic", "True", "SETTINGS");           // Отображать трафик ✓
+            App.settingsManager.SetOption("chart", "True", "SETTINGS");             // График тикрейта ✓
+            App.settingsManager.SetOption("ticktime", "True", "SETTINGS");          // График времени пакета ✓
+            App.settingsManager.SetOption("ping_chart", "True", "SETTINGS");        // График пинга ✓
+            App.settingsManager.SetOption("session_time", "True", "SETTINGS");      // Отображать время подключения ✓
+            App.settingsManager.SetOption("show_packet_drops", "True", "SETTINGS"); // Отображать потери пакетов ✓
+            
+            // Интервал и порты
+            App.settingsManager.SetOption("ping_interval", "1000", "SETTINGS");     // Интервал пинга 1000ms ✓
+            App.settingsManager.SetOption("ping_ports", "", "SETTINGS");            // Порты для пинга (пустые)
+            
+            // Системные настройки
+            App.settingsManager.SetOption("autodetect", "True", "SETTINGS");        // Автоматическое отслеживание (beta) ✓
+            App.settingsManager.SetOption("data_send", "False", "SETTINGS");        // Логировать тикрейт в CSV ✗
+            App.settingsManager.SetOption("run_minimized", "True", "SETTINGS");     // Запускать свёрнутым ✓
+            App.settingsManager.SetOption("network_quality_overlay", "True", "SETTINGS");
+            
+            // Дополнительные настройки сети (из ваших расширенных настроек)
+            App.settingsManager.SetOption("capture_all_adapters", "True", "SETTINGS");
+            App.settingsManager.SetOption("ping_bind_to_interface", "True", "SETTINGS");
+            App.settingsManager.SetOption("ping_tcp_prefer", "True", "SETTINGS");
+            App.settingsManager.SetOption("ping_fallback_icmp", "True", "SETTINGS");
+            App.settingsManager.SetOption("ping_target_active_only", "True", "SETTINGS");
+            App.settingsManager.SetOption("tickrate_smoothing", "True", "SETTINGS");
+            App.settingsManager.SetOption("dedup_multi_nic", "True", "SETTINGS");
+            App.settingsManager.SetOption("enable_ipv6", "True", "SETTINGS");
+            App.settingsManager.SetOption("ignore_virtual_adapters", "True", "SETTINGS");
+            App.settingsManager.SetOption("rtss_only_active", "True", "SETTINGS");
+            App.settingsManager.SetOption("stun_enable", "True", "SETTINGS");
+            App.settingsManager.SetOption("ui_refresh_hidden", "True", "SETTINGS");
+            
+            // Цвета оверлея (оптимальные значения)
+            App.settingsManager.SetOption("color_label", "636BDA", "SETTINGS");     // Цвет лейблов оверлея (синий)
+            App.settingsManager.SetOption("color_bad", "FF0000", "SETTINGS");       // Цвет низких значений (красный)
+            App.settingsManager.SetOption("color_mid", "FF8040", "SETTINGS");       // Цвет средних значений (оранжевый)
+            App.settingsManager.SetOption("color_good", "00FF00", "SETTINGS");      // Цвет хороших значений (зелёный)
+            App.settingsManager.SetOption("color_chart", "FF0080", "SETTINGS");     // Цвет графиков (розовый)
+            
+            // === ДОПОЛНИТЕЛЬНЫЕ ADVANCED НАСТРОЙКИ ===
+            App.settingsManager.SetOption("use_windows_stats", "False", "ADVANCED");
+            App.settingsManager.SetOption("hybrid_pcap_windows", "True", "ADVANCED");
+            App.settingsManager.SetOption("smoothing_ping_value", "True", "ADVANCED");
+            App.settingsManager.SetOption("smoothing_traffic_value", "True", "ADVANCED");
+            App.settingsManager.SetOption("smoothing_tickrate_graph", "True", "ADVANCED");
+            App.settingsManager.SetOption("smoothing_ticktime_graph", "True", "ADVANCED");
+            App.settingsManager.SetOption("smoothing_ping_graph", "True", "ADVANCED");
+            
             // Сохраняем основные настройки
             SaveSettings();
+            
+            // ВАЖНО: Принудительно перезагружаем настройки из файла
+            try
+            {
+                App.settingsManager.ReloadConfig();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка перезагрузки конфигурации: {ex.Message}");
+            }
+            
+            // ВАЖНО: Обновляем UI основной формы настроек после изменения значений
+            try
+            {
+                if (App.settingsForm != null && !App.settingsForm.IsDisposed)
+                {
+                    App.settingsForm.ApplyFromConfig(); // Перезагружаем все настройки в UI
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка обновления UI основных настроек: {ex.Message}");
+            }
+            
+            // Уведомляем пользователя об успешном восстановлении
+            MessageBox.Show("Настройки восстановлены к оптимальным значениям:\n\n" +
+                           "📊 OUTPUT:\n" +
+                           "• Все основные индикаторы включены (RTSS, Tickrate, IP, Ping, Traffic)\n" +
+                           "• Все графики включены (Tickrate, Ping, Ticktime)\n" +
+                           "• Время сессии и потери пакетов включены\n\n" +
+                           "⚙️ СИСТЕМА:\n" +
+                           "• Интервал обновления: 1 секунда\n" +
+                           "• Автоматическое отслеживание включено\n" +
+                           "• Запуск свёрнутым включен\n" +
+                           "• Логирование в CSV отключено\n\n" +
+                           "🌐 СЕТЬ:\n" +
+                           "• Мультиадаптерный режим\n" +
+                           "• Гибридный PCAP+Windows Stats\n" +
+                           "• Все сглаживания включены\n" +
+                           "• Оптимизации производительности\n" +
+                           "• Детекция спайков (порог 150ms)",
+                           "Оптимальные настройки применены", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            
+            // ВАЖНО: Перезагружаем настройки в текущей форме после применения изменений
+            try
+            {
+                LoadSettings(); // Обновляем все контролы в расширенных настройках
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка перезагрузки расширенных настроек: {ex.Message}");
+            }
         }
 
         private void InitSpikeDetectionCombos()
