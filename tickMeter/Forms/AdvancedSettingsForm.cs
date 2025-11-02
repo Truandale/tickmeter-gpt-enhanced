@@ -540,214 +540,245 @@ namespace tickMeter.Forms
 
         /// <summary>
         /// Устанавливает оптимальные настройки для повседневного использования
+        /// Основано на проверенных настройках пользователя из settings.ini
         /// </summary>
         private void SetOptimalSettings()
         {
-            // Live View - умеренные настройки
-            chkLiveMaxRows.Checked = true;
-            liveMaxRowsNumeric.Value = 1000;
+            // === ОСНОВНЫЕ [SETTINGS] НАСТРОЙКИ ИЗ ВАШИХ РАБОЧИХ ЗНАЧЕНИЙ ===
             
-            // RTSS - отключаем FPS ограничение, используем ping_interval = 1000 мс
-            chkOverlayFps.Checked = false;
-            overlayFpsNumeric.Value = 60;  // Устанавливаем разумное значение в допустимом диапазоне (15-144)
+            // Output - что отображать (все включено, как у вас)
+            App.settingsManager.SetOption("rtss", "True", "SETTINGS");                    // RTSS оверлей ✓
+            App.settingsManager.SetOption("autodetect", "True", "SETTINGS");              // Автоматическое отслеживание ✓
+            App.settingsManager.SetOption("capture_all_adapters", "True", "SETTINGS");    // Захват всех адаптеров ✓
+            App.settingsManager.SetOption("chart", "True", "SETTINGS");                   // График тикрейта ✓
+            App.settingsManager.SetOption("ip", "True", "SETTINGS");                      // Отображать IP ✓
+            App.settingsManager.SetOption("tickrate", "True", "SETTINGS");                // Отображать Tickrate ✓
+            App.settingsManager.SetOption("ticktime", "True", "SETTINGS");                // График времени пакета ✓
+            App.settingsManager.SetOption("ping_chart", "True", "SETTINGS");              // График пинга ✓
+            App.settingsManager.SetOption("ping", "True", "SETTINGS");                    // Отображать Ping и страну ✓
+            App.settingsManager.SetOption("traffic", "True", "SETTINGS");                 // Отображать трафик ✓
+            App.settingsManager.SetOption("session_time", "True", "SETTINGS");            // Время сессии ✓
+            App.settingsManager.SetOption("show_packet_drops", "True", "SETTINGS");       // Потери пакетов ✓
             
-            // BPF фильтр - отключен для простоты
-            chkBpfFilter.Checked = false;
-            captureFilterTextBox.Text = "ip or ip6";
+            // Интервалы и порты (ваши значения)
+            App.settingsManager.SetOption("ping_interval", "1000", "SETTINGS");           // Интервал пинга 1000ms ✓
+            App.settingsManager.SetOption("ping_ports", "", "SETTINGS");                  // Порты для пинга (пустые) ✓
             
-            // Основные настройки - все активные (ваши оптимальные значения)
-            chkCaptureAllAdapters.Checked = true;
-            chkIgnoreVirtualAdapters.Checked = true;
-            chkPingBindToInterface.Checked = true;
-            chkPingTcpPrefer.Checked = true;
-            chkPingFallbackIcmp.Checked = true;
-            chkPingTargetActiveOnly.Checked = true;
-            chkTickrateSmoothing.Checked = true;
-            chkDedupMultiNic.Checked = true;
-            chkEnableIPv6.Checked = true;
-            chkRtssOnlyActive.Checked = true;
-            chkUiRefreshHidden.Checked = true;  // Ваша настройка
-            chkStunEnable.Checked = true;
+            // Системные настройки (ваши проверенные значения)
+            App.settingsManager.SetOption("data_send", "False", "SETTINGS");              // Логировать тикрейт в CSV ✗
+            App.settingsManager.SetOption("run_minimized", "True", "SETTINGS");           // Запускать свёрнутым ✓
+            App.settingsManager.SetOption("manual_ip_unlocked", "False", "SETTINGS");     // Ручной IP заблокирован ✗
             
-            // Smoothing - включены для стабильности (все ваши значения True)
-            chkPingGraphOverlaySmoothing.Checked = true;
-            chkTickrateGraphOverlaySmoothing.Checked = true;
-            chkTicktimeGraphOverlaySmoothing.Checked = true;
-            chkPingValueOverlaySmoothing.Checked = true;
-            chkPingValueGuiSmoothing.Checked = true;
-            chkTickrateValueOverlaySmoothing.Checked = true;
-            chkTrafficValueOverlaySmoothing.Checked = true;
+            // Сетевые настройки (все ваши оптимальные значения)
+            App.settingsManager.SetOption("ping_bind_to_interface", "True", "SETTINGS");  // Привязка пинга к интерфейсу ✓
+            App.settingsManager.SetOption("ping_tcp_prefer", "True", "SETTINGS");         // Предпочитать TCP ✓
+            App.settingsManager.SetOption("ping_fallback_icmp", "True", "SETTINGS");      // Fallback на ICMP ✓
+            App.settingsManager.SetOption("ping_target_active_only", "True", "SETTINGS"); // Пинг только активных ✓
+            App.settingsManager.SetOption("tickrate_smoothing", "True", "SETTINGS");      // Сглаживание тикрейта ✓
+            App.settingsManager.SetOption("dedup_multi_nic", "True", "SETTINGS");         // Дедупликация NIC ✓
+            App.settingsManager.SetOption("enable_ipv6", "True", "SETTINGS");             // IPv6 ✓
+            App.settingsManager.SetOption("ignore_virtual_adapters", "True", "SETTINGS"); // Игнорировать виртуальные ✓
+            App.settingsManager.SetOption("rtss_only_active", "True", "SETTINGS");        // RTSS только для активных ✓
+            App.settingsManager.SetOption("stun_enable", "True", "SETTINGS");             // STUN ✓
+            App.settingsManager.SetOption("network_quality_overlay", "True", "SETTINGS"); // Качество сети ✓
+            App.settingsManager.SetOption("ui_refresh_hidden", "True", "SETTINGS");       // UI обновление скрытых ✓
             
-            // Ping Spikes - ваши оптимальные настройки
-            chkShowPingSpikes.Checked = true;
-            numPingSpikeThreshold.Value = 150;
+            // Цвета оверлея (ваши проверенные значения)
+            App.settingsManager.SetOption("color_label", "636BDA", "SETTINGS");           // Цвет лейблов (синий) ✓
+            App.settingsManager.SetOption("color_bad", "FF0000", "SETTINGS");             // Красный для плохих значений ✓
+            App.settingsManager.SetOption("color_mid", "FF8040", "SETTINGS");             // Оранжевый для средних ✓
+            App.settingsManager.SetOption("color_good", "00FF00", "SETTINGS");            // Зелёный для хороших ✓
+            App.settingsManager.SetOption("color_chart", "FF0080", "SETTINGS");           // Розовый для графиков ✓
             
-            // VPN bypass - отключен по умолчанию (ваши настройки)
-            chkVpnBypassBasic.Checked = false;
-            chkVpnBypassAdvanced.Checked = false;
+            // === ADVANCED НАСТРОЙКИ ИЗ ВАШИХ РАБОЧИХ ЗНАЧЕНИЙ ===
             
-            // === PHASE 1: Anti-reentrancy (ваши настройки) ===
-            chkAntiReentrancy.Checked = true;
-            chkRtssThrottling.Checked = true;
-            chkPcapOptimization.Checked = true;
+            // Live View
+            App.settingsManager.SetOption("live_max_rows_enabled", "True", "ADVANCED");    // Ограничение строк ✓
+            App.settingsManager.SetOption("live_max_rows", "1000", "ADVANCED");            // 1000 строк ✓
             
-            // === PHASE 2: PCAP optimization (ваши оптимальные значения) ===
-            numPcapKernelBufferMb.Value = 8;
-            numPcapMinToCopy.Value = 4096;
+            // RTSS и FPS
+            App.settingsManager.SetOption("overlay_fps_enabled", "False", "ADVANCED");     // FPS ограничение ✗
+            App.settingsManager.SetOption("overlay_fps", "60", "ADVANCED");                // 60 FPS ✓
             
-            // === PHASE 3: Virtual Mode & Priorities (ваши настройки) ===
-            chkVirtualModeListView.Checked = true;
-            numVirtualModeThreshold.Value = 1000;
-            numRingBufferSize.Value = 10000;
-            chkShowVirtualModeStats.Checked = true;
+            // BPF фильтр
+            App.settingsManager.SetOption("bpf_filter_enabled", "False", "ADVANCED");      // BPF фильтр ✗
+            App.settingsManager.SetOption("capture_filter", "ip or ip6", "ADVANCED");      // Фильтр захвата ✓
             
-            // === PHASE 3: Thread Management (КОНСЕРВАТИВНЫЕ) ===
-            chkHighPriorityThreads.Checked = true;
-            chkSingleConsumerPattern.Checked = false; // Пока экспериментальное
-            numUiProcessingRate.Value = 60;           // 60 FPS UI
-            numUiBatchSize.Value = 10;                // Оптимальный batch размер
+            // Сглаживания (все включены, как у вас)
+            App.settingsManager.SetOption("smoothing_ping_value", "True", "ADVANCED");     // Сглаживание значений пинга ✓
+            App.settingsManager.SetOption("smoothing_traffic_value", "True", "ADVANCED");  // Сглаживание трафика ✓
+            App.settingsManager.SetOption("smoothing_tickrate_graph", "True", "ADVANCED"); // Сглаживание графика тикрейта ✓
+            App.settingsManager.SetOption("smoothing_ticktime_graph", "True", "ADVANCED"); // Сглаживание графика тиктайма ✓
+            App.settingsManager.SetOption("use_windows_stats", "False", "ADVANCED");       // Windows Stats ✗
+            App.settingsManager.SetOption("hybrid_pcap_windows", "True", "ADVANCED");      // Гибридный режим ✓
+            App.settingsManager.SetOption("smoothing_ping_graph", "True", "ADVANCED");     // Сглаживание графика пинга ✓
+            App.settingsManager.SetOption("smoothing_ping_graph_overlay", "True", "ADVANCED");     // Оверлей пинг-график ✓
+            App.settingsManager.SetOption("smoothing_tickrate_graph_overlay", "True", "ADVANCED"); // Оверлей тикрейт-график ✓
+            App.settingsManager.SetOption("smoothing_ticktime_graph_overlay", "True", "ADVANCED"); // Оверлей тиктайм-график ✓
+            App.settingsManager.SetOption("smoothing_ping_value_overlay", "True", "ADVANCED");     // Оверлей значения пинга ✓
+            App.settingsManager.SetOption("smoothing_tickrate_value_overlay", "True", "ADVANCED"); // Оверлей значения тикрейта ✓
+            App.settingsManager.SetOption("smoothing_traffic_value_overlay", "True", "ADVANCED");  // Оверлей значения трафика ✓
+            App.settingsManager.SetOption("smoothing_ping_value_gui", "True", "ADVANCED");          // GUI сглаживание пинга ✓
             
-            // === РАСШИРЕННЫЕ НАСТРОЙКИ ДЕТЕКЦИИ СПАЙКОВ ===
-            chkSpikeDetectionEnable.Checked = true;   // Включаем детекцию спайков
-            chkSpikeMetricPing.Checked = true;        // Отслеживаем спайки пинга
-            chkSpikeMetricTickrate.Checked = true;    // Отслеживаем спайки тикрейта
-            chkSpikeMetricTicktime.Checked = false;   // Тиктайм обычно менее важен
-            chkSpikeAutoCalibration.Checked = true;   // Автокалибровка включена
+            // Ping Spikes (ваши настройки)
+            App.settingsManager.SetOption("show_ping_spikes", "True", "ADVANCED");         // Показывать спайки пинга ✓
+            App.settingsManager.SetOption("ping_spike_threshold", "150", "ADVANCED");      // Порог спайков 150ms ✓
             
-            // Настройки комбобоксов для спайков
-            if (cmbSpikeSensitivity.Items.Contains("medium"))
-                cmbSpikeSensitivity.SelectedItem = "medium";  // Средняя чувствительность
-            if (cmbSpikeDisplayMode.Items.Contains("both"))
-                cmbSpikeDisplayMode.SelectedItem = "both";    // Показываем и значения и индикаторы
-                
-            // Численные параметры спайков
-            numSpikeMinDuration.Value = 120;          // 120мс минимальная длительность
-            numSpikeHistorySize.Value = 1000;         // 1000 значений в истории
+            // VPN bypass (ИСПРАВЛЕННЫЕ значения - при включении расширенного включается и простой)
+            App.settingsManager.SetOption("vpn_bypass_basic", "True", "ADVANCED");         // Простой VPN bypass ✓ (должен быть включен вместе с расширенным)
+            App.settingsManager.SetOption("vpn_bypass_advanced", "True", "ADVANCED");      // Сложный VPN bypass ✓ (включен на скриншоте)
             
-            // === EXTENDED OVERLAY НАСТРОЙКИ (ОПТИМАЛЬНЫЕ ДЛЯ ГЕЙМЕРОВ) ===
-            chkShowActiveProcess.Checked = true;      // Показываем активный процесс
-            chkShowSessionTime.Checked = true;        // Показываем время сессии
-            chkShowExternalIP.Checked = false;        // Внешний IP обычно не нужен
-            chkShowSessionStats.Checked = false;      // Статистика сессии может загромождать
-            chkShowServerInfo.Checked = false;        // Информация о сервере не всегда нужна
-            chkShowPacketCounters.Checked = false;    // Счетчики пакетов для продвинутых пользователей
-            chkShowConnectionType.Checked = false;    // Тип подключения редко меняется
-            chkShowDiagnosticInfo.Checked = false;    // Диагностика только при проблемах
+            // Оптимизации производительности (ваши значения)
+            App.settingsManager.SetOption("anti_reentrancy", "True", "ADVANCED");          // Защита от реентерабельности ✓
+            App.settingsManager.SetOption("rtss_throttling", "True", "ADVANCED");          // RTSS троттлинг ✓
+            App.settingsManager.SetOption("pcap_optimization", "True", "ADVANCED");        // PCAP оптимизация ✓
+            App.settingsManager.SetOption("pcap_kernel_buffer_mb", "8", "ADVANCED");       // Буфер ядра 8MB ✓
+            App.settingsManager.SetOption("pcap_min_to_copy", "4096", "ADVANCED");         // Минимум копирования 4KB ✓
             
-            // Применяем настройки Extended Overlay
-            SaveExtendedOverlaySettings();
+            // Virtual Mode (ваши настройки)
+            App.settingsManager.SetOption("virtual_mode_listview", "True", "ADVANCED");    // Виртуальный режим ✓
+            App.settingsManager.SetOption("virtual_mode_threshold", "1000", "ADVANCED");   // Порог 1000 ✓
+            App.settingsManager.SetOption("ring_buffer_size", "10000", "ADVANCED");        // Размер буфера 10000 ✓
+            App.settingsManager.SetOption("show_virtual_mode_stats", "True", "ADVANCED");  // Статистика виртуального режима ✓
             
-            // Применяем настройки детекции спайков
-            SaveSpikeDetectionSettings();
+            // Thread Management (ваши оптимальные значения)
+            App.settingsManager.SetOption("high_priority_threads", "True", "ADVANCED");    // Высокий приоритет потоков ✓
+            App.settingsManager.SetOption("single_consumer_pattern", "False", "ADVANCED"); // Single consumer ✗
+            App.settingsManager.SetOption("ui_processing_rate", "60", "ADVANCED");         // Частота UI 60Hz ✓
+            App.settingsManager.SetOption("ui_batch_size", "10", "ADVANCED");              // Размер пакета UI 10 ✓
             
-            // === ОСНОВНЫЕ НАСТРОЙКИ [SETTINGS] - ваши оптимальные значения ===
+            // Spike Detection (ваши РЕАЛЬНЫЕ настройки со скриншота)
+            App.settingsManager.SetOption("spikes.enable", "True", "ADVANCED");            // Детекция спайков ✓
+            App.settingsManager.SetOption("spikes.metrics", "ping,tickrate,ticktime", "ADVANCED"); // Метрики ✓
+            App.settingsManager.SetOption("spikes.display", "both", "ADVANCED");           // Отображение обоих ✓
+            App.settingsManager.SetOption("spikes.sensitivity", "low", "ADVANCED");        // Низкая чувствительность ✓
+            App.settingsManager.SetOption("spikes.min_hold_ms", "120", "ADVANCED");        // Минимальная длительность 120ms ✓
+            App.settingsManager.SetOption("spikes.history_size", "1000", "ADVANCED");      // Размер истории 1000 ✓
+            App.settingsManager.SetOption("spikes.auto.enable", "True", "ADVANCED");       // Автокалибровка ✓
             
-            // Output - что отображать
-            App.settingsManager.SetOption("rtss", "True", "SETTINGS");              // Вывод через RTSS ✓
-            App.settingsManager.SetOption("tickrate", "True", "SETTINGS");          // Отображать Tickrate ✓
-            App.settingsManager.SetOption("ip", "True", "SETTINGS");                // Отображать IP ✓
-            App.settingsManager.SetOption("ping", "True", "SETTINGS");              // Отображать Ping и страну ✓
-            App.settingsManager.SetOption("traffic", "True", "SETTINGS");           // Отображать трафик ✓
-            App.settingsManager.SetOption("chart", "True", "SETTINGS");             // График тикрейта ✓
-            App.settingsManager.SetOption("ticktime", "True", "SETTINGS");          // График времени пакета ✓
-            App.settingsManager.SetOption("ping_chart", "True", "SETTINGS");        // График пинга ✓
-            App.settingsManager.SetOption("session_time", "True", "SETTINGS");      // Отображать время подключения ✓
-            App.settingsManager.SetOption("show_packet_drops", "True", "SETTINGS"); // Отображать потери пакетов ✓
+            // ИСПРАВЛЕННЫЕ значения со скриншота Stage 4:
+            App.settingsManager.SetOption("spikes.ema_alpha", "0.050", "ADVANCED");        // EMA alpha 0.050 (не 0.1) ✓
+            App.settingsManager.SetOption("spikes.ew_sigma_alpha", "0.020", "ADVANCED");   // EW sigma alpha 0.020 (не 0.05) ✓
+            App.settingsManager.SetOption("spikes.sensitivity_multiplier", "3.0", "ADVANCED"); // Множитель 3.0 (не 2) ✓
+            App.settingsManager.SetOption("spikes.hysteresis_ratio", "0.70", "ADVANCED");  // Гистерезис 0.70 (не 0.8) ✓
+            App.settingsManager.SetOption("spikes.refractory_period_ms", "2000", "ADVANCED"); // Период тишины 2000ms (не 1000) ✓
+            App.settingsManager.SetOption("spikes.min_energy_threshold", "2.0", "ADVANCED"); // Мин энергия 2.0 (не 1) ✓
+            App.settingsManager.SetOption("spikes.init_window_size", "30", "ADVANCED");    // Размер выборки 30 (не 20) ✓
             
-            // Интервал и порты
-            App.settingsManager.SetOption("ping_interval", "1000", "SETTINGS");     // Интервал пинга 1000ms ✓
-            App.settingsManager.SetOption("ping_ports", "", "SETTINGS");            // Порты для пинга (пустые)
+            // Алерты (ваши настройки)
+            App.settingsManager.SetOption("alert_sound_enabled", "True", "ADVANCED");      // Звуковые алерты ✓
+            App.settingsManager.SetOption("alert_discord_enabled", "True", "ADVANCED");    // Discord алерты ✓
+            App.settingsManager.SetOption("alert_discord_webhook", "", "ADVANCED");        // Webhook пустой ✓
+            App.settingsManager.SetOption("alert_cooldown_seconds", "30", "ADVANCED");     // Задержка алертов 30s ✓
             
-            // Системные настройки
-            App.settingsManager.SetOption("autodetect", "True", "SETTINGS");        // Автоматическое отслеживание (beta) ✓
-            App.settingsManager.SetOption("data_send", "False", "SETTINGS");        // Логировать тикрейт в CSV ✗
-            App.settingsManager.SetOption("run_minimized", "True", "SETTINGS");     // Запускать свёрнутым ✓
-            App.settingsManager.SetOption("network_quality_overlay", "True", "SETTINGS");
+            // Network Quality (ваши настройки)
+            App.settingsManager.SetOption("network_quality_enabled", "True", "ADVANCED");  // Анализ качества сети ✓
+            App.settingsManager.SetOption("quality_history_size", "100", "ADVANCED");      // Размер истории качества 100 ✓
+            App.settingsManager.SetOption("stability_threshold", "0.15", "ADVANCED");      // Порог стабильности 0.15 ✓
+            App.settingsManager.SetOption("quality_threshold", "0.8", "ADVANCED");         // Порог качества 0.8 ✓
+            App.settingsManager.SetOption("network_optimization_enabled", "False", "ADVANCED"); // Сетевая оптимизация ✗
+            App.settingsManager.SetOption("optimization_threshold", "70", "ADVANCED");     // Порог оптимизации 70 ✓
+            App.settingsManager.SetOption("optimization_interval", "5", "ADVANCED");       // Интервал оптимизации 5 ✓
+            App.settingsManager.SetOption("aggressive_optimization", "False", "ADVANCED"); // Агрессивная оптимизация ✗
             
-            // Дополнительные настройки сети (из ваших расширенных настроек)
-            App.settingsManager.SetOption("capture_all_adapters", "True", "SETTINGS");
-            App.settingsManager.SetOption("ping_bind_to_interface", "True", "SETTINGS");
-            App.settingsManager.SetOption("ping_tcp_prefer", "True", "SETTINGS");
-            App.settingsManager.SetOption("ping_fallback_icmp", "True", "SETTINGS");
-            App.settingsManager.SetOption("ping_target_active_only", "True", "SETTINGS");
-            App.settingsManager.SetOption("tickrate_smoothing", "True", "SETTINGS");
-            App.settingsManager.SetOption("dedup_multi_nic", "True", "SETTINGS");
-            App.settingsManager.SetOption("enable_ipv6", "True", "SETTINGS");
-            App.settingsManager.SetOption("ignore_virtual_adapters", "True", "SETTINGS");
-            App.settingsManager.SetOption("rtss_only_active", "True", "SETTINGS");
-            App.settingsManager.SetOption("stun_enable", "True", "SETTINGS");
-            App.settingsManager.SetOption("ui_refresh_hidden", "True", "SETTINGS");
+            // Spike Detection UI
+            App.settingsManager.SetOption("spike_detection_enable", "True", "ADVANCED");   // Общая детекция ✓
+            App.settingsManager.SetOption("spike_sensitivity", "High", "ADVANCED");        // Высокая чувствительность ✓
+            App.settingsManager.SetOption("tickrate_chart_enabled", "True", "ADVANCED");   // График тикрейта ✓
             
-            // Цвета оверлея (оптимальные значения)
-            App.settingsManager.SetOption("color_label", "636BDA", "SETTINGS");     // Цвет лейблов оверлея (синий)
-            App.settingsManager.SetOption("color_bad", "FF0000", "SETTINGS");       // Цвет низких значений (красный)
-            App.settingsManager.SetOption("color_mid", "FF8040", "SETTINGS");       // Цвет средних значений (оранжевый)
-            App.settingsManager.SetOption("color_good", "00FF00", "SETTINGS");      // Цвет хороших значений (зелёный)
-            App.settingsManager.SetOption("color_chart", "FF0080", "SETTINGS");     // Цвет графиков (розовый)
+            // VPN дополнительные настройки (ваши значения)
+            App.settingsManager.SetOption("vpn_capture_virtual", "False", "ADVANCED");     // Захват виртуальных для VPN ✗
+            App.settingsManager.SetOption("vpn_allow_non_ethernet", "False", "ADVANCED");  // Разрешить не-Ethernet ✗
+            App.settingsManager.SetOption("vpn_disable_bpf", "False", "ADVANCED");         // Отключить BPF ✗
+            App.settingsManager.SetOption("vpn_etw_enrichment", "False", "ADVANCED");      // ETW обогащение ✗
+            App.settingsManager.SetOption("vpn_bypass_restore_capture_all", "True", "ADVANCED");    // Восстановить захват всех ✓
+            App.settingsManager.SetOption("vpn_bypass_restore_ignore_virtual", "True", "ADVANCED"); // Восстановить игнорирование виртуальных ✓
+            App.settingsManager.SetOption("vpn_bypass_restore_dedup", "True", "ADVANCED");          // Восстановить дедупликацию ✓
+            App.settingsManager.SetOption("vpn_bypass_restore_basic", "True", "ADVANCED");          // Восстановить базовые настройки ✓
             
-            // === ДОПОЛНИТЕЛЬНЫЕ ADVANCED НАСТРОЙКИ ===
-            App.settingsManager.SetOption("use_windows_stats", "False", "ADVANCED");
-            App.settingsManager.SetOption("hybrid_pcap_windows", "True", "ADVANCED");
-            App.settingsManager.SetOption("smoothing_ping_value", "True", "ADVANCED");
-            App.settingsManager.SetOption("smoothing_traffic_value", "True", "ADVANCED");
-            App.settingsManager.SetOption("smoothing_tickrate_graph", "True", "ADVANCED");
-            App.settingsManager.SetOption("smoothing_ticktime_graph", "True", "ADVANCED");
-            App.settingsManager.SetOption("smoothing_ping_graph", "True", "ADVANCED");
+            // === ДОПОЛНИТЕЛЬНЫЕ СЕКЦИИ ===
             
-            // Сохраняем основные настройки
+            // ZONES
+            App.settingsManager.SetOption("color_zone_profile", "Very Low", "ZONES");      // Профиль цветовых зон ✓
+            
+            // EXTENDED оверлей (ИСПРАВЛЕННЫЕ значения со скриншота)
+            App.settingsManager.SetOption("show_active_process", "True", "EXTENDED");      // Показывать отслеживаемый процесс ✓
+            App.settingsManager.SetOption("show_session_time", "True", "EXTENDED");        // Показывать время текущей сессии ✓
+            App.settingsManager.SetOption("show_external_ip", "True", "EXTENDED");         // Показывать внешний IP адрес ✓ (включено на скриншоте)
+            App.settingsManager.SetOption("show_session_stats", "False", "EXTENDED");      // Показывать статистику сессии ✗ (отключено на скриншоте)
+            App.settingsManager.SetOption("show_server_info", "False", "EXTENDED");        // Показывать информацию о сервере ✗ (отключено на скриншоте)
+            App.settingsManager.SetOption("show_packet_counters", "False", "EXTENDED");    // Показывать счетчики пакетов ✗ (отключено на скриншоте)
+            App.settingsManager.SetOption("show_connection_type", "False", "EXTENDED");    // Показывать тип подключения ✗ (отключено на скриншоте)
+            App.settingsManager.SetOption("show_diagnostic_info", "False", "EXTENDED");    // Показывать диагностическую информацию ✗ (отключено на скриншоте)
+            
+            // TICKRATE_CHART (ваши настройки)
+            App.settingsManager.SetOption("tickrate_chart_enabled", "True", "TICKRATE_CHART");        // График включен ✓
+            App.settingsManager.SetOption("tickrate_chart_per_server", "True", "TICKRATE_CHART");     // По серверу ✓
+            App.settingsManager.SetOption("tickrate_chart_compression", "True", "TICKRATE_CHART");    // Сжатие ✓
+            App.settingsManager.SetOption("tickrate_chart_time_scale", "True", "TICKRATE_CHART");     // Временная шкала ✓
+            App.settingsManager.SetOption("tickrate_chart_trimming", "True", "TICKRATE_CHART");       // Обрезка ✓
+            App.settingsManager.SetOption("tickrate_chart_mode", "Сжатый график", "TICKRATE_CHART");  // Режим сжатый ✓
+            App.settingsManager.SetOption("tickrate_chart_max_points", "1500", "TICKRATE_CHART");     // Макс точек 1500 ✓
+            App.settingsManager.SetOption("tickrate_chart_history_hours", "24", "TICKRATE_CHART");    // История 24ч ✓
+            
+            // PROFILES (ваши настройки)
+            App.settingsManager.SetOption("current_profile", "Стандарт (Balanced)", "PROFILES");      // Текущий профиль ✓
+            App.settingsManager.SetOption("advanced_profile", "Streamer", "PROFILES");                // Продвинутый профиль ✓
+            
+            // Обновляем UI-элементы формы в соответствии с настройками
+            LoadSettings();
+            
+            // Сохраняем все изменения
             SaveSettings();
             
-            // ВАЖНО: Принудительно перезагружаем настройки из файла
+            // Принудительно перезагружаем настройки
             try
             {
                 App.settingsManager.ReloadConfig();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Ошибка перезагрузки конфигурации: {ex.Message}");
-            }
-            
-            // ВАЖНО: Обновляем UI основной формы настроек после изменения значений
-            try
-            {
+                
+                // Обновляем основную форму настроек
                 if (App.settingsForm != null && !App.settingsForm.IsDisposed)
                 {
-                    App.settingsForm.ApplyFromConfig(); // Перезагружаем все настройки в UI
+                    App.settingsForm.ApplyFromConfig();
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Ошибка обновления UI основных настроек: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Ошибка перезагрузки: {ex.Message}");
             }
             
-            // Уведомляем пользователя об успешном восстановлении
-            MessageBox.Show("Настройки восстановлены к оптимальным значениям:\n\n" +
-                           "📊 OUTPUT:\n" +
-                           "• Все основные индикаторы включены (RTSS, Tickrate, IP, Ping, Traffic)\n" +
-                           "• Все графики включены (Tickrate, Ping, Ticktime)\n" +
-                           "• Время сессии и потери пакетов включены\n\n" +
+            // Уведомляем об успешном применении ВАШИХ оптимальных настроек
+            MessageBox.Show("Восстановлены ваши проверенные оптимальные настройки! ✅\n\n" +
+                           "📊 ОВЕРЛЕЙ:\n" +
+                           "• Все основные метрики: Tickrate, Ping, IP, Traffic, Session Time\n" +
+                           "• Все графики: Tickrate Chart, Ping Chart, Ticktime Chart\n" +
+                           "• Потери пакетов и качество сети\n" +
+                           "• Расширенная информация: процесс, время сессии, внешний IP\n" +
+                           "• Цветовая схема: синий/красный/оранжевый/зелёный/розовый\n\n" +
                            "⚙️ СИСТЕМА:\n" +
-                           "• Интервал обновления: 1 секунда\n" +
-                           "• Автоматическое отслеживание включено\n" +
-                           "• Запуск свёрнутым включен\n" +
-                           "• Логирование в CSV отключено\n\n" +
-                           "🌐 СЕТЬ:\n" +
-                           "• Мультиадаптерный режим\n" +
-                           "• Гибридный PCAP+Windows Stats\n" +
-                           "• Все сглаживания включены\n" +
-                           "• Оптимизации производительности\n" +
-                           "• Детекция спайков (порог 150ms)",
-                           "Оптимальные настройки применены", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            
-            // ВАЖНО: Перезагружаем настройки в текущей форме после применения изменений
-            try
-            {
-                LoadSettings(); // Обновляем все контролы в расширенных настройках
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Ошибка перезагрузки расширенных настроек: {ex.Message}");
-            }
+                           "• Интервал пинга: 1000ms | RTSS только для активных окон\n" +
+                           "• Автоматическое отслеживание | Запуск свёрнутым\n" +
+                           "• Multi-adapter режим | IPv6 поддержка\n" +
+                           "• TCP ping + ICMP fallback | STUN включен\n\n" +
+                           "🔧 ПРОИЗВОДИТЕЛЬНОСТЬ:\n" +
+                           "• Все сглаживания включены | Гибридный PCAP+Windows\n" +
+                           "• Virtual mode (1000 строк) | Ring buffer 10K\n" +
+                           "• PCAP оптимизация: 8MB kernel buffer, 4KB min copy\n" +
+                           "• UI: 60Hz обработка, batch size 10\n\n" +
+                           "🛡️ VPN & БЕЗОПАСНОСТЬ:\n" +
+                           "• Простой VPN bypass включен\n" +
+                           "• Сложный VPN bypass включен (IP Helper API)\n" +
+                           "• Оба режима работают совместно\n\n" +
+                           "🎯 ДЕТЕКЦИЯ СПАЙКОВ (Stage 4):\n" +
+                           "• Ping/Tickrate/Ticktime мониторинг\n" +
+                           "• Порог: 150ms | Чувствительность: низкая\n" +
+                           "• EMA Alpha: 0.050 | EW-Sigma: 0.020\n" +
+                           "• Множитель: 3.0 | Гистерезис: 0.70\n" +
+                           "• Период тишины: 2000ms | Выборка: 30\n" +
+                           "• Мин. энергия: 2.0 | Автокалибровка включена\n" +
+                           "• Звуковые и Discord алерты (30s cooldown)",
+                           "Ваши точные настройки применены!", 
+                           MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void InitSpikeDetectionCombos()
