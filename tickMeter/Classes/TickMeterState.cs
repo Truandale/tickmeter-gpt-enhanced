@@ -1258,9 +1258,11 @@ namespace tickMeter
                 // Используем новый robust геолокационный сервис с fallback'ами
                 try
                 {
-                    DebugLogger.log($"[DetectLocation] Starting geolocation for IP: {ipToDetect}");
+                    // Проверяем статистику геолокации - новая система автоматически обрабатывает rate limiting
+                    string cacheInfo = Classes.GeolocationService.GetCacheInfo();
+                    DebugLogger.log($"[DetectLocation] Starting geolocation for IP: {ipToDetect}. Cache: {cacheInfo}");
                     
-                    var locationInfo = await GeolocationService.GetLocationAsync(ipToDetect);
+                    var locationInfo = await Classes.GeolocationService.GetLocationAsync(ipToDetect);
                     
                     if (this.CurrentIP == ipToDetect)
                     {
@@ -1273,7 +1275,19 @@ namespace tickMeter
                         {
                             DebugLogger.log($"[DetectLocation] ISP: {locationInfo.Isp}");
                         }
+                        
+                        // Логируем статус провайдеров при проблемах
+                        if (locationInfo?.Country == "Error" || locationInfo?.Country == "Service Disabled" || locationInfo?.Country == "All Providers Failed")
+                        {
+                            string providerStatus = Classes.GeolocationService.GetProviderStatus();
+                            DebugLogger.log($"[DetectLocation] Provider status:\n{providerStatus}");
+                        }
                     }
+                }
+                catch (WebException webEx) when (webEx.Response is HttpWebResponse response && (int)response.StatusCode == 429)
+                {
+                    DebugLogger.log($"[DetectLocation] Geolocation rate limited (429) for IP {ipToDetect}. Keeping previous location: {Location}");
+                    // Не обновляем Location если получили rate limit - оставляем предыдущее значение
                 }
                 catch (Exception ex)
                 {
