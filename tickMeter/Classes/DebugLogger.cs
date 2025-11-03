@@ -66,6 +66,10 @@ namespace tickMeter.Classes
 
         public static void log(String message)
         {
+            // Проверяем настройку включения логов
+            if (!IsLoggingEnabled())
+                return;
+
             try
             {
                 lock (_logLock)
@@ -78,8 +82,27 @@ namespace tickMeter.Classes
             }
             catch { }
         }
+
+        /// <summary>
+        /// Проверяет, включено ли текстовое логирование в настройках
+        /// </summary>
+        private static bool IsLoggingEnabled()
+        {
+            try
+            {
+                return App.settingsManager?.GetOption("enable_text_logs", "True", "ADVANCED") == "True";
+            }
+            catch
+            {
+                // В случае ошибки - возвращаем true для обратной совместимости
+                return true;
+            }
+        }
         public static async void log(String[] messages)
         {
+            if (!IsLoggingEnabled())
+                return;
+
             await Task.Run(() =>
             {
                 foreach (String message in messages)
@@ -91,6 +114,9 @@ namespace tickMeter.Classes
 
         public static async void log(Exception ex)
         {
+            if (!IsLoggingEnabled())
+                return;
+
             await Task.Run(() =>
             {
                 log(ex.Message);

@@ -106,6 +106,9 @@ namespace tickMeter.Forms
                 chkVpnBypassBasic.Checked = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
                 chkVpnBypassAdvanced.Checked = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
                 
+                // Debug settings
+                chkEnableTextLogs.Checked = App.settingsManager.GetOption("enable_text_logs", "True", "ADVANCED") == "True";
+                
                 // Performance Optimization Phase 1-3 настройки
                 chkAntiReentrancy.Checked = App.settingsManager.GetOption("anti_reentrancy", "True", "ADVANCED") == "True";
                 chkRtssThrottling.Checked = App.settingsManager.GetOption("rtss_throttling", "True", "ADVANCED") == "True";
@@ -410,6 +413,9 @@ namespace tickMeter.Forms
                 App.settingsManager.SetOption("vpn_bypass_advanced", chkVpnBypassAdvanced.Checked.ToString(), "ADVANCED");
                 PersistVpnPresetSnapshotForSave();
                 
+                // Debug settings
+                App.settingsManager.SetOption("enable_text_logs", chkEnableTextLogs.Checked.ToString(), "ADVANCED");
+                
                 // Performance Optimization Phase 1-3 настройки  
                 App.settingsManager.SetOption("anti_reentrancy", chkAntiReentrancy.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("rtss_throttling", chkRtssThrottling.Checked.ToString(), "ADVANCED");
@@ -627,6 +633,9 @@ namespace tickMeter.Forms
             // VPN bypass (ИСПРАВЛЕННЫЕ значения - при включении расширенного включается и простой)
             App.settingsManager.SetOption("vpn_bypass_basic", "True", "ADVANCED");         // Простой VPN bypass ✓ (должен быть включен вместе с расширенным)
             App.settingsManager.SetOption("vpn_bypass_advanced", "True", "ADVANCED");      // Сложный VPN bypass ✓ (включен на скриншоте)
+            
+            // Debug settings - отключаем логирование для оптимальной производительности
+            App.settingsManager.SetOption("enable_text_logs", "False", "ADVANCED");        // Отключить текстовые логи ✗ (для простых игроков)
             
             // Оптимизации производительности (ваши значения)
             App.settingsManager.SetOption("anti_reentrancy", "True", "ADVANCED");          // Защита от реентерабельности ✓
