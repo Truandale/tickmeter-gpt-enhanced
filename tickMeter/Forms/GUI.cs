@@ -1750,6 +1750,18 @@ namespace tickMeter.Forms
             {
                 AutoDetectMngr.GetActiveProcessName(true);
                 
+                // Обновляем активный процесс для ETW в VPN bypass режиме
+                bool vpnBypassBasic = App.settingsManager?.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
+                bool vpnBypassAdvanced = App.settingsManager?.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+                if (vpnBypassBasic || vpnBypassAdvanced)
+                {
+                    string currentActiveProcess = AutoDetectMngr.GetActiveProcessName();
+                    if (!string.IsNullOrEmpty(currentActiveProcess) && currentActiveProcess != "n\\a")
+                    {
+                        Classes.ETW.SetActiveProcess(currentActiveProcess);
+                    }
+                }
+                
                 // NEW: Обновляем эмулированный тикрейт для VPN bypass режима
                 UpdateVpnTickrateEmulation();
                 
@@ -3086,13 +3098,25 @@ namespace tickMeter.Forms
                         // (вместо эмулированного ticksIn)
                         if (vpnBypassBasic || vpnBypassAdvanced)
                         {
+                            // Устанавливаем активный процесс для ETW мониторинга пакетов
+                            Classes.ETW.SetActiveProcess(procStats.name);
+                            
+                            // Получаем ETW счетчик пакетов для VPN bypass
+                            long etwPacketsPerSec = Classes.ETW.GetIncomingPacketsPerSecond(procStats.name);
+                            
                             // Получаем реальные данные трафика с расчётом тикрейта
                             var realTraffic = Classes.RealProcessTrafficMonitor.GetRealProcessTrafficWithPing(
                                 procStats.name, 
                                 procStats.remoteIp?.ToString(), 
                                 (int)procStats.remotePort);
                             
-                            if (realTraffic != null && realTraffic.CalculatedTickrate > 0)
+                            if (etwPacketsPerSec > 0)
+                            {
+                                // Используем ETW подсчет пакетов как приоритетный метод для VPN bypass
+                                currentTickRate = (int)Math.Min(etwPacketsPerSec, 128); // Ограничиваем максимум
+                                DebugLogger.log($"[VPN-TickRate] Using ETW packet count for VPN bypass: {currentTickRate} packets/sec");
+                            }
+                            else if (realTraffic != null && realTraffic.CalculatedTickrate > 0)
                             {
                                 currentTickRate = realTraffic.CalculatedTickrate;
                                 DebugLogger.log($"[VPN-TickRate] Using REAL tickrate for VPN bypass: {currentTickRate} (from traffic analysis)");
@@ -3657,6 +3681,18 @@ namespace tickMeter.Forms
             {
                 Debug.Print("[StartTracking] VPN bypass mode detected - subscribing to ConnectionTracker events");
                 App.connectionTracker.OnNewTunnelConnection += HandleTunnelConnectionForTracking;
+                
+                // Сбрасываем ETW счетчики пакетов для нового сеанса мониторинга
+                Classes.ETW.ResetPacketCounters();
+                Debug.Print("[StartTracking] ETW packet counters reset for VPN bypass session");
+                
+                // Устанавливаем активный процесс для ETW, если он уже известен
+                string activeGame = Classes.AutoDetectMngr.GetActiveProcessName(true);
+                if (!string.IsNullOrEmpty(activeGame) && activeGame != "n\\a")
+                {
+                    Classes.ETW.SetActiveProcess(activeGame);
+                    Debug.Print($"[StartTracking] Active process set for ETW: {activeGame}");
+                }
             }
             
             string captureAllSetting = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS");
