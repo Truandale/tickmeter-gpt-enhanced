@@ -21,6 +21,15 @@ namespace tickMeter.Classes
         private static readonly ConcurrentDictionary<string, long> _packetsPerSecond = new ConcurrentDictionary<string, long>();
         
         /// <summary>
+        /// Счетчики трафика для VPN bypass режима (байты)
+        /// </summary>
+        private static readonly ConcurrentDictionary<string, long> _uploadBytes = new ConcurrentDictionary<string, long>();
+        private static readonly ConcurrentDictionary<string, long> _downloadBytes = new ConcurrentDictionary<string, long>();
+        private static readonly ConcurrentDictionary<string, long> _uploadBytesPerSecond = new ConcurrentDictionary<string, long>();
+        private static readonly ConcurrentDictionary<string, long> _downloadBytesPerSecond = new ConcurrentDictionary<string, long>();
+        private static DateTime _lastTrafficUpdate = DateTime.Now;
+        
+        /// <summary>
         /// Активный процесс для мониторинга (из ActiveWindowTracker)
         /// </summary>
         private static string _activeProcessName = "";
@@ -257,6 +266,13 @@ namespace tickMeter.Classes
             if (IsLocalIP(session.daddr.ToString()))
             {
                 IncrementIncomingPackets(session.ProcessName, session.saddr.ToString(), session.daddr.ToString());
+                // Добавляем трафик для VPN bypass (входящий UDP)
+                AddTrafficData(session.ProcessName, false, session.size); // download
+            }
+            else if (IsLocalIP(session.saddr.ToString()))
+            {
+                // Добавляем трафик для VPN bypass (исходящий UDP)
+                AddTrafficData(session.ProcessName, true, session.size); // upload
             }
         }
 
@@ -271,11 +287,23 @@ namespace tickMeter.Classes
             ProcessNetworkData.processEventData(session.ProcessName, session.ProcessID, session.saddr.ToString(), session.daddr.ToString(), session.sport, session.dport);
             // Подсчитываем входящие TCP пакеты для VPN bypass
             IncrementIncomingPackets(session.ProcessName, session.saddr.ToString(), session.daddr.ToString());
+            
+            // Добавляем трафик для VPN bypass (входящий TCP)
+            if (IsLocalIP(session.daddr.ToString()))
+            {
+                AddTrafficData(session.ProcessName, false, session.size); // download
+            }
         }
 
         private static void tcpIpSend(TcpIpSendTraceData session)
         {
             ProcessNetworkData.processEventData(session.ProcessName, session.ProcessID, session.saddr.ToString(), session.daddr.ToString(), session.sport, session.dport);
+            
+            // Добавляем трафик для VPN bypass (исходящий TCP)
+            if (IsLocalIP(session.saddr.ToString()))
+            {
+                AddTrafficData(session.ProcessName, true, session.size); // upload
+            }
         }
 
         public static string resolveProcessname(string fromIp, string toIp, uint fromPort, uint toPort)
@@ -301,6 +329,84 @@ namespace tickMeter.Classes
                 }
             } catch { }
             return @"n\a";
+        }
+
+        /// <summary>
+        /// Добавляет данные о трафике для процесса
+        /// </summary>
+        private static void AddTrafficData(string processName, bool isUpload, long bytes)
+        {
+            if (string.IsNullOrEmpty(processName)) return;
+            
+            try
+            {
+                if (isUpload)
+                {
+                    _uploadBytes.AddOrUpdate(processName, bytes, (key, oldValue) => oldValue + bytes);
+                }
+                else
+                {
+                    _downloadBytes.AddOrUpdate(processName, bytes, (key, oldValue) => oldValue + bytes);
+                }
+                
+                // Обновляем счетчики байт/сек каждую секунду
+                var now = DateTime.Now;
+                if ((now - _lastTrafficUpdate).TotalSeconds >= 1.0)
+                {
+                    UpdateTrafficCounters();
+                    _lastTrafficUpdate = now;
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[ETW-Traffic] Error adding traffic data: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Обновляет счетчики байт/сек для всех процессов
+        /// </summary>
+        private static void UpdateTrafficCounters()
+        {
+            foreach (var process in _uploadBytes.Keys)
+            {
+                long bytes;
+                if (_uploadBytes.TryGetValue(process, out bytes))
+                {
+                    _uploadBytesPerSecond[process] = bytes;
+                    _uploadBytes[process] = 0; // Сброс счетчика
+                }
+            }
+            
+            foreach (var process in _downloadBytes.Keys)
+            {
+                long bytes;
+                if (_downloadBytes.TryGetValue(process, out bytes))
+                {
+                    _downloadBytesPerSecond[process] = bytes;
+                    _downloadBytes[process] = 0; // Сброс счетчика
+                }
+            }
+        }
+
+        /// <summary>
+        /// Получает скорость загрузки для процесса в байтах/сек
+        /// </summary>
+        public static long GetUploadBytesPerSecond(string processName)
+        {
+            if (string.IsNullOrEmpty(processName)) return 0;
+            long bytes;
+            return _uploadBytesPerSecond.TryGetValue(processName, out bytes) ? bytes : 0;
+        }
+
+        /// <summary>
+        /// Получает скорость скачивания для процесса в байтах/сек  
+        /// </summary>
+        public static long GetDownloadBytesPerSecond(string processName)
+        {
+            if (string.IsNullOrEmpty(processName)) return 0;
+            long bytes;
+            return _downloadBytesPerSecond.TryGetValue(processName, out bytes) ? bytes : 0;
         }
     }
 }

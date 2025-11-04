@@ -3084,12 +3084,25 @@ namespace tickMeter.Forms
                         
                         App.meterState.Game = procStats.name;
                         App.meterState.Server.Ip = procStats.remoteIp.ToString();
-                        App.meterState.DownloadTraffic = procStats.downloaded;
-                        App.meterState.UploadTraffic = procStats.sent;
                         
-                        // ДИАГНОСТИКА: Логируем что устанавливается
+                        // ЭТАП 2: Полный переход на ETW трафик в VPN bypass режиме
+                        // ETW предоставляет более точные данные на уровне ядра, минуя VPN шифрование
+                        double etwUploadBytesPerSec = Classes.ETW.GetUploadBytesPerSecond(procStats.name);
+                        double etwDownloadBytesPerSec = Classes.ETW.GetDownloadBytesPerSecond(procStats.name);
+                        
+                        // В VPN bypass режиме полностью используем ETW данные
+                        // Конвертируем из байт/сек в общие байты для совместимости
+                        int etwUploadBytes = (int)(etwUploadBytesPerSec * 1.0);
+                        int etwDownloadBytes = (int)(etwDownloadBytesPerSec * 1.0);
+                        
+                        App.meterState.DownloadTraffic = etwDownloadBytes;
+                        App.meterState.UploadTraffic = etwUploadBytes;
+                        
+                        // ДИАГНОСТИКА: Логируем переход на ETW
+                        DebugLogger.log($"[ETW-VPN-FULL] Using FULL ETW traffic: download={etwDownloadBytesPerSec:F1} B/s ({etwDownloadBytes} bytes), upload={etwUploadBytesPerSec:F1} B/s ({etwUploadBytes} bytes)");
+                        DebugLogger.log($"[ETW-VPN-FULL] Replacing procStats data: old_download={procStats.downloaded}, old_upload={procStats.sent}");
                         DebugLogger.log($"[VPN-DEBUG] Set Server.Ip = {procStats.remoteIp} (from procStats.remoteIp)");
-                        DebugLogger.log($"[VPN-DEBUG] Set DownloadTraffic = {procStats.downloaded}, UploadTraffic = {procStats.sent}");
+                        DebugLogger.log($"[VPN-DEBUG] Final DownloadTraffic = {App.meterState.DownloadTraffic}, UploadTraffic = {App.meterState.UploadTraffic}");
                         
                         // Обновляем TickRate и добавляем в детектор спайков
                         int currentTickRate;
