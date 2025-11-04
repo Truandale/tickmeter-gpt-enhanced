@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -28,6 +29,23 @@ namespace tickMeter.Classes
         private static readonly ConcurrentDictionary<string, long> _uploadBytesPerSecond = new ConcurrentDictionary<string, long>();
         private static readonly ConcurrentDictionary<string, long> _downloadBytesPerSecond = new ConcurrentDictionary<string, long>();
         private static DateTime _lastTrafficUpdate = DateTime.Now;
+        
+        /// <summary>
+        /// RTT/Ping метрики для VPN bypass режима (Phase 3)
+        /// </summary>
+        private static readonly ConcurrentDictionary<string, List<long>> _rttHistory = new ConcurrentDictionary<string, List<long>>();
+        private static readonly ConcurrentDictionary<string, long> _avgRttMs = new ConcurrentDictionary<string, long>();
+        private static readonly ConcurrentDictionary<string, long> _minRttMs = new ConcurrentDictionary<string, long>();
+        private static readonly ConcurrentDictionary<string, long> _maxRttMs = new ConcurrentDictionary<string, long>();
+        private static readonly ConcurrentDictionary<string, double> _jitterMs = new ConcurrentDictionary<string, double>();
+        private static readonly ConcurrentDictionary<string, DateTime> _lastRttUpdate = new ConcurrentDictionary<string, DateTime>();
+        private static DateTime _lastRttCleanup = DateTime.Now;
+        
+        /// <summary>
+        /// Отслеживание TCP пакетов для RTT измерений
+        /// Ключ: "process:srcIP:srcPort:dstIP:dstPort", Значение: timestamp отправки
+        /// </summary>
+        private static readonly ConcurrentDictionary<string, DateTime> _tcpSentPackets = new ConcurrentDictionary<string, DateTime>();
         
         /// <summary>
         /// Активный процесс для мониторинга (из ActiveWindowTracker)
@@ -95,12 +113,28 @@ namespace tickMeter.Classes
         {
             lock (_activeProcessLock)
             {
-                if (!string.IsNullOrEmpty(processName) && _activeProcessName != processName)
+                if (!string.IsNullOrEmpty(processName))
                 {
-                    _activeProcessName = processName.Replace(".exe", "").ToLower();
-                    DebugLogger.log($"[ETW-VPN] Active process set to: {_activeProcessName}");
+                    string cleanProcessName = processName.Replace(".exe", "").ToLower();
+                    if (_activeProcessName != cleanProcessName)
+                    {
+                        _activeProcessName = cleanProcessName;
+                        DebugLogger.log($"[ETW-VPN] Active process set to: {_activeProcessName}");
+                    }
                 }
             }
+        }
+
+        /// <summary>
+        /// Проверяет, является ли процесс активным игровым процессом
+        /// </summary>
+        private static bool IsActiveGameProcess(string processName)
+        {
+            if (string.IsNullOrEmpty(processName) || string.IsNullOrEmpty(_activeProcessName))
+                return false;
+            
+            string cleanProcessName = processName.Replace(".exe", "").ToLower();
+            return cleanProcessName == _activeProcessName;
         }
         
         /// <summary>
@@ -141,7 +175,11 @@ namespace tickMeter.Classes
             if (!IsLocalIP(destIP))
                 return;
             
-            // Увеличиваем счетчик
+            // Фильтруем только для активного игрового процесса
+            if (!IsActiveGameProcess(processName))
+                return;
+            
+            // Увеличиваем счетчик для активного игрового процесса
             long newCount = _incomingPacketCounters.AddOrUpdate(cleanProcessName, 1, (key, oldValue) => oldValue + 1);
             
             // Обновляем время последнего пакета
@@ -154,17 +192,21 @@ namespace tickMeter.Classes
             {
                 long prevCount = _incomingPacketCounters.TryGetValue(cleanProcessName + "_prev", out long prev) ? prev : 0;
                 long packetsInLastSecond = newCount - prevCount;
-                _packetsPerSecond[cleanProcessName] = Math.Max(0, (long)(packetsInLastSecond / timeDiff));
+                long rawPacketsPerSec = Math.Max(0, (long)(packetsInLastSecond / timeDiff));
+                
+                // ETW система полностью без ограничений - синхронно с VPN bypass
+                // Никаких искусственных лимитов, только реальные данные
+                _packetsPerSecond[cleanProcessName] = rawPacketsPerSec;
                 _incomingPacketCounters[cleanProcessName + "_prev"] = newCount;
                 
-                // Логируем только для активного процесса
-                if (cleanProcessName == _activeProcessName && _packetsPerSecond[cleanProcessName] > 0)
+                // Логируем для активного игрового процесса
+                if (rawPacketsPerSec > 0)
                 {
-                    DebugLogger.log($"[ETW-VPN] {cleanProcessName}: {_packetsPerSecond[cleanProcessName]} packets/sec (from {sourceIP})");
+                    DebugLogger.log($"[ETW-UNLIMITED] {cleanProcessName}: {rawPacketsPerSec} packets/sec (no limits) from {sourceIP}");
                 }
             }
         }
-        
+
         /// <summary>
         /// Проверяет, является ли IP-адрес локальным
         /// </summary>
@@ -292,6 +334,9 @@ namespace tickMeter.Classes
             if (IsLocalIP(session.daddr.ToString()))
             {
                 AddTrafficData(session.ProcessName, false, session.size); // download
+                
+                // Phase 3: Измеряем RTT для входящих TCP пакетов
+                MeasureTcpRtt(session.ProcessName, session.saddr.ToString(), session.sport, session.daddr.ToString(), session.dport, session.TimeStamp, false);
             }
         }
 
@@ -303,6 +348,9 @@ namespace tickMeter.Classes
             if (IsLocalIP(session.saddr.ToString()))
             {
                 AddTrafficData(session.ProcessName, true, session.size); // upload
+                
+                // Phase 3: Записываем время отправки TCP пакета для RTT измерений
+                MeasureTcpRtt(session.ProcessName, session.saddr.ToString(), session.sport, session.daddr.ToString(), session.dport, session.TimeStamp, true);
             }
         }
 
@@ -356,6 +404,13 @@ namespace tickMeter.Classes
                     UpdateTrafficCounters();
                     _lastTrafficUpdate = now;
                 }
+                
+                // Очищаем старые RTT данные каждые 30 секунд
+                if ((now - _lastRttCleanup).TotalSeconds >= 30.0)
+                {
+                    CleanupOldRttData();
+                    _lastRttCleanup = now;
+                }
             }
             catch (Exception ex)
             {
@@ -407,6 +462,278 @@ namespace tickMeter.Classes
             if (string.IsNullOrEmpty(processName)) return 0;
             long bytes;
             return _downloadBytesPerSecond.TryGetValue(processName, out bytes) ? bytes : 0;
+        }
+
+        /// <summary>
+        /// Phase 3: Добавляет RTT измерение для процесса (БЕЗ ОГРАНИЧЕНИЙ - показывает всё как есть)
+        /// </summary>
+        public static void AddRttData(string processName, long rttMs)
+        {
+            // Фильтруем только для активного игрового процесса
+            if (string.IsNullOrEmpty(processName) || rttMs <= 0) return;
+            
+            if (!IsActiveGameProcess(processName))
+            {
+                return; // Игнорируем RTT от неактивных процессов
+            }
+
+            try
+            {
+                string process = processName.Replace(".exe", "").ToLower();
+                
+                // Инициализируем историю RTT если её нет
+                if (!_rttHistory.ContainsKey(process))
+                {
+                    _rttHistory[process] = new List<long>();
+                }
+                
+                var history = _rttHistory[process];
+                lock (history)
+                {
+                    // Добавляем новое RTT значение
+                    history.Add(rttMs);
+                    
+                    // Ограничиваем размер истории (последние 20 значений для расчета jitter)
+                    while (history.Count > 20)
+                    {
+                        history.RemoveAt(0);
+                    }
+                    
+                    // Обновляем статистику
+                    UpdateRttStatistics(process, history);
+                }
+                
+                // Обновляем время последнего RTT измерения
+                _lastRttUpdate[process] = DateTime.Now;
+                
+                DebugLogger.log($"[ETW-RTT-GAME] Active game RTT for {process}: {rttMs}ms (avg: {GetAverageRttMs(processName)}ms, jitter: {GetJitterMs(processName):F1}ms)");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[ETW-RTT] Error adding RTT data: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Обновляет RTT статистику для процесса
+        /// </summary>
+        private static void UpdateRttStatistics(string processName, List<long> history)
+        {
+            if (history.Count == 0) return;
+
+            // Среднее RTT
+            long avgRtt = (long)history.Average();
+            _avgRttMs[processName] = avgRtt;
+
+            // Минимальное и максимальное RTT
+            _minRttMs[processName] = history.Min();
+            _maxRttMs[processName] = history.Max();
+
+            // Jitter (стандартное отклонение RTT)
+            if (history.Count > 1)
+            {
+                double variance = history.Select(x => Math.Pow(x - avgRtt, 2)).Average();
+                double jitter = Math.Sqrt(variance);
+                _jitterMs[processName] = jitter;
+            }
+            else
+            {
+                _jitterMs[processName] = 0.0;
+            }
+        }
+
+        /// <summary>
+        /// Получает среднее RTT для процесса в миллисекундах
+        /// </summary>
+        public static long GetAverageRttMs(string processName)
+        {
+            if (string.IsNullOrEmpty(processName)) return 0;
+            string process = processName.Replace(".exe", "").ToLower();
+            long rtt;
+            return _avgRttMs.TryGetValue(process, out rtt) ? rtt : 0;
+        }
+
+        /// <summary>
+        /// Получает минимальное RTT для процесса в миллисекундах
+        /// </summary>
+        public static long GetMinRttMs(string processName)
+        {
+            if (string.IsNullOrEmpty(processName)) return 0;
+            string process = processName.Replace(".exe", "").ToLower();
+            long rtt;
+            return _minRttMs.TryGetValue(process, out rtt) ? rtt : 0;
+        }
+
+        /// <summary>
+        /// Получает максимальное RTT для процесса в миллисекундах
+        /// </summary>
+        public static long GetMaxRttMs(string processName)
+        {
+            if (string.IsNullOrEmpty(processName)) return 0;
+            string process = processName.Replace(".exe", "").ToLower();
+            long rtt;
+            return _maxRttMs.TryGetValue(process, out rtt) ? rtt : 0;
+        }
+
+        /// <summary>
+        /// Получает jitter (вариации RTT) для процесса в миллисекундах
+        /// </summary>
+        public static double GetJitterMs(string processName)
+        {
+            if (string.IsNullOrEmpty(processName)) return 0.0;
+            string process = processName.Replace(".exe", "").ToLower();
+            double jitter;
+            return _jitterMs.TryGetValue(process, out jitter) ? jitter : 0.0;
+        }
+
+        /// <summary>
+        /// Phase 3: Измеряет RTT для TCP пакетов (БЕЗ ФИЛЬТРОВ - все данные как есть)
+        /// </summary>
+        private static void MeasureTcpRtt(string processName, string srcIP, int srcPort, string dstIP, int dstPort, DateTime timestamp, bool isOutgoing)
+        {
+            if (string.IsNullOrEmpty(processName)) return;
+            
+            try
+            {
+                // Создаем более специфичный ключ для отслеживания пары пакетов
+                string connectionKey = $"{processName}:{srcIP}:{dstIP}";
+                string key = $"{connectionKey}:{srcPort}:{dstPort}";
+                string reverseKey = $"{connectionKey}:{dstPort}:{srcPort}";
+                
+                if (isOutgoing)
+                {
+                    // Записываем время отправки исходящего пакета
+                    _tcpSentPackets[key] = timestamp;
+                    
+                    // Очищаем старые записи (старше 2 секунд)
+                    CleanupOldTcpPackets(timestamp);
+                }
+                else
+                {
+                    // Ищем соответствующий исходящий пакет для вычисления RTT
+                    DateTime sentTime;
+                    if (_tcpSentPackets.TryGetValue(reverseKey, out sentTime))
+                    {
+                        var rtt = timestamp - sentTime;
+                        long rttMs = (long)rtt.TotalMilliseconds;
+                        
+                        // Фильтруем localhost и другие локальные соединения
+                        bool isLocalhost = srcIP == "127.0.0.1" || dstIP == "127.0.0.1" || 
+                                          srcIP == "::1" || dstIP == "::1";
+                        
+                        // Фильтруем только для активного игрового процесса и разумные RTT значения
+                        if (rttMs > 0 && rttMs <= 500 && IsActiveGameProcess(processName) && !isLocalhost)
+                        {
+                            AddRttData(processName, rttMs);
+                            
+                            // Удаляем использованную запись
+                            _tcpSentPackets.TryRemove(reverseKey, out _);
+                            
+                            DebugLogger.log($"[ETW-RTT-GAME] Measured RTT for active game {processName}: {rttMs}ms (connection: {srcIP}:{srcPort} -> {dstIP}:{dstPort})");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[ETW-RTT] Error measuring TCP RTT: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// ИСПРАВЛЕНИЕ: Проверяет является ли процесс игровым
+        /// </summary>
+        private static bool IsGameProcess(string processName)
+        {
+            if (string.IsNullOrEmpty(processName)) return false;
+            
+            string process = processName.ToLowerInvariant();
+            
+            // Список известных игровых процессов
+            string[] gameProcesses = {
+                "overwatch", "csgo", "cs2", "valorant", "apex", "dota2", "lol", 
+                "fortnite", "warzone", "battlefield", "pubg", "destiny2", "siege",
+                "minecraft", "wow", "diablo", "hearthstone", "starcraft", "hots"
+            };
+            
+            return gameProcesses.Any(game => process.Contains(game));
+        }
+
+        /// <summary>
+        /// ИСПРАВЛЕНИЕ: Проверяет является ли порт игровым (избегаем HTTP/HTTPS/браузеры)
+        /// </summary>
+        private static bool IsGamePort(int dstPort, int srcPort)
+        {
+            // Исключаем стандартные веб порты
+            int[] webPorts = { 80, 443, 8080, 8443, 3000, 8000 };
+            if (webPorts.Contains(dstPort) || webPorts.Contains(srcPort)) return false;
+            
+            // Исключаем системные порты
+            if (dstPort < 1024 && dstPort != 80 && dstPort != 443) return false;
+            
+            // Включаем типичные игровые порты
+            int[] gamePorts = { 3724, 1119, 6113, 7777, 7778, 27015, 27016 };
+            if (gamePorts.Contains(dstPort) || gamePorts.Contains(srcPort)) return true;
+            
+            // Включаем диапазоны игровых портов
+            return (dstPort >= 3000 && dstPort <= 65000) || (srcPort >= 3000 && srcPort <= 65000);
+        }
+
+        /// <summary>
+        /// Очищает старые TCP пакеты для экономии памяти (УСКОРЕННАЯ ОЧИСТКА)
+        /// </summary>
+        private static void CleanupOldTcpPackets(DateTime currentTime)
+        {
+            var cutoff = currentTime.AddSeconds(-2); // Очищаем пакеты старше 2 секунд (вместо 5)
+            var keysToRemove = new List<string>();
+            
+            foreach (var kvp in _tcpSentPackets)
+            {
+                if (kvp.Value < cutoff)
+                {
+                    keysToRemove.Add(kvp.Key);
+                }
+            }
+            
+            foreach (var key in keysToRemove)
+            {
+                _tcpSentPackets.TryRemove(key, out _);
+            }
+            
+            if (keysToRemove.Count > 0)
+            {
+                DebugLogger.log($"[ETW-RTT] Cleaned {keysToRemove.Count} old TCP packet entries");
+            }
+        }
+        private static void CleanupOldRttData()
+        {
+            var now = DateTime.Now;
+            var cutoff = now.AddMinutes(-5); // Очищаем данные старше 5 минут
+            
+            var keysToRemove = new List<string>();
+            
+            foreach (var kvp in _lastRttUpdate)
+            {
+                if (kvp.Value < cutoff)
+                {
+                    keysToRemove.Add(kvp.Key);
+                }
+            }
+            
+            foreach (var key in keysToRemove)
+            {
+                _rttHistory.TryRemove(key, out _);
+                _avgRttMs.TryRemove(key, out _);
+                _minRttMs.TryRemove(key, out _);
+                _maxRttMs.TryRemove(key, out _);
+                _jitterMs.TryRemove(key, out _);
+                _lastRttUpdate.TryRemove(key, out _);
+            }
+            
+            if (keysToRemove.Count > 0)
+            {
+                DebugLogger.log($"[ETW-RTT] Cleaned up {keysToRemove.Count} old RTT entries");
+            }
         }
     }
 }

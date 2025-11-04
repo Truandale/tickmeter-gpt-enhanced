@@ -3123,6 +3123,32 @@ namespace tickMeter.Forms
                                 procStats.remoteIp?.ToString(), 
                                 (int)procStats.remotePort);
                             
+                            // ЭТАП 3: Интеграция ETW RTT/Ping данных для VPN bypass режима (БЕЗ ОГРАНИЧЕНИЙ)
+                            // ETW предоставляет kernel-level RTT измерения - показываем всё как есть
+                            long etwAvgRtt = Classes.ETW.GetAverageRttMs(procStats.name);
+                            long etwMinRtt = Classes.ETW.GetMinRttMs(procStats.name);
+                            long etwMaxRtt = Classes.ETW.GetMaxRttMs(procStats.name);
+                            double etwJitter = Classes.ETW.GetJitterMs(procStats.name);
+                            
+                            // УБИРАЕМ ВСЕ ОГРАНИЧЕНИЯ - показываем реальные данные
+                            if (etwAvgRtt > 0)
+                            {
+                                App.meterState.Server.Ping = (int)etwAvgRtt;
+                                
+                                DebugLogger.log($"[ETW-VPN-RTT-RAW] Using RAW ETW RTT data: avg={etwAvgRtt}ms, min={etwMinRtt}ms, max={etwMaxRtt}ms, jitter={etwJitter:F1}ms");
+                                DebugLogger.log($"[ETW-VPN-RTT-RAW] ETW RTT replaces realTraffic data: old_ping={realTraffic?.RealPingMs ?? -1}ms");
+                            }
+                            else if (realTraffic != null && realTraffic.RealPingMs > 0)
+                            {
+                                // Fallback: используем realTraffic ping если ETW данных нет
+                                App.meterState.Server.Ping = realTraffic.RealPingMs;
+                                DebugLogger.log($"[VPN-RTT-Fallback] Using RealProcessTrafficMonitor ping: {realTraffic.RealPingMs}ms (ETW RTT not available)");
+                            }
+                            else
+                            {
+                                DebugLogger.log($"[VPN-RTT-None] No ping data available: ETW_avg={etwAvgRtt}ms, realTraffic_valid={realTraffic?.RealPingMs > 0}");
+                            }
+                            
                             if (etwPacketsPerSec > 0)
                             {
                                 // Используем ETW подсчет пакетов как приоритетный метод для VPN bypass
@@ -3143,6 +3169,22 @@ namespace tickMeter.Forms
                             
                             // РЕАЛЬНЫЙ ТРАФИК вместо эмуляции в VPN bypass режиме
                             UpdateRealVpnTraffic(procStats);
+                            
+                            // *** ИСПРАВЛЕНИЕ: Рассчитываем тиктайм для VPN bypass режима ***
+                            // В VPN bypass режиме тиктайм должен корректно обновляться в соответствии с реальным тикрейтом
+                            float currentTicktime = currentTickRate > 0 ? 1000.0f / currentTickRate : 7.8f;
+                            
+                            // Обновляем буфер тиктайма для отображения в оверлее
+                            if (App.meterState.tickTimeBuffer == null)
+                                App.meterState.tickTimeBuffer = new List<float>();
+                                
+                            App.meterState.tickTimeBuffer.Add(currentTicktime);
+                            
+                            // Ограничиваем размер буфера
+                            if (App.meterState.tickTimeBuffer.Count > 100)
+                                App.meterState.tickTimeBuffer.RemoveAt(0);
+                                
+                            DebugLogger.log($"[VPN-TickTime] Calculated ticktime for VPN bypass: {currentTicktime:F1}ms (from tickrate {currentTickRate} Hz)");
                         }
                         else
                         {
