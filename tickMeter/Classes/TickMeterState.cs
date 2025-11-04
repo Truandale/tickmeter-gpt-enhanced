@@ -36,6 +36,7 @@ namespace tickMeter
         public bool isCustomProfileActive = false;
 
         public List<float> tickTimeBuffer = new List<float>();
+        public List<float> tickrateBuffer = new List<float>(); // Новый буфер для графика тикрейта
         public List<float> pingBuffer = new List<float>();
         
         // Thread-safe access to pingBuffer
@@ -88,6 +89,17 @@ namespace tickMeter
             }
         }
 
+        public void updateTickrateBuffer(int currentTickrate)
+        {
+            // Обновление буфера тикрейта для графика
+            if (tickrateBuffer.Count > 511)
+            {
+                tickrateBuffer.RemoveAt(0);
+            }
+            tickrateBuffer.Add(currentTickrate);
+            DebugLogger.log($"[TickrateBuffer] Added {currentTickrate} Hz to buffer (size: {tickrateBuffer.Count})");
+        }
+
         public void SetMeterTimer()
         {
             if (MeterValidateTimer == null || !MeterValidateTimer.Enabled)
@@ -106,6 +118,7 @@ namespace tickMeter
             for (int i = 0; i < 513; i++)
             {
                 tickTimeBuffer.Add(0);
+                tickrateBuffer.Add(0); // Инициализация нового буфера тикрейта
                 lock (_pingBufferLock)
                 {
                     pingBuffer.Add(30); // Начальное значение для графика пинга
@@ -149,6 +162,9 @@ namespace tickMeter
                     {
                         Server.UpdateTickrate(smoothedTickrate, value);
                     }
+                    
+                    // Обновляем новый буфер тикрейта для графика
+                    updateTickrateBuffer(smoothedTickrate);
                     
                     // Reset tick counter for next measurement
                     TickRate = 0;
@@ -310,6 +326,7 @@ namespace tickMeter
             }
 
             tickTimeBuffer.Clear();
+            tickrateBuffer.Clear(); // Очистка нового буфера тикрейта
             lock (_pingBufferLock)
             {
                 pingBuffer.Clear();
@@ -317,6 +334,7 @@ namespace tickMeter
             for (int i = 0; i < 513; i++)
             {
                 tickTimeBuffer.Add(0);
+                tickrateBuffer.Add(0); // Инициализация нового буфера тикрейта
                 lock (_pingBufferLock)
                 {
                     pingBuffer.Add(30);
@@ -885,7 +903,7 @@ namespace tickMeter
                         // This ensures each IP has its own fresh metrics
                         TicksHistory.Clear();
                         TickTimestamps.Clear();
-                        TickrateGraph.Clear();
+                        // TickrateGraph.Clear(); // ОТКЛЮЧЕНО: не очищаем график тикрейта для непрерывного отображения
                         OutputTickRate = 0;
                         AvgTickrate = 0;
                         UploadTraffic = 0;
@@ -961,7 +979,7 @@ namespace tickMeter
                 
                 // Reset individual log and graph data
                 TickRateLog = "";
-                TickrateGraph.Clear();
+                // TickrateGraph.Clear(); // ОТКЛЮЧЕНО: не очищаем график тикрейта для непрерывного отображения
                 
                 KillTimer();
             }
@@ -1065,6 +1083,9 @@ namespace tickMeter
                     TickrateGraph.RemoveAt(0);
                 }
                 TickrateGraph.Add(currentTickrate);
+                
+                // Debug: добавляем логирование для отладки графика тикрейта
+                DebugLogger.log($"[TickrateGraph] Added to graph: {currentTickrate} Hz (graph size: {TickrateGraph.Count})");
                 
                 // Update individual log
                 TickRateLog += timestamp.ToString() + ";" + currentTickrate.ToString() + Environment.NewLine;

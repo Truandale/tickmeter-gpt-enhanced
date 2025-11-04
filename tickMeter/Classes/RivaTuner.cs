@@ -393,10 +393,21 @@ namespace tickMeter.Classes
                 output += "<S0><C4>Tickrate" + Environment.NewLine;
                 
                 // Применяем сглаживание графика тикрейта, если включено
-                float[] tickrateGraphData = Classes.SmoothingManager.SmoothSeries(
-                    App.meterState.tickrateGraph.ToArray(),
-                    Classes.SmoothingManager.IsTickrateGraphOverlayEnabled()
-                );
+                // ВРЕМЕННО: отключаем сглаживание для отладки
+                float[] tickrateGraphData = App.meterState.tickrateBuffer.ToArray();
+                // float[] tickrateGraphData = Classes.SmoothingManager.SmoothSeries(
+                //     App.meterState.tickrateBuffer.ToArray(),
+                //     Classes.SmoothingManager.IsTickrateGraphOverlayEnabled()
+                // );
+                
+                // Debug: логируем данные графика тикрейта для RTSS
+                if (tickrateGraphData.Length > 0)
+                {
+                    int startIndex = Math.Max(0, tickrateGraphData.Length - 10);
+                    var recentValues = new float[Math.Min(10, tickrateGraphData.Length)];
+                    Array.Copy(tickrateGraphData, startIndex, recentValues, 0, recentValues.Length);
+                    DebugLogger.log($"[RTSS TickrateGraph] Sending to RTSS: [{string.Join(", ", recentValues)}] (total points: {tickrateGraphData.Length})");
+                }
                 
                 output += DrawChart(
                     tickrateGraphData,
