@@ -1762,8 +1762,11 @@ namespace tickMeter.Forms
                     }
                 }
                 
-                // NEW: Обновляем эмулированный тикрейт для VPN bypass режима
-                UpdateVpnTickrateEmulation();
+                // NEW: Обновляем эмулированный тикрейт для VPN bypass режима (только если НЕ VPN bypass advanced)
+                if (!vpnBypassAdvanced)
+                {
+                    UpdateVpnTickrateEmulation();
+                }
                 
                 // NEW: Обновляем трафик через Windows Statistics (для обычного режима)
                 UpdateTrafficFromWindowsStats();
@@ -2910,7 +2913,8 @@ namespace tickMeter.Forms
                         }
                         ProcessNetworkStats procStats = ActiveWindowTracker.connections[targetKey];
                         
-                        App.meterState.tickTimeBuffer = procStats.tickTimeBuffer;
+                        // НЕ перезаписываем tickTimeBuffer в VPN bypass режиме - он пересчитывается в ETW блоке
+                        // Проверяем позже после объявления vpnBypassAdvanced переменной
                         
                         // Добавляем ticktime данные в детектор спайков
                         try
@@ -2960,6 +2964,18 @@ namespace tickMeter.Forms
                         bool captureAll = App.settingsManager?.GetOption("capture_all_adapters", "False", "ADVANCED") == "True";
                         bool vpnBypassBasic = App.settingsManager?.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
                         bool vpnBypassAdvanced = App.settingsManager?.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+                        
+                        // В VPN bypass режиме не используем старый tickTimeBuffer - он будет пересчитан в ETW блоке
+                        if (vpnBypassAdvanced && App.meterState.tickTimeBuffer != null)
+                        {
+                            // Сохраняем текущий буфер, не перезаписываем его данными из procStats.tickTimeBuffer
+                            Debug.Print($"[VPN-TickTime] Skipping tickTimeBuffer overwrite in VPN bypass mode (current buffer has {App.meterState.tickTimeBuffer.Count} values)");
+                        }
+                        else
+                        {
+                            // Обычный режим: используем данные из procStats
+                            App.meterState.tickTimeBuffer = procStats.tickTimeBuffer;
+                        }
                         
                         if (captureAll || vpnBypassBasic || vpnBypassAdvanced)
                         {

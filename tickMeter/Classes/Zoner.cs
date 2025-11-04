@@ -373,12 +373,21 @@ namespace tickMeter.Classes
         /// </summary>
         public static double AvgTicktimeForZone()
         {
-            // Use same source as RivaTuner - last value from tickTimeBuffer
-            if (App.meterState.tickTimeBuffer.Count > 0)
+            // ИСПРАВЛЕНИЕ: рассчитываем тиктайм от текущего тикрейта для синхронизации
+            // Проблема была в том, что тикрейт и тиктайм брались из разных источников и моментов времени
+            double currentTickrate = App.meterState.OutputTickRate;
+            if (currentTickrate > 0)
+            {
+                return 1000.0 / currentTickrate; // ticktime = 1000ms / tickrate
+            }
+            
+            // Fallback: если нет тикрейта, используем последнее значение из буфера
+            if (App.meterState.tickTimeBuffer?.Count > 0)
             {
                 return App.meterState.tickTimeBuffer.Last();
             }
-            return 0.0;
+            
+            return 7.8; // Fallback значение
         }
     }
 }

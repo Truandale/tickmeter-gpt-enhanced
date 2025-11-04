@@ -416,11 +416,8 @@ namespace tickMeter.Classes
                 var ticktimeZone = zoner.FromTicktime(snap.TicktimeAvgMs);
                 string ticktimeColor = Classes.ZoneColors.ToRtssLegacy(ticktimeZone);
                 
-                float ticktimeValue = 0;
-                if (App.meterState.tickTimeBuffer.Count > 0)
-                {
-                    ticktimeValue = App.meterState.tickTimeBuffer.Last();
-                }
+                // ИСПРАВЛЕНИЕ: используем синхронизированное значение из snapshot вместо буфера
+                float ticktimeValue = (float)snap.TicktimeAvgMs;
                 // Добавляем индикатор спайка рядом со значением (как у пинга)
                 string ticktimeValueDisplay = ticktimeValue > 0 ? ticktimeValue.ToString("0.0") : "n/a";
                 bool showTicktimeSpikes = App.settingsManager?.GetOption("show_ticktime_spikes", "True", "ADVANCED") == "True";
