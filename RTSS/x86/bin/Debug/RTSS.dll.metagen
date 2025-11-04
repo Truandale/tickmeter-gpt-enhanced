@@ -1,0 +1,134 @@
+ImageRuntimeVersion: v4.0.30319
+Assembly RTSS, Version=1.0.*, Culture=Инвариантный язык (Инвариантная страна): 
+	hash=SHA1, flags=PublicKey
+Assembly mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a: 
+	hash=None, flags=None
+Assembly System.Xml, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Class RTSS.OSDEntry: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.String Owner : Public
+    System.String Text : Public
+Class RTSS.AppEntry: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    Int32 ProcessId : Public
+    System.String Name : Public
+    RTSS.AppFlags Flags : Public
+    System.DateTime InstantaneousTimeStart : Public
+    System.DateTime InstantaneousTimeEnd : Public
+    UInt32 InstantaneousFrames IsLong : Public
+    System.TimeSpan InstantaneousFrameTime : Public
+    RTSS.StatFlags StatFlags : Public
+    System.DateTime StatTimeStart : Public
+    System.DateTime StatTimeEnd : Public
+    UInt32 StatFrames IsLong : Public
+    UInt32 StatCount IsLong : Public
+    UInt32 StatFramerateMin IsLong : Public
+    UInt32 StatFramerateAvg IsLong : Public
+    UInt32 StatFramerateMax IsLong : Public
+    UInt32 StatFrameTimeMin IsLong : Public
+    UInt32 StatFrameTimeAvg IsLong : Public
+    UInt32 StatFrameTimeMax IsLong : Public
+    UInt32 StatFrameTimeCount IsLong : Public
+    Int32 OSDCoordinateX : Public
+    Int32 OSDCoordinateY : Public
+    UInt32 OSDZoom IsLong : Public
+    System.Drawing.Color OSDColor : Public
+    UInt32 OSDFrameId IsLong : Public
+    System.Drawing.Color OSDBackgroundColor : Public
+    RTSS.ScreenshotFlags ScreenshotFlags : Public
+    System.String ScreenshotPath : Public
+    UInt32 ScreenshotQuality IsLong : Public
+    UInt32 ScreenshotThreads IsLong : Public
+    RTSS.VideoCaptureFlags VideoCaptureFlags : Public
+    System.String VideoCapturePath : Public
+    UInt32 VideoFramerate IsLong : Public
+    UInt32 VideoFramesize IsLong : Public
+    UInt32 VideoFormat IsLong : Public
+    UInt32 VideoQuality IsLong : Public
+    UInt32 VideoCaptureThreads IsLong : Public
+    UInt32 VideoCaptureFlagsEx IsLong : Public
+    UInt32 AudioCaptureFlags IsLong : Public
+    UInt32 AudioCaptureFlags2 IsLong : Public
+    Int64 AudioCapturePTTEventPush : Public
+    Int64 AudioCapturePTTEventRelease : Public
+    Int64 AudioCapturePTTEventPush2 : Public
+    Int64 AudioCapturePTTEventRelease2 : Public
+    UInt32 dwPrerecordSizeLimit IsLong : Public
+    UInt32 dwPrerecordTimeLimit IsLong : Public
+    Int64 qwStatTotalTime : Public
+    UInt32[] dwStatFrameTimeLowBuf : Public
+    UInt32 dwStatFramerate1Dot0PercentLow IsLong : Public
+    UInt32 dwStatFramerate0Dot1PercentLow IsLong : Public
+Class RTSS.OSD: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    System.IDisposable
+  Properties:
+    System.Version Version 'get ' : 
+  Methods:
+    get_Version(): PrivateScope, Public, Static, HideBySig, SpecialName
+    EmbedGraphArray(UInt32 IsLong, Single, UInt32 IsLong, UInt32 IsLong, Int32 IsLong, Int32 IsLong, Int32 IsLong, Single, Single, UInt32 IsLong): PrivateScope, Public, HideBySig
+    EmbedGraph(UInt32 IsLong, Single*, UInt32 IsLong, UInt32 IsLong, Int32 IsLong, Int32 IsLong, Int32 IsLong, Single, Single, UInt32 IsLong): PrivateScope, Public, HideBySig
+    Update(String): PrivateScope, Public, HideBySig
+    GetOSDEntries(): PrivateScope, Public, Static, HideBySig
+    GetAppEntries(): PrivateScope, Public, Static, HideBySig
+    Dispose(): PrivateScope, Public, Final, Virtual, HideBySig
+Struct RTSS.AppFlags: AutoLayout, AnsiClass, Class, Public, Sealed, BeforeFieldInit
+  :System.Enum
+  Fields:
+    Int32 value__ : Public, SpecialName, RTSpecialName
+    RTSS.AppFlags None = 0 : Public, Static, Literal, HasDefault
+    RTSS.AppFlags OpenGL = 1 : Public, Static, Literal, HasDefault
+    RTSS.AppFlags DirectDraw = 2 : Public, Static, Literal, HasDefault
+    RTSS.AppFlags Direct3D8 = 3 : Public, Static, Literal, HasDefault
+    RTSS.AppFlags Direct3D9 = 4 : Public, Static, Literal, HasDefault
+    RTSS.AppFlags Direct3D9Ex = 5 : Public, Static, Literal, HasDefault
+    RTSS.AppFlags Direct3D10 = 6 : Public, Static, Literal, HasDefault
+    RTSS.AppFlags Direct3D11 = 7 : Public, Static, Literal, HasDefault
+    RTSS.AppFlags Direct3D12 = 8 : Public, Static, Literal, HasDefault
+    RTSS.AppFlags Direct3D12AFR = 9 : Public, Static, Literal, HasDefault
+    RTSS.AppFlags Vulkan = 10 : Public, Static, Literal, HasDefault
+    RTSS.AppFlags ProfileUpdateRequested = 268435456 : Public, Static, Literal, HasDefault
+    RTSS.AppFlags MASK = 15 : Public, Static, Literal, HasDefault
+Struct RTSS.StatFlags: AutoLayout, AnsiClass, Class, Public, Sealed, BeforeFieldInit
+  :System.Enum
+  Fields:
+    Int32 value__ : Public, SpecialName, RTSpecialName
+    RTSS.StatFlags None = 0 : Public, Static, Literal, HasDefault
+    RTSS.StatFlags Record = 1 : Public, Static, Literal, HasDefault
+Struct RTSS.ScreenshotFlags: AutoLayout, AnsiClass, Class, Public, Sealed, BeforeFieldInit
+  :System.Enum
+  Fields:
+    Int32 value__ : Public, SpecialName, RTSpecialName
+    RTSS.ScreenshotFlags None = 0 : Public, Static, Literal, HasDefault
+    RTSS.ScreenshotFlags RequestCapture = 1 : Public, Static, Literal, HasDefault
+    RTSS.ScreenshotFlags RequestCaptureOSD = 16 : Public, Static, Literal, HasDefault
+Struct RTSS.VideoCaptureFlags: AutoLayout, AnsiClass, Class, Public, Sealed, BeforeFieldInit
+  :System.Enum
+  Fields:
+    Int32 value__ : Public, SpecialName, RTSpecialName
+    RTSS.VideoCaptureFlags None = 0 : Public, Static, Literal, HasDefault
+    RTSS.VideoCaptureFlags RequestCaptureStart = 1 : Public, Static, Literal, HasDefault
+    RTSS.VideoCaptureFlags RequestCaptureProgress = 2 : Public, Static, Literal, HasDefault
+    RTSS.VideoCaptureFlags RequestCaptureStop = 4 : Public, Static, Literal, HasDefault
+    RTSS.VideoCaptureFlags RequestCaptureOSD = 16 : Public, Static, Literal, HasDefault
+    RTSS.VideoCaptureFlags INTERNAL_RESIZE = 65536 : Public, Static, Literal, HasDefault
+    RTSS.VideoCaptureFlags MASK = 7 : Public, Static, Literal, HasDefault
+Struct RTSS.EMBEDDED_OBJECT_GRAPH: AutoLayout, AnsiClass, Class, Public, Sealed, BeforeFieldInit
+  :System.Enum
+  Fields:
+    UInt32 value__ IsLong : Public, SpecialName, RTSpecialName
+    RTSS.EMBEDDED_OBJECT_GRAPH FLAG_FILLED = 1 : Public, Static, Literal, HasDefault
+    RTSS.EMBEDDED_OBJECT_GRAPH FLAG_FRAMERATE = 2 : Public, Static, Literal, HasDefault
+    RTSS.EMBEDDED_OBJECT_GRAPH FLAG_FRAMETIME = 4 : Public, Static, Literal, HasDefault
+    RTSS.EMBEDDED_OBJECT_GRAPH FLAG_BAR = 8 : Public, Static, Literal, HasDefault
+    RTSS.EMBEDDED_OBJECT_GRAPH FLAG_BGND = 16 : Public, Static, Literal, HasDefault

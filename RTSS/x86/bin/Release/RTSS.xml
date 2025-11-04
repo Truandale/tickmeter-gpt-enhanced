@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        "RTSS"
+    </assembly>
+    <members>
+        <member name="M:RTSS.OSD.Update(System.String)">
+            <summary>
+Text should be no longer than 4095 chars once converted to ANSI. Lower case looks awful.
+</summary>
+        </member>
+        <member name="M:RTSS.OSD.#ctor(System.String)">
+            <param name="entryName">
+The name of the OSD entry. Should be unique and not more than 255 chars once converted to ANSI.
+</param>
+        </member>
+    </members>
+</doc>

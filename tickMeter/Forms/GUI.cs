@@ -3113,8 +3113,8 @@ namespace tickMeter.Forms
                             if (etwPacketsPerSec > 0)
                             {
                                 // Используем ETW подсчет пакетов как приоритетный метод для VPN bypass
-                                currentTickRate = (int)Math.Min(etwPacketsPerSec, 128); // Ограничиваем максимум
-                                DebugLogger.log($"[VPN-TickRate] Using ETW packet count for VPN bypass: {currentTickRate} packets/sec");
+                                currentTickRate = (int)etwPacketsPerSec; // Убрано ограничение 128 Гц - сглаживание работает
+                                DebugLogger.log($"[VPN-TickRate] Using ETW packet count for VPN bypass: {currentTickRate} packets/sec (no limit)");
                             }
                             else if (realTraffic != null && realTraffic.CalculatedTickrate > 0)
                             {
