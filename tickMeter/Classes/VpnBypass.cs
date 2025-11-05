@@ -180,7 +180,9 @@ namespace tickMeter.Classes
                    eventName.Contains("Connect") ||
                    eventName.Contains("Accept") ||
                    eventName.Contains("Send") ||
-                   eventName.Contains("Recv");
+                   eventName.Contains("Recv") ||
+                   eventName.Contains("UDP") ||     // Добавлена поддержка UDP
+                   eventName.Contains("Bind");      // Добавлена поддержка Bind
         }
         
         private bool TryParseNetworkEvent(TraceEvent eventData, out Key key, out Info info)
@@ -503,6 +505,12 @@ namespace tickMeter.Classes
                 {
                     info = new Info((int)etwInfo.Pid, etwInfo.Exe);
                     Interlocked.Increment(ref _etwHits);
+                    
+                    // Логируем успешное ETW resolution
+                    if (_etwHits % 10 == 1) // Логируем каждый 10-й hit для производительности
+                    {
+                        DebugLogger.log($"[ConnectionTracker] ETW hit #{_etwHits}: {etwInfo.Exe}({etwInfo.Pid}) {local}:{lport}->{remote}:{rport}");
+                    }
                     return true;
                 }
                 Interlocked.Increment(ref _etwMisses);
@@ -518,6 +526,19 @@ namespace tickMeter.Classes
 
             if (proto == 17)
             {
+                // Попробуем ETW для UDP соединений
+                if (_useETW && _etwTracker != null)
+                {
+                    ETWConnectionTracker.Info etwUdpInfo;
+                    if (_etwTracker.TryResolve(proto, local, lport, remote, rport, out etwUdpInfo))
+                    {
+                        info = new Info((int)etwUdpInfo.Pid, etwUdpInfo.Exe);
+                        Interlocked.Increment(ref _etwHits);
+                        DebugLogger.log($"[ConnectionTracker] ETW UDP hit: {etwUdpInfo.Exe}({etwUdpInfo.Pid}) {local}:{lport}->{remote}:{rport}");
+                        return true;
+                    }
+                }
+                
                 if (TryResolveUdpOwner((proto, local, lport), out info))
                 {
                     LogLookup("HIT udpOwner", proto, local, lport, remote, rport,
@@ -587,6 +608,8 @@ namespace tickMeter.Classes
         private void Loop()
         {
             var sw = Stopwatch.StartNew();
+            var lastETWStatsLog = Environment.TickCount;
+            
             while (!_stop)
             {
                 try
@@ -597,6 +620,14 @@ namespace tickMeter.Classes
                     RefreshUdp(AF_INET6);
                     EvictExpired();
                     DumpProcessSnapshotIfNeeded();
+                    
+                    // Логируем ETW статистику каждые 30 секунд
+                    var now = Environment.TickCount;
+                    if (now - lastETWStatsLog > 30000)
+                    {
+                        LogETWStatistics();
+                        lastETWStatsLog = now;
+                    }
                 }
                 catch { /* ignore all */ }
                 var due = 300 - (int)sw.ElapsedMilliseconds;
@@ -1280,6 +1311,23 @@ namespace tickMeter.Classes
             // Это позволит показать "NO TRAFFIC" для процессов без реального трафика
             DebugLogger.log($"[VpnFallback] Connection not resolved: {local}:{lport}->{remote}:{rport} - returning Unknown");
             return new Info(0, "Unknown");
+        }
+
+        private void LogETWStatistics()
+        {
+            try
+            {
+                var etwEfficiency = _etwHits + _etwMisses > 0 ? (_etwHits * 100.0) / (_etwHits + _etwMisses) : 0;
+                var log = $"[ETW Stats] Hits: {_etwHits}, Misses: {_etwMisses}, Polling: {_pollingHits}, " +
+                         $"ETW Active: {(_etwTracker != null ? "YES" : "NO")}, " +
+                         $"ETW Efficiency: {etwEfficiency:F1}%";
+                DebugLogger.log(log);
+                Console.WriteLine(log);
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"LogETWStatistics error: {ex.Message}");
+            }
         }
     }
 }
