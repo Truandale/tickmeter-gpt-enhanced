@@ -1896,9 +1896,11 @@ namespace tickMeter.Forms
                         }
 
                         int rawTickrate = App.meterState.OutputTickRate;
+                        // Применяем сглаживание для GUI значений тикрейта, если включено
+                        int displayTickrate = Classes.SmoothingManager.SmoothTickrateValueGui(rawTickrate);
                         bool showTickrateSpikes = App.settingsManager?.GetOption("show_tickrate_spikes", "True", "ADVANCED") == "True";
                         bool tickrateSpikeActive = hasActiveSession && showTickrateSpikes && App.meterState.HasTickRateSpike;
-                        string tickrateText = rawTickrate.ToString();
+                        string tickrateText = displayTickrate.ToString();
                         if (tickrateSpikeActive)
                         {
                             tickrateText += " (!)";

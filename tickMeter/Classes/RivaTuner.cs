@@ -429,7 +429,9 @@ namespace tickMeter.Classes
                 string ticktimeColor = Classes.ZoneColors.ToRtssLegacy(ticktimeZone);
                 
                 // ИСПРАВЛЕНИЕ: используем синхронизированное значение из snapshot вместо буфера
-                float ticktimeValue = (float)snap.TicktimeAvgMs;
+                float rawTicktimeValue = (float)snap.TicktimeAvgMs;
+                // Применяем сглаживание для значений тиктайма в оверлее, если включено
+                float ticktimeValue = Classes.SmoothingManager.SmoothTicktimeValueOverlay(rawTicktimeValue);
                 // Добавляем индикатор спайка рядом со значением (как у пинга)
                 string ticktimeValueDisplay = ticktimeValue > 0 ? ticktimeValue.ToString("0.0") : "n/a";
                 bool showTicktimeSpikes = App.settingsManager?.GetOption("show_ticktime_spikes", "True", "ADVANCED") == "True";

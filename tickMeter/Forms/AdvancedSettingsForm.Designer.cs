@@ -184,7 +184,9 @@ namespace tickMeter.Forms
             this.chkTicktimeGraphOverlaySmoothing = new System.Windows.Forms.CheckBox();
             this.chkPingValueOverlaySmoothing = new System.Windows.Forms.CheckBox();
             this.chkPingValueGuiSmoothing = new System.Windows.Forms.CheckBox();
+            this.chkTickrateValueGuiSmoothing = new System.Windows.Forms.CheckBox();
             this.chkTickrateValueOverlaySmoothing = new System.Windows.Forms.CheckBox();
+            this.chkTicktimeValueOverlaySmoothing = new System.Windows.Forms.CheckBox();
             this.chkTrafficValueOverlaySmoothing = new System.Windows.Forms.CheckBox();
             this.chkPingTargetActiveOnly = new System.Windows.Forms.CheckBox();
             this.chkPingFallbackIcmp = new System.Windows.Forms.CheckBox();
@@ -2312,7 +2314,9 @@ namespace tickMeter.Forms
             this.groupBox5.Controls.Add(this.chkTicktimeGraphOverlaySmoothing);
             this.groupBox5.Controls.Add(this.chkPingValueOverlaySmoothing);
             this.groupBox5.Controls.Add(this.chkPingValueGuiSmoothing);
+            this.groupBox5.Controls.Add(this.chkTickrateValueGuiSmoothing);
             this.groupBox5.Controls.Add(this.chkTickrateValueOverlaySmoothing);
+            this.groupBox5.Controls.Add(this.chkTicktimeValueOverlaySmoothing);
             this.groupBox5.Controls.Add(this.chkTrafficValueOverlaySmoothing);
             this.groupBox5.Controls.Add(this.chkPingTargetActiveOnly);
             this.groupBox5.Controls.Add(this.chkPingFallbackIcmp);
@@ -2493,25 +2497,47 @@ namespace tickMeter.Forms
             this.chkPingValueGuiSmoothing.Text = "Сглаживание значений пинга в GUI";
             this.chkPingValueGuiSmoothing.UseVisualStyleBackColor = true;
             // 
+            // chkTickrateValueGuiSmoothing
+            // 
+            this.chkTickrateValueGuiSmoothing.AutoSize = true;
+            this.chkTickrateValueGuiSmoothing.Location = new System.Drawing.Point(20, 339);
+            this.chkTickrateValueGuiSmoothing.Margin = new System.Windows.Forms.Padding(4);
+            this.chkTickrateValueGuiSmoothing.Name = "chkTickrateValueGuiSmoothing";
+            this.chkTickrateValueGuiSmoothing.Size = new System.Drawing.Size(285, 20);
+            this.chkTickrateValueGuiSmoothing.TabIndex = 15;
+            this.chkTickrateValueGuiSmoothing.Text = "Сглаживание значений тикрейта в GUI";
+            this.chkTickrateValueGuiSmoothing.UseVisualStyleBackColor = true;
+            // 
             // chkTickrateValueOverlaySmoothing
             // 
             this.chkTickrateValueOverlaySmoothing.AutoSize = true;
-            this.chkTickrateValueOverlaySmoothing.Location = new System.Drawing.Point(20, 339);
+            this.chkTickrateValueOverlaySmoothing.Location = new System.Drawing.Point(20, 367);
             this.chkTickrateValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTickrateValueOverlaySmoothing.Name = "chkTickrateValueOverlaySmoothing";
             this.chkTickrateValueOverlaySmoothing.Size = new System.Drawing.Size(318, 20);
-            this.chkTickrateValueOverlaySmoothing.TabIndex = 15;
+            this.chkTickrateValueOverlaySmoothing.TabIndex = 16;
             this.chkTickrateValueOverlaySmoothing.Text = "Сглаживание значений тикрейта в оверлее";
             this.chkTickrateValueOverlaySmoothing.UseVisualStyleBackColor = true;
+            // 
+            // chkTicktimeValueOverlaySmoothing
+            // 
+            this.chkTicktimeValueOverlaySmoothing.AutoSize = true;
+            this.chkTicktimeValueOverlaySmoothing.Location = new System.Drawing.Point(20, 395);
+            this.chkTicktimeValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
+            this.chkTicktimeValueOverlaySmoothing.Name = "chkTicktimeValueOverlaySmoothing";
+            this.chkTicktimeValueOverlaySmoothing.Size = new System.Drawing.Size(318, 20);
+            this.chkTicktimeValueOverlaySmoothing.TabIndex = 17;
+            this.chkTicktimeValueOverlaySmoothing.Text = "Сглаживание значений тиктайма в оверлее";
+            this.chkTicktimeValueOverlaySmoothing.UseVisualStyleBackColor = true;
             // 
             // chkTrafficValueOverlaySmoothing
             // 
             this.chkTrafficValueOverlaySmoothing.AutoSize = true;
-            this.chkTrafficValueOverlaySmoothing.Location = new System.Drawing.Point(20, 367);
+            this.chkTrafficValueOverlaySmoothing.Location = new System.Drawing.Point(20, 423);
             this.chkTrafficValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTrafficValueOverlaySmoothing.Name = "chkTrafficValueOverlaySmoothing";
             this.chkTrafficValueOverlaySmoothing.Size = new System.Drawing.Size(314, 20);
-            this.chkTrafficValueOverlaySmoothing.TabIndex = 16;
+            this.chkTrafficValueOverlaySmoothing.TabIndex = 18;
             this.chkTrafficValueOverlaySmoothing.Text = "Сглаживание значений трафика в оверлее";
             this.chkTrafficValueOverlaySmoothing.UseVisualStyleBackColor = true;
             // 
@@ -2955,7 +2981,9 @@ namespace tickMeter.Forms
     private System.Windows.Forms.CheckBox chkTicktimeGraphOverlaySmoothing;
     private System.Windows.Forms.CheckBox chkPingValueOverlaySmoothing;
     private System.Windows.Forms.CheckBox chkPingValueGuiSmoothing;
+    private System.Windows.Forms.CheckBox chkTickrateValueGuiSmoothing;
     private System.Windows.Forms.CheckBox chkTickrateValueOverlaySmoothing;
+    private System.Windows.Forms.CheckBox chkTicktimeValueOverlaySmoothing;
     private System.Windows.Forms.CheckBox chkTrafficValueOverlaySmoothing;
     private System.Windows.Forms.CheckBox chkDedupMultiNic;
     private System.Windows.Forms.CheckBox chkEnableIPv6;

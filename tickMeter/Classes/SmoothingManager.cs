@@ -22,6 +22,8 @@ namespace tickMeter.Classes
         private static ExponentialMovingAverage _emaPingValueOverlay;
         private static ExponentialMovingAverage _emaPingValueGui;
         private static ExponentialMovingAverage _emaTickrateValueOverlay;
+        private static ExponentialMovingAverage _emaTickrateValueGui;
+        private static ExponentialMovingAverage _emaTicktimeValueOverlay;
         private static ExponentialMovingAverage _emaUploadMbOverlay;
         private static ExponentialMovingAverage _emaDownloadMbOverlay;
 
@@ -44,7 +46,9 @@ namespace tickMeter.Classes
     public static bool IsPingGraphOverlayEnabled() => App.settingsManager?.GetBool("smoothing_ping_graph_overlay", false, "ADVANCED") == true;
     public static bool IsPingValueOverlayEnabled() => App.settingsManager?.GetBool("smoothing_ping_value_overlay", false, "ADVANCED") == true;
     public static bool IsPingValueGuiEnabled() => App.settingsManager?.GetBool("smoothing_ping_value_gui", false, "ADVANCED") == true;
+    public static bool IsTickrateValueGuiEnabled() => App.settingsManager?.GetBool("smoothing_tickrate_value_gui", false, "ADVANCED") == true;
     public static bool IsTickrateValueOverlayEnabled() => App.settingsManager?.GetBool("smoothing_tickrate_value_overlay", false, "ADVANCED") == true;
+    public static bool IsTicktimeValueOverlayEnabled() => App.settingsManager?.GetBool("smoothing_ticktime_value_overlay", false, "ADVANCED") == true;
     public static bool IsTrafficValueOverlayEnabled() => App.settingsManager?.GetBool("smoothing_traffic_value_overlay", false, "ADVANCED") == true;
 
         // --- Значения ---
@@ -124,6 +128,32 @@ namespace tickMeter.Classes
                     _emaTickrateValueOverlay = new ExponentialMovingAverage(GetAlpha());
                 }
                 return (int)Math.Round(_emaTickrateValueOverlay.Update(raw));
+            }
+        }
+
+        public static int SmoothTickrateValueGui(int raw)
+        {
+            if (!IsTickrateValueGuiEnabled() || raw <= 0) return raw;
+            lock (_lock)
+            {
+                if (_emaTickrateValueGui == null)
+                {
+                    _emaTickrateValueGui = new ExponentialMovingAverage(GetAlpha());
+                }
+                return (int)Math.Round(_emaTickrateValueGui.Update(raw));
+            }
+        }
+
+        public static float SmoothTicktimeValueOverlay(float raw)
+        {
+            if (!IsTicktimeValueOverlayEnabled() || raw <= 0) return raw;
+            lock (_lock)
+            {
+                if (_emaTicktimeValueOverlay == null)
+                {
+                    _emaTicktimeValueOverlay = new ExponentialMovingAverage(GetAlpha());
+                }
+                return (float)_emaTicktimeValueOverlay.Update(raw);
             }
         }
 
