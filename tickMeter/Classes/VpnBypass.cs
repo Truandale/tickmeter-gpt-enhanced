@@ -96,11 +96,15 @@ namespace tickMeter.Classes
             // Этот провайдер генерирует события TCP/UDP соединений
             _etwSession.EnableProvider("Microsoft-Windows-Kernel-Network", TraceEventLevel.Informational);
             
-            // Альтернативные провайдеры для более полного покрытия
+            // Альтернативные провайдеры для более полного покрытия (включая UDP)
             try
             {
                 _etwSession.EnableProvider("Microsoft-Windows-Winsock-AFD", TraceEventLevel.Informational);
                 _etwSession.EnableProvider("Microsoft-Windows-TCPIP", TraceEventLevel.Informational);
+                
+                // UDP-специфичные провайдеры для лучшего покрытия
+                _etwSession.EnableProvider("Microsoft-Windows-Kernel-Process", TraceEventLevel.Informational);
+                _etwSession.EnableProvider("Microsoft-Windows-Winsock-NameResolution", TraceEventLevel.Informational);
             }
             catch (Exception ex)
             {
@@ -170,7 +174,7 @@ namespace tickMeter.Classes
         
         private bool IsNetworkEvent(TraceEvent eventData)
         {
-            // Фильтруем по provider и event names
+            // Фильтруем по provider и event names для TCP и UDP
             var providerName = eventData.ProviderName;
             var eventName = eventData.EventName;
             
@@ -181,8 +185,9 @@ namespace tickMeter.Classes
                    eventName.Contains("Accept") ||
                    eventName.Contains("Send") ||
                    eventName.Contains("Recv") ||
-                   eventName.Contains("UDP") ||     // Добавлена поддержка UDP
-                   eventName.Contains("Bind");      // Добавлена поддержка Bind
+                   eventName.Contains("UDP") ||
+                   eventName.Contains("Bind") ||
+                   eventName.Contains("Socket");
         }
         
         private bool TryParseNetworkEvent(TraceEvent eventData, out Key key, out Info info)
@@ -195,10 +200,21 @@ namespace tickMeter.Classes
                 // Парсим payload события для извлечения network info
                 var processId = (uint)eventData.ProcessID;
                 var processName = eventData.ProcessName ?? "Unknown";
-                
-                // Попытка извлечь network parameters из event data
-                // В реальной implementation нужно парсить специфичные поля событий
                 var eventName = eventData.EventName;
+                
+                // Обрабатываем TCP события
+                if (TryParseTCPEvent(eventData, processId, processName, out key, out info))
+                {
+                    return true;
+                }
+                
+                // Обрабатываем UDP события
+                if (TryParseUDPEvent(eventData, processId, processName, out key, out info))
+                {
+                    return true;
+                }
+                
+                // Fallback на старую логику для совместимости
                 var providerName = eventData.ProviderName;
                 
                 // Заглушка для демонстрации - в реальности нужен парсинг по типам событий
@@ -212,6 +228,129 @@ namespace tickMeter.Classes
             catch (Exception ex)
             {
                 DebugLogger.log($"[ETWConnectionTracker] Event parsing error: {ex.Message}");
+            }
+            
+            return false;
+        }
+        
+        private bool TryParseTCPEvent(TraceEvent eventData, uint processId, string processName, out Key key, out Info info)
+        {
+            key = default;
+            info = default;
+            
+            try
+            {
+                var eventName = eventData.EventName;
+                
+                // TCP-специфичные события
+                if (eventName.Contains("Connect") || eventName.Contains("Accept") || eventName.Contains("TCP"))
+                {
+                    if (TryExtractNetworkInfo(eventData, out var proto, out var local, out var lport, out var remote, out var rport))
+                    {
+                        key = new Key(proto, local, lport, remote, rport);
+                        info = new Info(processId, processName);
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[ETWConnectionTracker] TCP event parsing error: {ex.Message}");
+            }
+            
+            return false;
+        }
+        
+        private bool TryParseUDPEvent(TraceEvent eventData, uint processId, string processName, out Key key, out Info info)
+        {
+            key = default;
+            info = default;
+            
+            try
+            {
+                var eventName = eventData.EventName;
+                
+                // UDP-специфичные события: Bind, Send, Recv, UDP
+                if (eventName.Contains("UDP") || eventName.Contains("Bind") || 
+                    (eventName.Contains("Send") && IsUDPEvent(eventData)) ||
+                    (eventName.Contains("Recv") && IsUDPEvent(eventData)))
+                {
+                    if (TryExtractUDPNetworkInfo(eventData, out var local, out var lport, out var remote, out var rport))
+                    {
+                        key = new Key(17, local, lport, remote, rport); // Protocol = 17 для UDP
+                        info = new Info(processId, processName);
+                        
+                        DebugLogger.log($"[ETW] UDP event parsed: {processName}({processId}) {local}:{lport} -> {remote}:{rport}");
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[ETWConnectionTracker] UDP event parsing error: {ex.Message}");
+            }
+            
+            return false;
+        }
+        
+        private bool IsUDPEvent(TraceEvent eventData)
+        {
+            try
+            {
+                // Проверяем payload или другие индикаторы UDP протокола
+                // В реальной реализации здесь нужно анализировать структуру события
+                return eventData.PayloadNames.Any(name => 
+                    name.Contains("Protocol") || 
+                    name.Contains("UDP") || 
+                    name.ToLower().Contains("socket"));
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        private bool TryExtractUDPNetworkInfo(TraceEvent eventData, out IPAddress local, out int lport, out IPAddress remote, out int rport)
+        {
+            // UDP-специфичная логика извлечения network info
+            local = IPAddress.Loopback;
+            lport = 0;
+            remote = IPAddress.Loopback;
+            rport = 0;
+            
+            try
+            {
+                var eventName = eventData.EventName;
+                
+                // Для UDP Bind события - обычно есть только local endpoint
+                if (eventName.Contains("Bind"))
+                {
+                    // TODO: Извлечь local address и port из payload
+                    // local = IPAddress.Parse(eventData.PayloadValue("LocalAddress").ToString());
+                    // lport = (int)eventData.PayloadValue("LocalPort");
+                    
+                    // Для Bind событий remote endpoint может быть 0.0.0.0:0
+                    remote = IPAddress.Any;
+                    rport = 0;
+                    
+                    return false; // Возвращаем false пока парсинг не реализован полностью
+                }
+                
+                // Для UDP Send/Recv событий - есть полная информация
+                if (eventName.Contains("Send") || eventName.Contains("Recv"))
+                {
+                    // TODO: Извлечь полную endpoint информацию
+                    // local = IPAddress.Parse(eventData.PayloadValue("LocalAddress").ToString());
+                    // lport = (int)eventData.PayloadValue("LocalPort");
+                    // remote = IPAddress.Parse(eventData.PayloadValue("RemoteAddress").ToString());
+                    // rport = (int)eventData.PayloadValue("RemotePort");
+                    
+                    return false; // Возвращаем false пока парсинг не реализован полностью
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[ETWConnectionTracker] UDP network info extraction error: {ex.Message}");
             }
             
             return false;
@@ -389,6 +528,11 @@ namespace tickMeter.Classes
     private long _etwHits = 0;
     private long _pollingHits = 0;
     private long _etwMisses = 0;
+    
+    // UDP-специфичные счетчики для мониторинга эффективности
+    private long _udpEtwHits = 0;
+    private long _udpPollingHits = 0;
+    private long _udpEtwMisses = 0;
 
         public ConnectionTracker()
         {
@@ -497,6 +641,13 @@ namespace tickMeter.Classes
 
         public bool TryResolve(byte proto, IPAddress local, int lport, IPAddress remote, int rport, out Info info)
         {
+            // UDP-специфичная логика с гибридным ETW + fallback
+            if (proto == 17) // UDP
+            {
+                return TryResolveUDP(local, lport, remote, rport, out info);
+            }
+            
+            // TCP логика (существующая)
             // Сначала пробуем ETW трекер (если доступен)
             if (_useETW && _etwTracker != null)
             {
@@ -509,14 +660,14 @@ namespace tickMeter.Classes
                     // Логируем успешное ETW resolution
                     if (_etwHits % 10 == 1) // Логируем каждый 10-й hit для производительности
                     {
-                        DebugLogger.log($"[ConnectionTracker] ETW hit #{_etwHits}: {etwInfo.Exe}({etwInfo.Pid}) {local}:{lport}->{remote}:{rport}");
+                        DebugLogger.log($"[ConnectionTracker] TCP ETW hit #{_etwHits}: {etwInfo.Exe}({etwInfo.Pid}) {local}:{lport}->{remote}:{rport}");
                     }
                     return true;
                 }
                 Interlocked.Increment(ref _etwMisses);
             }
             
-            // Fallback на обычную логику поллинга
+            // Fallback на обычную логику поллинга для TCP
             var now = Environment.TickCount;
             if (TryGetFiveTuple(proto, local, lport, remote, rport, now, out info))
             {
@@ -524,40 +675,62 @@ namespace tickMeter.Classes
                 return true;
             }
 
-            if (proto == 17)
+            info = default;
+            LogLookup("MISS", proto, local, lport, remote, rport);
+            return false;
+        }
+        
+        public bool TryResolveUDP(IPAddress local, int lport, IPAddress remote, int rport, out Info info)
+        {
+            // UDP-специфичная гибридная resolution с ETW primary + fallback
+            
+            // 1. Сначала пробуем ETW для UDP (если доступен)
+            if (_useETW && _etwTracker != null)
             {
-                // Попробуем ETW для UDP соединений
-                if (_useETW && _etwTracker != null)
+                ETWConnectionTracker.Info etwInfo;
+                if (_etwTracker.TryResolve(17, local, lport, remote, rport, out etwInfo))
                 {
-                    ETWConnectionTracker.Info etwUdpInfo;
-                    if (_etwTracker.TryResolve(proto, local, lport, remote, rport, out etwUdpInfo))
+                    info = new Info((int)etwInfo.Pid, etwInfo.Exe);
+                    Interlocked.Increment(ref _udpEtwHits);
+                    
+                    // Логируем успешное UDP ETW resolution
+                    if (_udpEtwHits % 5 == 1) // Логируем каждый 5-й UDP hit для отладки
                     {
-                        info = new Info((int)etwUdpInfo.Pid, etwUdpInfo.Exe);
-                        Interlocked.Increment(ref _etwHits);
-                        DebugLogger.log($"[ConnectionTracker] ETW UDP hit: {etwUdpInfo.Exe}({etwUdpInfo.Pid}) {local}:{lport}->{remote}:{rport}");
-                        return true;
+                        DebugLogger.log($"[ConnectionTracker] UDP ETW hit #{_udpEtwHits}: {etwInfo.Exe}({etwInfo.Pid}) {local}:{lport}->{remote}:{rport}");
                     }
-                }
-                
-                if (TryResolveUdpOwner((proto, local, lport), out info))
-                {
-                    LogLookup("HIT udpOwner", proto, local, lport, remote, rport,
-                        extra: $"owner={(info.Exe ?? string.Empty)}/{info.Pid}");
-                    Interlocked.Increment(ref _pollingHits);
                     return true;
                 }
+                Interlocked.Increment(ref _udpEtwMisses);
+            }
+            
+            // 2. Fallback на UDP owner lookup (только local endpoint)
+            if (TryResolveUdpOwner((17, local, lport), out info))
+            {
+                LogLookup("HIT UDP udpOwner", 17, local, lport, remote, rport,
+                    extra: $"owner={(info.Exe ?? string.Empty)}/{info.Pid}");
+                Interlocked.Increment(ref _udpPollingHits);
+                return true;
+            }
 
-                if (TryResolveUdpOwner((proto, remote, rport), out info))
-                {
-                    LogLookup("HIT udpOwner swapped", proto, local, lport, remote, rport,
-                        extra: $"owner={(info.Exe ?? string.Empty)}/{info.Pid}");
-                    Interlocked.Increment(ref _pollingHits);
-                    return true;
-                }
+            // 3. Fallback на remote endpoint (swapped) для UDP
+            if (TryResolveUdpOwner((17, remote, rport), out info))
+            {
+                LogLookup("HIT UDP udpOwner swapped", 17, local, lport, remote, rport,
+                    extra: $"owner={(info.Exe ?? string.Empty)}/{info.Pid}");
+                Interlocked.Increment(ref _udpPollingHits);
+                return true;
+            }
+            
+            // 4. Fallback на общую five-tuple логику для UDP
+            var now = Environment.TickCount;
+            if (TryGetFiveTuple(17, local, lport, remote, rport, now, out info))
+            {
+                Interlocked.Increment(ref _udpPollingHits);
+                return true;
             }
 
             info = default;
-            LogLookup("MISS", proto, local, lport, remote, rport);
+            LogLookup("MISS UDP", 17, local, lport, remote, rport);
             return false;
         }
         
@@ -591,14 +764,19 @@ namespace tickMeter.Classes
             return null;
         }
         
-        // Методы для мониторинга производительности ETW vs Polling (временно отключено)
-        public bool IsETWEnabled => false; // _useETW && _etwTracker != null;
+        // Методы для мониторинга производительности ETW vs Polling (обновлено для UDP)
+        public bool IsETWEnabled => _useETW && _etwTracker != null;
         
-        public (long etwHits, long pollingHits, long etwMisses, long etwEvents, long etwConnections) GetPerformanceStats()
+        public (long tcpEtwHits, long tcpPollingHits, long tcpEtwMisses, long udpEtwHits, long udpPollingHits, long udpEtwMisses, long etwEvents, long etwConnections) GetPerformanceStats()
         {
-            // var etwEvents = _etwTracker?.GetETWEventsProcessed() ?? 0;
-            // var etwConnections = _etwTracker?.GetConnectionsTracked() ?? 0;
-            return (_etwHits, _pollingHits, _etwMisses, 0, 0);
+            var etwEvents = _etwTracker?.GetEventsProcessed() ?? 0;
+            var etwConnections = _etwTracker?.GetConnectionsTracked() ?? 0;
+            return (_etwHits, _pollingHits, _etwMisses, _udpEtwHits, _udpPollingHits, _udpEtwMisses, etwEvents, etwConnections);
+        }
+        
+        public (long udpEtwHits, long udpPollingHits, long udpEtwMisses) GetUDPPerformanceStats()
+        {
+            return (_udpEtwHits, _udpPollingHits, _udpEtwMisses);
         }
         
         public void EnableETW() => _useETW = true;
@@ -1317,10 +1495,12 @@ namespace tickMeter.Classes
         {
             try
             {
-                var etwEfficiency = _etwHits + _etwMisses > 0 ? (_etwHits * 100.0) / (_etwHits + _etwMisses) : 0;
-                var log = $"[ETW Stats] Hits: {_etwHits}, Misses: {_etwMisses}, Polling: {_pollingHits}, " +
-                         $"ETW Active: {(_etwTracker != null ? "YES" : "NO")}, " +
-                         $"ETW Efficiency: {etwEfficiency:F1}%";
+                var tcpEfficiency = _etwHits + _etwMisses > 0 ? (_etwHits * 100.0) / (_etwHits + _etwMisses) : 0;
+                var udpEfficiency = _udpEtwHits + _udpEtwMisses > 0 ? (_udpEtwHits * 100.0) / (_udpEtwHits + _udpEtwMisses) : 0;
+                
+                var log = $"[ETW Stats] TCP: Hits={_etwHits}, Misses={_etwMisses}, Polling={_pollingHits}, Efficiency={tcpEfficiency:F1}% | " +
+                         $"UDP: Hits={_udpEtwHits}, Misses={_udpEtwMisses}, Polling={_udpPollingHits}, Efficiency={udpEfficiency:F1}% | " +
+                         $"ETW Active: {(_etwTracker != null ? "YES" : "NO")}";
                 DebugLogger.log(log);
                 Console.WriteLine(log);
             }
