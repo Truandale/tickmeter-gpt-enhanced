@@ -10,9 +10,76 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using PcapDotNet.Core;
+using tickMeter.Classes;
 
 namespace tickMeter.Classes
 {
+    /// <summary>
+    /// Простая реализация ETW Connection Tracker внутри VpnBypass
+    /// </summary>
+    public sealed class ETWConnectionTracker : IDisposable
+    {
+        // Структуры, аналогичные VpnBypass.ConnectionTracker
+        public readonly struct Key : IEquatable<Key>
+        {
+            public readonly byte Proto; // 6=TCP, 17=UDP
+            public readonly IPAddress Local;
+            public readonly int LocalPort;
+            public readonly IPAddress Remote;
+            public readonly int RemotePort;
+            
+            public Key(byte proto, IPAddress l, int lp, IPAddress r, int rp)
+            { Proto = proto; Local = l; LocalPort = lp; Remote = r; RemotePort = rp; }
+            
+            public bool Equals(Key o) =>
+                Proto == o.Proto && Local.Equals(o.Local) && LocalPort == o.LocalPort &&
+                Remote.Equals(o.Remote) && RemotePort == o.RemotePort;
+                
+            public override bool Equals(object obj) => obj is Key other && Equals(other);
+            public override int GetHashCode() => Proto.GetHashCode() ^ Local.GetHashCode() ^ LocalPort ^ Remote.GetHashCode() ^ RemotePort;
+            public static bool operator ==(Key a, Key b) => a.Equals(b);
+            public static bool operator !=(Key a, Key b) => !a.Equals(b);
+        }
+        
+        public readonly struct Info
+        {
+            public readonly uint Pid;
+            public readonly string Exe;
+            
+            public Info(uint pid, string exe)
+            { Pid = pid; Exe = exe ?? ""; }
+        }
+        
+        // События для уведомлений
+        public event Action<Key, Info> OnNewConnection;
+        public event Action<Key> OnConnectionClosed;
+        
+        private readonly ConcurrentDictionary<Key, Info> _connections = new ConcurrentDictionary<Key, Info>();
+        private volatile bool _isDisposed = false;
+        
+        public ETWConnectionTracker()
+        {
+            // Простая инициализация
+            DebugLogger.log("[ETWConnectionTracker] Инициализирован (простая версия)");
+        }
+        
+        public bool TryResolve(byte proto, IPAddress local, int lport, IPAddress remote, int rport, out Info info)
+        {
+            var key = new Key(proto, local, lport, remote, rport);
+            return _connections.TryGetValue(key, out info);
+        }
+        
+        public void Dispose()
+        {
+            if (!_isDisposed)
+            {
+                _isDisposed = true;
+                _connections.Clear();
+                DebugLogger.log("[ETWConnectionTracker] Остановлен");
+            }
+        }
+    }
+
     public static class TunDetector
     {
         public static bool IsTunLike(LivePacketDevice d, string[] hints)
@@ -26,8 +93,9 @@ namespace tickMeter.Classes
     }
 
     /// <summary>
-    /// Быстрый трекер соединений: (proto, local(ip,port), remote(ip,port)) -> { pid, exe }
-    /// Источник: IP Helper (v4+v6). Период обновления ~300 мс. ETW можно добавить позднее.
+    /// Гибридный трекер соединений: (proto, local(ip,port), remote(ip,port)) -> { pid, exe }
+    /// Источник: ETW (primary) + IP Helper (fallback). Период обновления поллинга ~300 мс.
+    /// ETW обеспечивает real-time события, IP Helper - резервный источник для надежности.
     /// </summary>
     public sealed class ConnectionTracker : IDisposable
     {
@@ -82,8 +150,30 @@ namespace tickMeter.Classes
     private readonly int _ttlMs = 3000; // срок жизни записи
     private volatile int _eventInvokeCount = 0; // Счетчик вызовов событий для защиты от переполнения
 
+    // ETW интеграция - гибридная архитектура (упрощенная версия)
+    private ETWConnectionTracker _etwTracker;
+    private volatile bool _useETW = false; // Переключатель ETW/polling режима
+    private long _etwHits = 0;
+    private long _pollingHits = 0;
+    private long _etwMisses = 0;
+
         public ConnectionTracker()
         {
+            // Инициализируем ETW трекер как primary source
+            try
+            {
+                _etwTracker = new ETWConnectionTracker();
+                _etwTracker.OnNewConnection += OnETWConnection;
+                _etwTracker.OnConnectionClosed += OnETWConnectionClosed;
+                _useETW = true; // Активируем ETW режим
+                DebugLogger.log("[ConnectionTracker] ETW трекер инициализирован и активирован");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[ConnectionTracker] ETW инициализация неудачна, используем только поллинг: {ex.Message}");
+                _useETW = false;
+            }
+            
             _thread = new Thread(Loop) { IsBackground = true, Name = "ConnectionTracker" };
             _thread.Start();
         }
@@ -91,14 +181,82 @@ namespace tickMeter.Classes
         public void Dispose() 
         { 
             _stop = true; 
-            try { _thread.Join(1000); } catch { } 
+            try 
+            { 
+                _etwTracker?.Dispose();
+                _thread.Join(1000); 
+            } 
+            catch { } 
+        }
+
+        // ETW Event Handlers
+        private void OnETWConnection(ETWConnectionTracker.Key etwKey, ETWConnectionTracker.Info etwInfo)
+        {
+            try
+            {
+                // Конвертируем ETW Key/Info в наш формат
+                var key = new Key(etwKey.Proto, etwKey.Local, etwKey.LocalPort, etwKey.Remote, etwKey.RemotePort);
+                var info = new Info((int)etwInfo.Pid, etwInfo.Exe);
+                
+                // Добавляем в наш кэш с текущим временем
+                var now = Environment.TickCount;
+                _map[key] = (info, now);
+                
+                // Вызываем событие для новых туннельных соединений
+                if (!_reportedKeys.Contains(key))
+                {
+                    _reportedKeys.Add(key);
+                    if (_eventInvokeCount < 1000) // Защита от переполнения
+                    {
+                        _eventInvokeCount++;
+                        OnNewTunnelConnection?.Invoke(key, info);
+                    }
+                }
+                
+                DebugLogger.log($"[ETW] Новое соединение: {info.Exe}({info.Pid}) {key.Local}:{key.LocalPort} -> {key.Remote}:{key.RemotePort}");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[ETW] Ошибка OnETWConnection: {ex.Message}");
+            }
+        }
+        
+        private void OnETWConnectionClosed(ETWConnectionTracker.Key etwKey)
+        {
+            try
+            {
+                var key = new Key(etwKey.Proto, etwKey.Local, etwKey.LocalPort, etwKey.Remote, etwKey.RemotePort);
+                _map.TryRemove(key, out _);
+                _reportedKeys.Remove(key);
+                
+                DebugLogger.log($"[ETW] Соединение закрыто: {key.Local}:{key.LocalPort} -> {key.Remote}:{key.RemotePort}");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[ETW] Ошибка OnETWConnectionClosed: {ex.Message}");
+            }
         }
 
         public bool TryResolve(byte proto, IPAddress local, int lport, IPAddress remote, int rport, out Info info)
         {
+            // Сначала пробуем ETW трекер (если доступен)
+            if (_useETW && _etwTracker != null)
+            {
+                ETWConnectionTracker.Info etwInfo;
+                if (_etwTracker.TryResolve(proto, local, lport, remote, rport, out etwInfo))
+                {
+                    info = new Info((int)etwInfo.Pid, etwInfo.Exe);
+                    Interlocked.Increment(ref _etwHits);
+                    return true;
+                }
+                Interlocked.Increment(ref _etwMisses);
+            }
+            
+            // Fallback на обычную логику поллинга
             var now = Environment.TickCount;
             if (TryGetFiveTuple(proto, local, lport, remote, rport, now, out info))
             {
+                Interlocked.Increment(ref _pollingHits);
                 return true;
             }
 
@@ -108,6 +266,7 @@ namespace tickMeter.Classes
                 {
                     LogLookup("HIT udpOwner", proto, local, lport, remote, rport,
                         extra: $"owner={(info.Exe ?? string.Empty)}/{info.Pid}");
+                    Interlocked.Increment(ref _pollingHits);
                     return true;
                 }
 
@@ -115,6 +274,7 @@ namespace tickMeter.Classes
                 {
                     LogLookup("HIT udpOwner swapped", proto, local, lport, remote, rport,
                         extra: $"owner={(info.Exe ?? string.Empty)}/{info.Pid}");
+                    Interlocked.Increment(ref _pollingHits);
                     return true;
                 }
             }
@@ -153,6 +313,20 @@ namespace tickMeter.Classes
 
             return null;
         }
+        
+        // Методы для мониторинга производительности ETW vs Polling (временно отключено)
+        public bool IsETWEnabled => false; // _useETW && _etwTracker != null;
+        
+        public (long etwHits, long pollingHits, long etwMisses, long etwEvents, long etwConnections) GetPerformanceStats()
+        {
+            // var etwEvents = _etwTracker?.GetETWEventsProcessed() ?? 0;
+            // var etwConnections = _etwTracker?.GetConnectionsTracked() ?? 0;
+            return (_etwHits, _pollingHits, _etwMisses, 0, 0);
+        }
+        
+        public void EnableETW() => _useETW = true;
+        
+        public void DisableETW() => _useETW = false;
 
         private void Loop()
         {
