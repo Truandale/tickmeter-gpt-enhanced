@@ -379,10 +379,11 @@ namespace tickMeter.Classes
                 var tickrateZone = zoner.FromTickrate(snap.TickrateAvgHz);
                 string tickrateColor = Classes.ZoneColors.ToRtssLegacy(tickrateZone);
                 
-                float tickrateValue = App.meterState.OutputTickRate;
+                // ИСПРАВЛЕНИЕ: используем то же сглаженное значение что и в FormatTickrate()
+                int tickrateValue = Classes.SmoothingManager.SmoothTickrateValueOverlay(App.meterState.OutputTickRate);
 
                 // Добавляем индикатор спайка рядом со значением (как у пинга)
-                string tickrateValueDisplay = tickrateValue > 0 ? tickrateValue.ToString("0") : "n/a";
+                string tickrateValueDisplay = tickrateValue > 0 ? tickrateValue.ToString() : "n/a";
                 bool showTickrateSpikes = App.settingsManager?.GetOption("show_tickrate_spikes", "True", "ADVANCED") == "True";
                 if (showTickrateSpikes && App.meterState.HasTickRateSpike)
                 {
