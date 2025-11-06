@@ -23,8 +23,7 @@ namespace tickMeter.Classes
         private readonly Form _form;
         private readonly System.Windows.Forms.Timer _checkTimer;
         private const int CHECK_INTERVAL_MS = 100;
-        private const double TRANSPARENT_OPACITY = 0.15;
-        private const double OPAQUE_OPACITY = 0.95;
+
         private bool _isDisposed = false;
         private bool _isHovering = false;
 
@@ -34,17 +33,19 @@ namespace tickMeter.Classes
                 throw new ArgumentNullException(nameof(form));
 
             _form = form;
-            
+
             // Initialize timer
             _checkTimer = new System.Windows.Forms.Timer();
             _checkTimer.Interval = CHECK_INTERVAL_MS;
             _checkTimer.Tick += CheckTimer_Tick;
-            
+
             // Set initial transparency
             SetTransparentState();
-            
+
             // Start checking
             _checkTimer.Start();
+            
+            DebugLogger.log("SmartTransparencyManager: Initialized");
         }
 
         private void CheckTimer_Tick(object sender, EventArgs e)
@@ -62,15 +63,24 @@ namespace tickMeter.Classes
                 Rectangle formBounds = _form.Bounds;
                 bool isCurrentlyHovering = formBounds.Contains(cursorPos.X, cursorPos.Y);
 
+                // DETAILED LOGGING for debugging
+                DebugLogger.log($"[HOVER-DEBUG] Cursor: ({cursorPos.X}, {cursorPos.Y}) | Form bounds: X={formBounds.X} Y={formBounds.Y} W={formBounds.Width} H={formBounds.Height} | IsOver: {isCurrentlyHovering} | WasHovering: {_isHovering}");
+
                 // Update state if changed
                 if (isCurrentlyHovering != _isHovering)
                 {
                     _isHovering = isCurrentlyHovering;
-                    
+
                     if (_isHovering)
+                    {
+                        DebugLogger.log("[HOVER-CHANGE] Mouse ENTERED form area -> calling SetOpaqueState()");
                         SetOpaqueState();
+                    }
                     else
+                    {
+                        DebugLogger.log("[HOVER-CHANGE] Mouse LEFT form area -> calling SetTransparentState()");
                         SetTransparentState();
+                    }
                 }
             }
             catch (Exception ex)
@@ -83,15 +93,20 @@ namespace tickMeter.Classes
         {
             try
             {
-                if (_form != null && !_form.IsDisposed && _form.Opacity != TRANSPARENT_OPACITY)
+                if (_form != null && !_form.IsDisposed)
                 {
-                    _form.Opacity = TRANSPARENT_OPACITY;
-                    DebugLogger.log($"SmartTransparencyManager: Set transparent state (opacity={TRANSPARENT_OPACITY})");
+                    // Set transparent minimal mode directly through Form properties
+                    // This mimics ApplyInactiveWindowPresentation() behavior
+                    _form.BackColor = System.Drawing.SystemColors.WindowFrame;
+                    _form.TransparencyKey = System.Drawing.SystemColors.WindowFrame;
+                    _form.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+                    
+                    DebugLogger.log("SmartTransparencyManager: Applied inactive window presentation (minimal mode)");
                 }
             }
             catch (Exception ex)
             {
-                DebugLogger.log($"SmartTransparencyManager.SetTransparentState: {ex.Message}");
+                DebugLogger.log($"SmartTransparencyManager.SetTransparentState ERROR: {ex.Message}\n{ex.StackTrace}");
             }
         }
 
@@ -99,15 +114,20 @@ namespace tickMeter.Classes
         {
             try
             {
-                if (_form != null && !_form.IsDisposed && _form.Opacity != OPAQUE_OPACITY)
+                if (_form != null && !_form.IsDisposed)
                 {
-                    _form.Opacity = OPAQUE_OPACITY;
-                    DebugLogger.log($"SmartTransparencyManager: Set opaque state (opacity={OPAQUE_OPACITY})");
+                    // Set opaque full mode directly through Form properties
+                    // This mimics ApplyActiveWindowPresentation() behavior
+                    _form.BackColor = System.Drawing.SystemColors.Control;
+                    _form.TransparencyKey = System.Drawing.Color.PaleVioletRed;
+                    _form.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
+                    
+                    DebugLogger.log("SmartTransparencyManager: Applied active window presentation (full mode with buttons)");
                 }
             }
             catch (Exception ex)
             {
-                DebugLogger.log($"SmartTransparencyManager.SetOpaqueState: {ex.Message}");
+                DebugLogger.log($"SmartTransparencyManager.SetOpaqueState ERROR: {ex.Message}\n{ex.StackTrace}");
             }
         }
 
@@ -127,11 +147,8 @@ namespace tickMeter.Classes
                     _checkTimer.Dispose();
                 }
 
-                // Restore full opacity
-                if (_form != null && !_form.IsDisposed)
-                {
-                    _form.Opacity = OPAQUE_OPACITY;
-                }
+                // Restore opaque state
+                SetOpaqueState();
             }
             catch (Exception ex)
             {
