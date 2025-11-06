@@ -67,7 +67,26 @@ namespace tickMeter.Classes
         public static void log(String message)
         {
             // Проверяем настройку включения логов
-            if (!IsLoggingEnabled())
+            bool isEnabled = IsLoggingEnabled();
+            
+            // ДИАГНОСТИКА: всегда пишем первое сообщение для проверки
+            if (message.Contains("[LOGGER-TEST]"))
+            {
+                try
+                {
+                    lock (_logLock)
+                    {
+                        using (StreamWriter sw = new StreamWriter(LogFilePath, true))
+                        {
+                            sw.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " " + message + $" (IsLoggingEnabled={isEnabled})");
+                        }
+                    }
+                }
+                catch { }
+                return;
+            }
+            
+            if (!isEnabled)
                 return;
 
             try

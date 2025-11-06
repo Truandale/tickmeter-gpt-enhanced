@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\packages\Microsoft.Diagnostics.Tracing.TraceEvent.2.0.77\build\Microsoft.Diagnostics.Tracing.TraceEvent.props" Condition="Exists('..\packages\Microsoft.Diagnostics.Tracing.TraceEvent.2.0.77\build\Microsoft.Diagnostics.Tracing.TraceEvent.props')" />
   <Import Project="..\packages\Microsoft.Diagnostics.Tracing.TraceEvent.SupportFiles.1.0.23\build\Microsoft.Diagnostics.Tracing.TraceEvent.SupportFiles.props" Condition="Exists('..\packages\Microsoft.Diagnostics.Tracing.TraceEvent.SupportFiles.1.0.23\build\Microsoft.Diagnostics.Tracing.TraceEvent.SupportFiles.props')" />
@@ -246,6 +246,7 @@
     <Compile Include="Classes\PubgStatsManager.cs" />
     <Compile Include="Classes\SmoothingManager.cs" />
     <Compile Include="Classes\RealProcessTrafficMonitor.cs" />
+    <Compile Include="Classes\SmartTransparencyManager.cs" />
     <Compile Include="Classes\SpikeDetection\ISpikeDetector.cs" />
     <Compile Include="Classes\SpikeDetection\SpikeDetector.cs" />
     <Compile Include="Classes\SpikeDetection\SpikeDetectionManager.cs" />
