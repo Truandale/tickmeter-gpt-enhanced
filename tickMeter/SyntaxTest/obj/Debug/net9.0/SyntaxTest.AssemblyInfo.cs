@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SyntaxTest")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b04cf66ad9f93de94ce5b3906cebac8da6487cce")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1ce7b4e5ceb15b20788d90fc5a58772f88cae722")]
 [assembly: System.Reflection.AssemblyProductAttribute("SyntaxTest")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SyntaxTest")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

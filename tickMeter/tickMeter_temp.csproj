@@ -6,7 +6,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{C4830814-4B69-4040-BB47-46CED11A567B}</ProjectGuid>
+    <ProjectGuid>{E73E7A05-DA72-C371-7C88-3BAFB8DA7C1A}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>tickMeter</RootNamespace>

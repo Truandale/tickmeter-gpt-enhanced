@@ -6,7 +6,7 @@
    <Modules>
     <Module Name="rtss.dll">
      <Messages>
-      <Message TypeName="AssembliesShouldHaveValidStrongNames" Category="Microsoft.Design" CheckId="CA2210" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+      <Message TypeName="AssembliesShouldHaveValidStrongNames" Category="Microsoft.Design" CheckId="CA2210" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
        <Issue Name="NoStrongName" Certainty="95" Level="CriticalError">Подпишите 'RTSS.dll' с использованием ключа строгого имени.</Issue>
       </Message>
      </Messages>
@@ -15,7 +15,7 @@
        <Types>
         <Type Name="RTSSHooksTypes" Kind="Class" Accessibility="Assembly" ExternallyVisible="False">
          <Messages>
-          <Message TypeName="AvoidUninstantiatedInternalClasses" Category="Microsoft.Performance" CheckId="CA1812" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+          <Message TypeName="AvoidUninstantiatedInternalClasses" Category="Microsoft.Performance" CheckId="CA1812" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
            <Issue Certainty="75" Level="Warning">'RTSSHooksTypes' является внутренним классом, экземпляр которого никогда явно не создается. Если это так, удалите код из сборки. Если этот класс должен содержать только статические методы, попробуйте добавить частный конструктор, чтобы компилятор не создавал заданный по умолчанию конструктор.</Issue>
           </Message>
          </Messages>
@@ -28,343 +28,343 @@
          <Members>
           <Member Name="#AudioCaptureFlags" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::AudioCaptureFlags' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#AudioCaptureFlags2" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::AudioCaptureFlags2' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#AudioCapturePTTEventPush" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::AudioCapturePTTEventPush' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#AudioCapturePTTEventPush2" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::AudioCapturePTTEventPush2' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#AudioCapturePTTEventRelease" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::AudioCapturePTTEventRelease' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#AudioCapturePTTEventRelease2" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::AudioCapturePTTEventRelease2' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#dwPrerecordSizeLimit" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::dwPrerecordSizeLimit' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#dwPrerecordTimeLimit" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::dwPrerecordTimeLimit' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#dwStatFramerate0Dot1PercentLow" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::dwStatFramerate0Dot1PercentLow' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#dwStatFramerate1Dot0PercentLow" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::dwStatFramerate1Dot0PercentLow' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#dwStatFrameTimeLowBuf" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::dwStatFrameTimeLowBuf' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#Flags" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::Flags' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#InstantaneousFrames" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::InstantaneousFrames' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#InstantaneousFrameTime" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::InstantaneousFrameTime' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#InstantaneousTimeEnd" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::InstantaneousTimeEnd' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#InstantaneousTimeStart" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::InstantaneousTimeStart' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#Name" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::Name' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#OSDBackgroundColor" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::OSDBackgroundColor' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#OSDColor" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::OSDColor' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#OSDCoordinateX" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::OSDCoordinateX' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#OSDCoordinateY" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::OSDCoordinateY' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#OSDFrameId" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::OSDFrameId' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#OSDZoom" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::OSDZoom' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#ProcessId" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::ProcessId' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#qwStatTotalTime" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::qwStatTotalTime' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#ScreenshotFlags" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::ScreenshotFlags' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#ScreenshotPath" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::ScreenshotPath' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#ScreenshotQuality" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::ScreenshotQuality' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#ScreenshotThreads" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::ScreenshotThreads' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#StatCount" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::StatCount' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#StatFlags" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::StatFlags' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#StatFramerateAvg" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::StatFramerateAvg' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#StatFramerateMax" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::StatFramerateMax' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#StatFramerateMin" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::StatFramerateMin' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#StatFrames" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::StatFrames' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#StatFrameTimeAvg" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::StatFrameTimeAvg' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#StatFrameTimeCount" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::StatFrameTimeCount' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#StatFrameTimeMax" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::StatFrameTimeMax' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#StatFrameTimeMin" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::StatFrameTimeMin' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#StatTimeEnd" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::StatTimeEnd' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#StatTimeStart" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::StatTimeStart' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#VideoCaptureFlags" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::VideoCaptureFlags' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#VideoCaptureFlagsEx" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::VideoCaptureFlagsEx' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#VideoCapturePath" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::VideoCapturePath' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#VideoCaptureThreads" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::VideoCaptureThreads' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#VideoFormat" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::VideoFormat' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#VideoFramerate" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::VideoFramerate' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#VideoFramesize" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::VideoFramesize' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#VideoQuality" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'AppEntry::VideoQuality' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
@@ -373,7 +373,7 @@
         </Type>
         <Type Name="EMBEDDED_OBJECT_GRAPH" Kind="Enum" Accessibility="Public" ExternallyVisible="True">
          <Messages>
-          <Message TypeName="EnumStorageShouldBeInt32" Category="Microsoft.Design" CheckId="CA1028" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+          <Message TypeName="EnumStorageShouldBeInt32" Category="Microsoft.Design" CheckId="CA1028" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
            <Issue Name="NotIntegral" Certainty="60" Level="Warning">По возможности сделайте базовым типом для 'EMBEDDED_OBJECT_GRAPH' Int32 вместо 'unsigned int'. В противном случае рассмотрите возможность использования типов Byte, Int16 или Int64.</Issue>
           </Message>
          </Messages>
@@ -382,45 +382,45 @@
          <Members>
           <Member Name="#!OSD()" Kind="Method" Static="False" Accessibility="Private" ExternallyVisible="False">
            <Messages>
-            <Message TypeName="RemoveCallsToGCKeepAlive" Category="Microsoft.Reliability" CheckId="CA2004" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+            <Message TypeName="RemoveCallsToGCKeepAlive" Category="Microsoft.Reliability" CheckId="CA2004" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
              <Issue Certainty="75" Level="CriticalWarning" Path="C:\Users\Predator\Documents\tickmeter-master\tickmeter-master — gpt-fixed tcp ping — работае мониторинг полностью но без vpn\RTSS" File="OSD.cpp" Line="51">'OSD::!OSD(void)' содержит один или несколько вызовов GC.KeepAlive(объект), которые должны быть удалены (после преобразования к SafeHandle для инкапсуляции неуправляемых ресурсов).</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#closeSharedMemory(System.Void*,RTSS_SHARED_MEMORY*)" Kind="Method" Static="True" Accessibility="Private" ExternallyVisible="False">
            <Messages>
-            <Message Id="&lt;Module&gt;.CloseHandle(System.Void*)" TypeName="DoNotIgnoreMethodResults" Category="Microsoft.Usage" CheckId="CA1806" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+            <Message Id="&lt;Module&gt;.CloseHandle(System.Void*)" TypeName="DoNotIgnoreMethodResults" Category="Microsoft.Usage" CheckId="CA1806" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
              <Issue Name="HResultOrErrorCode" Certainty="95" Level="Warning" Path="C:\Users\Predator\Documents\tickmeter-master\tickmeter-master — gpt-fixed tcp ping — работае мониторинг полностью но без vpn\RTSS" File="OSD.cpp" Line="398">'OSD::closeSharedMemory(void*, RTSS_SHARED_MEMORY*)' вызывает 'Global::CloseHandle(void*)', но не использует HRESULT или код ошибки, возвращаемые методом. Это может привести к непредвиденному поведению при возникновении ошибок или в ситуациях нехватки ресурсов. Используйте результат в условном операторе, присвойте его переменной или передайте его в качестве аргумента другому методу.</Issue>
             </Message>
-            <Message Id="&lt;Module&gt;.UnmapViewOfFile(System.optional(IsConst) Void*)" TypeName="DoNotIgnoreMethodResults" Category="Microsoft.Usage" CheckId="CA1806" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+            <Message Id="&lt;Module&gt;.UnmapViewOfFile(System.optional(IsConst) Void*)" TypeName="DoNotIgnoreMethodResults" Category="Microsoft.Usage" CheckId="CA1806" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
              <Issue Name="HResultOrErrorCode" Certainty="95" Level="Warning" Path="C:\Users\Predator\Documents\tickmeter-master\tickmeter-master — gpt-fixed tcp ping — работае мониторинг полностью но без vpn\RTSS" File="OSD.cpp" Line="395">'OSD::closeSharedMemory(void*, RTSS_SHARED_MEMORY*)' вызывает 'Global::UnmapViewOfFile(const void*)', но не использует HRESULT или код ошибки, возвращаемые методом. Это может привести к непредвиденному поведению при возникновении ошибок или в ситуациях нехватки ресурсов. Используйте результат в условном операторе, присвойте его переменной или передайте его в качестве аргумента другому методу.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#Dispose()" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="RemoveCallsToGCKeepAlive" Category="Microsoft.Reliability" CheckId="CA2004" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+            <Message TypeName="RemoveCallsToGCKeepAlive" Category="Microsoft.Reliability" CheckId="CA2004" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
              <Issue Certainty="75" Level="CriticalWarning">'OSD::Dispose(void)' содержит один или несколько вызовов GC.KeepAlive(объект), которые должны быть удалены (после преобразования к SafeHandle для инкапсуляции неуправляемых ресурсов).</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#EmbedGraph({modopt(System.Runtime.CompilerServices.IsLong)}System.UInt32,System.Single*,{modopt(System.Runtime.CompilerServices.IsLong)}System.UInt32,{modopt(System.Runtime.CompilerServices.IsLong)}System.UInt32,{modopt(System.Runtime.CompilerServices.IsLong)}System.Int32,{modopt(System.Runtime.CompilerServices.IsLong)}System.Int32,{modopt(System.Runtime.CompilerServices.IsLong)}System.Int32,System.Single,System.Single,{modopt(System.Runtime.CompilerServices.IsLong)}System.UInt32)" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message Id="&lt;Module&gt;.CloseHandle(System.Void*)" TypeName="DoNotIgnoreMethodResults" Category="Microsoft.Usage" CheckId="CA1806" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+            <Message Id="&lt;Module&gt;.CloseHandle(System.Void*)" TypeName="DoNotIgnoreMethodResults" Category="Microsoft.Usage" CheckId="CA1806" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
              <Issue Name="HResultOrErrorCode" Certainty="95" Level="Warning" Path="C:\Users\Predator\Documents\tickmeter-master\tickmeter-master — gpt-fixed tcp ping — работае мониторинг полностью но без vpn\RTSS" File="OSD.cpp" Line="129">'OSD::EmbedGraph(unsigned int, float*, unsigned int, unsigned int, int, int, int, float, float, unsigned int)' вызывает 'Global::CloseHandle(void*)', но не использует HRESULT или код ошибки, возвращаемые методом. Это может привести к непредвиденному поведению при возникновении ошибок или в ситуациях нехватки ресурсов. Используйте результат в условном операторе, присвойте его переменной или передайте его в качестве аргумента другому методу.</Issue>
             </Message>
-            <Message Id="&lt;Module&gt;.UnmapViewOfFile(System.optional(IsConst) Void*)" TypeName="DoNotIgnoreMethodResults" Category="Microsoft.Usage" CheckId="CA1806" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+            <Message Id="&lt;Module&gt;.UnmapViewOfFile(System.optional(IsConst) Void*)" TypeName="DoNotIgnoreMethodResults" Category="Microsoft.Usage" CheckId="CA1806" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
              <Issue Name="HResultOrErrorCode" Certainty="95" Level="Warning" Path="C:\Users\Predator\Documents\tickmeter-master\tickmeter-master — gpt-fixed tcp ping — работае мониторинг полностью но без vpn\RTSS" File="OSD.cpp" Line="127">'OSD::EmbedGraph(unsigned int, float*, unsigned int, unsigned int, int, int, int, float, float, unsigned int)' вызывает 'Global::UnmapViewOfFile(const void*)', но не использует HRESULT или код ошибки, возвращаемые методом. Это может привести к непредвиденному поведению при возникновении ошибок или в ситуациях нехватки ресурсов. Используйте результат в условном операторе, присвойте его переменной или передайте его в качестве аргумента другому методу.</Issue>
              <Issue Name="HResultOrErrorCode" Certainty="95" Level="Warning" Path="C:\Users\Predator\Documents\tickmeter-master\tickmeter-master — gpt-fixed tcp ping — работае мониторинг полностью но без vpn\RTSS" File="OSD.cpp" Line="172">'OSD::EmbedGraph(unsigned int, float*, unsigned int, unsigned int, int, int, int, float, float, unsigned int)' вызывает 'Global::UnmapViewOfFile(const void*)', но не использует HRESULT или код ошибки, возвращаемые методом. Это может привести к непредвиденному поведению при возникновении ошибок или в ситуациях нехватки ресурсов. Используйте результат в условном операторе, присвойте его переменной или передайте его в качестве аргумента другому методу.</Issue>
             </Message>
-            <Message TypeName="RemoveCallsToGCKeepAlive" Category="Microsoft.Reliability" CheckId="CA2004" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+            <Message TypeName="RemoveCallsToGCKeepAlive" Category="Microsoft.Reliability" CheckId="CA2004" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
              <Issue Certainty="75" Level="CriticalWarning" Path="C:\Users\Predator\Documents\tickmeter-master\tickmeter-master — gpt-fixed tcp ping — работае мониторинг полностью но без vpn\RTSS" File="OSD.cpp" Line="95">'OSD::EmbedGraph(unsigned int, float*, unsigned int, unsigned int, int, int, int, float, float, unsigned int)' содержит один или несколько вызовов GC.KeepAlive(объект), которые должны быть удалены (после преобразования к SafeHandle для инкапсуляции неуправляемых ресурсов).</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#Update(System.String)" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="RemoveCallsToGCKeepAlive" Category="Microsoft.Reliability" CheckId="CA2004" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+            <Message TypeName="RemoveCallsToGCKeepAlive" Category="Microsoft.Reliability" CheckId="CA2004" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
              <Issue Certainty="75" Level="CriticalWarning" Path="C:\Users\Predator\Documents\tickmeter-master\tickmeter-master — gpt-fixed tcp ping — работае мониторинг полностью но без vpn\RTSS" File="OSD.cpp" Line="187">'OSD::Update(String^)' содержит один или несколько вызовов GC.KeepAlive(объект), которые должны быть удалены (после преобразования к SafeHandle для инкапсуляции неуправляемых ресурсов).</Issue>
             </Message>
            </Messages>
@@ -431,14 +431,14 @@
          <Members>
           <Member Name="#Owner" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'OSDEntry::Owner' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
           </Member>
           <Member Name="#Text" Kind="Field" Static="False" Accessibility="Public" ExternallyVisible="True">
            <Messages>
-            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+            <Message TypeName="DoNotDeclareVisibleInstanceFields" Category="Microsoft.Design" CheckId="CA1051" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
              <Issue Certainty="90" Level="Error">Так как поле 'OSDEntry::Text' является видимым извне объявляющего его типа, необходимо изменить уровень доступа на частный и добавить свойство, имеющее тот же уровень доступа, что и поле, чтобы обеспечить доступ к нему.</Issue>
             </Message>
            </Messages>
@@ -451,14 +451,14 @@
        <Types>
         <Type Name="CppInlineNamespaceAttribute" Kind="Class" Accessibility="Assembly" ExternallyVisible="False">
          <Messages>
-          <Message TypeName="AvoidUnsealedAttributes" Category="Microsoft.Performance" CheckId="CA1813" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+          <Message TypeName="AvoidUnsealedAttributes" Category="Microsoft.Performance" CheckId="CA1813" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
            <Issue Certainty="75" Level="Warning">Запечатайте 'CppInlineNamespaceAttribute' , если возможно.</Issue>
           </Message>
          </Messages>
          <Members>
           <Member Name="#.ctor(System.String)" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="False">
            <Messages>
-            <Message Id="A_0" TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+            <Message Id="A_0" TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
              <Issue Certainty="95" Level="Warning" Path="D:\a\_work\1\s\src\vctools\crt\managed\xmd\predefined C++" File="CLI attribute types (compiler internal)" Line="15">Параметр 'A_0' в 'CppInlineNamespaceAttribute::CppInlineNamespaceAttribute(String^)' никогда не используется. Удалите этот параметр или используйте его в теле метода.</Issue>
             </Message>
            </Messages>
@@ -471,14 +471,14 @@
        <Types>
         <Type Name="CppInlineNamespaceAttribute" Kind="Class" Accessibility="Assembly" ExternallyVisible="False">
          <Messages>
-          <Message TypeName="AvoidUnsealedAttributes" Category="Microsoft.Performance" CheckId="CA1813" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+          <Message TypeName="AvoidUnsealedAttributes" Category="Microsoft.Performance" CheckId="CA1813" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
            <Issue Certainty="75" Level="Warning">Запечатайте 'CppInlineNamespaceAttribute' , если возможно.</Issue>
           </Message>
          </Messages>
          <Members>
           <Member Name="#.ctor(System.String)" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="False">
            <Messages>
-            <Message Id="A_0" TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+            <Message Id="A_0" TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
              <Issue Certainty="95" Level="Warning" Path="C:\Users\Predator\Documents\tickmeter-master\tickmeter-master — gpt-fixed tcp ping — работае мониторинг полностью но без vpn\RTSS\predefined C++" File="CLI attribute types (compiler internal)" Line="15">Параметр 'A_0' в 'CppInlineNamespaceAttribute::CppInlineNamespaceAttribute(String^)' никогда не используется. Удалите этот параметр или используйте его в теле метода.</Issue>
             </Message>
            </Messages>
@@ -491,14 +491,14 @@
        <Types>
         <Type Name="CppInlineNamespaceAttribute" Kind="Class" Accessibility="Assembly" ExternallyVisible="False">
          <Messages>
-          <Message TypeName="AvoidUnsealedAttributes" Category="Microsoft.Performance" CheckId="CA1813" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+          <Message TypeName="AvoidUnsealedAttributes" Category="Microsoft.Performance" CheckId="CA1813" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
            <Issue Certainty="75" Level="Warning">Запечатайте 'CppInlineNamespaceAttribute' , если возможно.</Issue>
           </Message>
          </Messages>
          <Members>
           <Member Name="#.ctor(System.String)" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="False">
            <Messages>
-            <Message Id="A_0" TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+            <Message Id="A_0" TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
              <Issue Certainty="95" Level="Warning" Path="D:\a\_work\1\s\src\vctools\crt\managed\xmd\predefined C++" File="CLI attribute types (compiler internal)" Line="15">Параметр 'A_0' в 'CppInlineNamespaceAttribute::CppInlineNamespaceAttribute(String^)' никогда не используется. Удалите этот параметр или используйте его в теле метода.</Issue>
             </Message>
            </Messages>
@@ -511,14 +511,14 @@
        <Types>
         <Type Name="CppInlineNamespaceAttribute" Kind="Class" Accessibility="Assembly" ExternallyVisible="False">
          <Messages>
-          <Message TypeName="AvoidUnsealedAttributes" Category="Microsoft.Performance" CheckId="CA1813" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+          <Message TypeName="AvoidUnsealedAttributes" Category="Microsoft.Performance" CheckId="CA1813" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
            <Issue Certainty="75" Level="Warning">Запечатайте 'CppInlineNamespaceAttribute' , если возможно.</Issue>
           </Message>
          </Messages>
          <Members>
           <Member Name="#.ctor(System.String)" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="False">
            <Messages>
-            <Message Id="A_0" TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+            <Message Id="A_0" TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
              <Issue Certainty="95" Level="Warning" Path="C:\Users\Predator\Documents\tickmeter-master\tickmeter-master — gpt-fixed tcp ping — работае мониторинг полностью но без vpn\RTSS\predefined C++" File="CLI attribute types (compiler internal)" Line="15">Параметр 'A_0' в 'CppInlineNamespaceAttribute::CppInlineNamespaceAttribute(String^)' никогда не используется. Удалите этот параметр или используйте его в теле метода.</Issue>
             </Message>
            </Messages>
@@ -531,14 +531,14 @@
        <Types>
         <Type Name="CppInlineNamespaceAttribute" Kind="Class" Accessibility="Assembly" ExternallyVisible="False">
          <Messages>
-          <Message TypeName="AvoidUnsealedAttributes" Category="Microsoft.Performance" CheckId="CA1813" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+          <Message TypeName="AvoidUnsealedAttributes" Category="Microsoft.Performance" CheckId="CA1813" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
            <Issue Certainty="75" Level="Warning">Запечатайте 'CppInlineNamespaceAttribute' , если возможно.</Issue>
           </Message>
          </Messages>
          <Members>
           <Member Name="#.ctor(System.String)" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="False">
            <Messages>
-            <Message Id="A_0" TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+            <Message Id="A_0" TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
              <Issue Certainty="95" Level="Warning" Path="D:\a\_work\1\s\src\vctools\crt\managed\xmd\predefined C++" File="CLI attribute types (compiler internal)" Line="15">Параметр 'A_0' в 'CppInlineNamespaceAttribute::CppInlineNamespaceAttribute(String^)' никогда не используется. Удалите этот параметр или используйте его в теле метода.</Issue>
             </Message>
            </Messages>
@@ -551,14 +551,14 @@
        <Types>
         <Type Name="CppInlineNamespaceAttribute" Kind="Class" Accessibility="Assembly" ExternallyVisible="False">
          <Messages>
-          <Message TypeName="AvoidUnsealedAttributes" Category="Microsoft.Performance" CheckId="CA1813" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="Breaking">
+          <Message TypeName="AvoidUnsealedAttributes" Category="Microsoft.Performance" CheckId="CA1813" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="Breaking">
            <Issue Certainty="75" Level="Warning">Запечатайте 'CppInlineNamespaceAttribute' , если возможно.</Issue>
           </Message>
          </Messages>
          <Members>
           <Member Name="#.ctor(System.String)" Kind="Method" Static="False" Accessibility="Public" ExternallyVisible="False">
            <Messages>
-            <Message Id="A_0" TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+            <Message Id="A_0" TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
              <Issue Certainty="95" Level="Warning" Path="D:\a\_work\1\s\src\vctools\crt\managed\xmd\predefined C++" File="CLI attribute types (compiler internal)" Line="15">Параметр 'A_0' в 'CppInlineNamespaceAttribute::CppInlineNamespaceAttribute(String^)' никогда не используется. Удалите этот параметр или используйте его в теле метода.</Issue>
             </Message>
            </Messages>
@@ -571,28 +571,28 @@
        <Types>
         <Type Name="IsChar16_t" Kind="Class" Accessibility="Assembly" ExternallyVisible="False">
          <Messages>
-          <Message TypeName="AvoidUninstantiatedInternalClasses" Category="Microsoft.Performance" CheckId="CA1812" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+          <Message TypeName="AvoidUninstantiatedInternalClasses" Category="Microsoft.Performance" CheckId="CA1812" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
            <Issue Certainty="75" Level="Warning">'IsChar16_t' является внутренним классом, экземпляр которого никогда явно не создается. Если это так, удалите код из сборки. Если этот класс должен содержать только статические методы, попробуйте добавить частный конструктор, чтобы компилятор не создавал заданный по умолчанию конструктор.</Issue>
           </Message>
          </Messages>
         </Type>
         <Type Name="IsChar32_t" Kind="Class" Accessibility="Assembly" ExternallyVisible="False">
          <Messages>
-          <Message TypeName="AvoidUninstantiatedInternalClasses" Category="Microsoft.Performance" CheckId="CA1812" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+          <Message TypeName="AvoidUninstantiatedInternalClasses" Category="Microsoft.Performance" CheckId="CA1812" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
            <Issue Certainty="75" Level="Warning">'IsChar32_t' является внутренним классом, экземпляр которого никогда явно не создается. Если это так, удалите код из сборки. Если этот класс должен содержать только статические методы, попробуйте добавить частный конструктор, чтобы компилятор не создавал заданный по умолчанию конструктор.</Issue>
           </Message>
          </Messages>
         </Type>
         <Type Name="IsChar8_t" Kind="Class" Accessibility="Assembly" ExternallyVisible="False">
          <Messages>
-          <Message TypeName="AvoidUninstantiatedInternalClasses" Category="Microsoft.Performance" CheckId="CA1812" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+          <Message TypeName="AvoidUninstantiatedInternalClasses" Category="Microsoft.Performance" CheckId="CA1812" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
            <Issue Certainty="75" Level="Warning">'IsChar8_t' является внутренним классом, экземпляр которого никогда явно не создается. Если это так, удалите код из сборки. Если этот класс должен содержать только статические методы, попробуйте добавить частный конструктор, чтобы компилятор не создавал заданный по умолчанию конструктор.</Issue>
           </Message>
          </Messages>
         </Type>
         <Type Name="ThisPointer" Kind="Class" Accessibility="Assembly" ExternallyVisible="False">
          <Messages>
-          <Message TypeName="AvoidUninstantiatedInternalClasses" Category="Microsoft.Performance" CheckId="CA1812" Status="Active" Created="2025-11-05 09:08:38Z" FixCategory="NonBreaking">
+          <Message TypeName="AvoidUninstantiatedInternalClasses" Category="Microsoft.Performance" CheckId="CA1812" Status="Active" Created="2025-11-06 15:35:11Z" FixCategory="NonBreaking">
            <Issue Certainty="75" Level="Warning">'ThisPointer' является внутренним классом, экземпляр которого никогда явно не создается. Если это так, удалите код из сборки. Если этот класс должен содержать только статические методы, попробуйте добавить частный конструктор, чтобы компилятор не создавал заданный по умолчанию конструктор.</Issue>
           </Message>
          </Messages>
