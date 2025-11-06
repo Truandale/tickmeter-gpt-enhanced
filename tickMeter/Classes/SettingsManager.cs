@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using IniParser;
 using IniParser.Model;
 using System.Globalization;
+using tickMeter.Classes;
 
 namespace tickMeter
 {
@@ -11,6 +12,42 @@ namespace tickMeter
     {
         FileIniDataParser parser;
         IniData data;
+
+        /// <summary>
+        /// Проверяет наличие settings.ini и создает его с оптимальными настройками если файл отсутствует
+        /// </summary>
+        public static void EnsureSettingsFileExists()
+        {
+            string settingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.ini");
+            
+            if (File.Exists(settingsPath))
+            {
+                DebugLogger.log("[SettingsManager] settings.ini найден, продолжаем запуск");
+                return;
+            }
+            
+            DebugLogger.log("[SettingsManager] settings.ini не найден! Создаем файл с оптимальными настройками...");
+            
+            try
+            {
+                // Создаем временный SettingsManager для записи оптимальных настроек
+                var tempManager = new SettingsManager();
+                tempManager.CreateOptimalSettings();
+                
+                DebugLogger.log("[SettingsManager] settings.ini успешно создан с оптимальными настройками!");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[SettingsManager] ОШИБКА при создании settings.ini: {ex.Message}");
+                MessageBox.Show(
+                    $"Не удалось создать файл настроек settings.ini!\n\nОшибка: {ex.Message}\n\nПрограмма будет закрыта.",
+                    "Критическая ошибка",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+                Environment.Exit(1);
+            }
+        }
 
         public SettingsManager()
         {
@@ -20,6 +57,161 @@ namespace tickMeter
                 File.WriteAllText("settings.ini", "[SETTINGS]"+Environment.NewLine);
             }
             data = parser.ReadFile("settings.ini");
+        }
+        
+        /// <summary>
+        /// Создает settings.ini с оптимальными настройками (идентично кнопке "Сброс к оптимальным")
+        /// </summary>
+        private void CreateOptimalSettings()
+        {
+            // === ОСНОВНЫЕ [SETTINGS] НАСТРОЙКИ ===
+            SetOption("rtss", "True", "SETTINGS");
+            SetOption("autodetect", "True", "SETTINGS");
+            SetOption("capture_all_adapters", "True", "SETTINGS");
+            SetOption("chart", "True", "SETTINGS");
+            SetOption("ip", "True", "SETTINGS");
+            SetOption("tickrate", "True", "SETTINGS");
+            SetOption("ticktime", "True", "SETTINGS");
+            SetOption("ping_chart", "True", "SETTINGS");
+            SetOption("ping", "True", "SETTINGS");
+            SetOption("traffic", "True", "SETTINGS");
+            SetOption("session_time", "True", "SETTINGS");
+            SetOption("show_packet_drops", "True", "SETTINGS");
+            SetOption("ping_interval", "1000", "SETTINGS");
+            SetOption("ping_ports", "", "SETTINGS");
+            SetOption("data_send", "False", "SETTINGS");
+            SetOption("run_minimized", "True", "SETTINGS");
+            SetOption("manual_ip_unlocked", "False", "SETTINGS");
+            SetOption("ping_bind_to_interface", "True", "SETTINGS");
+            SetOption("ping_tcp_prefer", "True", "SETTINGS");
+            SetOption("ping_fallback_icmp", "True", "SETTINGS");
+            SetOption("ping_target_active_only", "True", "SETTINGS");
+            SetOption("tickrate_smoothing", "True", "SETTINGS");
+            SetOption("dedup_multi_nic", "True", "SETTINGS");
+            SetOption("enable_ipv6", "True", "SETTINGS");
+            SetOption("ignore_virtual_adapters", "False", "SETTINGS");
+            SetOption("rtss_only_active", "True", "SETTINGS");
+            SetOption("stun_enable", "True", "SETTINGS");
+            SetOption("network_quality_overlay", "True", "SETTINGS");
+            SetOption("ui_refresh_hidden", "True", "SETTINGS");
+            SetOption("color_label", "636BDA", "SETTINGS");
+            SetOption("color_bad", "FF0000", "SETTINGS");
+            SetOption("color_mid", "FF8040", "SETTINGS");
+            SetOption("color_good", "00FF00", "SETTINGS");
+            SetOption("color_chart", "FF0080", "SETTINGS");
+            SetOption("last_selected_adapter", "", "SETTINGS");
+            SetOption("local_ip", "", "SETTINGS");
+            
+            // === ADVANCED НАСТРОЙКИ ===
+            SetOption("live_max_rows_enabled", "True", "ADVANCED");
+            SetOption("live_max_rows", "1000", "ADVANCED");
+            SetOption("overlay_fps_enabled", "False", "ADVANCED");
+            SetOption("overlay_fps", "60", "ADVANCED");
+            SetOption("bpf_filter_enabled", "False", "ADVANCED");
+            SetOption("capture_filter", "ip or ip6", "ADVANCED");
+            SetOption("smoothing_ping_value", "True", "ADVANCED");
+            SetOption("smoothing_traffic_value", "True", "ADVANCED");
+            SetOption("smoothing_tickrate_graph", "True", "ADVANCED");
+            SetOption("smoothing_ticktime_graph", "True", "ADVANCED");
+            SetOption("use_windows_stats", "False", "ADVANCED");
+            SetOption("hybrid_pcap_windows", "True", "ADVANCED");
+            SetOption("smoothing_ping_graph", "True", "ADVANCED");
+            SetOption("smoothing_ping_graph_overlay", "True", "ADVANCED");
+            SetOption("smoothing_tickrate_graph_overlay", "True", "ADVANCED");
+            SetOption("smoothing_ticktime_graph_overlay", "True", "ADVANCED");
+            SetOption("smoothing_ping_value_overlay", "True", "ADVANCED");
+            SetOption("smoothing_tickrate_value_overlay", "False", "ADVANCED");
+            SetOption("smoothing_traffic_value_overlay", "True", "ADVANCED");
+            SetOption("smoothing_ping_value_gui", "True", "ADVANCED");
+            SetOption("show_ping_spikes", "True", "ADVANCED");
+            SetOption("ping_spike_threshold", "150", "ADVANCED");
+            SetOption("vpn_bypass_basic", "True", "ADVANCED");
+            SetOption("vpn_bypass_advanced", "True", "ADVANCED");
+            SetOption("enable_text_logs", "True", "ADVANCED");
+            SetOption("anti_reentrancy", "True", "ADVANCED");
+            SetOption("rtss_throttling", "True", "ADVANCED");
+            SetOption("pcap_optimization", "True", "ADVANCED");
+            SetOption("pcap_kernel_buffer_mb", "8", "ADVANCED");
+            SetOption("pcap_min_to_copy", "4096", "ADVANCED");
+            SetOption("virtual_mode_listview", "True", "ADVANCED");
+            SetOption("virtual_mode_threshold", "1000", "ADVANCED");
+            SetOption("ring_buffer_size", "10000", "ADVANCED");
+            SetOption("show_virtual_mode_stats", "True", "ADVANCED");
+            SetOption("high_priority_threads", "True", "ADVANCED");
+            SetOption("single_consumer_pattern", "False", "ADVANCED");
+            SetOption("ui_processing_rate", "60", "ADVANCED");
+            SetOption("ui_batch_size", "10", "ADVANCED");
+            SetOption("spikes.enable", "True", "ADVANCED");
+            SetOption("spikes.metrics", "ping,tickrate,ticktime", "ADVANCED");
+            SetOption("spikes.display", "both", "ADVANCED");
+            SetOption("spikes.sensitivity", "low", "ADVANCED");
+            SetOption("spikes.min_hold_ms", "120", "ADVANCED");
+            SetOption("spikes.history_size", "1000", "ADVANCED");
+            SetOption("spikes.auto.enable", "True", "ADVANCED");
+            SetOption("spikes.ema_alpha", "0.1", "ADVANCED");
+            SetOption("spikes.ew_sigma_alpha", "0.05", "ADVANCED");
+            SetOption("spikes.sensitivity_multiplier", "2", "ADVANCED");
+            SetOption("spikes.hysteresis_ratio", "0.8", "ADVANCED");
+            SetOption("spikes.refractory_period_ms", "2000", "ADVANCED");
+            SetOption("spikes.min_energy_threshold", "1", "ADVANCED");
+            SetOption("spikes.init_window_size", "30", "ADVANCED");
+            SetOption("alert_sound_enabled", "True", "ADVANCED");
+            SetOption("alert_discord_enabled", "True", "ADVANCED");
+            SetOption("alert_discord_webhook", "", "ADVANCED");
+            SetOption("alert_cooldown_seconds", "30", "ADVANCED");
+            SetOption("network_quality_enabled", "True", "ADVANCED");
+            SetOption("quality_history_size", "100", "ADVANCED");
+            SetOption("stability_threshold", "0.15", "ADVANCED");
+            SetOption("quality_threshold", "0.8", "ADVANCED");
+            SetOption("network_optimization_enabled", "False", "ADVANCED");
+            SetOption("optimization_threshold", "70", "ADVANCED");
+            SetOption("optimization_interval", "5", "ADVANCED");
+            SetOption("aggressive_optimization", "False", "ADVANCED");
+            SetOption("spike_detection_enable", "True", "ADVANCED");
+            SetOption("spike_sensitivity", "High", "ADVANCED");
+            SetOption("tickrate_chart_enabled", "True", "ADVANCED");
+            SetOption("vpn_capture_virtual", "False", "ADVANCED");
+            SetOption("vpn_allow_non_ethernet", "False", "ADVANCED");
+            SetOption("vpn_disable_bpf", "False", "ADVANCED");
+            SetOption("vpn_etw_enrichment", "False", "ADVANCED");
+            SetOption("vpn_bypass_restore_capture_all", "True", "ADVANCED");
+            SetOption("vpn_bypass_restore_ignore_virtual", "True", "ADVANCED");
+            SetOption("vpn_bypass_restore_dedup", "True", "ADVANCED");
+            SetOption("vpn_bypass_restore_basic", "True", "ADVANCED");
+            SetOption("smoothing_tickrate_value_gui", "False", "ADVANCED");
+            SetOption("smoothing_ticktime_value_overlay", "False", "ADVANCED");
+            SetOption("alert_sound_pingspike_path", "", "ADVANCED");
+            SetOption("alert_sound_tickratespike_path", "", "ADVANCED");
+            SetOption("alert_sound_ticktimespike_path", "", "ADVANCED");
+            
+            // === ZONES ===
+            SetOption("color_zone_profile", "Very Low", "ZONES");
+            
+            // === EXTENDED ===
+            SetOption("show_active_process", "True", "EXTENDED");
+            SetOption("show_session_time", "True", "EXTENDED");
+            SetOption("show_external_ip", "True", "EXTENDED");
+            SetOption("show_session_stats", "False", "EXTENDED");
+            SetOption("show_server_info", "False", "EXTENDED");
+            SetOption("show_packet_counters", "False", "EXTENDED");
+            SetOption("show_connection_type", "False", "EXTENDED");
+            SetOption("show_diagnostic_info", "False", "EXTENDED");
+            
+            // === TICKRATE_CHART ===
+            SetOption("tickrate_chart_enabled", "True", "TICKRATE_CHART");
+            SetOption("tickrate_chart_per_server", "True", "TICKRATE_CHART");
+            SetOption("tickrate_chart_compression", "True", "TICKRATE_CHART");
+            SetOption("tickrate_chart_time_scale", "True", "TICKRATE_CHART");
+            SetOption("tickrate_chart_trimming", "True", "TICKRATE_CHART");
+            SetOption("tickrate_chart_mode", "Сжатый график", "TICKRATE_CHART");
+            SetOption("tickrate_chart_max_points", "1500", "TICKRATE_CHART");
+            SetOption("tickrate_chart_history_hours", "24", "TICKRATE_CHART");
+            
+            // === PROFILES ===
+            SetOption("current_profile", "Стандарт (Balanced)", "PROFILES");
+            SetOption("advanced_profile", "Streamer", "PROFILES");
+            
+            DebugLogger.log("[SettingsManager] Оптимальные настройки записаны в settings.ini");
         }
 
         public int GetIntOption(string optionName, int defaultValue)

@@ -32,6 +32,10 @@ namespace tickMeter
             Application.ApplicationExit += Application_ApplicationExit;
             currentDomain.ProcessExit += CurrentDomain_ProcessExit;
             
+            // КРИТИЧНО: Проверяем наличие settings.ini перед запуском GUI
+            // Если файл отсутствует - создаем его с оптимальными настройками
+            SettingsManager.EnsureSettingsFileExists();
+            
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new GUI());
