@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -37,6 +37,7 @@ namespace tickMeter.Forms
         // NEW: поля для мульти-адаптерного захвата
         private readonly List<LivePacketDevice> _allSelectedAdapters = new List<LivePacketDevice>();
         private readonly List<BackgroundWorker> _pcapWorkers = new List<BackgroundWorker>();
+        private Classes.SmartTransparencyManager _transparencyManager; // Управление прозрачностью при наведении
         // простая защита от дублей на бриджах/VPN
         private readonly Dictionary<ulong, long> _dedup = new Dictionary<ulong, long>(capacity: 4096);
         private readonly Stopwatch _dedupSw = Stopwatch.StartNew();
@@ -837,6 +838,18 @@ namespace tickMeter.Forms
             
             // Инициализируем анализатор качества сети
             Classes.NetworkQualityAnalyzer.Initialize();
+
+            // Инициализируем SmartTransparencyManager
+            try
+            {
+                DebugLogger.log("[GUI] Creating SmartTransparencyManager...");
+                _transparencyManager = new Classes.SmartTransparencyManager(this);
+                DebugLogger.log("[GUI] SmartTransparencyManager initialized successfully");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[GUI] SmartTransparencyManager initialization failed: {ex.Message}\n{ex.StackTrace}");
+            }
         }
 
         static void MyHandler(object sender, UnhandledExceptionEventArgs args)
