@@ -274,10 +274,12 @@ namespace tickMeter.Classes
             string pingValue = "";
             string geo = meterState.Server.Location;
             
-            // Format display value from snapshot
+            // Format display value from snapshot with smoothing
             if (snap.PingAvgMs > 0)
             {
-                pingValue = ((int)snap.PingAvgMs).ToString();
+                // Применяем сглаживание для overlay значений пинга, если включено
+                int smoothedPing = Classes.SmoothingManager.SmoothPingValueOverlay((int)snap.PingAvgMs);
+                pingValue = smoothedPing.ToString();
             }
             else
             {
@@ -394,12 +396,10 @@ namespace tickMeter.Classes
                 output += "<S0><C4>Tickrate" + Environment.NewLine;
                 
                 // Применяем сглаживание графика тикрейта, если включено
-                // ВРЕМЕННО: отключаем сглаживание для отладки
-                float[] tickrateGraphData = App.meterState.tickrateBuffer.ToArray();
-                // float[] tickrateGraphData = Classes.SmoothingManager.SmoothSeries(
-                //     App.meterState.tickrateBuffer.ToArray(),
-                //     Classes.SmoothingManager.IsTickrateGraphOverlayEnabled()
-                // );
+                float[] tickrateGraphData = Classes.SmoothingManager.SmoothSeries(
+                    App.meterState.tickrateBuffer.ToArray(),
+                    Classes.SmoothingManager.IsTickrateGraphOverlayEnabled()
+                );
                 
                 // Debug: логируем данные графика тикрейта для RTSS
                 if (tickrateGraphData.Length > 0)
