@@ -144,10 +144,10 @@ namespace tickMeter
             SetOption("spikes.enable", "True", "ADVANCED");
             SetOption("spikes.metrics", "ping,tickrate,ticktime", "ADVANCED");
             SetOption("spikes.display", "both", "ADVANCED");
-            SetOption("spikes.sensitivity", "low", "ADVANCED");
-            SetOption("spikes.min_hold_ms", "120", "ADVANCED");
+            SetOption("spikes.sensitivity", "very_low", "ADVANCED");  // ОЧЕНЬ низкая чувствительность (новый пресет)
+            SetOption("spikes.min_hold_ms", "50", "ADVANCED");        // Быстрое снятие индикатора
             SetOption("spikes.history_size", "1000", "ADVANCED");
-            SetOption("spikes.auto.enable", "True", "ADVANCED");
+            // SetOption("spikes.auto.enable", "True", "ADVANCED");   // УДАЛЕНО - dead code
             SetOption("spikes.ema_alpha", "0.1", "ADVANCED");
             SetOption("spikes.ew_sigma_alpha", "0.05", "ADVANCED");
             SetOption("spikes.sensitivity_multiplier", "2", "ADVANCED");

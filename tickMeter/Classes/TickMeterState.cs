@@ -592,15 +592,75 @@ namespace tickMeter
                 var now = DateTime.Now;
                 var pingSeconds = currentPing / 1000.0; // конвертируем в секунды для внутренних расчетов
                 
-                // Параметры детектора - МАКСИМАЛЬНО СНИЖЕНА ЧУВСТВИТЕЛЬНОСТЬ
-                double tauSec = 10.0; // еще больше инерция EMA (было 8.0) - очень медленно реагирует
-                double minAbsMs = 40.0; // значительно увеличен порог (было 25.0) - нужен огромный скачок
-                double minRel = 1.2; // сильно увеличен (было 0.8) - нужно 120% от базы
-                double kHi = 5.0; // еще выше z-порог (было 4.0) - нужно 5 сигм!
-                double kLo = 0.5; // сильно уменьшен (было 1.0) - очень быстро снимается
+                // Читаем пресет чувствительности из настроек
+                string sensitivityPreset = "very_low";
+                if (App.settingsManager != null)
+                {
+                    sensitivityPreset = App.settingsManager.GetOption("spikes.sensitivity", "very_low", "ADVANCED");
+                }
+                
+                // Параметры детектора в зависимости от пресета
+                double tauSec, minAbsMs, minRel, kHi, kLo;
+                
+                switch (sensitivityPreset.ToLower())
+                {
+                    case "very_low":
+                        // ОЧЕНЬ низкая чувствительность - только критические ситуации
+                        tauSec = 10.0;
+                        minAbsMs = 40.0;
+                        minRel = 1.2;
+                        kHi = 5.0;
+                        kLo = 0.5;
+                        break;
+                        
+                    case "low":
+                        // Низкая чувствительность
+                        tauSec = 8.0;
+                        minAbsMs = 25.0;
+                        minRel = 0.8;
+                        kHi = 4.0;
+                        kLo = 1.0;
+                        break;
+                        
+                    case "medium":
+                        // Средняя чувствительность (по умолчанию)
+                        tauSec = 6.0;
+                        minAbsMs = 15.0;
+                        minRel = 0.6;
+                        kHi = 3.0;
+                        kLo = 1.5;
+                        break;
+                        
+                    case "high":
+                        // Высокая чувствительность
+                        tauSec = 4.0;
+                        minAbsMs = 10.0;
+                        minRel = 0.4;
+                        kHi = 2.5;
+                        kLo = 1.8;
+                        break;
+                        
+                    case "auto":
+                        // Автоматическая (адаптивная) - используем medium как базу
+                        tauSec = 6.0;
+                        minAbsMs = 15.0;
+                        minRel = 0.6;
+                        kHi = 3.0;
+                        kLo = 1.5;
+                        break;
+                        
+                    default:
+                        // По умолчанию medium
+                        tauSec = 6.0;
+                        minAbsMs = 15.0;
+                        minRel = 0.6;
+                        kHi = 3.0;
+                        kLo = 1.5;
+                        break;
+                }
                 
                 // Читаем минимальную длительность из настроек
-                int minHoldMs = 50; // очень короткая минимальная длительность (было 80)
+                int minHoldMs = 50;
                 if (App.settingsManager != null)
                 {
                     string minHoldStr = App.settingsManager.GetOption("spikes.min_hold_ms", "50", "ADVANCED");
@@ -610,9 +670,9 @@ namespace tickMeter
                     }
                 }
                 double minHoldSec = minHoldMs / 1000.0;
-                double maxHoldSec = 10.0; // сильно уменьшено (было 20.0) - максимум 10 секунд
-                double refractorySec = 1.5; // уменьшено (было 2.0) - еще быстрее новый спайк
-                double mergeWindow = 0.2; // уменьшено (было 0.3) - почти не объединяет
+                double maxHoldSec = 10.0; // максимум 10 секунд для very_low
+                double refractorySec = 1.5;
+                double mergeWindow = 0.2;
 
                 // Инициализация при первом запуске
                 if (!_pingDetectorInitialized)

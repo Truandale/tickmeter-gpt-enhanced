@@ -664,10 +664,10 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("spikes.enable", "True", "ADVANCED");            // Детекция спайков ✓
             App.settingsManager.SetOption("spikes.metrics", "ping,tickrate,ticktime", "ADVANCED"); // Метрики ✓
             App.settingsManager.SetOption("spikes.display", "both", "ADVANCED");           // Отображение обоих ✓
-            App.settingsManager.SetOption("spikes.sensitivity", "low", "ADVANCED");        // Низкая чувствительность ✓
-            App.settingsManager.SetOption("spikes.min_hold_ms", "120", "ADVANCED");        // Минимальная длительность 120ms ✓
+            App.settingsManager.SetOption("spikes.sensitivity", "very_low", "ADVANCED");   // ОЧЕНЬ низкая чувствительность (новый пресет) ✓
+            App.settingsManager.SetOption("spikes.min_hold_ms", "50", "ADVANCED");         // Минимальная длительность 50ms (быстрое снятие) ✓
             App.settingsManager.SetOption("spikes.history_size", "1000", "ADVANCED");      // Размер истории 1000 ✓
-            App.settingsManager.SetOption("spikes.auto.enable", "True", "ADVANCED");       // Автокалибровка ✓
+            // App.settingsManager.SetOption("spikes.auto.enable", "True", "ADVANCED");    // Автокалибровка - УДАЛЕНО (dead code)
             
             // ИСПРАВЛЕННЫЕ значения со скриншота Stage 4:
             App.settingsManager.SetOption("spikes.ema_alpha", "0.050", "ADVANCED");        // EMA alpha 0.050 (не 0.1) ✓
@@ -798,7 +798,7 @@ namespace tickMeter.Forms
         {
             // Инициализация ComboBox для чувствительности
             cmbSpikeSensitivity.Items.Clear();
-            cmbSpikeSensitivity.Items.AddRange(new object[] { "low", "medium", "high", "auto" });
+            cmbSpikeSensitivity.Items.AddRange(new object[] { "very_low", "low", "medium", "high", "auto (в разработке)" });
             
             // Инициализация ComboBox для режима отображения
             cmbSpikeDisplayMode.Items.Clear();
@@ -824,7 +824,9 @@ namespace tickMeter.Forms
 
                 // Чувствительность
                 var sensitivity = App.settingsManager.GetOption("spikes.sensitivity", "medium", "ADVANCED");
-                cmbSpikeSensitivity.SelectedItem = cmbSpikeSensitivity.Items.Cast<string>().Contains(sensitivity) ? sensitivity : "medium";
+                // Поддержка "(в разработке)" в UI
+                var displaySensitivity = sensitivity == "auto" ? "auto (в разработке)" : sensitivity;
+                cmbSpikeSensitivity.SelectedItem = cmbSpikeSensitivity.Items.Cast<string>().Contains(displaySensitivity) ? displaySensitivity : "medium";
 
                 // Минимальная длительность
                 int minDuration = SafeInt(App.settingsManager.GetOption("spikes.min_hold_ms", "120", "ADVANCED"), 120);
@@ -864,7 +866,9 @@ namespace tickMeter.Forms
                 App.settingsManager.SetOption("spikes.display", display, "ADVANCED");
 
                 // Чувствительность
-                var sensitivity = (cmbSpikeSensitivity.SelectedItem as string) ?? "medium";
+                var sensitivityUI = (cmbSpikeSensitivity.SelectedItem as string) ?? "medium";
+                // Убираем "(в разработке)" при сохранении
+                var sensitivity = sensitivityUI.Replace(" (в разработке)", "");
                 App.settingsManager.SetOption("spikes.sensitivity", sensitivity, "ADVANCED");
 
                 // Минимальная длительность

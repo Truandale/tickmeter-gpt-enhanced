@@ -1016,20 +1016,20 @@ namespace tickMeter.Forms
             this.chkSpikeMetricTickrate.Location = new System.Drawing.Point(320, 30);
             this.chkSpikeMetricTickrate.Margin = new System.Windows.Forms.Padding(4);
             this.chkSpikeMetricTickrate.Name = "chkSpikeMetricTickrate";
-            this.chkSpikeMetricTickrate.Size = new System.Drawing.Size(84, 20);
+            this.chkSpikeMetricTickrate.Size = new System.Drawing.Size(170, 20);
             this.chkSpikeMetricTickrate.TabIndex = 2;
-            this.chkSpikeMetricTickrate.Text = "Тикрейт";
+            this.chkSpikeMetricTickrate.Text = "Тикрейт (в разработке)";
             this.chkSpikeMetricTickrate.UseVisualStyleBackColor = true;
             // 
             // chkSpikeMetricTicktime
             // 
             this.chkSpikeMetricTicktime.AutoSize = true;
-            this.chkSpikeMetricTicktime.Location = new System.Drawing.Point(410, 30);
+            this.chkSpikeMetricTicktime.Location = new System.Drawing.Point(500, 30);
             this.chkSpikeMetricTicktime.Margin = new System.Windows.Forms.Padding(4);
             this.chkSpikeMetricTicktime.Name = "chkSpikeMetricTicktime";
-            this.chkSpikeMetricTicktime.Size = new System.Drawing.Size(85, 20);
+            this.chkSpikeMetricTicktime.Size = new System.Drawing.Size(171, 20);
             this.chkSpikeMetricTicktime.TabIndex = 3;
-            this.chkSpikeMetricTicktime.Text = "Тиктайм";
+            this.chkSpikeMetricTicktime.Text = "Тиктайм (в разработке)";
             this.chkSpikeMetricTicktime.UseVisualStyleBackColor = true;
             // 
             // lblSpikeSensitivity
@@ -1144,9 +1144,9 @@ namespace tickMeter.Forms
             this.chkSpikeAutoCalibration.Location = new System.Drawing.Point(20, 140);
             this.chkSpikeAutoCalibration.Margin = new System.Windows.Forms.Padding(4);
             this.chkSpikeAutoCalibration.Name = "chkSpikeAutoCalibration";
-            this.chkSpikeAutoCalibration.Size = new System.Drawing.Size(219, 20);
+            this.chkSpikeAutoCalibration.Size = new System.Drawing.Size(300, 20);
             this.chkSpikeAutoCalibration.TabIndex = 12;
-            this.chkSpikeAutoCalibration.Text = "Автоматическая калибровка";
+            this.chkSpikeAutoCalibration.Text = "Автоматическая калибровка (в разработке)";
             this.chkSpikeAutoCalibration.UseVisualStyleBackColor = true;
             // 
             // groupBoxSpikeAdvanced
