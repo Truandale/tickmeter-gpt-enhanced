@@ -592,15 +592,27 @@ namespace tickMeter
                 var now = DateTime.Now;
                 var pingSeconds = currentPing / 1000.0; // конвертируем в секунды для внутренних расчетов
                 
-                // Параметры детектора (настраиваемые через Advanced Settings)
-                double tauSec = 6.0; // инерция EMA
-                double minAbsMs = 15.0; // минимальный абсолютный порог (мс)
-                double minRel = 0.6; // минимальный относительный порог (60% от μ)
-                double kHi = 3.0; // верхний z-порог
-                double kLo = 1.5; // нижний z-порог для гистерезиса
-                double minHoldSec = 0.15; // минимальная длительность спайка
-                double refractorySec = 3.0; // рефрактерный период
-                double mergeWindow = 0.5; // окно объединения
+                // Параметры детектора - МАКСИМАЛЬНО СНИЖЕНА ЧУВСТВИТЕЛЬНОСТЬ
+                double tauSec = 10.0; // еще больше инерция EMA (было 8.0) - очень медленно реагирует
+                double minAbsMs = 40.0; // значительно увеличен порог (было 25.0) - нужен огромный скачок
+                double minRel = 1.2; // сильно увеличен (было 0.8) - нужно 120% от базы
+                double kHi = 5.0; // еще выше z-порог (было 4.0) - нужно 5 сигм!
+                double kLo = 0.5; // сильно уменьшен (было 1.0) - очень быстро снимается
+                
+                // Читаем минимальную длительность из настроек
+                int minHoldMs = 50; // очень короткая минимальная длительность (было 80)
+                if (App.settingsManager != null)
+                {
+                    string minHoldStr = App.settingsManager.GetOption("spikes.min_hold_ms", "50", "ADVANCED");
+                    if (int.TryParse(minHoldStr, out int parsedMinHold) && parsedMinHold > 0)
+                    {
+                        minHoldMs = parsedMinHold;
+                    }
+                }
+                double minHoldSec = minHoldMs / 1000.0;
+                double maxHoldSec = 10.0; // сильно уменьшено (было 20.0) - максимум 10 секунд
+                double refractorySec = 1.5; // уменьшено (было 2.0) - еще быстрее новый спайк
+                double mergeWindow = 0.2; // уменьшено (было 0.3) - почти не объединяет
 
                 // Инициализация при первом запуске
                 if (!_pingDetectorInitialized)
@@ -678,23 +690,43 @@ namespace tickMeter
                     double lowerThreshold = kLo * sigma;
                     bool belowLower = (pingSeconds - _pingEma) < lowerThreshold;
                     
-                    if (belowLower && _spikeHoldTime >= minHoldSec)
+                    // УПРОЩЕННАЯ защита: снимаем если пинг вернулся к нормальному уровню
+                    // Проверяем только если пинг близок к EMA (в пределах 1.3x)
+                    double absoluteHighThreshold = (_pingEma * 1.3);
+                    bool stillObjectivelyHigh = pingSeconds > absoluteHighThreshold;
+                    
+                    // Защита от "вечного" индикатора: принудительно снимаем после maxHoldSec
+                    bool maxDurationExceeded = _spikeHoldTime >= maxHoldSec;
+                    
+                    // УПРОЩЕННОЕ условие снятия: снимаем если ЛИБО порог пройден, ЛИБО время вышло
+                    // Убираем требование минимальной длительности для быстрого снятия
+                    if (belowLower && !stillObjectivelyHigh)
                     {
                         _inPingSpike = false;
                         _timeSinceSpike = 0;
                         _spikeEndTime = now;
                         
-                        // Вычисляем "энергию" спайка для диагностики
                         double spikeEnergy = _spikePeak * _spikeHoldTime;
-                        
-                        Debug.Print($"[AdvancedPingSpike] SPIKE END: duration={_spikeHoldTime:F3}s, peak={_spikePeak:F1}ms, energy={spikeEnergy:F1}");
+                        Debug.Print($"[AdvancedPingSpike] SPIKE END (NORMAL): duration={_spikeHoldTime:F3}s, peak={_spikePeak:F1}ms");
                         
                         _spikePeak = 0;
                         _spikeStartTime = DateTime.MinValue;
                     }
-                    else if (_spikeHoldTime > 0 && DateTime.Now.Millisecond % 500 < 50) // логируем каждые ~500мс
+                    else if (maxDurationExceeded)
                     {
-                        Debug.Print($"[AdvancedPingSpike] ONGOING: current={currentPing}ms, peak={_spikePeak:F1}ms, hold={_spikeHoldTime:F2}s");
+                        // Принудительное снятие по времени
+                        _inPingSpike = false;
+                        _timeSinceSpike = 0;
+                        _spikeEndTime = now;
+                        
+                        Debug.Print($"[AdvancedPingSpike] SPIKE END (MAX_DURATION): forced removal after {maxHoldSec}s");
+                        
+                        _spikePeak = 0;
+                        _spikeStartTime = DateTime.MinValue;
+                    }
+                    else if (DateTime.Now.Millisecond % 500 < 50) // логируем каждые ~500мс
+                    {
+                        Debug.Print($"[AdvancedPingSpike] ONGOING: current={currentPing}ms, EMA={_pingEma*1000:F1}ms, deviation={currentDeviation:F1}ms, threshold={lowerThreshold*1000:F1}ms, hold={_spikeHoldTime:F2}s");
                     }
                 }
             }
