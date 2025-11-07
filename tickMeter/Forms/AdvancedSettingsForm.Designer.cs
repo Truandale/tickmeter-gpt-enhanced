@@ -80,6 +80,7 @@ namespace tickMeter.Forms
             this.numPcapMinToCopy = new System.Windows.Forms.NumericUpDown();
             this.groupBoxSpikeDetection = new System.Windows.Forms.GroupBox();
             this.chkSpikeDetectionEnable = new System.Windows.Forms.CheckBox();
+            this.chkSpikeManualSettings = new System.Windows.Forms.CheckBox();
             this.chkSpikeMetricPing = new System.Windows.Forms.CheckBox();
             this.chkSpikeMetricTickrate = new System.Windows.Forms.CheckBox();
             this.chkSpikeMetricTicktime = new System.Windows.Forms.CheckBox();
@@ -313,7 +314,7 @@ namespace tickMeter.Forms
             this.groupBoxTickrateChart.Controls.Add(this.numTickrateChartHistoryHours);
             this.groupBoxTickrateChart.Controls.Add(this.btnTickrateChartReset);
             this.groupBoxTickrateChart.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxTickrateChart.Location = new System.Drawing.Point(13, 3152);
+            this.groupBoxTickrateChart.Location = new System.Drawing.Point(13, 3172);
             this.groupBoxTickrateChart.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxTickrateChart.Name = "groupBoxTickrateChart";
             this.groupBoxTickrateChart.Padding = new System.Windows.Forms.Padding(4);
@@ -489,7 +490,7 @@ namespace tickMeter.Forms
             this.groupBoxExtendedOverlay.Controls.Add(this.chkShowConnectionType);
             this.groupBoxExtendedOverlay.Controls.Add(this.chkShowDiagnosticInfo);
             this.groupBoxExtendedOverlay.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxExtendedOverlay.Location = new System.Drawing.Point(13, 2932);
+            this.groupBoxExtendedOverlay.Location = new System.Drawing.Point(13, 2952);
             this.groupBoxExtendedOverlay.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxExtendedOverlay.Name = "groupBoxExtendedOverlay";
             this.groupBoxExtendedOverlay.Padding = new System.Windows.Forms.Padding(4);
@@ -582,7 +583,7 @@ namespace tickMeter.Forms
             // 
             this.groupBoxDebugSettings.Controls.Add(this.chkEnableTextLogs);
             this.groupBoxDebugSettings.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxDebugSettings.Location = new System.Drawing.Point(13, 2882);
+            this.groupBoxDebugSettings.Location = new System.Drawing.Point(13, 2902);
             this.groupBoxDebugSettings.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxDebugSettings.Name = "groupBoxDebugSettings";
             this.groupBoxDebugSettings.Padding = new System.Windows.Forms.Padding(4);
@@ -607,7 +608,7 @@ namespace tickMeter.Forms
             this.groupBoxVpnBypass.Controls.Add(this.chkVpnBypassAdvanced);
             this.groupBoxVpnBypass.Controls.Add(this.chkVpnBypassBasic);
             this.groupBoxVpnBypass.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxVpnBypass.Location = new System.Drawing.Point(13, 2784);
+            this.groupBoxVpnBypass.Location = new System.Drawing.Point(13, 2804);
             this.groupBoxVpnBypass.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxVpnBypass.Name = "groupBoxVpnBypass";
             this.groupBoxVpnBypass.Padding = new System.Windows.Forms.Padding(4);
@@ -647,7 +648,7 @@ namespace tickMeter.Forms
             this.groupBoxPhase3.Controls.Add(this.lblUiBatchSize);
             this.groupBoxPhase3.Controls.Add(this.numUiBatchSize);
             this.groupBoxPhase3.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxPhase3.Location = new System.Drawing.Point(13, 2584);
+            this.groupBoxPhase3.Location = new System.Drawing.Point(13, 2604);
             this.groupBoxPhase3.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxPhase3.Name = "groupBoxPhase3";
             this.groupBoxPhase3.Padding = new System.Windows.Forms.Padding(4);
@@ -753,7 +754,7 @@ namespace tickMeter.Forms
             this.groupBoxPhase2.Controls.Add(this.numRingBufferSize);
             this.groupBoxPhase2.Controls.Add(this.chkShowVirtualModeStats);
             this.groupBoxPhase2.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxPhase2.Location = new System.Drawing.Point(13, 2434);
+            this.groupBoxPhase2.Location = new System.Drawing.Point(13, 2454);
             this.groupBoxPhase2.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxPhase2.Name = "groupBoxPhase2";
             this.groupBoxPhase2.Padding = new System.Windows.Forms.Padding(4);
@@ -860,7 +861,7 @@ namespace tickMeter.Forms
             this.groupBoxPhase1.Controls.Add(this.lblPcapMinToCopy);
             this.groupBoxPhase1.Controls.Add(this.numPcapMinToCopy);
             this.groupBoxPhase1.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxPhase1.Location = new System.Drawing.Point(13, 2284);
+            this.groupBoxPhase1.Location = new System.Drawing.Point(13, 2304);
             this.groupBoxPhase1.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxPhase1.Name = "groupBoxPhase1";
             this.groupBoxPhase1.Padding = new System.Windows.Forms.Padding(4);
@@ -966,6 +967,7 @@ namespace tickMeter.Forms
             // groupBoxSpikeDetection
             // 
             this.groupBoxSpikeDetection.Controls.Add(this.chkSpikeDetectionEnable);
+            this.groupBoxSpikeDetection.Controls.Add(this.chkSpikeManualSettings);
             this.groupBoxSpikeDetection.Controls.Add(this.chkSpikeMetricPing);
             this.groupBoxSpikeDetection.Controls.Add(this.chkSpikeMetricTickrate);
             this.groupBoxSpikeDetection.Controls.Add(this.chkSpikeMetricTicktime);
@@ -983,7 +985,7 @@ namespace tickMeter.Forms
             this.groupBoxSpikeDetection.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxSpikeDetection.Name = "groupBoxSpikeDetection";
             this.groupBoxSpikeDetection.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBoxSpikeDetection.Size = new System.Drawing.Size(753, 200);
+            this.groupBoxSpikeDetection.Size = new System.Drawing.Size(753, 220);
             this.groupBoxSpikeDetection.TabIndex = 5;
             this.groupBoxSpikeDetection.TabStop = false;
             this.groupBoxSpikeDetection.Text = "Детекция спайков";
@@ -998,6 +1000,18 @@ namespace tickMeter.Forms
             this.chkSpikeDetectionEnable.TabIndex = 0;
             this.chkSpikeDetectionEnable.Text = "Включить детекцию спайков";
             this.chkSpikeDetectionEnable.UseVisualStyleBackColor = true;
+            // 
+            // chkSpikeManualSettings
+            // 
+            this.chkSpikeManualSettings.AutoSize = true;
+            this.chkSpikeManualSettings.Location = new System.Drawing.Point(23, 186);
+            this.chkSpikeManualSettings.Margin = new System.Windows.Forms.Padding(4);
+            this.chkSpikeManualSettings.Name = "chkSpikeManualSettings";
+            this.chkSpikeManualSettings.Size = new System.Drawing.Size(149, 20);
+            this.chkSpikeManualSettings.TabIndex = 1;
+            this.chkSpikeManualSettings.Text = "Ручная настройка";
+            this.chkSpikeManualSettings.UseVisualStyleBackColor = true;
+            this.chkSpikeManualSettings.CheckedChanged += new System.EventHandler(this.chkSpikeManualSettings_CheckedChanged);
             // 
             // chkSpikeMetricPing
             // 
@@ -1016,7 +1030,7 @@ namespace tickMeter.Forms
             this.chkSpikeMetricTickrate.Location = new System.Drawing.Point(320, 30);
             this.chkSpikeMetricTickrate.Margin = new System.Windows.Forms.Padding(4);
             this.chkSpikeMetricTickrate.Name = "chkSpikeMetricTickrate";
-            this.chkSpikeMetricTickrate.Size = new System.Drawing.Size(170, 20);
+            this.chkSpikeMetricTickrate.Size = new System.Drawing.Size(184, 20);
             this.chkSpikeMetricTickrate.TabIndex = 2;
             this.chkSpikeMetricTickrate.Text = "Тикрейт (в разработке)";
             this.chkSpikeMetricTickrate.UseVisualStyleBackColor = true;
@@ -1027,7 +1041,7 @@ namespace tickMeter.Forms
             this.chkSpikeMetricTicktime.Location = new System.Drawing.Point(500, 30);
             this.chkSpikeMetricTicktime.Margin = new System.Windows.Forms.Padding(4);
             this.chkSpikeMetricTicktime.Name = "chkSpikeMetricTicktime";
-            this.chkSpikeMetricTicktime.Size = new System.Drawing.Size(171, 20);
+            this.chkSpikeMetricTicktime.Size = new System.Drawing.Size(185, 20);
             this.chkSpikeMetricTicktime.TabIndex = 3;
             this.chkSpikeMetricTicktime.Text = "Тиктайм (в разработке)";
             this.chkSpikeMetricTicktime.UseVisualStyleBackColor = true;
@@ -1144,7 +1158,7 @@ namespace tickMeter.Forms
             this.chkSpikeAutoCalibration.Location = new System.Drawing.Point(20, 140);
             this.chkSpikeAutoCalibration.Margin = new System.Windows.Forms.Padding(4);
             this.chkSpikeAutoCalibration.Name = "chkSpikeAutoCalibration";
-            this.chkSpikeAutoCalibration.Size = new System.Drawing.Size(300, 20);
+            this.chkSpikeAutoCalibration.Size = new System.Drawing.Size(319, 20);
             this.chkSpikeAutoCalibration.TabIndex = 12;
             this.chkSpikeAutoCalibration.Text = "Автоматическая калибровка (в разработке)";
             this.chkSpikeAutoCalibration.UseVisualStyleBackColor = true;
@@ -2525,7 +2539,7 @@ namespace tickMeter.Forms
             this.chkTicktimeValueOverlaySmoothing.Location = new System.Drawing.Point(20, 395);
             this.chkTicktimeValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTicktimeValueOverlaySmoothing.Name = "chkTicktimeValueOverlaySmoothing";
-            this.chkTicktimeValueOverlaySmoothing.Size = new System.Drawing.Size(318, 20);
+            this.chkTicktimeValueOverlaySmoothing.Size = new System.Drawing.Size(319, 20);
             this.chkTicktimeValueOverlaySmoothing.TabIndex = 17;
             this.chkTicktimeValueOverlaySmoothing.Text = "Сглаживание значений тиктайма в оверлее";
             this.chkTicktimeValueOverlaySmoothing.UseVisualStyleBackColor = true;
@@ -3030,6 +3044,7 @@ namespace tickMeter.Forms
         
         private System.Windows.Forms.GroupBox groupBoxSpikeDetection;
         private System.Windows.Forms.CheckBox chkSpikeDetectionEnable;
+        private System.Windows.Forms.CheckBox chkSpikeManualSettings;
         private System.Windows.Forms.CheckBox chkSpikeMetricPing;
         private System.Windows.Forms.CheckBox chkSpikeMetricTickrate;
         private System.Windows.Forms.CheckBox chkSpikeMetricTicktime;

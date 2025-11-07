@@ -838,6 +838,10 @@ namespace tickMeter.Forms
 
                 // Автокалибровка
                 chkSpikeAutoCalibration.Checked = App.settingsManager.GetOption("spikes.auto.enable", "True", "ADVANCED") == "True";
+
+                // Ручная настройка
+                chkSpikeManualSettings.Checked = App.settingsManager.GetOption("spikes.manual_mode", "False", "ADVANCED") == "True";
+                ToggleSpikeSettingsMode(chkSpikeManualSettings.Checked);
             }
             catch (Exception ex)
             {
@@ -879,6 +883,9 @@ namespace tickMeter.Forms
 
                 // Автокалибровка
                 App.settingsManager.SetOption("spikes.auto.enable", chkSpikeAutoCalibration.Checked.ToString(), "ADVANCED");
+
+                // Ручная настройка
+                App.settingsManager.SetOption("spikes.manual_mode", chkSpikeManualSettings.Checked.ToString(), "ADVANCED");
             }
             catch (Exception ex)
             {
@@ -889,6 +896,37 @@ namespace tickMeter.Forms
         private static int SafeInt(string s, int def)
         {
             return int.TryParse(s, out var v) ? v : def;
+        }
+
+        /// <summary>
+        /// Переключает режим настроек спайк-детекции между пресетами и ручным режимом
+        /// </summary>
+        private void ToggleSpikeSettingsMode(bool manualMode)
+        {
+            // Контролы основной секции "Детекция спайков" (groupBoxSpikeDetection)
+            // Отключаем все, кроме chkSpikeDetectionEnable и chkSpikeManualSettings
+            foreach (Control ctrl in groupBoxSpikeDetection.Controls)
+            {
+                if (ctrl != chkSpikeDetectionEnable && ctrl != chkSpikeManualSettings)
+                {
+                    ctrl.Enabled = !manualMode;
+                }
+            }
+
+            // Контролы расширенной ручной настройки (groupBoxSpikeAdvanced)
+            // Включаем все контролы, когда манульный режим активен
+            if (groupBoxSpikeAdvanced != null)
+            {
+                groupBoxSpikeAdvanced.Enabled = manualMode;
+            }
+        }
+
+        /// <summary>
+        /// Обработчик переключения чекбокса "Ручная настройка"
+        /// </summary>
+        private void chkSpikeManualSettings_CheckedChanged(object sender, EventArgs e)
+        {
+            ToggleSpikeSettingsMode(chkSpikeManualSettings.Checked);
         }
 
         #region Stage 4: Advanced Spike Detection Settings
