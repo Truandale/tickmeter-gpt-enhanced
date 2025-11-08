@@ -1834,28 +1834,15 @@ namespace tickMeter.Forms
             }
 
             // === ChatGPT ENHANCED: Snapshot-based unified zoning ===
-            // Use SAME snapshot as RTSS for perfect consistency
+            // IMPORTANT: Get snapshot for target Hz, but apply zones to SMOOTHED display values
             var snap = Classes.UnifiedDataSource.Snapshot();
             var profile = App.settingsManager.GetColorZoneProfile();
             var zoner = Classes.Zoner.FromProfile(profile, snap.TargetHz);
-            
-            // Calculate zones using SAME snapshot data as RTSS
-            var pingZone = zoner.FromPing(snap.PingAvgMs);
-            var tickrateZone = zoner.FromTickrate(snap.TickrateAvgHz);
-            var ticktimeZone = zoner.FromTicktime(snap.TicktimeAvgMs);
-            
-            // Convert zones to colors - SAME mapping for GUI and RTSS
-            Color PingColor = Classes.ZoneColors.ToColor(pingZone);
-            Color TickRateColor = Classes.ZoneColors.ToColor(tickrateZone);
             
             bool hasActiveSession = App.meterState.IsTracking &&
                                     App.meterState.Server != null &&
                                     !string.IsNullOrEmpty(App.meterState.Server.Ip);
             bool showNoTrafficPlaceholder = !hasActiveSession;
-            
-            // ChatGPT Enhancement: Snapshot-based diagnostic for perfect consistency
-            string zonerDiagnostic = zoner.GetDiagnostic(snap);
-            System.Diagnostics.Debug.Print($"[ZONER GUI] {zonerDiagnostic}");
             
             await Task.Run(
                     () => {
@@ -1885,7 +1872,12 @@ namespace tickMeter.Forms
                             }
                         }
 
+                        // FIXED: Apply smoothing first, then determine zone from smoothed value
                         int displayPing = rawPing > 0 ? Classes.SmoothingManager.SmoothPingValueGui(rawPing) : 0;
+                        
+                        // Calculate zone from SMOOTHED display value, not raw snapshot
+                        var pingZone = zoner.FromPing(displayPing);
+                        Color PingColor = Classes.ZoneColors.ToColor(pingZone);
                         string pingText = rawPing > 0 ? $"{displayPing} ms" : "n/a ms";
 
                         bool showSpikeIndicator = App.settingsManager?.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
@@ -1909,8 +1901,13 @@ namespace tickMeter.Forms
                         }
 
                         int rawTickrate = App.meterState.OutputTickRate;
-                        // Применяем сглаживание для GUI значений тикрейта, если включено
+                        // FIXED: Apply smoothing first, then determine zone from smoothed value
                         int displayTickrate = Classes.SmoothingManager.SmoothTickrateValueGui(rawTickrate);
+                        
+                        // Calculate zone from SMOOTHED display value, not raw snapshot
+                        var tickrateZone = zoner.FromTickrate(displayTickrate);
+                        Color TickRateColor = Classes.ZoneColors.ToColor(tickrateZone);
+                        
                         bool showTickrateSpikes = App.settingsManager?.GetOption("show_tickrate_spikes", "True", "ADVANCED") == "True";
                         bool tickrateSpikeActive = hasActiveSession && showTickrateSpikes && App.meterState.HasTickRateSpike;
                         string tickrateText = displayTickrate.ToString();
@@ -2098,7 +2095,7 @@ namespace tickMeter.Forms
                             {
                                 Ping = pingZone.ToString(),
                                 Tickrate = tickrateZone.ToString(),
-                                Ticktime = ticktimeZone.ToString()
+                                Ticktime = "N/A" // Ticktime uses same zone as tickrate (inverse relationship)
                             },
                             Spikes = new SpikeMetrics
                             {
@@ -2113,7 +2110,7 @@ namespace tickMeter.Forms
                                 TickrateOverlayEnabled = SmoothingManager.IsTickrateValueOverlayEnabled(),
                                 TrafficOverlayEnabled = SmoothingManager.IsTrafficValueOverlayEnabled()
                             },
-                            Diagnostic = zonerDiagnostic
+                            Diagnostic = $"Zones calculated from smoothed display values (GUI: Ping={displayPing}, Tickrate={displayTickrate})"
                         };
 
                         MetricDiagnostics.TryLog(diagnosticPayload);

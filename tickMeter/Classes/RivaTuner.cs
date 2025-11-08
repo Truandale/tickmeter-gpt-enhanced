@@ -180,20 +180,17 @@ namespace tickMeter.Classes
         {
             string tickRateStr = "<S><C0>Tickrate: ";
             
-            // === ChatGPT ENHANCED: Snapshot-based unified tickrate zoning ===
-            // Use SAME snapshot as FormatPing() for perfect consistency
+            // === ChatGPT ENHANCED: Zone from smoothed display value ===
             var snap = Classes.UnifiedDataSource.Snapshot();
             var profile = App.settingsManager.GetColorZoneProfile();
             var zoner = Classes.Zoner.FromProfile(profile, snap.TargetHz);
             
-            // Get zone from SAME snapshot data as GUI
-            var tickrateZone = zoner.FromTickrate(snap.TickrateAvgHz);
-            
-            // Use SAME color mapping as FormatPing() but for RTSS format
-            string tickrateColor = Classes.ZoneColors.ToRtssLegacy(tickrateZone);
-            
-            // Применяем сглаживание для overlay значений тикрейта, если включено
+            // FIXED: Apply smoothing first, then determine zone from smoothed value
             int displayTickrate = Classes.SmoothingManager.SmoothTickrateValueOverlay(meterState.OutputTickRate);
+            
+            // Calculate zone from SMOOTHED display value, not raw snapshot
+            var tickrateZone = zoner.FromTickrate(displayTickrate);
+            string tickrateColor = Classes.ZoneColors.ToRtssLegacy(tickrateZone);
             
             tickRateStr += tickrateColor + displayTickrate.ToString();
             
@@ -281,27 +278,25 @@ namespace tickMeter.Classes
 
         public static string FormatPing()
         {
-            // === ChatGPT ENHANCED: Snapshot-based unified zoning ===
-            // Use SAME snapshot as GUI for perfect consistency
+            // === ChatGPT ENHANCED: Zone from smoothed display value ===
             var snap = Classes.UnifiedDataSource.Snapshot();
             var profile = App.settingsManager.GetColorZoneProfile(); 
             var zoner = Classes.Zoner.FromProfile(profile, snap.TargetHz);
             
-            // Get zone from SAME snapshot data as GUI
-            var pingZone = zoner.FromPing(snap.PingAvgMs);
-            
-            // Use SAME color mapping as GUI but for RTSS format
-            string pingFont = Classes.ZoneColors.ToRtssLegacy(pingZone);
-            
             string pingValue = "";
             string geo = meterState.Server.Location;
+            string pingFont;
             
-            // Format display value from snapshot with smoothing
+            // Format display value with smoothing FIRST
             if (snap.PingAvgMs > 0)
             {
-                // Применяем сглаживание для overlay значений пинга, если включено
+                // FIXED: Apply smoothing first, then determine zone from smoothed value
                 int smoothedPing = Classes.SmoothingManager.SmoothPingValueOverlay((int)snap.PingAvgMs);
                 pingValue = smoothedPing.ToString();
+                
+                // Calculate zone from SMOOTHED display value, not raw snapshot
+                var pingZone = zoner.FromPing(smoothedPing);
+                pingFont = Classes.ZoneColors.ToRtssLegacy(pingZone);
             }
             else
             {
@@ -396,15 +391,17 @@ namespace tickMeter.Classes
             }
             if (App.settingsForm.settings_chart_checkbox.Checked)
             {
-                // === ChatGPT ENHANCED: Use unified zoning for tickrate chart ===
+                // === ChatGPT ENHANCED: Zone from smoothed display value for chart ===
                 var snap = Classes.UnifiedDataSource.Snapshot();
                 var profile = App.settingsManager.GetColorZoneProfile();
                 var zoner = Classes.Zoner.FromProfile(profile, snap.TargetHz);
-                var tickrateZone = zoner.FromTickrate(snap.TickrateAvgHz);
-                string tickrateColor = Classes.ZoneColors.ToRtssLegacy(tickrateZone);
                 
-                // ИСПРАВЛЕНИЕ: используем то же сглаженное значение что и в FormatTickrate()
+                // FIXED: Apply smoothing first, then determine zone from smoothed value
                 int tickrateValue = Classes.SmoothingManager.SmoothTickrateValueOverlay(App.meterState.OutputTickRate);
+                
+                // Calculate zone from SMOOTHED display value, not raw snapshot
+                var tickrateZone = zoner.FromTickrate(tickrateValue);
+                string tickrateColor = Classes.ZoneColors.ToRtssLegacy(tickrateZone);
 
                 // Добавляем индикатор спайка рядом со значением (как у пинга)
                 string tickrateValueDisplay = tickrateValue > 0 ? tickrateValue.ToString() : "n/a";
@@ -443,19 +440,19 @@ namespace tickMeter.Classes
             }
             if (App.settingsForm.settings_ticktime_chart.Checked)
             {
-                // === ChatGPT ENHANCED: Use unified zoning for ticktime chart ===
+                // === ChatGPT ENHANCED: Zone from smoothed tickrate value (inverse relationship) ===
                 // ВАЖНО: Ticktime обратно пропорционален tickrate, используем ТОТ ЖЕ цвет
                 var snap = Classes.UnifiedDataSource.Snapshot();
                 var profile = App.settingsManager.GetColorZoneProfile();
                 var zoner = Classes.Zoner.FromProfile(profile, snap.TargetHz);
                 
-                // Получаем цвет от TICKRATE (не от ticktime), т.к. они обратно пропорциональны
-                var tickrateZone = zoner.FromTickrate(snap.TickrateAvgHz);
+                // FIXED: Get color from SMOOTHED tickrate (since ticktime is inversely proportional)
+                int smoothedTickrate = Classes.SmoothingManager.SmoothTickrateValueOverlay(App.meterState.OutputTickRate);
+                var tickrateZone = zoner.FromTickrate(smoothedTickrate);
                 string ticktimeColor = Classes.ZoneColors.ToRtssLegacy(tickrateZone);
                 
-                // ИСПРАВЛЕНИЕ: используем синхронизированное значение из snapshot вместо буфера
+                // Apply smoothing to ticktime display value
                 float rawTicktimeValue = (float)snap.TicktimeAvgMs;
-                // Применяем сглаживание для значений тиктайма в оверлее, если включено
                 float ticktimeValue = Classes.SmoothingManager.SmoothTicktimeValueOverlay(rawTicktimeValue);
                 // Добавляем индикатор спайка рядом со значением (как у пинга)
                 string ticktimeValueDisplay = ticktimeValue > 0 ? ticktimeValue.ToString("0.0") : "n/a";
@@ -487,23 +484,23 @@ namespace tickMeter.Classes
                 {
                     if (App.settingsForm.settings_ping_chart.Checked && App.meterState.pingBuffer.Count() > 1)
                     {
-                        // === ChatGPT ENHANCED: Snapshot-based ping chart ===
-                        // Use SAME snapshot as FormatPing() for perfect consistency
+                        // === ChatGPT ENHANCED: Zone from smoothed display value for ping chart ===
                         var snap = Classes.UnifiedDataSource.Snapshot();
                         var profile = App.settingsManager.GetColorZoneProfile();
                         var zoner = Classes.Zoner.FromProfile(profile, snap.TargetHz);
                         
-                        // Get zone from SAME snapshot data as FormatPing()
-                        var pingZone = zoner.FromPing(snap.PingAvgMs);
-                        
-                        // Use SAME color mapping as FormatPing() but for RTSS format
-                        string pingColor = Classes.ZoneColors.ToRtssLegacy(pingZone);
-                        
-                        // Format display value from snapshot
+                        // Format display value WITH SMOOTHING first
                         string pingValue = "";
+                        string pingColor;
                         if (snap.PingAvgMs > 0)
                         {
-                            pingValue = ((int)snap.PingAvgMs).ToString();
+                            // FIXED: Apply smoothing first, then determine zone from smoothed value
+                            int smoothedPing = Classes.SmoothingManager.SmoothPingValueOverlay((int)snap.PingAvgMs);
+                            pingValue = smoothedPing.ToString();
+                            
+                            // Calculate zone from SMOOTHED display value, not raw snapshot
+                            var pingZone = zoner.FromPing(smoothedPing);
+                            pingColor = Classes.ZoneColors.ToRtssLegacy(pingZone);
                         }
                         else
                         {

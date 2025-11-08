@@ -302,12 +302,14 @@ namespace tickMeter.Classes
         /// <summary>
         /// Get ping value for zone calculation - same source for GUI and RTSS
         /// ChatGPT Enhanced: Data validation and anomaly detection
+        /// IMPORTANT: Returns RAW value - smoothing is applied at display time only once!
         /// </summary>
         public static double AvgPingForZone()
         {
             try 
             {
-                // Use smoothed value from SmoothingManager for consistent display
+                // ИСПРАВЛЕНИЕ: возвращаем сырое значение без сглаживания
+                // Сглаживание применяется один раз в месте отображения (GUI или Overlay)
                 int rawPing = 0;
                 
                 // Same priority as GUI: UDP > TCP > ICMP
@@ -331,17 +333,8 @@ namespace tickMeter.Classes
                     return GetFallbackPing();
                 }
                 
-                // Apply same smoothing as display
-                double smoothedPing = rawPing > 0 ? Classes.SmoothingManager.SmoothPingValueGui(rawPing) : 0;
-                
-                // Additional validation after smoothing
-                if (double.IsNaN(smoothedPing) || double.IsInfinity(smoothedPing))
-                {
-                    Console.WriteLine($"[ERROR] Invalid smoothed ping: {smoothedPing}, using raw value");
-                    return rawPing;
-                }
-                
-                return smoothedPing;
+                // Возвращаем сырое значение - сглаживание будет применено в GUI/Overlay
+                return rawPing;
             }
             catch (Exception ex)
             {
