@@ -207,22 +207,23 @@ namespace tickMeter.Classes
             // Добавляем ticktime рядом с tickrate
             tickRateStr += " <S0><C0>/ ";
             
-            // Get ticktime zone and color
-            var ticktimeZone = zoner.FromTicktime(snap.TicktimeAvgMs);
-            string ticktimeColor = Classes.ZoneColors.ToRtssLegacy(ticktimeZone);
+            // ВАЖНО: Ticktime обратно пропорционален tickrate, поэтому используем ТОТ ЖЕ цвет
+            // Например: Tickrate 128Hz (зеленый) → Ticktime 7.8ms (тоже зеленый)
+            //           Tickrate 64Hz (желтый) → Ticktime 15.6ms (тоже желтый)
+            // Используем tickrateColor вместо отдельной зоны для ticktime
             
             // Применяем сглаживание для значений тиктайма
             float rawTicktimeValue = (float)snap.TicktimeAvgMs;
             float ticktimeValue = Classes.SmoothingManager.SmoothTicktimeValueOverlay(rawTicktimeValue);
             string ticktimeDisplay = ticktimeValue > 0 ? ticktimeValue.ToString("0.0") : "n/a";
             
-            tickRateStr += ticktimeColor + ticktimeDisplay + " <S0>ms";
+            tickRateStr += tickrateColor + ticktimeDisplay + " <S0>ms";
             
-            // Добавляем индикатор спайка для ticktime (того же цвета что и значение)
+            // Добавляем индикатор спайка для ticktime (того же цвета что и tickrate)
             bool showTicktimeSpikes = App.settingsManager?.GetOption("show_ticktime_spikes", "True", "ADVANCED") == "True";
             if (showTicktimeSpikes && App.meterState.HasTickTimeSpike)
             {
-                tickRateStr += $" {ticktimeColor}(!)";
+                tickRateStr += $" {tickrateColor}(!)";
             }
             
             string output = tickRateStr + "<C>" + Environment.NewLine;
@@ -443,11 +444,14 @@ namespace tickMeter.Classes
             if (App.settingsForm.settings_ticktime_chart.Checked)
             {
                 // === ChatGPT ENHANCED: Use unified zoning for ticktime chart ===
+                // ВАЖНО: Ticktime обратно пропорционален tickrate, используем ТОТ ЖЕ цвет
                 var snap = Classes.UnifiedDataSource.Snapshot();
                 var profile = App.settingsManager.GetColorZoneProfile();
                 var zoner = Classes.Zoner.FromProfile(profile, snap.TargetHz);
-                var ticktimeZone = zoner.FromTicktime(snap.TicktimeAvgMs);
-                string ticktimeColor = Classes.ZoneColors.ToRtssLegacy(ticktimeZone);
+                
+                // Получаем цвет от TICKRATE (не от ticktime), т.к. они обратно пропорциональны
+                var tickrateZone = zoner.FromTickrate(snap.TickrateAvgHz);
+                string ticktimeColor = Classes.ZoneColors.ToRtssLegacy(tickrateZone);
                 
                 // ИСПРАВЛЕНИЕ: используем синхронизированное значение из snapshot вместо буфера
                 float rawTicktimeValue = (float)snap.TicktimeAvgMs;
@@ -458,7 +462,7 @@ namespace tickMeter.Classes
                 bool showTicktimeSpikes = App.settingsManager?.GetOption("show_ticktime_spikes", "True", "ADVANCED") == "True";
                 if (showTicktimeSpikes && App.meterState.HasTickTimeSpike)
                 {
-                    // Используем тот же цвет что и значение тиктайма (сохраняем цвет зоны)
+                    // Используем тот же цвет что и tickrate (обратная пропорциональность)
                     ticktimeValueDisplay += $" {ticktimeColor}(!)";
                 }
                 
