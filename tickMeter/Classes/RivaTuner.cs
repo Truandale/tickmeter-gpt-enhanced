@@ -204,6 +204,27 @@ namespace tickMeter.Classes
                 tickRateStr += $" {tickrateColor}(!)";
             }
             
+            // Добавляем ticktime рядом с tickrate
+            tickRateStr += " <S0><C0>/ ";
+            
+            // Get ticktime zone and color
+            var ticktimeZone = zoner.FromTicktime(snap.TicktimeAvgMs);
+            string ticktimeColor = Classes.ZoneColors.ToRtssLegacy(ticktimeZone);
+            
+            // Применяем сглаживание для значений тиктайма
+            float rawTicktimeValue = (float)snap.TicktimeAvgMs;
+            float ticktimeValue = Classes.SmoothingManager.SmoothTicktimeValueOverlay(rawTicktimeValue);
+            string ticktimeDisplay = ticktimeValue > 0 ? ticktimeValue.ToString("0.0") : "n/a";
+            
+            tickRateStr += ticktimeColor + ticktimeDisplay + " <S0>ms";
+            
+            // Добавляем индикатор спайка для ticktime (того же цвета что и значение)
+            bool showTicktimeSpikes = App.settingsManager?.GetOption("show_ticktime_spikes", "True", "ADVANCED") == "True";
+            if (showTicktimeSpikes && App.meterState.HasTickTimeSpike)
+            {
+                tickRateStr += $" {ticktimeColor}(!)";
+            }
+            
             string output = tickRateStr + "<C>" + Environment.NewLine;
             return output;
         }
