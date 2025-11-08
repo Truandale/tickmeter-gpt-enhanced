@@ -85,6 +85,12 @@ namespace tickMeter
                 if (tickTime > 0f)
                 {
                     tickTimeBuffer.Add(tickTime);
+                    
+                    // Детекция спайков ticktime
+                    if (Server != null)
+                    {
+                        Server.CheckForTicktimeSpike(tickTime);
+                    }
                 }
             }
         }
@@ -569,7 +575,7 @@ namespace tickMeter
                 CheckForPingSpikeAdvanced(currentPing);
             }
 
-            // EMA состояние для продвинутой детекции
+            // EMA состояние для продвинутой детекции PING
             private double _pingEma = 0;
             private double _pingEwVar = 0;
             private bool _pingDetectorInitialized = false;
@@ -580,9 +586,27 @@ namespace tickMeter
             private double _timeSinceSpike = 1000; // большое значение для начала
             private double _spikePeak = 0;
 
-            // Spike detection flags for new system
+            // EMA состояние для продвинутой детекции TICKRATE
+            private double _tickrateEma = 0;
+            private double _tickrateEwVar = 0;
+            private bool _tickrateDetectorInitialized = false;
             private bool _inTickRateSpike = false;
+            private DateTime _tickrateSpikeStartTime = DateTime.MinValue;
+            private DateTime _tickrateSpikeEndTime = DateTime.MinValue;
+            private double _tickrateSpikeHoldTime = 0;
+            private double _tickrateTimeSinceSpike = 1000;
+            private double _tickrateSpikePeak = 0;
+
+            // EMA состояние для продвинутой детекции TICKTIME
+            private double _ticktimeEma = 0;
+            private double _ticktimeEwVar = 0;
+            private bool _ticktimeDetectorInitialized = false;
             private bool _inTickTimeSpike = false;
+            private DateTime _ticktimeSpikeStartTime = DateTime.MinValue;
+            private DateTime _ticktimeSpikeEndTime = DateTime.MinValue;
+            private double _ticktimeSpikeHoldTime = 0;
+            private double _ticktimeTimeSinceSpike = 1000;
+            private double _ticktimeSpikePeak = 0;
 
             /// <summary>
             /// Продвинутая детекция спайков с EMA, EW-стандартным отклонением и гистерезисом
@@ -828,6 +852,377 @@ namespace tickMeter
             public void SetTickTimeSpike(bool hasSpike)
             {
                 _inTickTimeSpike = hasSpike;
+            }
+
+            /// <summary>
+            /// Продвинутая детекция спайков TICKRATE с EMA, EW-стандартным отклонением и гистерезисом
+            /// ВАЖНО: Детектируем ПАДЕНИЕ tickrate (инверсия относительно ping!)
+            /// </summary>
+            public void CheckForTickrateSpike(float currentTickrate)
+            {
+                // Проверяем настройки детекции tickrate
+                bool detectTickrateSpikes = App.settingsManager?.GetOption("spikes.detect_tickrate", "True", "ADVANCED") == "True";
+                if (!detectTickrateSpikes || currentTickrate <= 0)
+                {
+                    return;
+                }
+
+                var now = DateTime.Now;
+                
+                // Читаем пресет чувствительности из настроек
+                string sensitivityPreset = "medium";
+                if (App.settingsManager != null)
+                {
+                    sensitivityPreset = App.settingsManager.GetOption("spikes.sensitivity", "medium", "ADVANCED");
+                }
+                
+                // Параметры детектора в зависимости от пресета (для TICKRATE)
+                double tauSec, minAbsHz, minRel, kHi, kLo;
+                
+                switch (sensitivityPreset.ToLower())
+                {
+                    case "very_low":
+                        tauSec = 10.0;
+                        minAbsHz = 25.0;
+                        minRel = 0.40;
+                        kHi = 5.0;
+                        kLo = 2.0; // выше чем у ping для быстрого снятия
+                        break;
+                        
+                    case "low":
+                        tauSec = 8.0;
+                        minAbsHz = 18.0;
+                        minRel = 0.30;
+                        kHi = 4.0;
+                        kLo = 1.5;
+                        break;
+                        
+                    case "medium":
+                        tauSec = 6.0;
+                        minAbsHz = 12.0;
+                        minRel = 0.22;
+                        kHi = 3.0;
+                        kLo = 1.8;
+                        break;
+                        
+                    case "high":
+                        tauSec = 4.0;
+                        minAbsHz = 8.0;
+                        minRel = 0.15;
+                        kHi = 2.5;
+                        kLo = 2.0;
+                        break;
+                        
+                    case "auto":
+                        tauSec = 6.0;
+                        minAbsHz = 12.0;
+                        minRel = 0.22;
+                        kHi = 3.0;
+                        kLo = 1.8;
+                        break;
+                        
+                    default:
+                        tauSec = 6.0;
+                        minAbsHz = 12.0;
+                        minRel = 0.22;
+                        kHi = 3.0;
+                        kLo = 1.8;
+                        break;
+                }
+                
+                double minHoldSec = 0.05; // 50ms
+                double maxHoldSec = 10.0;
+                double refractorySec = 1.5;
+                double mergeWindow = 0.2;
+
+                // Инициализация при первом запуске
+                if (!_tickrateDetectorInitialized)
+                {
+                    _tickrateEma = currentTickrate;
+                    _tickrateEwVar = Math.Pow(currentTickrate * 0.1, 2);
+                    _tickrateDetectorInitialized = true;
+                    Debug.Print($"[AdvancedTickrateSpike] Initialized with base {currentTickrate:F1} Hz");
+                    return;
+                }
+
+                double dt = 0.1; // ~100мс между обновлениями
+                
+                // Обновляем EMA
+                double alpha = dt / (tauSec + dt);
+                double dx = currentTickrate - _tickrateEma;
+                _tickrateEma += alpha * dx;
+
+                // Обновляем EW дисперсию
+                double beta = alpha;
+                _tickrateEwVar = (1 - beta) * _tickrateEwVar + beta * dx * dx;
+                double sigma = Math.Sqrt(Math.Max(_tickrateEwVar, 1e-12));
+
+                // Вычисляем гибридный порог
+                double thrAbs = minAbsHz;
+                double thrRel = Math.Abs(minRel * _tickrateEma);
+                double thrSig = kHi * sigma;
+                double threshold = Math.Max(thrAbs, Math.Max(thrRel, thrSig));
+
+                _tickrateTimeSinceSpike += dt;
+
+                if (!_inTickRateSpike)
+                {
+                    // ИНВЕРСИЯ: Проверяем ПАДЕНИЕ tickrate (EMA - current > threshold)
+                    bool cross = (_tickrateEma - currentTickrate) > threshold;
+                    
+                    if (cross && _tickrateTimeSinceSpike >= refractorySec)
+                    {
+                        // Проверяем анти-бурст объединение
+                        if (_tickrateSpikeEndTime != DateTime.MinValue && 
+                            (now - _tickrateSpikeEndTime).TotalSeconds < mergeWindow)
+                        {
+                            Debug.Print($"[AdvancedTickrateSpike] Merging with recent spike");
+                            _inTickRateSpike = true;
+                            _tickrateSpikePeak = Math.Max(_tickrateSpikePeak, (_tickrateEma - currentTickrate));
+                            return;
+                        }
+                        
+                        // Начинаем новый спайк
+                        _tickrateSpikeHoldTime = 0;
+                        _inTickRateSpike = true;
+                        _tickrateTimeSinceSpike = 0;
+                        _tickrateSpikeStartTime = now;
+                        _tickrateSpikePeak = (_tickrateEma - currentTickrate);
+                        
+                        Debug.Print($"[AdvancedTickrateSpike] SPIKE START: {currentTickrate:F1}Hz (dropped from μ={_tickrateEma:F1}Hz), σ={sigma:F2}Hz, threshold={threshold:F1}Hz, peak={_tickrateSpikePeak:F1}Hz");
+                    }
+                }
+                else
+                {
+                    _tickrateSpikeHoldTime += dt;
+                    
+                    // Обновляем пик спайка (максимальное падение)
+                    var currentDeviation = (_tickrateEma - currentTickrate);
+                    if (currentDeviation > _tickrateSpikePeak)
+                    {
+                        _tickrateSpikePeak = currentDeviation;
+                    }
+                    
+                    // Проверяем условие выхода из спайка (гистерезис)
+                    double lowerThreshold = kLo * sigma;
+                    bool belowLower = (_tickrateEma - currentTickrate) < lowerThreshold;
+                    
+                    // Защита от "вечного" индикатора
+                    bool maxDurationExceeded = _tickrateSpikeHoldTime >= maxHoldSec;
+                    
+                    if (belowLower)
+                    {
+                        _inTickRateSpike = false;
+                        _tickrateTimeSinceSpike = 0;
+                        _tickrateSpikeEndTime = now;
+                        
+                        Debug.Print($"[AdvancedTickrateSpike] SPIKE END (NORMAL): duration={_tickrateSpikeHoldTime:F3}s, peak={_tickrateSpikePeak:F1}Hz drop");
+                        
+                        _tickrateSpikePeak = 0;
+                        _tickrateSpikeStartTime = DateTime.MinValue;
+                    }
+                    else if (maxDurationExceeded)
+                    {
+                        _inTickRateSpike = false;
+                        _tickrateTimeSinceSpike = 0;
+                        _tickrateSpikeEndTime = now;
+                        
+                        Debug.Print($"[AdvancedTickrateSpike] SPIKE END (MAX_DURATION): forced after {maxHoldSec}s");
+                        
+                        _tickrateSpikePeak = 0;
+                        _tickrateSpikeStartTime = DateTime.MinValue;
+                    }
+                    else if (DateTime.Now.Millisecond % 500 < 50)
+                    {
+                        Debug.Print($"[AdvancedTickrateSpike] ONGOING: current={currentTickrate:F1}Hz, EMA={_tickrateEma:F1}Hz, deviation={currentDeviation:F1}Hz, threshold={lowerThreshold:F1}Hz, hold={_tickrateSpikeHoldTime:F2}s");
+                    }
+                }
+            }
+
+            /// <summary>
+            /// Продвинутая детекция спайков TICKTIME с EMA, EW-стандартным отклонением и гистерезисом
+            /// Детектируем УВЕЛИЧЕНИЕ ticktime (аналогично ping)
+            /// </summary>
+            public void CheckForTicktimeSpike(float currentTicktime)
+            {
+                // Проверяем настройки детекции ticktime
+                bool detectTicktimeSpikes = App.settingsManager?.GetOption("spikes.detect_ticktime", "True", "ADVANCED") == "True";
+                if (!detectTicktimeSpikes || currentTicktime <= 0)
+                {
+                    return;
+                }
+
+                var now = DateTime.Now;
+                var ticktimeSeconds = currentTicktime / 1000.0; // конвертируем в секунды
+                
+                // Читаем пресет чувствительности из настроек
+                string sensitivityPreset = "medium";
+                if (App.settingsManager != null)
+                {
+                    sensitivityPreset = App.settingsManager.GetOption("spikes.sensitivity", "medium", "ADVANCED");
+                }
+                
+                // Параметры детектора в зависимости от пресета (для TICKTIME)
+                double tauSec, minAbsMs, minRel, kHi, kLo;
+                
+                switch (sensitivityPreset.ToLower())
+                {
+                    case "very_low":
+                        tauSec = 10.0;
+                        minAbsMs = 25.0;
+                        minRel = 1.0;
+                        kHi = 5.0;
+                        kLo = 1.0; // выше чем у ping
+                        break;
+                        
+                    case "low":
+                        tauSec = 8.0;
+                        minAbsMs = 18.0;
+                        minRel = 0.7;
+                        kHi = 4.0;
+                        kLo = 1.2;
+                        break;
+                        
+                    case "medium":
+                        tauSec = 6.0;
+                        minAbsMs = 12.0;
+                        minRel = 0.55;
+                        kHi = 3.0;
+                        kLo = 1.6;
+                        break;
+                        
+                    case "high":
+                        tauSec = 4.0;
+                        minAbsMs = 8.0;
+                        minRel = 0.38;
+                        kHi = 2.5;
+                        kLo = 1.9;
+                        break;
+                        
+                    case "auto":
+                        tauSec = 6.0;
+                        minAbsMs = 12.0;
+                        minRel = 0.55;
+                        kHi = 3.0;
+                        kLo = 1.6;
+                        break;
+                        
+                    default:
+                        tauSec = 6.0;
+                        minAbsMs = 12.0;
+                        minRel = 0.55;
+                        kHi = 3.0;
+                        kLo = 1.6;
+                        break;
+                }
+                
+                double minHoldSec = 0.05; // 50ms
+                double maxHoldSec = 10.0;
+                double refractorySec = 1.5;
+                double mergeWindow = 0.2;
+
+                // Инициализация при первом запуске
+                if (!_ticktimeDetectorInitialized)
+                {
+                    _ticktimeEma = ticktimeSeconds;
+                    _ticktimeEwVar = Math.Pow(ticktimeSeconds * 0.1, 2);
+                    _ticktimeDetectorInitialized = true;
+                    Debug.Print($"[AdvancedTicktimeSpike] Initialized with base {currentTicktime:F1}ms");
+                    return;
+                }
+
+                double dt = 0.1; // ~100мс между обновлениями
+                
+                // Обновляем EMA
+                double alpha = dt / (tauSec + dt);
+                double dx = ticktimeSeconds - _ticktimeEma;
+                _ticktimeEma += alpha * dx;
+
+                // Обновляем EW дисперсию
+                double beta = alpha;
+                _ticktimeEwVar = (1 - beta) * _ticktimeEwVar + beta * dx * dx;
+                double sigma = Math.Sqrt(Math.Max(_ticktimeEwVar, 1e-12));
+
+                // Вычисляем гибридный порог
+                double thrAbs = minAbsMs / 1000.0; // в секунды
+                double thrRel = Math.Abs(minRel * _ticktimeEma);
+                double thrSig = kHi * sigma;
+                double threshold = Math.Max(thrAbs, Math.Max(thrRel, thrSig));
+
+                _ticktimeTimeSinceSpike += dt;
+
+                if (!_inTickTimeSpike)
+                {
+                    // Проверяем УВЕЛИЧЕНИЕ ticktime (аналогично ping)
+                    bool cross = (ticktimeSeconds - _ticktimeEma) > threshold;
+                    
+                    if (cross && _ticktimeTimeSinceSpike >= refractorySec)
+                    {
+                        // Проверяем анти-бурст объединение
+                        if (_ticktimeSpikeEndTime != DateTime.MinValue && 
+                            (now - _ticktimeSpikeEndTime).TotalSeconds < mergeWindow)
+                        {
+                            Debug.Print($"[AdvancedTicktimeSpike] Merging with recent spike");
+                            _inTickTimeSpike = true;
+                            _ticktimeSpikePeak = Math.Max(_ticktimeSpikePeak, (ticktimeSeconds - _ticktimeEma) * 1000);
+                            return;
+                        }
+                        
+                        // Начинаем новый спайк
+                        _ticktimeSpikeHoldTime = 0;
+                        _inTickTimeSpike = true;
+                        _ticktimeTimeSinceSpike = 0;
+                        _ticktimeSpikeStartTime = now;
+                        _ticktimeSpikePeak = (ticktimeSeconds - _ticktimeEma) * 1000; // пик в мс
+                        
+                        Debug.Print($"[AdvancedTicktimeSpike] SPIKE START: {currentTicktime:F1}ms (up from μ={_ticktimeEma*1000:F1}ms), σ={sigma*1000:F2}ms, threshold={threshold*1000:F1}ms, peak={_ticktimeSpikePeak:F1}ms");
+                    }
+                }
+                else
+                {
+                    _ticktimeSpikeHoldTime += dt;
+                    
+                    // Обновляем пик спайка
+                    var currentDeviation = (ticktimeSeconds - _ticktimeEma) * 1000;
+                    if (currentDeviation > _ticktimeSpikePeak)
+                    {
+                        _ticktimeSpikePeak = currentDeviation;
+                    }
+                    
+                    // Проверяем условие выхода из спайка (гистерезис)
+                    double lowerThreshold = kLo * sigma;
+                    bool belowLower = (ticktimeSeconds - _ticktimeEma) < lowerThreshold;
+                    
+                    // Защита от "вечного" индикатора
+                    bool maxDurationExceeded = _ticktimeSpikeHoldTime >= maxHoldSec;
+                    
+                    if (belowLower)
+                    {
+                        _inTickTimeSpike = false;
+                        _ticktimeTimeSinceSpike = 0;
+                        _ticktimeSpikeEndTime = now;
+                        
+                        Debug.Print($"[AdvancedTicktimeSpike] SPIKE END (NORMAL): duration={_ticktimeSpikeHoldTime:F3}s, peak={_ticktimeSpikePeak:F1}ms");
+                        
+                        _ticktimeSpikePeak = 0;
+                        _ticktimeSpikeStartTime = DateTime.MinValue;
+                    }
+                    else if (maxDurationExceeded)
+                    {
+                        _inTickTimeSpike = false;
+                        _ticktimeTimeSinceSpike = 0;
+                        _ticktimeSpikeEndTime = now;
+                        
+                        Debug.Print($"[AdvancedTicktimeSpike] SPIKE END (MAX_DURATION): forced after {maxHoldSec}s");
+                        
+                        _ticktimeSpikePeak = 0;
+                        _ticktimeSpikeStartTime = DateTime.MinValue;
+                    }
+                    else if (DateTime.Now.Millisecond % 500 < 50)
+                    {
+                        Debug.Print($"[AdvancedTicktimeSpike] ONGOING: current={currentTicktime:F1}ms, EMA={_ticktimeEma*1000:F1}ms, deviation={currentDeviation:F1}ms, threshold={lowerThreshold*1000:F1}ms, hold={_ticktimeSpikeHoldTime:F2}s");
+                    }
+                }
             }
 
             /// <summary>
@@ -1135,6 +1530,9 @@ namespace tickMeter
                 OutputTickRate = currentTickrate;
                 TicksHistory.Add(currentTickrate);
                 TickTimestamps.Add(timestamp);
+                
+                // Детекция спайков tickrate
+                CheckForTickrateSpike(currentTickrate);
                 
                 // Calculate average tickrate
                 if (AvgTickrate == 0)

@@ -1032,7 +1032,7 @@ namespace tickMeter.Forms
             this.chkSpikeMetricTickrate.Name = "chkSpikeMetricTickrate";
             this.chkSpikeMetricTickrate.Size = new System.Drawing.Size(184, 20);
             this.chkSpikeMetricTickrate.TabIndex = 2;
-            this.chkSpikeMetricTickrate.Text = "Тикрейт (в разработке)";
+            this.chkSpikeMetricTickrate.Text = "Тикрейт";
             this.chkSpikeMetricTickrate.UseVisualStyleBackColor = true;
             // 
             // chkSpikeMetricTicktime
@@ -1043,7 +1043,7 @@ namespace tickMeter.Forms
             this.chkSpikeMetricTicktime.Name = "chkSpikeMetricTicktime";
             this.chkSpikeMetricTicktime.Size = new System.Drawing.Size(185, 20);
             this.chkSpikeMetricTicktime.TabIndex = 3;
-            this.chkSpikeMetricTicktime.Text = "Тиктайм (в разработке)";
+            this.chkSpikeMetricTicktime.Text = "Тиктайм";
             this.chkSpikeMetricTicktime.UseVisualStyleBackColor = true;
             // 
             // lblSpikeSensitivity
