@@ -291,8 +291,12 @@ namespace tickMeter.Classes
             if (snap.PingAvgMs > 0)
             {
                 // FIXED: Apply smoothing first, then determine zone from smoothed value
-                int smoothedPing = Classes.SmoothingManager.SmoothPingValueOverlay((int)snap.PingAvgMs);
+                int rawPingOverlay = (int)snap.PingAvgMs;
+                int smoothedPing = Classes.SmoothingManager.SmoothPingValueOverlay(rawPingOverlay);
                 pingValue = smoothedPing.ToString();
+                
+                // DEBUG: Log overlay smoothing for verification
+                DebugLogger.log($"[OVERLAY-PING] Raw={rawPingOverlay} -> Smoothed={smoothedPing}");
                 
                 // Calculate zone from SMOOTHED display value, not raw snapshot
                 var pingZone = zoner.FromPing(smoothedPing);

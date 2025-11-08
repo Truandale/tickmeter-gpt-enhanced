@@ -1875,6 +1875,12 @@ namespace tickMeter.Forms
                         // FIXED: Apply smoothing first, then determine zone from smoothed value
                         int displayPing = rawPing > 0 ? Classes.SmoothingManager.SmoothPingValueGui(rawPing) : 0;
                         
+                        // DEBUG: Log GUI smoothing for verification
+                        if (rawPing > 0)
+                        {
+                            DebugLogger.log($"[GUI-PING] Raw={rawPing} -> Smoothed={displayPing}");
+                        }
+                        
                         // Calculate zone from SMOOTHED display value, not raw snapshot
                         var pingZone = zoner.FromPing(displayPing);
                         Color PingColor = Classes.ZoneColors.ToColor(pingZone);
@@ -2105,10 +2111,10 @@ namespace tickMeter.Forms
                             },
                             Smoothing = new SmoothingFlags
                             {
-                                PingGuiEnabled = SmoothingManager.IsPingValueGuiEnabled(),
-                                PingOverlayEnabled = SmoothingManager.IsPingValueOverlayEnabled(),
-                                TickrateOverlayEnabled = SmoothingManager.IsTickrateValueOverlayEnabled(),
-                                TrafficOverlayEnabled = SmoothingManager.IsTrafficValueOverlayEnabled()
+                                PingGuiEnabled = SmoothingManager.IsPingValueEnabled(),
+                                PingOverlayEnabled = SmoothingManager.IsPingValueEnabled(),
+                                TickrateOverlayEnabled = SmoothingManager.IsTickrateValueEnabled(),
+                                TrafficOverlayEnabled = SmoothingManager.IsTrafficValueEnabled()
                             },
                             Diagnostic = $"Zones calculated from smoothed display values (GUI: Ping={displayPing}, Tickrate={displayTickrate})"
                         };
