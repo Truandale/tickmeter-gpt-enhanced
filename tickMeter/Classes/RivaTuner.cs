@@ -696,7 +696,7 @@ namespace tickMeter.Classes
                 var qualityStats = Classes.NetworkQualityAnalyzer.GetDetailedStats();
                 
                 // Читаем режим отображения
-                string displayMode = IniFileHandler.ReadValue("ADVANCED", "network_quality_mode", "hybrid").ToLower();
+                string displayMode = (App.settingsManager?.GetOption("network_quality_mode", "hybrid", "ADVANCED") ?? "hybrid").ToLower();
                 
                 // Собираем дополнительную информацию компактно
                 var extras = new List<string>();
@@ -775,7 +775,7 @@ namespace tickMeter.Classes
         /// <summary>
         /// Форматирует гибридный режим (Standard + Context)
         /// </summary>
-        private static string FormatHybridQuality(tickMeter.Classes.NetworkQualityAnalyzer.NetworkQualityStats stats, List<string> extras)
+        private static string FormatHybridQuality(tickMeter.Classes.NetworkQualityStats stats, List<string> extras)
         {
             var (stdLevel, stdColor, stdIcon) = GetQualityLevelWithHysteresis(stats.StandardQuality, "Medium");
             var (ctxLevel, ctxColor, ctxIcon) = GetQualityLevelWithHysteresis(stats.ContextQuality, stats.ContextProfile);
