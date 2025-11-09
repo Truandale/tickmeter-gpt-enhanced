@@ -161,6 +161,7 @@ namespace tickMeter.Forms
             this.groupBoxNetworkQuality = new System.Windows.Forms.GroupBox();
             this.chkNetworkQualityEnabled = new System.Windows.Forms.CheckBox();
             this.chkNetworkQualityOverlay = new System.Windows.Forms.CheckBox();
+            this.chkNetworkQualityUseSmoothed = new System.Windows.Forms.CheckBox();
             this.lblQualityHistorySize = new System.Windows.Forms.Label();
             this.numQualityHistorySize = new System.Windows.Forms.NumericUpDown();
             this.lblStabilityThreshold = new System.Windows.Forms.Label();
@@ -2129,6 +2130,7 @@ namespace tickMeter.Forms
             // 
             this.groupBoxNetworkQuality.Controls.Add(this.chkNetworkQualityEnabled);
             this.groupBoxNetworkQuality.Controls.Add(this.chkNetworkQualityOverlay);
+            this.groupBoxNetworkQuality.Controls.Add(this.chkNetworkQualityUseSmoothed);
             this.groupBoxNetworkQuality.Controls.Add(this.lblQualityHistorySize);
             this.groupBoxNetworkQuality.Controls.Add(this.numQualityHistorySize);
             this.groupBoxNetworkQuality.Controls.Add(this.lblStabilityThreshold);
@@ -2170,10 +2172,21 @@ namespace tickMeter.Forms
             this.chkNetworkQualityOverlay.Text = "Показывать рейтинг качества в оверлее";
             this.chkNetworkQualityOverlay.UseVisualStyleBackColor = true;
             // 
+            // chkNetworkQualityUseSmoothed
+            // 
+            this.chkNetworkQualityUseSmoothed.AutoSize = true;
+            this.chkNetworkQualityUseSmoothed.Location = new System.Drawing.Point(8, 50);
+            this.chkNetworkQualityUseSmoothed.Margin = new System.Windows.Forms.Padding(4);
+            this.chkNetworkQualityUseSmoothed.Name = "chkNetworkQualityUseSmoothed";
+            this.chkNetworkQualityUseSmoothed.Size = new System.Drawing.Size(330, 20);
+            this.chkNetworkQualityUseSmoothed.TabIndex = 11;
+            this.chkNetworkQualityUseSmoothed.Text = "Использовать сглаженные данные для анализа";
+            this.chkNetworkQualityUseSmoothed.UseVisualStyleBackColor = true;
+            // 
             // lblQualityHistorySize
             // 
             this.lblQualityHistorySize.AutoSize = true;
-            this.lblQualityHistorySize.Location = new System.Drawing.Point(8, 55);
+            this.lblQualityHistorySize.Location = new System.Drawing.Point(8, 80);
             this.lblQualityHistorySize.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblQualityHistorySize.Name = "lblQualityHistorySize";
             this.lblQualityHistorySize.Size = new System.Drawing.Size(114, 16);
@@ -2182,7 +2195,7 @@ namespace tickMeter.Forms
             // 
             // numQualityHistorySize
             // 
-            this.numQualityHistorySize.Location = new System.Drawing.Point(160, 53);
+            this.numQualityHistorySize.Location = new System.Drawing.Point(160, 78);
             this.numQualityHistorySize.Margin = new System.Windows.Forms.Padding(4);
             this.numQualityHistorySize.Maximum = new decimal(new int[] {
             500,
@@ -2206,7 +2219,7 @@ namespace tickMeter.Forms
             // lblStabilityThreshold
             // 
             this.lblStabilityThreshold.AutoSize = true;
-            this.lblStabilityThreshold.Location = new System.Drawing.Point(250, 55);
+            this.lblStabilityThreshold.Location = new System.Drawing.Point(250, 80);
             this.lblStabilityThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStabilityThreshold.Name = "lblStabilityThreshold";
             this.lblStabilityThreshold.Size = new System.Drawing.Size(144, 16);
@@ -2221,7 +2234,7 @@ namespace tickMeter.Forms
             0,
             0,
             131072});
-            this.numStabilityThreshold.Location = new System.Drawing.Point(412, 53);
+            this.numStabilityThreshold.Location = new System.Drawing.Point(412, 78);
             this.numStabilityThreshold.Margin = new System.Windows.Forms.Padding(4);
             this.numStabilityThreshold.Maximum = new decimal(new int[] {
             1,
@@ -2245,7 +2258,7 @@ namespace tickMeter.Forms
             // lblQualityThreshold
             // 
             this.lblQualityThreshold.AutoSize = true;
-            this.lblQualityThreshold.Location = new System.Drawing.Point(8, 85);
+            this.lblQualityThreshold.Location = new System.Drawing.Point(8, 110);
             this.lblQualityThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblQualityThreshold.Name = "lblQualityThreshold";
             this.lblQualityThreshold.Size = new System.Drawing.Size(114, 16);
@@ -2260,7 +2273,7 @@ namespace tickMeter.Forms
             0,
             0,
             131072});
-            this.numQualityThreshold.Location = new System.Drawing.Point(160, 83);
+            this.numQualityThreshold.Location = new System.Drawing.Point(160, 108);
             this.numQualityThreshold.Margin = new System.Windows.Forms.Padding(4);
             this.numQualityThreshold.Maximum = new decimal(new int[] {
             1,
@@ -3133,6 +3146,7 @@ namespace tickMeter.Forms
         private System.Windows.Forms.GroupBox groupBoxNetworkQuality;
         private System.Windows.Forms.CheckBox chkNetworkQualityEnabled;
         private System.Windows.Forms.CheckBox chkNetworkQualityOverlay;
+        private System.Windows.Forms.CheckBox chkNetworkQualityUseSmoothed;
         private System.Windows.Forms.Label lblQualityHistorySize;
         private System.Windows.Forms.NumericUpDown numQualityHistorySize;
         private System.Windows.Forms.Label lblStabilityThreshold;

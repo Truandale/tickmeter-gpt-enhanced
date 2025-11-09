@@ -1434,6 +1434,7 @@ namespace tickMeter.Forms
             {
                 chkNetworkQualityEnabled.Checked = App.settingsManager.GetOption("network_quality_enabled", "True", "ADVANCED") == "True";
                 chkNetworkQualityOverlay.Checked = App.settingsManager.GetOption("network_quality_overlay", "False", "SETTINGS") == "True";
+                chkNetworkQualityUseSmoothed.Checked = App.settingsManager.GetOption("network_quality_use_smoothed", "False", "ADVANCED") == "True";
                 numQualityHistorySize.Value = decimal.Parse(App.settingsManager.GetOption("quality_history_size", "100", "ADVANCED"));
                 numStabilityThreshold.Value = decimal.Parse(App.settingsManager.GetOption("stability_threshold", "0.15", "ADVANCED"));
                 numQualityThreshold.Value = decimal.Parse(App.settingsManager.GetOption("quality_threshold", "0.8", "ADVANCED"));
@@ -1452,6 +1453,7 @@ namespace tickMeter.Forms
                 // Устанавливаем обработчики событий
                 chkNetworkQualityEnabled.CheckedChanged += ChkNetworkQualityEnabled_CheckedChanged;
                 chkNetworkQualityOverlay.CheckedChanged += ChkNetworkQualityOverlay_CheckedChanged;
+                chkNetworkQualityUseSmoothed.CheckedChanged += ChkNetworkQualityUseSmoothed_CheckedChanged;
                 numQualityHistorySize.ValueChanged += NumQualityHistorySize_ValueChanged;
                 numStabilityThreshold.ValueChanged += NumStabilityThreshold_ValueChanged;
                 numQualityThreshold.ValueChanged += NumQualityThreshold_ValueChanged;
@@ -1471,6 +1473,7 @@ namespace tickMeter.Forms
             {
                 App.settingsManager.SetOption("network_quality_enabled", chkNetworkQualityEnabled.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("network_quality_overlay", chkNetworkQualityOverlay.Checked.ToString(), "SETTINGS");
+                App.settingsManager.SetOption("network_quality_use_smoothed", chkNetworkQualityUseSmoothed.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("quality_history_size", SettingsManager.ToInvariantString((int)numQualityHistorySize.Value), "ADVANCED");
                 App.settingsManager.SetOption("stability_threshold", SettingsManager.ToInvariantString((float)numStabilityThreshold.Value), "ADVANCED");
                 App.settingsManager.SetOption("quality_threshold", SettingsManager.ToInvariantString((float)numQualityThreshold.Value), "ADVANCED");
@@ -1503,6 +1506,12 @@ namespace tickMeter.Forms
         private void ChkNetworkQualityOverlay_CheckedChanged(object sender, EventArgs e)
         {
             SaveNetworkQualitySettings();
+        }
+        
+        private void ChkNetworkQualityUseSmoothed_CheckedChanged(object sender, EventArgs e)
+        {
+            SaveNetworkQualitySettings();
+            System.Diagnostics.Debug.Print($"[NetworkQuality] Use smoothed data: {chkNetworkQualityUseSmoothed.Checked}");
         }
         
         private void NumQualityHistorySize_ValueChanged(object sender, EventArgs e)

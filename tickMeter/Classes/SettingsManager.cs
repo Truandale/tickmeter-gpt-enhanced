@@ -160,6 +160,7 @@ namespace tickMeter
             SetOption("alert_discord_webhook", "", "ADVANCED");
             SetOption("alert_cooldown_seconds", "30", "ADVANCED");
             SetOption("network_quality_enabled", "True", "ADVANCED");
+            SetOption("network_quality_use_smoothed", "False", "ADVANCED");
             SetOption("quality_history_size", "100", "ADVANCED");
             SetOption("stability_threshold", "0.15", "ADVANCED");
             SetOption("quality_threshold", "0.8", "ADVANCED");
