@@ -26,6 +26,9 @@ namespace tickMeter.Classes
         // Сохраняем последнее сглаженное значение из GUI для использования в Overlay
         private static int _cachedSmoothedPing = 0;
         private static int _cachedRawPing = 0;  // Для отслеживания изменений
+        
+        private static int _cachedSmoothedTickrate = 0;
+        private static int _cachedRawTickrate = 0;  // Для отслеживания изменений
 
         private static double GetAlpha()
         {
@@ -43,6 +46,9 @@ namespace tickMeter.Classes
         // Проверка режима синхронизации оверлея с GUI
         public static bool IsPingOverlaySyncWithGui() =>
             App.settingsManager?.GetBool("sync_ping_overlay_with_gui", true, "ADVANCED") == true;
+        
+        public static bool IsTickrateOverlaySyncWithGui() =>
+            App.settingsManager?.GetBool("sync_tickrate_overlay_with_gui", true, "ADVANCED") == true;
             
         public static bool IsTickrateValueEnabled() =>
             App.settingsManager?.GetBool("smoothing_tickrate_value_gui", false, "ADVANCED") == true ||
@@ -149,7 +155,65 @@ namespace tickMeter.Classes
                 {
                     _emaTickrateValue = new ExponentialMovingAverage(GetAlpha());
                 }
-                return (int)Math.Round(_emaTickrateValue.Update(raw));
+                int smoothed = (int)Math.Round(_emaTickrateValue.Update(raw));
+                
+                // Сохраняем в кэш для использования в Overlay
+                _cachedSmoothedTickrate = smoothed;
+                _cachedRawTickrate = raw;
+                
+                return smoothed;
+            }
+        }
+
+        /// <summary>
+        /// Получить сглаженное значение тикрейта для Overlay.
+        /// Два режима работы:
+        /// 1. Синхронизация с GUI (sync_tickrate_overlay_with_gui=true) - берет из кэша GUI
+        /// 2. Независимое сглаживание (sync_tickrate_overlay_with_gui=false) - использует общую EMA напрямую
+        /// </summary>
+        public static int GetCachedSmoothedTickrate(int rawTickrate)
+        {
+            lock (_lock)
+            {
+                bool syncWithGui = App.settingsManager?.GetBool("sync_tickrate_overlay_with_gui", true, "ADVANCED") == true;
+                
+                // РЕЖИМ 1: Синхронизация с GUI через кэш
+                if (syncWithGui)
+                {
+                    // Если сглаживание в GUI выключено, возвращаем RAW
+                    if (!App.settingsManager?.GetBool("smoothing_tickrate_value_gui", false, "ADVANCED") == true)
+                    {
+                        return rawTickrate;
+                    }
+                    
+                    // Если значение в кэше соответствует текущему RAW, используем кэш
+                    if (_cachedRawTickrate == rawTickrate && _cachedSmoothedTickrate > 0)
+                    {
+                        return _cachedSmoothedTickrate;
+                    }
+                    
+                    // Если кэш пуст или не синхронизирован, применяем сглаживание напрямую
+                    if (_emaTickrateValue == null)
+                    {
+                        _emaTickrateValue = new ExponentialMovingAverage(GetAlpha());
+                    }
+                    return (int)Math.Round(_emaTickrateValue.Update(rawTickrate));
+                }
+                
+                // РЕЖИМ 2: Независимое сглаживание через общую EMA (без кэша)
+                bool overlaySmoothing = App.settingsManager?.GetBool("smoothing_tickrate_value_overlay", false, "ADVANCED") == true;
+                
+                if (!overlaySmoothing || rawTickrate <= 0)
+                {
+                    return rawTickrate;
+                }
+                
+                // Используем ту же EMA что и GUI, но вызываем напрямую (не из кэша)
+                if (_emaTickrateValue == null)
+                {
+                    _emaTickrateValue = new ExponentialMovingAverage(GetAlpha());
+                }
+                return (int)Math.Round(_emaTickrateValue.Update(rawTickrate));
             }
         }
 

@@ -185,8 +185,13 @@ namespace tickMeter.Classes
             var profile = App.settingsManager.GetColorZoneProfile();
             var zoner = Classes.Zoner.FromProfile(profile, snap.TargetHz);
             
-            // FIXED: Apply smoothing first, then determine zone from smoothed value
-            int displayTickrate = Classes.SmoothingManager.SmoothTickrateValueOverlay(meterState.OutputTickRate);
+            // === ПОЛУЧАЕМ ЗНАЧЕНИЕ: из кэша GUI (если sync=true) или через независимое сглаживание ===
+            int rawTickrateOverlay = meterState.OutputTickRate;
+            int displayTickrate = Classes.SmoothingManager.GetCachedSmoothedTickrate(rawTickrateOverlay);
+            
+            // DEBUG: Log overlay smoothing for verification
+            string mode = Classes.SmoothingManager.IsTickrateOverlaySyncWithGui() ? "synced with GUI" : "independent";
+            DebugLogger.log($"[OVERLAY-TICKRATE] Raw={rawTickrateOverlay} -> Smoothed={displayTickrate} ({mode})");
             
             // Calculate zone from SMOOTHED display value, not raw snapshot
             var tickrateZone = zoner.FromTickrate(displayTickrate);
@@ -205,13 +210,13 @@ namespace tickMeter.Classes
             tickRateStr += " <S0><C0>/ ";
             
             // ВАЖНО: Ticktime обратно пропорционален tickrate, поэтому используем ТОТ ЖЕ цвет
-            // Например: Tickrate 128Hz (зеленый) → Ticktime 7.8ms (тоже зеленый)
-            //           Tickrate 64Hz (желтый) → Ticktime 15.6ms (тоже желтый)
-            // Используем tickrateColor вместо отдельной зоны для ticktime
+            // Tickrate↑ (зеленый) → Ticktime↓ (тоже зеленый) - оба показывают ХОРОШЕЕ состояние
+            // Tickrate↓ (красный) → Ticktime↑ (тоже красный) - оба показывают ПЛОХОЕ состояние
+            // Ticktime = 1000 / Tickrate, поэтому цветовая зона ОБРАТНО ПРОПОРЦИОНАЛЬНА
             
-            // Применяем сглаживание для значений тиктайма
-            float rawTicktimeValue = (float)snap.TicktimeAvgMs;
-            float ticktimeValue = Classes.SmoothingManager.SmoothTicktimeValueOverlay(rawTicktimeValue);
+            // СИНХРОНИЗАЦИЯ: Рассчитываем ticktime из того же displayTickrate, который уже был сглажен выше
+            // Это гарантирует синхронизацию значений tickrate и ticktime в оверлее
+            float ticktimeValue = displayTickrate > 0 ? (1000.0f / displayTickrate) : 0f;
             string ticktimeDisplay = ticktimeValue > 0 ? ticktimeValue.ToString("0.0") : "n/a";
             
             tickRateStr += tickrateColor + ticktimeDisplay + " <S0>ms";
@@ -401,8 +406,9 @@ namespace tickMeter.Classes
                 var profile = App.settingsManager.GetColorZoneProfile();
                 var zoner = Classes.Zoner.FromProfile(profile, snap.TargetHz);
                 
-                // FIXED: Apply smoothing first, then determine zone from smoothed value
-                int tickrateValue = Classes.SmoothingManager.SmoothTickrateValueOverlay(App.meterState.OutputTickRate);
+                // СИНХРОНИЗАЦИЯ: Используем тот же метод что и в FormatTickrate() для получения значения
+                int rawTickrateForGraph = App.meterState.OutputTickRate;
+                int tickrateValue = Classes.SmoothingManager.GetCachedSmoothedTickrate(rawTickrateForGraph);
                 
                 // Calculate zone from SMOOTHED display value, not raw snapshot
                 var tickrateZone = zoner.FromTickrate(tickrateValue);
@@ -451,16 +457,17 @@ namespace tickMeter.Classes
                 var profile = App.settingsManager.GetColorZoneProfile();
                 var zoner = Classes.Zoner.FromProfile(profile, snap.TargetHz);
                 
-                // FIXED: Get color from SMOOTHED tickrate (since ticktime is inversely proportional)
-                int smoothedTickrate = Classes.SmoothingManager.SmoothTickrateValueOverlay(App.meterState.OutputTickRate);
+                // СИНХРОНИЗАЦИЯ: Используем тот же метод что и в FormatTickrate() для получения значения
+                int rawTickrateForGraph = App.meterState.OutputTickRate;
+                int smoothedTickrate = Classes.SmoothingManager.GetCachedSmoothedTickrate(rawTickrateForGraph);
                 var tickrateZone = zoner.FromTickrate(smoothedTickrate);
                 string ticktimeColor = Classes.ZoneColors.ToRtssLegacy(tickrateZone);
                 
-                // Apply smoothing to ticktime display value
-                float rawTicktimeValue = (float)snap.TicktimeAvgMs;
-                float ticktimeValue = Classes.SmoothingManager.SmoothTicktimeValueOverlay(rawTicktimeValue);
-                // Добавляем индикатор спайка рядом со значением (как у пинга)
+                // СИНХРОНИЗАЦИЯ: Рассчитываем ticktime из того же smoothedTickrate для синхронности с текстом
+                float ticktimeValue = smoothedTickrate > 0 ? (1000.0f / smoothedTickrate) : 0f;
                 string ticktimeValueDisplay = ticktimeValue > 0 ? ticktimeValue.ToString("0.0") : "n/a";
+                
+                // Добавляем индикатор спайка рядом со значением (как у пинга)
                 bool showTicktimeSpikes = App.settingsManager?.GetOption("show_ticktime_spikes", "True", "ADVANCED") == "True";
                 if (showTicktimeSpikes && App.meterState.HasTickTimeSpike)
                 {

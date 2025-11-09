@@ -84,6 +84,7 @@ namespace tickMeter.Forms
                 chkPingValueGuiSmoothing.Checked = App.settingsManager.GetOption("smoothing_ping_value_gui", "False", "ADVANCED") == "True";
                 chkSyncPingOverlayWithGui.Checked = App.settingsManager.GetOption("sync_ping_overlay_with_gui", "True", "ADVANCED") == "True";
                 chkTickrateValueGuiSmoothing.Checked = App.settingsManager.GetOption("smoothing_tickrate_value_gui", "False", "ADVANCED") == "True";
+                chkSyncTickrateOverlayWithGui.Checked = App.settingsManager.GetOption("sync_tickrate_overlay_with_gui", "True", "ADVANCED") == "True";
                 chkTickrateValueOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_tickrate_value_overlay", "False", "ADVANCED") == "True";
                 chkTicktimeValueOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_ticktime_value_overlay", "False", "ADVANCED") == "True";
                 chkTrafficValueOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_traffic_value_overlay", "False", "ADVANCED") == "True";
@@ -161,6 +162,11 @@ namespace tickMeter.Forms
             chkSyncPingOverlayWithGui.CheckedChanged += chkSyncPingOverlayWithGui_CheckedChanged;
             chkPingValueOverlaySmoothing.CheckedChanged += chkPingValueOverlaySmoothing_CheckedChanged;
             chkPingGraphOverlaySmoothing.CheckedChanged += chkPingGraphOverlaySmoothing_CheckedChanged;
+            
+            // Взаимоисключение для галок сглаживания тикрейта в оверлее
+            chkSyncTickrateOverlayWithGui.CheckedChanged += chkSyncTickrateOverlayWithGui_CheckedChanged;
+            chkTickrateValueOverlaySmoothing.CheckedChanged += chkTickrateValueOverlaySmoothing_CheckedChanged;
+            chkTickrateGraphOverlaySmoothing.CheckedChanged += chkTickrateGraphOverlaySmoothing_CheckedChanged;
         }
 
         private void chkVpnBypassAdvanced_CheckedChanged(object sender, EventArgs e)
@@ -218,6 +224,46 @@ namespace tickMeter.Forms
             {
                 // Отключаем синхронизацию с GUI
                 chkSyncPingOverlayWithGui.Checked = false;
+            }
+        }
+
+        // Обработчик для синхронизации тикрейта оверлея и GUI
+        private void chkSyncTickrateOverlayWithGui_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_isLoadingSettings)
+                return;
+
+            if (chkSyncTickrateOverlayWithGui.Checked)
+            {
+                // Отключаем независимое сглаживание для оверлея
+                chkTickrateValueOverlaySmoothing.Checked = false;
+                chkTickrateGraphOverlaySmoothing.Checked = false;
+            }
+        }
+
+        // Обработчик для сглаживания значения тикрейта в оверлее
+        private void chkTickrateValueOverlaySmoothing_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_isLoadingSettings)
+                return;
+
+            if (chkTickrateValueOverlaySmoothing.Checked)
+            {
+                // Отключаем синхронизацию с GUI
+                chkSyncTickrateOverlayWithGui.Checked = false;
+            }
+        }
+
+        // Обработчик для сглаживания графика тикрейта в оверлее
+        private void chkTickrateGraphOverlaySmoothing_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_isLoadingSettings)
+                return;
+
+            if (chkTickrateGraphOverlaySmoothing.Checked)
+            {
+                // Отключаем синхронизацию с GUI
+                chkSyncTickrateOverlayWithGui.Checked = false;
             }
         }
 
@@ -443,6 +489,7 @@ namespace tickMeter.Forms
                 App.settingsManager.SetOption("smoothing_ping_value_gui", chkPingValueGuiSmoothing.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("sync_ping_overlay_with_gui", chkSyncPingOverlayWithGui.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("smoothing_tickrate_value_gui", chkTickrateValueGuiSmoothing.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("sync_tickrate_overlay_with_gui", chkSyncTickrateOverlayWithGui.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("smoothing_tickrate_value_overlay", chkTickrateValueOverlaySmoothing.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("smoothing_ticktime_value_overlay", chkTicktimeValueOverlaySmoothing.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("smoothing_traffic_value_overlay", chkTrafficValueOverlaySmoothing.Checked.ToString(), "ADVANCED");
@@ -541,11 +588,6 @@ namespace tickMeter.Forms
         private void chkBpfFilter_CheckedChanged(object sender, EventArgs e)
         {
             captureFilterTextBox.Enabled = chkBpfFilter.Checked;
-        }
-
-        private void chkTickrateGraphOverlaySmoothing_CheckedChanged(object sender, EventArgs e)
-        {
-
         }
 
         private void btnOK_Click(object sender, EventArgs e)

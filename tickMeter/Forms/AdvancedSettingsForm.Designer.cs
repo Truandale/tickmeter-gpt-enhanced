@@ -187,6 +187,7 @@ namespace tickMeter.Forms
             this.chkPingValueGuiSmoothing = new System.Windows.Forms.CheckBox();
             this.chkSyncPingOverlayWithGui = new System.Windows.Forms.CheckBox();
             this.chkTickrateValueGuiSmoothing = new System.Windows.Forms.CheckBox();
+            this.chkSyncTickrateOverlayWithGui = new System.Windows.Forms.CheckBox();
             this.chkTickrateValueOverlaySmoothing = new System.Windows.Forms.CheckBox();
             this.chkTicktimeValueOverlaySmoothing = new System.Windows.Forms.CheckBox();
             this.chkTrafficValueOverlaySmoothing = new System.Windows.Forms.CheckBox();
@@ -2331,6 +2332,7 @@ namespace tickMeter.Forms
             this.groupBox5.Controls.Add(this.chkPingValueGuiSmoothing);
             this.groupBox5.Controls.Add(this.chkSyncPingOverlayWithGui);
             this.groupBox5.Controls.Add(this.chkTickrateValueGuiSmoothing);
+            this.groupBox5.Controls.Add(this.chkSyncTickrateOverlayWithGui);
             this.groupBox5.Controls.Add(this.chkTickrateValueOverlaySmoothing);
             this.groupBox5.Controls.Add(this.chkTicktimeValueOverlaySmoothing);
             this.groupBox5.Controls.Add(this.chkTrafficValueOverlaySmoothing);
@@ -2450,7 +2452,7 @@ namespace tickMeter.Forms
             // chkTickrateSmoothing
             // 
             this.chkTickrateSmoothing.AutoSize = true;
-            this.chkTickrateSmoothing.Location = new System.Drawing.Point(20, 115);
+            this.chkTickrateSmoothing.Location = new System.Drawing.Point(21, 87);
             this.chkTickrateSmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTickrateSmoothing.Name = "chkTickrateSmoothing";
             this.chkTickrateSmoothing.Size = new System.Drawing.Size(280, 20);
@@ -2461,7 +2463,7 @@ namespace tickMeter.Forms
             // chkPingGraphOverlaySmoothing
             // 
             this.chkPingGraphOverlaySmoothing.AutoSize = true;
-            this.chkPingGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 143);
+            this.chkPingGraphOverlaySmoothing.Location = new System.Drawing.Point(21, 115);
             this.chkPingGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingGraphOverlaySmoothing.Name = "chkPingGraphOverlaySmoothing";
             this.chkPingGraphOverlaySmoothing.Size = new System.Drawing.Size(287, 20);
@@ -2472,7 +2474,7 @@ namespace tickMeter.Forms
             // chkTickrateGraphOverlaySmoothing
             // 
             this.chkTickrateGraphOverlaySmoothing.AutoSize = true;
-            this.chkTickrateGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 171);
+            this.chkTickrateGraphOverlaySmoothing.Location = new System.Drawing.Point(21, 143);
             this.chkTickrateGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTickrateGraphOverlaySmoothing.Name = "chkTickrateGraphOverlaySmoothing";
             this.chkTickrateGraphOverlaySmoothing.Size = new System.Drawing.Size(310, 20);
@@ -2483,7 +2485,7 @@ namespace tickMeter.Forms
             // chkTicktimeGraphOverlaySmoothing
             // 
             this.chkTicktimeGraphOverlaySmoothing.AutoSize = true;
-            this.chkTicktimeGraphOverlaySmoothing.Location = new System.Drawing.Point(20, 199);
+            this.chkTicktimeGraphOverlaySmoothing.Location = new System.Drawing.Point(21, 171);
             this.chkTicktimeGraphOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTicktimeGraphOverlaySmoothing.Name = "chkTicktimeGraphOverlaySmoothing";
             this.chkTicktimeGraphOverlaySmoothing.Size = new System.Drawing.Size(311, 20);
@@ -2494,7 +2496,7 @@ namespace tickMeter.Forms
             // chkPingValueOverlaySmoothing
             // 
             this.chkPingValueOverlaySmoothing.AutoSize = true;
-            this.chkPingValueOverlaySmoothing.Location = new System.Drawing.Point(20, 283);
+            this.chkPingValueOverlaySmoothing.Location = new System.Drawing.Point(21, 227);
             this.chkPingValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingValueOverlaySmoothing.Name = "chkPingValueOverlaySmoothing";
             this.chkPingValueOverlaySmoothing.Size = new System.Drawing.Size(295, 20);
@@ -2505,7 +2507,7 @@ namespace tickMeter.Forms
             // chkPingValueGuiSmoothing
             // 
             this.chkPingValueGuiSmoothing.AutoSize = true;
-            this.chkPingValueGuiSmoothing.Location = new System.Drawing.Point(20, 311);
+            this.chkPingValueGuiSmoothing.Location = new System.Drawing.Point(21, 255);
             this.chkPingValueGuiSmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingValueGuiSmoothing.Name = "chkPingValueGuiSmoothing";
             this.chkPingValueGuiSmoothing.Size = new System.Drawing.Size(262, 20);
@@ -2516,7 +2518,7 @@ namespace tickMeter.Forms
             // chkSyncPingOverlayWithGui
             // 
             this.chkSyncPingOverlayWithGui.AutoSize = true;
-            this.chkSyncPingOverlayWithGui.Location = new System.Drawing.Point(20, 227);
+            this.chkSyncPingOverlayWithGui.Location = new System.Drawing.Point(21, 59);
             this.chkSyncPingOverlayWithGui.Margin = new System.Windows.Forms.Padding(4);
             this.chkSyncPingOverlayWithGui.Name = "chkSyncPingOverlayWithGui";
             this.chkSyncPingOverlayWithGui.Size = new System.Drawing.Size(282, 20);
@@ -2527,7 +2529,7 @@ namespace tickMeter.Forms
             // chkTickrateValueGuiSmoothing
             // 
             this.chkTickrateValueGuiSmoothing.AutoSize = true;
-            this.chkTickrateValueGuiSmoothing.Location = new System.Drawing.Point(20, 339);
+            this.chkTickrateValueGuiSmoothing.Location = new System.Drawing.Point(21, 283);
             this.chkTickrateValueGuiSmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTickrateValueGuiSmoothing.Name = "chkTickrateValueGuiSmoothing";
             this.chkTickrateValueGuiSmoothing.Size = new System.Drawing.Size(285, 20);
@@ -2535,10 +2537,21 @@ namespace tickMeter.Forms
             this.chkTickrateValueGuiSmoothing.Text = "Сглаживание значений тикрейта в GUI";
             this.chkTickrateValueGuiSmoothing.UseVisualStyleBackColor = true;
             // 
+            // chkSyncTickrateOverlayWithGui
+            // 
+            this.chkSyncTickrateOverlayWithGui.AutoSize = true;
+            this.chkSyncTickrateOverlayWithGui.Location = new System.Drawing.Point(21, 31);
+            this.chkSyncTickrateOverlayWithGui.Margin = new System.Windows.Forms.Padding(4);
+            this.chkSyncTickrateOverlayWithGui.Name = "chkSyncTickrateOverlayWithGui";
+            this.chkSyncTickrateOverlayWithGui.Size = new System.Drawing.Size(305, 20);
+            this.chkSyncTickrateOverlayWithGui.TabIndex = 16;
+            this.chkSyncTickrateOverlayWithGui.Text = "Синхронизировать тикрейт оверлея и GUI";
+            this.chkSyncTickrateOverlayWithGui.UseVisualStyleBackColor = true;
+            // 
             // chkTickrateValueOverlaySmoothing
             // 
             this.chkTickrateValueOverlaySmoothing.AutoSize = true;
-            this.chkTickrateValueOverlaySmoothing.Location = new System.Drawing.Point(20, 367);
+            this.chkTickrateValueOverlaySmoothing.Location = new System.Drawing.Point(21, 311);
             this.chkTickrateValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTickrateValueOverlaySmoothing.Name = "chkTickrateValueOverlaySmoothing";
             this.chkTickrateValueOverlaySmoothing.Size = new System.Drawing.Size(318, 20);
@@ -2549,7 +2562,7 @@ namespace tickMeter.Forms
             // chkTicktimeValueOverlaySmoothing
             // 
             this.chkTicktimeValueOverlaySmoothing.AutoSize = true;
-            this.chkTicktimeValueOverlaySmoothing.Location = new System.Drawing.Point(20, 255);
+            this.chkTicktimeValueOverlaySmoothing.Location = new System.Drawing.Point(21, 199);
             this.chkTicktimeValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTicktimeValueOverlaySmoothing.Name = "chkTicktimeValueOverlaySmoothing";
             this.chkTicktimeValueOverlaySmoothing.Size = new System.Drawing.Size(319, 20);
@@ -2582,7 +2595,7 @@ namespace tickMeter.Forms
             // chkPingFallbackIcmp
             // 
             this.chkPingFallbackIcmp.AutoSize = true;
-            this.chkPingFallbackIcmp.Location = new System.Drawing.Point(20, 87);
+            this.chkPingFallbackIcmp.Location = new System.Drawing.Point(363, 255);
             this.chkPingFallbackIcmp.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingFallbackIcmp.Name = "chkPingFallbackIcmp";
             this.chkPingFallbackIcmp.Size = new System.Drawing.Size(298, 20);
@@ -2593,7 +2606,7 @@ namespace tickMeter.Forms
             // chkPingTcpPrefer
             // 
             this.chkPingTcpPrefer.AutoSize = true;
-            this.chkPingTcpPrefer.Location = new System.Drawing.Point(20, 59);
+            this.chkPingTcpPrefer.Location = new System.Drawing.Point(363, 283);
             this.chkPingTcpPrefer.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingTcpPrefer.Name = "chkPingTcpPrefer";
             this.chkPingTcpPrefer.Size = new System.Drawing.Size(323, 20);
@@ -2604,7 +2617,7 @@ namespace tickMeter.Forms
             // chkPingBindToInterface
             // 
             this.chkPingBindToInterface.AutoSize = true;
-            this.chkPingBindToInterface.Location = new System.Drawing.Point(20, 31);
+            this.chkPingBindToInterface.Location = new System.Drawing.Point(364, 311);
             this.chkPingBindToInterface.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingBindToInterface.Name = "chkPingBindToInterface";
             this.chkPingBindToInterface.Size = new System.Drawing.Size(318, 20);
@@ -3010,6 +3023,7 @@ namespace tickMeter.Forms
     private System.Windows.Forms.CheckBox chkPingValueGuiSmoothing;
     private System.Windows.Forms.CheckBox chkSyncPingOverlayWithGui;
     private System.Windows.Forms.CheckBox chkTickrateValueGuiSmoothing;
+    private System.Windows.Forms.CheckBox chkSyncTickrateOverlayWithGui;
     private System.Windows.Forms.CheckBox chkTickrateValueOverlaySmoothing;
     private System.Windows.Forms.CheckBox chkTicktimeValueOverlaySmoothing;
     private System.Windows.Forms.CheckBox chkTrafficValueOverlaySmoothing;
