@@ -290,13 +290,14 @@ namespace tickMeter.Classes
             // Format display value with smoothing FIRST
             if (snap.PingAvgMs > 0)
             {
-                // FIXED: Apply smoothing first, then determine zone from smoothed value
+                // === ИСПОЛЬЗУЕМ КЭШИРОВАННОЕ ЗНАЧЕНИЕ ИЗ GUI ===
+                // Это гарантирует синхронизацию: оверлей показывает ТО ЖЕ значение что и главное окно
                 int rawPingOverlay = (int)snap.PingAvgMs;
-                int smoothedPing = Classes.SmoothingManager.SmoothPingValueOverlay(rawPingOverlay);
+                int smoothedPing = Classes.SmoothingManager.GetCachedSmoothedPing(rawPingOverlay);
                 pingValue = smoothedPing.ToString();
                 
                 // DEBUG: Log overlay smoothing for verification
-                DebugLogger.log($"[OVERLAY-PING] Raw={rawPingOverlay} -> Smoothed={smoothedPing}");
+                DebugLogger.log($"[OVERLAY-PING] Raw={rawPingOverlay} -> Smoothed={smoothedPing} (cached from GUI)");
                 
                 // Calculate zone from SMOOTHED display value, not raw snapshot
                 var pingZone = zoner.FromPing(smoothedPing);
@@ -493,13 +494,14 @@ namespace tickMeter.Classes
                         var profile = App.settingsManager.GetColorZoneProfile();
                         var zoner = Classes.Zoner.FromProfile(profile, snap.TargetHz);
                         
+                        // === ИСПОЛЬЗУЕМ КЭШИРОВАННОЕ ЗНАЧЕНИЕ ИЗ GUI ===
                         // Format display value WITH SMOOTHING first
                         string pingValue = "";
                         string pingColor;
                         if (snap.PingAvgMs > 0)
                         {
-                            // FIXED: Apply smoothing first, then determine zone from smoothed value
-                            int smoothedPing = Classes.SmoothingManager.SmoothPingValueOverlay((int)snap.PingAvgMs);
+                            // Используем кэшированное значение для синхронизации с GUI
+                            int smoothedPing = Classes.SmoothingManager.GetCachedSmoothedPing((int)snap.PingAvgMs);
                             pingValue = smoothedPing.ToString();
                             
                             // Calculate zone from SMOOTHED display value, not raw snapshot

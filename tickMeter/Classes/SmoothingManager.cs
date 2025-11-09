@@ -22,6 +22,11 @@ namespace tickMeter.Classes
         private static ExponentialMovingAverage _emaUploadMb;
         private static ExponentialMovingAverage _emaDownloadMb;
 
+        // === КЭШИРОВАНИЕ для синхронизации GUI и Overlay ===
+        // Сохраняем последнее сглаженное значение из GUI для использования в Overlay
+        private static int _cachedSmoothedPing = 0;
+        private static int _cachedRawPing = 0;  // Для отслеживания изменений
+
         private static double GetAlpha()
         {
             // Используем общий коэффициент из tickrate_smoothing_alpha, если задан
@@ -64,7 +69,44 @@ namespace tickMeter.Classes
                 {
                     _emaPingValue = new ExponentialMovingAverage(GetAlpha());
                 }
-                return (int)Math.Round(_emaPingValue.Update(raw));
+                int smoothed = (int)Math.Round(_emaPingValue.Update(raw));
+                
+                // Сохраняем в кэш для использования в Overlay
+                _cachedSmoothedPing = smoothed;
+                _cachedRawPing = raw;
+                
+                return smoothed;
+            }
+        }
+
+        /// <summary>
+        /// Получить кэшированное сглаженное значение пинга из GUI.
+        /// Используется в Overlay для синхронизации отображения.
+        /// Если сглаживание выключено или значения нет, возвращает RAW значение.
+        /// </summary>
+        public static int GetCachedSmoothedPing(int rawPing)
+        {
+            lock (_lock)
+            {
+                // Если сглаживание выключено, возвращаем RAW
+                if (!IsPingValueEnabled())
+                {
+                    return rawPing;
+                }
+                
+                // Если значение в кэше соответствует текущему RAW, используем кэш
+                if (_cachedRawPing == rawPing && _cachedSmoothedPing > 0)
+                {
+                    return _cachedSmoothedPing;
+                }
+                
+                // Если кэш пуст или не синхронизирован, применяем сглаживание напрямую
+                // (это может произойти если Overlay обновляется раньше GUI)
+                if (_emaPingValue == null)
+                {
+                    _emaPingValue = new ExponentialMovingAverage(GetAlpha());
+                }
+                return (int)Math.Round(_emaPingValue.Update(rawPing));
             }
         }
 
@@ -180,6 +222,10 @@ namespace tickMeter.Classes
                 _emaTicktimeValue = null;
                 _emaUploadMb = null;
                 _emaDownloadMb = null;
+                
+                // Сбрасываем кэш
+                _cachedSmoothedPing = 0;
+                _cachedRawPing = 0;
             }
         }
     }
