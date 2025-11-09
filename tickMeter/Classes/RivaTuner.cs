@@ -694,13 +694,9 @@ namespace tickMeter.Classes
             {
                 // Получаем статистику качества сети
                 var qualityStats = Classes.NetworkQualityAnalyzer.GetDetailedStats();
-                var currentQuality = qualityStats.OverallQuality;
                 
-                // Применяем hysteresis для стабильного отображения
-                var (level, color, icon) = GetQualityLevelWithHysteresis(currentQuality);
-                
-                // Формируем компактную строку для RTSS
-                int qualityPercent = (int)Math.Round(currentQuality * 100);
+                // Читаем режим отображения
+                string displayMode = IniFileHandler.ReadValue("ADVANCED", "network_quality_mode", "hybrid").ToLower();
                 
                 // Собираем дополнительную информацию компактно
                 var extras = new List<string>();
@@ -717,21 +713,26 @@ namespace tickMeter.Classes
                     extras.Add($"jit{qualityStats.AverageJitter:F0}");
                 }
                 
-                // Формируем финальную строку (максимум 60 символов для RTSS)
-                var result = $"<S><C0>NET: {color}{icon} {qualityPercent}%<C>";
+                string result;
                 
-                if (extras.Count > 0)
+                switch (displayMode)
                 {
-                    var extrasText = string.Join(" ", extras);
-                    result += $" | {extrasText}";
-                }
-                
-                result += Environment.NewLine;
-                
-                // Обрезаем если слишком длинно
-                if (result.Length > 80) // учитываем RTSS теги
-                {
-                    result = $"<S><C0>NET: {color}{icon} {qualityPercent}%<C>" + Environment.NewLine;
+                    case "standard":
+                        // Только стандартное качество (объективное, Medium профиль)
+                        result = FormatSingleQuality("NET", qualityStats.StandardQuality, "Medium", extras);
+                        break;
+                    
+                    case "context":
+                        // Только контекстное качество (субъективное, пользовательский профиль)
+                        string contextLabel = GetContextLabel(qualityStats.ContextProfile);
+                        result = FormatSingleQuality(contextLabel, qualityStats.ContextQuality, qualityStats.ContextProfile, extras);
+                        break;
+                    
+                    case "hybrid":
+                    default:
+                        // Гибридный режим: показываем оба
+                        result = FormatHybridQuality(qualityStats, extras);
+                        break;
                 }
                 
                 return result;
@@ -744,13 +745,86 @@ namespace tickMeter.Classes
         }
         
         /// <summary>
+        /// Форматирует одно значение качества для RTSS
+        /// </summary>
+        private static string FormatSingleQuality(string label, double quality, string profileName, List<string> extras)
+        {
+            var (level, color, icon) = GetQualityLevelWithHysteresis(quality, profileName);
+            int qualityPercent = (int)Math.Round(quality * 100);
+            
+            var result = $"<S><C0>{label}: {color}{icon} {qualityPercent}%<C>";
+            
+            if (extras.Count > 0)
+            {
+                var extrasText = string.Join(" ", extras);
+                result += $" | {extrasText}";
+            }
+            
+            result += Environment.NewLine;
+            
+            // Обрезаем если слишком длинно
+            if (result.Length > 80)
+            {
+                result = $"<S><C0>{label}: {color}{icon} {qualityPercent}%<C>" + Environment.NewLine;
+            }
+            
+            return result;
+        }
+        
+        /// <summary>
+        /// <summary>
+        /// Форматирует гибридный режим (Standard + Context)
+        /// </summary>
+        private static string FormatHybridQuality(tickMeter.Classes.NetworkQualityAnalyzer.NetworkQualityStats stats, List<string> extras)
+        {
+            var (stdLevel, stdColor, stdIcon) = GetQualityLevelWithHysteresis(stats.StandardQuality, "Medium");
+            var (ctxLevel, ctxColor, ctxIcon) = GetQualityLevelWithHysteresis(stats.ContextQuality, stats.ContextProfile);
+            
+            int stdPercent = (int)Math.Round(stats.StandardQuality * 100);
+            int ctxPercent = (int)Math.Round(stats.ContextQuality * 100);
+            
+            string contextLabel = Classes.QualityDisplayThresholds.GetProfileShortName(stats.ContextProfile);
+            
+            var result = $"<S><C0>NET: {stdColor}{stdIcon} {stdPercent}%<C> | {contextLabel}: {ctxColor}{ctxIcon} {ctxPercent}%<C>";
+            
+            if (extras.Count > 0)
+            {
+                var extrasText = string.Join(" ", extras);
+                result += $" | {extrasText}";
+            }
+            
+            result += Environment.NewLine;
+            
+            // Обрезаем если слишком длинно
+            if (result.Length > 100)
+            {
+                // Упрощенная версия без extras
+                result = $"<S><C0>NET: {stdColor}{stdIcon} {stdPercent}%<C> | {contextLabel}: {ctxColor}{ctxIcon} {ctxPercent}%<C>" + Environment.NewLine;
+            }
+            
+            return result;
+        }
+        
+        /// <summary>
+        /// Получает метку для контекстного режима
+        /// </summary>
+        private static string GetContextLabel(string profileName)
+        {
+            string shortName = Classes.QualityDisplayThresholds.GetProfileShortName(profileName);
+            return shortName == "NET" ? "NET" : shortName; // По умолчанию NET для Medium
+        }
+        
+        /// <summary>
         /// Определяет уровень качества с hysteresis для предотвращения дребезга
         /// </summary>
-        private static (string level, string color, string icon) GetQualityLevelWithHysteresis(double quality)
+        /// <param name="quality">Значение качества (0.0-1.0)</param>
+        /// <param name="profileName">Имя профиля для адаптивных порогов (Very Low/Low/Medium/High). По умолчанию Medium.</param>
+        private static (string level, string color, string icon) GetQualityLevelWithHysteresis(double quality, string profileName = "Medium")
         {
-            const double EXCELLENT_IN = 0.90, EXCELLENT_OUT = 0.85;
-            const double GOOD_IN = 0.75, GOOD_OUT = 0.70;
-            const double FAIR_IN = 0.50, FAIR_OUT = 0.45;
+            // Получаем адаптивные пороги для профиля
+            var (excellentIn, excellentOut, goodIn, goodOut, fairIn, fairOut) = 
+                Classes.QualityDisplayThresholds.GetThresholds(profileName);
+            
             const double HOLD_TIME_SECONDS = 3.0; // Минимальное время удержания уровня
             
             var now = DateTime.Now;
@@ -764,25 +838,25 @@ namespace tickMeter.Classes
                 switch (_lastQualityLevel)
                 {
                     case "excellent":
-                        newLevel = quality < EXCELLENT_OUT ? GetQualityLevel(quality, GOOD_IN, FAIR_IN) : "excellent";
+                        newLevel = quality < excellentOut ? GetQualityLevel(quality, goodIn, fairIn) : "excellent";
                         break;
                     case "good":
-                        newLevel = quality >= EXCELLENT_IN ? "excellent" : 
-                                  quality < GOOD_OUT ? GetQualityLevel(quality, GOOD_IN, FAIR_IN) : "good";
+                        newLevel = quality >= excellentIn ? "excellent" : 
+                                  quality < goodOut ? GetQualityLevel(quality, goodIn, fairIn) : "good";
                         break;
                     case "fair":
-                        newLevel = quality >= GOOD_IN ? GetQualityLevel(quality, GOOD_IN, FAIR_IN) : 
-                                  quality < FAIR_OUT ? "poor" : "fair";
+                        newLevel = quality >= goodIn ? GetQualityLevel(quality, goodIn, fairIn) : 
+                                  quality < fairOut ? "poor" : "fair";
                         break;
                     default: // poor
-                        newLevel = quality >= FAIR_IN ? GetQualityLevel(quality, GOOD_IN, FAIR_IN) : "poor";
+                        newLevel = quality >= fairIn ? GetQualityLevel(quality, goodIn, fairIn) : "poor";
                         break;
                 }
             }
             else
             {
                 // Применяем входные пороги
-                newLevel = GetQualityLevel(quality, GOOD_IN, FAIR_IN);
+                newLevel = GetQualityLevel(quality, goodIn, fairIn);
             }
             
             // Обновляем состояние если изменился уровень

@@ -162,6 +162,13 @@ namespace tickMeter.Forms
             this.chkNetworkQualityEnabled = new System.Windows.Forms.CheckBox();
             this.chkNetworkQualityOverlay = new System.Windows.Forms.CheckBox();
             this.chkNetworkQualityUseSmoothed = new System.Windows.Forms.CheckBox();
+            this.lblQualityMode = new System.Windows.Forms.Label();
+            this.radioQualityStandard = new System.Windows.Forms.RadioButton();
+            this.radioQualityContext = new System.Windows.Forms.RadioButton();
+            this.radioQualityHybrid = new System.Windows.Forms.RadioButton();
+            this.chkQualityContextSync = new System.Windows.Forms.CheckBox();
+            this.lblQualityContextProfile = new System.Windows.Forms.Label();
+            this.cmbQualityContextProfile = new System.Windows.Forms.ComboBox();
             this.lblQualityHistorySize = new System.Windows.Forms.Label();
             this.numQualityHistorySize = new System.Windows.Forms.NumericUpDown();
             this.lblStabilityThreshold = new System.Windows.Forms.Label();
@@ -317,7 +324,7 @@ namespace tickMeter.Forms
             this.groupBoxTickrateChart.Controls.Add(this.numTickrateChartHistoryHours);
             this.groupBoxTickrateChart.Controls.Add(this.btnTickrateChartReset);
             this.groupBoxTickrateChart.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxTickrateChart.Location = new System.Drawing.Point(13, 3172);
+            this.groupBoxTickrateChart.Location = new System.Drawing.Point(13, 3232);
             this.groupBoxTickrateChart.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxTickrateChart.Name = "groupBoxTickrateChart";
             this.groupBoxTickrateChart.Padding = new System.Windows.Forms.Padding(4);
@@ -493,7 +500,7 @@ namespace tickMeter.Forms
             this.groupBoxExtendedOverlay.Controls.Add(this.chkShowConnectionType);
             this.groupBoxExtendedOverlay.Controls.Add(this.chkShowDiagnosticInfo);
             this.groupBoxExtendedOverlay.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxExtendedOverlay.Location = new System.Drawing.Point(13, 2952);
+            this.groupBoxExtendedOverlay.Location = new System.Drawing.Point(13, 3012);
             this.groupBoxExtendedOverlay.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxExtendedOverlay.Name = "groupBoxExtendedOverlay";
             this.groupBoxExtendedOverlay.Padding = new System.Windows.Forms.Padding(4);
@@ -586,7 +593,7 @@ namespace tickMeter.Forms
             // 
             this.groupBoxDebugSettings.Controls.Add(this.chkEnableTextLogs);
             this.groupBoxDebugSettings.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxDebugSettings.Location = new System.Drawing.Point(13, 2902);
+            this.groupBoxDebugSettings.Location = new System.Drawing.Point(13, 2962);
             this.groupBoxDebugSettings.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxDebugSettings.Name = "groupBoxDebugSettings";
             this.groupBoxDebugSettings.Padding = new System.Windows.Forms.Padding(4);
@@ -611,7 +618,7 @@ namespace tickMeter.Forms
             this.groupBoxVpnBypass.Controls.Add(this.chkVpnBypassAdvanced);
             this.groupBoxVpnBypass.Controls.Add(this.chkVpnBypassBasic);
             this.groupBoxVpnBypass.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxVpnBypass.Location = new System.Drawing.Point(13, 2804);
+            this.groupBoxVpnBypass.Location = new System.Drawing.Point(13, 2864);
             this.groupBoxVpnBypass.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxVpnBypass.Name = "groupBoxVpnBypass";
             this.groupBoxVpnBypass.Padding = new System.Windows.Forms.Padding(4);
@@ -651,7 +658,7 @@ namespace tickMeter.Forms
             this.groupBoxPhase3.Controls.Add(this.lblUiBatchSize);
             this.groupBoxPhase3.Controls.Add(this.numUiBatchSize);
             this.groupBoxPhase3.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxPhase3.Location = new System.Drawing.Point(13, 2604);
+            this.groupBoxPhase3.Location = new System.Drawing.Point(13, 2664);
             this.groupBoxPhase3.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxPhase3.Name = "groupBoxPhase3";
             this.groupBoxPhase3.Padding = new System.Windows.Forms.Padding(4);
@@ -757,7 +764,7 @@ namespace tickMeter.Forms
             this.groupBoxPhase2.Controls.Add(this.numRingBufferSize);
             this.groupBoxPhase2.Controls.Add(this.chkShowVirtualModeStats);
             this.groupBoxPhase2.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxPhase2.Location = new System.Drawing.Point(13, 2454);
+            this.groupBoxPhase2.Location = new System.Drawing.Point(13, 2514);
             this.groupBoxPhase2.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxPhase2.Name = "groupBoxPhase2";
             this.groupBoxPhase2.Padding = new System.Windows.Forms.Padding(4);
@@ -864,7 +871,7 @@ namespace tickMeter.Forms
             this.groupBoxPhase1.Controls.Add(this.lblPcapMinToCopy);
             this.groupBoxPhase1.Controls.Add(this.numPcapMinToCopy);
             this.groupBoxPhase1.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxPhase1.Location = new System.Drawing.Point(13, 2304);
+            this.groupBoxPhase1.Location = new System.Drawing.Point(13, 2364);
             this.groupBoxPhase1.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxPhase1.Name = "groupBoxPhase1";
             this.groupBoxPhase1.Padding = new System.Windows.Forms.Padding(4);
@@ -984,7 +991,7 @@ namespace tickMeter.Forms
             this.groupBoxSpikeDetection.Controls.Add(this.numSpikeHistorySize);
             this.groupBoxSpikeDetection.Controls.Add(this.chkSpikeAutoCalibration);
             this.groupBoxSpikeDetection.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxSpikeDetection.Location = new System.Drawing.Point(13, 2084);
+            this.groupBoxSpikeDetection.Location = new System.Drawing.Point(13, 2144);
             this.groupBoxSpikeDetection.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxSpikeDetection.Name = "groupBoxSpikeDetection";
             this.groupBoxSpikeDetection.Padding = new System.Windows.Forms.Padding(4);
@@ -1187,7 +1194,7 @@ namespace tickMeter.Forms
             this.groupBoxSpikeAdvanced.Controls.Add(this.btnSpikePresetsBalanced);
             this.groupBoxSpikeAdvanced.Controls.Add(this.btnSpikePresetsConservative);
             this.groupBoxSpikeAdvanced.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxSpikeAdvanced.Location = new System.Drawing.Point(13, 1804);
+            this.groupBoxSpikeAdvanced.Location = new System.Drawing.Point(13, 1864);
             this.groupBoxSpikeAdvanced.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxSpikeAdvanced.Name = "groupBoxSpikeAdvanced";
             this.groupBoxSpikeAdvanced.Padding = new System.Windows.Forms.Padding(4);
@@ -1503,7 +1510,7 @@ namespace tickMeter.Forms
             this.groupBoxAlerts.Controls.Add(this.btnTestDiscordAlert);
             this.groupBoxAlerts.Controls.Add(this.btnTestSoundAlert);
             this.groupBoxAlerts.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxAlerts.Location = new System.Drawing.Point(13, 1624);
+            this.groupBoxAlerts.Location = new System.Drawing.Point(13, 1684);
             this.groupBoxAlerts.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxAlerts.Name = "groupBoxAlerts";
             this.groupBoxAlerts.Padding = new System.Windows.Forms.Padding(4);
@@ -1617,7 +1624,7 @@ namespace tickMeter.Forms
             this.groupBoxAlertSounds.Controls.Add(this.txtAlertTicktimeSoundPath);
             this.groupBoxAlertSounds.Controls.Add(this.btnBrowseTicktimeSound);
             this.groupBoxAlertSounds.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxAlertSounds.Location = new System.Drawing.Point(13, 1484);
+            this.groupBoxAlertSounds.Location = new System.Drawing.Point(13, 1544);
             this.groupBoxAlertSounds.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxAlertSounds.Name = "groupBoxAlertSounds";
             this.groupBoxAlertSounds.Padding = new System.Windows.Forms.Padding(4);
@@ -1723,7 +1730,7 @@ namespace tickMeter.Forms
             this.groupBoxNetworkOptimizer.Controls.Add(this.lblOptimizationStats);
             this.groupBoxNetworkOptimizer.Controls.Add(this.btnClearOptimizationHistory);
             this.groupBoxNetworkOptimizer.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxNetworkOptimizer.Location = new System.Drawing.Point(13, 1204);
+            this.groupBoxNetworkOptimizer.Location = new System.Drawing.Point(13, 1264);
             this.groupBoxNetworkOptimizer.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxNetworkOptimizer.Name = "groupBoxNetworkOptimizer";
             this.groupBoxNetworkOptimizer.Padding = new System.Windows.Forms.Padding(4);
@@ -1874,7 +1881,7 @@ namespace tickMeter.Forms
             this.groupBoxColorZones.Controls.Add(this.numTicktimeYellow);
             this.groupBoxColorZones.Controls.Add(this.btnResetColorZones);
             this.groupBoxColorZones.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxColorZones.Location = new System.Drawing.Point(13, 984);
+            this.groupBoxColorZones.Location = new System.Drawing.Point(13, 1044);
             this.groupBoxColorZones.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxColorZones.Name = "groupBoxColorZones";
             this.groupBoxColorZones.Padding = new System.Windows.Forms.Padding(4);
@@ -2131,6 +2138,13 @@ namespace tickMeter.Forms
             this.groupBoxNetworkQuality.Controls.Add(this.chkNetworkQualityEnabled);
             this.groupBoxNetworkQuality.Controls.Add(this.chkNetworkQualityOverlay);
             this.groupBoxNetworkQuality.Controls.Add(this.chkNetworkQualityUseSmoothed);
+            this.groupBoxNetworkQuality.Controls.Add(this.lblQualityMode);
+            this.groupBoxNetworkQuality.Controls.Add(this.radioQualityStandard);
+            this.groupBoxNetworkQuality.Controls.Add(this.radioQualityContext);
+            this.groupBoxNetworkQuality.Controls.Add(this.radioQualityHybrid);
+            this.groupBoxNetworkQuality.Controls.Add(this.chkQualityContextSync);
+            this.groupBoxNetworkQuality.Controls.Add(this.lblQualityContextProfile);
+            this.groupBoxNetworkQuality.Controls.Add(this.cmbQualityContextProfile);
             this.groupBoxNetworkQuality.Controls.Add(this.lblQualityHistorySize);
             this.groupBoxNetworkQuality.Controls.Add(this.numQualityHistorySize);
             this.groupBoxNetworkQuality.Controls.Add(this.lblStabilityThreshold);
@@ -2145,7 +2159,7 @@ namespace tickMeter.Forms
             this.groupBoxNetworkQuality.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxNetworkQuality.Name = "groupBoxNetworkQuality";
             this.groupBoxNetworkQuality.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBoxNetworkQuality.Size = new System.Drawing.Size(753, 180);
+            this.groupBoxNetworkQuality.Size = new System.Drawing.Size(753, 240);
             this.groupBoxNetworkQuality.TabIndex = 9;
             this.groupBoxNetworkQuality.TabStop = false;
             this.groupBoxNetworkQuality.Text = "Stage 6: Анализ качества сети";
@@ -2178,15 +2192,97 @@ namespace tickMeter.Forms
             this.chkNetworkQualityUseSmoothed.Location = new System.Drawing.Point(8, 50);
             this.chkNetworkQualityUseSmoothed.Margin = new System.Windows.Forms.Padding(4);
             this.chkNetworkQualityUseSmoothed.Name = "chkNetworkQualityUseSmoothed";
-            this.chkNetworkQualityUseSmoothed.Size = new System.Drawing.Size(330, 20);
+            this.chkNetworkQualityUseSmoothed.Size = new System.Drawing.Size(342, 20);
             this.chkNetworkQualityUseSmoothed.TabIndex = 11;
             this.chkNetworkQualityUseSmoothed.Text = "Использовать сглаженные данные для анализа";
             this.chkNetworkQualityUseSmoothed.UseVisualStyleBackColor = true;
             // 
+            // lblQualityMode
+            // 
+            this.lblQualityMode.AutoSize = true;
+            this.lblQualityMode.Location = new System.Drawing.Point(8, 77);
+            this.lblQualityMode.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblQualityMode.Name = "lblQualityMode";
+            this.lblQualityMode.Size = new System.Drawing.Size(143, 16);
+            this.lblQualityMode.TabIndex = 12;
+            this.lblQualityMode.Text = "Режим отображения:";
+            // 
+            // radioQualityStandard
+            // 
+            this.radioQualityStandard.AutoSize = true;
+            this.radioQualityStandard.Location = new System.Drawing.Point(170, 75);
+            this.radioQualityStandard.Margin = new System.Windows.Forms.Padding(4);
+            this.radioQualityStandard.Name = "radioQualityStandard";
+            this.radioQualityStandard.Size = new System.Drawing.Size(83, 20);
+            this.radioQualityStandard.TabIndex = 13;
+            this.radioQualityStandard.TabStop = true;
+            this.radioQualityStandard.Text = "Standard";
+            this.radioQualityStandard.UseVisualStyleBackColor = true;
+            // 
+            // radioQualityContext
+            // 
+            this.radioQualityContext.AutoSize = true;
+            this.radioQualityContext.Location = new System.Drawing.Point(275, 75);
+            this.radioQualityContext.Margin = new System.Windows.Forms.Padding(4);
+            this.radioQualityContext.Name = "radioQualityContext";
+            this.radioQualityContext.Size = new System.Drawing.Size(72, 20);
+            this.radioQualityContext.TabIndex = 14;
+            this.radioQualityContext.TabStop = true;
+            this.radioQualityContext.Text = "Context";
+            this.radioQualityContext.UseVisualStyleBackColor = true;
+            // 
+            // radioQualityHybrid
+            // 
+            this.radioQualityHybrid.AutoSize = true;
+            this.radioQualityHybrid.Location = new System.Drawing.Point(370, 75);
+            this.radioQualityHybrid.Margin = new System.Windows.Forms.Padding(4);
+            this.radioQualityHybrid.Name = "radioQualityHybrid";
+            this.radioQualityHybrid.Size = new System.Drawing.Size(68, 20);
+            this.radioQualityHybrid.TabIndex = 15;
+            this.radioQualityHybrid.TabStop = true;
+            this.radioQualityHybrid.Text = "Hybrid";
+            this.radioQualityHybrid.UseVisualStyleBackColor = true;
+            // 
+            // chkQualityContextSync
+            // 
+            this.chkQualityContextSync.AutoSize = true;
+            this.chkQualityContextSync.Location = new System.Drawing.Point(7, 170);
+            this.chkQualityContextSync.Margin = new System.Windows.Forms.Padding(4);
+            this.chkQualityContextSync.Name = "chkQualityContextSync";
+            this.chkQualityContextSync.Size = new System.Drawing.Size(327, 20);
+            this.chkQualityContextSync.TabIndex = 16;
+            this.chkQualityContextSync.Text = "Синхронизировать с профилем цветовых зон";
+            this.chkQualityContextSync.UseVisualStyleBackColor = true;
+            // 
+            // lblQualityContextProfile
+            // 
+            this.lblQualityContextProfile.AutoSize = true;
+            this.lblQualityContextProfile.Location = new System.Drawing.Point(9, 137);
+            this.lblQualityContextProfile.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblQualityContextProfile.Name = "lblQualityContextProfile";
+            this.lblQualityContextProfile.Size = new System.Drawing.Size(156, 16);
+            this.lblQualityContextProfile.TabIndex = 17;
+            this.lblQualityContextProfile.Text = "Контекстный профиль:";
+            // 
+            // cmbQualityContextProfile
+            // 
+            this.cmbQualityContextProfile.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbQualityContextProfile.FormattingEnabled = true;
+            this.cmbQualityContextProfile.Items.AddRange(new object[] {
+            "Very Low",
+            "Low",
+            "Medium",
+            "High"});
+            this.cmbQualityContextProfile.Location = new System.Drawing.Point(183, 138);
+            this.cmbQualityContextProfile.Margin = new System.Windows.Forms.Padding(4);
+            this.cmbQualityContextProfile.Name = "cmbQualityContextProfile";
+            this.cmbQualityContextProfile.Size = new System.Drawing.Size(120, 24);
+            this.cmbQualityContextProfile.TabIndex = 18;
+            // 
             // lblQualityHistorySize
             // 
             this.lblQualityHistorySize.AutoSize = true;
-            this.lblQualityHistorySize.Location = new System.Drawing.Point(8, 80);
+            this.lblQualityHistorySize.Location = new System.Drawing.Point(498, 110);
             this.lblQualityHistorySize.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblQualityHistorySize.Name = "lblQualityHistorySize";
             this.lblQualityHistorySize.Size = new System.Drawing.Size(114, 16);
@@ -2195,7 +2291,7 @@ namespace tickMeter.Forms
             // 
             // numQualityHistorySize
             // 
-            this.numQualityHistorySize.Location = new System.Drawing.Point(160, 78);
+            this.numQualityHistorySize.Location = new System.Drawing.Point(630, 110);
             this.numQualityHistorySize.Margin = new System.Windows.Forms.Padding(4);
             this.numQualityHistorySize.Maximum = new decimal(new int[] {
             500,
@@ -2219,7 +2315,7 @@ namespace tickMeter.Forms
             // lblStabilityThreshold
             // 
             this.lblStabilityThreshold.AutoSize = true;
-            this.lblStabilityThreshold.Location = new System.Drawing.Point(250, 80);
+            this.lblStabilityThreshold.Location = new System.Drawing.Point(238, 110);
             this.lblStabilityThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStabilityThreshold.Name = "lblStabilityThreshold";
             this.lblStabilityThreshold.Size = new System.Drawing.Size(144, 16);
@@ -2234,7 +2330,7 @@ namespace tickMeter.Forms
             0,
             0,
             131072});
-            this.numStabilityThreshold.Location = new System.Drawing.Point(412, 78);
+            this.numStabilityThreshold.Location = new System.Drawing.Point(400, 108);
             this.numStabilityThreshold.Margin = new System.Windows.Forms.Padding(4);
             this.numStabilityThreshold.Maximum = new decimal(new int[] {
             1,
@@ -2273,7 +2369,7 @@ namespace tickMeter.Forms
             0,
             0,
             131072});
-            this.numQualityThreshold.Location = new System.Drawing.Point(160, 108);
+            this.numQualityThreshold.Location = new System.Drawing.Point(140, 108);
             this.numQualityThreshold.Margin = new System.Windows.Forms.Padding(4);
             this.numQualityThreshold.Maximum = new decimal(new int[] {
             1,
@@ -2296,7 +2392,7 @@ namespace tickMeter.Forms
             // 
             // btnResetQualityAnalyzer
             // 
-            this.btnResetQualityAnalyzer.Location = new System.Drawing.Point(250, 81);
+            this.btnResetQualityAnalyzer.Location = new System.Drawing.Point(620, 204);
             this.btnResetQualityAnalyzer.Margin = new System.Windows.Forms.Padding(4);
             this.btnResetQualityAnalyzer.Name = "btnResetQualityAnalyzer";
             this.btnResetQualityAnalyzer.Size = new System.Drawing.Size(120, 28);
@@ -2308,7 +2404,7 @@ namespace tickMeter.Forms
             // 
             this.lblCurrentQuality.AutoSize = true;
             this.lblCurrentQuality.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.lblCurrentQuality.Location = new System.Drawing.Point(8, 120);
+            this.lblCurrentQuality.Location = new System.Drawing.Point(332, 137);
             this.lblCurrentQuality.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCurrentQuality.Name = "lblCurrentQuality";
             this.lblCurrentQuality.Size = new System.Drawing.Size(173, 18);
@@ -2320,7 +2416,7 @@ namespace tickMeter.Forms
             this.lblQualityRating.AutoSize = true;
             this.lblQualityRating.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.lblQualityRating.ForeColor = System.Drawing.Color.Green;
-            this.lblQualityRating.Location = new System.Drawing.Point(8, 145);
+            this.lblQualityRating.Location = new System.Drawing.Point(539, 139);
             this.lblQualityRating.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblQualityRating.Name = "lblQualityRating";
             this.lblQualityRating.Size = new System.Drawing.Size(148, 18);
@@ -3147,6 +3243,13 @@ namespace tickMeter.Forms
         private System.Windows.Forms.CheckBox chkNetworkQualityEnabled;
         private System.Windows.Forms.CheckBox chkNetworkQualityOverlay;
         private System.Windows.Forms.CheckBox chkNetworkQualityUseSmoothed;
+        private System.Windows.Forms.Label lblQualityMode;
+        private System.Windows.Forms.RadioButton radioQualityStandard;
+        private System.Windows.Forms.RadioButton radioQualityContext;
+        private System.Windows.Forms.RadioButton radioQualityHybrid;
+        private System.Windows.Forms.CheckBox chkQualityContextSync;
+        private System.Windows.Forms.Label lblQualityContextProfile;
+        private System.Windows.Forms.ComboBox cmbQualityContextProfile;
         private System.Windows.Forms.Label lblQualityHistorySize;
         private System.Windows.Forms.NumericUpDown numQualityHistorySize;
         private System.Windows.Forms.Label lblStabilityThreshold;

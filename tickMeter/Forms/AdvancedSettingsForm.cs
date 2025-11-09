@@ -1439,6 +1439,28 @@ namespace tickMeter.Forms
                 numStabilityThreshold.Value = decimal.Parse(App.settingsManager.GetOption("stability_threshold", "0.15", "ADVANCED"));
                 numQualityThreshold.Value = decimal.Parse(App.settingsManager.GetOption("quality_threshold", "0.8", "ADVANCED"));
                 
+                // NEW: Load hybrid quality mode settings
+                string qualityMode = App.settingsManager.GetOption("network_quality_mode", "hybrid", "ADVANCED").ToLower();
+                switch (qualityMode)
+                {
+                    case "standard":
+                        radioQualityStandard.Checked = true;
+                        break;
+                    case "context":
+                        radioQualityContext.Checked = true;
+                        break;
+                    default:
+                        radioQualityHybrid.Checked = true;
+                        break;
+                }
+                
+                chkQualityContextSync.Checked = App.settingsManager.GetOption("network_quality_context_sync", "True", "ADVANCED") == "True";
+                string contextProfile = App.settingsManager.GetOption("network_quality_context_profile", "medium", "ADVANCED");
+                cmbQualityContextProfile.SelectedItem = Classes.QualityDisplayThresholds.GetProfileDisplayName(contextProfile);
+                
+                // Disable profile ComboBox if sync is enabled
+                cmbQualityContextProfile.Enabled = !chkQualityContextSync.Checked;
+                
                 // Инициализируем анализатор если он включен
                 if (chkNetworkQualityEnabled.Checked)
                 {
@@ -1454,6 +1476,11 @@ namespace tickMeter.Forms
                 chkNetworkQualityEnabled.CheckedChanged += ChkNetworkQualityEnabled_CheckedChanged;
                 chkNetworkQualityOverlay.CheckedChanged += ChkNetworkQualityOverlay_CheckedChanged;
                 chkNetworkQualityUseSmoothed.CheckedChanged += ChkNetworkQualityUseSmoothed_CheckedChanged;
+                radioQualityStandard.CheckedChanged += RadioQualityMode_CheckedChanged;
+                radioQualityContext.CheckedChanged += RadioQualityMode_CheckedChanged;
+                radioQualityHybrid.CheckedChanged += RadioQualityMode_CheckedChanged;
+                chkQualityContextSync.CheckedChanged += ChkQualityContextSync_CheckedChanged;
+                cmbQualityContextProfile.SelectedIndexChanged += CmbQualityContextProfile_SelectedIndexChanged;
                 numQualityHistorySize.ValueChanged += NumQualityHistorySize_ValueChanged;
                 numStabilityThreshold.ValueChanged += NumStabilityThreshold_ValueChanged;
                 numQualityThreshold.ValueChanged += NumQualityThreshold_ValueChanged;
@@ -1477,6 +1504,18 @@ namespace tickMeter.Forms
                 App.settingsManager.SetOption("quality_history_size", SettingsManager.ToInvariantString((int)numQualityHistorySize.Value), "ADVANCED");
                 App.settingsManager.SetOption("stability_threshold", SettingsManager.ToInvariantString((float)numStabilityThreshold.Value), "ADVANCED");
                 App.settingsManager.SetOption("quality_threshold", SettingsManager.ToInvariantString((float)numQualityThreshold.Value), "ADVANCED");
+                
+                // NEW: Save hybrid quality mode settings
+                string qualityMode = radioQualityStandard.Checked ? "standard" :
+                                    radioQualityContext.Checked ? "context" : "hybrid";
+                App.settingsManager.SetOption("network_quality_mode", qualityMode, "ADVANCED");
+                App.settingsManager.SetOption("network_quality_context_sync", chkQualityContextSync.Checked.ToString(), "ADVANCED");
+                
+                if (cmbQualityContextProfile.SelectedItem != null)
+                {
+                    string profileValue = cmbQualityContextProfile.SelectedItem.ToString().ToLower().Replace(" ", "_");
+                    App.settingsManager.SetOption("network_quality_context_profile", profileValue, "ADVANCED");
+                }
             }
             catch (Exception ex)
             {
@@ -1512,6 +1551,46 @@ namespace tickMeter.Forms
         {
             SaveNetworkQualitySettings();
             System.Diagnostics.Debug.Print($"[NetworkQuality] Use smoothed data: {chkNetworkQualityUseSmoothed.Checked}");
+        }
+        
+        private void RadioQualityMode_CheckedChanged(object sender, EventArgs e)
+        {
+            RadioButton radio = sender as RadioButton;
+            if (radio != null && radio.Checked)
+            {
+                SaveNetworkQualitySettings();
+                string mode = radioQualityStandard.Checked ? "Standard" :
+                             radioQualityContext.Checked ? "Context" : "Hybrid";
+                System.Diagnostics.Debug.Print($"[NetworkQuality] Display mode changed to: {mode}");
+                UpdateQualityDisplay();
+            }
+        }
+        
+        private void ChkQualityContextSync_CheckedChanged(object sender, EventArgs e)
+        {
+            cmbQualityContextProfile.Enabled = !chkQualityContextSync.Checked;
+            SaveNetworkQualitySettings();
+            
+            if (chkNetworkQualityEnabled.Checked)
+            {
+                NetworkQualityAnalyzer.Initialize(); // Reload context profile
+            }
+            
+            System.Diagnostics.Debug.Print($"[NetworkQuality] Context sync: {chkQualityContextSync.Checked}");
+            UpdateQualityDisplay();
+        }
+        
+        private void CmbQualityContextProfile_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            SaveNetworkQualitySettings();
+            
+            if (chkNetworkQualityEnabled.Checked && !chkQualityContextSync.Checked)
+            {
+                NetworkQualityAnalyzer.Initialize(); // Reload with new context profile
+            }
+            
+            System.Diagnostics.Debug.Print($"[NetworkQuality] Context profile: {cmbQualityContextProfile.SelectedItem}");
+            UpdateQualityDisplay();
         }
         
         private void NumQualityHistorySize_ValueChanged(object sender, EventArgs e)
@@ -1597,15 +1676,32 @@ namespace tickMeter.Forms
                 
                 var stats = NetworkQualityAnalyzer.GetDetailedStats();
                 
-                lblCurrentQuality.Text = $"Качество сети: {(stats.OverallQuality * 100):F0}%";
-                lblQualityRating.Text = $"Рейтинг: {stats.QualityRating}";
+                // Показываем Standard и Context рейтинги в зависимости от режима
+                string displayMode = radioQualityStandard.Checked ? "standard" :
+                                    radioQualityContext.Checked ? "context" : "hybrid";
                 
-                // Цветовая индикация качества
-                if (stats.OverallQuality >= 0.9f)
+                if (displayMode == "standard")
+                {
+                    lblCurrentQuality.Text = $"Standard Quality: {(stats.StandardQuality * 100):F0}%";
+                    lblQualityRating.Text = $"Рейтинг: {stats.StandardRating}";
+                }
+                else if (displayMode == "context")
+                {
+                    lblCurrentQuality.Text = $"Context Quality ({stats.ContextProfile}): {(stats.ContextQuality * 100):F0}%";
+                    lblQualityRating.Text = $"Рейтинг: {stats.ContextRating}";
+                }
+                else // hybrid
+                {
+                    lblCurrentQuality.Text = $"Standard: {(stats.StandardQuality * 100):F0}% | Context ({stats.ContextProfile}): {(stats.ContextQuality * 100):F0}%";
+                    lblQualityRating.Text = $"Рейтинг: {stats.StandardRating} / {stats.ContextRating}";
+                }
+                
+                // Цветовая индикация по Standard Quality (объективная оценка)
+                if (stats.StandardQuality >= 0.9f)
                 {
                     lblQualityRating.ForeColor = System.Drawing.Color.Green;
                 }
-                else if (stats.OverallQuality >= 0.7f)
+                else if (stats.StandardQuality >= 0.7f)
                 {
                     lblQualityRating.ForeColor = System.Drawing.Color.Orange;
                 }

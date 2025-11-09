@@ -52,19 +52,56 @@ namespace tickMeter.Classes
         public static bool IsPredictingIssues { get; private set; } = false;
         public static string PredictionDetails { get; private set; } = "";
         
-    // EMA smoothing для общего качества
-    private static float _overallEma = -1f; // -1 означает неинициализировано
+        // NEW: Dual Quality System (Standard + Context)
+        public static float StandardQuality { get; private set; } = 1.0f;  // Всегда Medium пороги
+        public static string StandardRating { get; private set; } = "Excellent";
+        public static float ContextQuality { get; private set; } = 1.0f;   // По профилю зон
+        public static string ContextRating { get; private set; } = "Excellent";
+        public static string ContextProfile { get; private set; } = "Medium";
+        
+        // EMA smoothing для общего качества
+        private static float _overallEma = -1f; // -1 означает неинициализировано
 
-    // Отслеживание валидного пинга для борьбы с ложными скачками
-    private static float _lastValidPing = -1f;
-    private static int _missingPingSamples = 0;
-    private const int MissingPingTolerance = 5;
-    private const int MissingPingCritical = 30;
+        // Отслеживание валидного пинга для борьбы с ложными скачками
+        private static float _lastValidPing = -1f;
+        private static int _missingPingSamples = 0;
+        private const int MissingPingTolerance = 5;
+        private const int MissingPingCritical = 30;
         
         // События для уведомлений
         public static event Action<float> QualityChanged;
         public static event Action<string> QualityRatingChanged;
         public static event Action<bool, string> PredictionChanged;
+        
+        /// <summary>
+        /// Загружает настройки Context профиля
+        /// </summary>
+        private static void LoadContextProfile()
+        {
+            try
+            {
+                // Проверяем синхронизацию с color zones
+                bool contextSync = App.settingsManager?.GetOption("network_quality_context_sync", "True", "ADVANCED") == "True";
+                
+                if (contextSync)
+                {
+                    // Синхронизируем с профилем цветовых зон
+                    ContextProfile = App.settingsManager?.GetOption("color_zone_profile", "Medium", "ZONES") ?? "Medium";
+                }
+                else
+                {
+                    // Используем отдельный профиль для Context
+                    ContextProfile = App.settingsManager?.GetOption("network_quality_context_profile", "Medium", "ADVANCED") ?? "Medium";
+                }
+                
+                ContextProfile = QualityDisplayThresholds.GetProfileDisplayName(ContextProfile);
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[NetworkQualityAnalyzer] LoadContextProfile error: {ex.Message}");
+                ContextProfile = "Medium";
+            }
+        }
         
         /// <summary>
         /// Инициализация анализатора с настройками
@@ -154,9 +191,13 @@ namespace tickMeter.Classes
                 
                 _dynamicTargetTickrate = _manualTargetTickrate;
 
+                // NEW: Load Context Profile settings
+                LoadContextProfile();
+
                 Debug.Print($"[NetworkQualityAnalyzer] Initialized: history={_historySize}, stability(base)={_stabilityThreshold}, quality={_qualityThreshold}");
                 Debug.Print($"[NetworkQualityAnalyzer] Stability thresholds => ping={_pingStabilityThreshold}, tickrate={_tickrateStabilityThreshold}, ticktime={_ticktimeStabilityThreshold}");
                 Debug.Print($"[NetworkQualityAnalyzer] ChatGPT Settings: targetTickrateMode={( _targetTickrateAuto ? "auto" : _manualTargetTickrate.ToString("F0", CultureInfo.InvariantCulture))}, pingGood={_pingGoodMs}, pingBad={_pingBadMs}, ticktimeGood={_ticktimeGoodMs}, ticktimeBad={_ticktimeBadMs}, emaAlpha={_emaAlpha}");
+                Debug.Print($"[NetworkQualityAnalyzer] Context Profile: {ContextProfile}");
             }
             catch (Exception ex)
             {
@@ -258,11 +299,18 @@ namespace tickMeter.Classes
                     AverageJitter = _jitterHistory.Average();
                 }
                 
-                // Рассчитываем общее качество сети
-                OverallQuality = CalculateOverallQuality();
+                // NEW: Рассчитываем обе оценки качества
+                // Standard Quality - всегда используется Medium профиль (объективная оценка)
+                StandardQuality = CalculateQualityWithProfile("Medium");
+                StandardRating = GetQualityRating(StandardQuality);
                 
-                // Определяем рейтинг качества
-                QualityRating = GetQualityRating(OverallQuality);
+                // Context Quality - используется профиль из настроек (контекстная оценка)
+                ContextQuality = CalculateQualityWithProfile(ContextProfile);
+                ContextRating = GetQualityRating(ContextQuality);
+                
+                // OverallQuality - по умолчанию = StandardQuality для обратной совместимости
+                OverallQuality = StandardQuality;
+                QualityRating = StandardRating;
                 
                 // Предсказываем проблемы
                 PredictNetworkIssues();
@@ -320,8 +368,16 @@ namespace tickMeter.Classes
         /// <summary>
         /// Рассчитывает общее качество сети с ChatGPT улучшениями
         /// </summary>
-        private static float CalculateOverallQuality()
+        /// <param name="profileName">Название профиля (Very Low/Low/Medium/High)</param>
+        private static float CalculateQualityWithProfile(string profileName = "Medium")
         {
+            // Получаем пороги для выбранного профиля
+            var thresholds = QualityCalculationThresholds.GetThresholds(profileName);
+            float pingGoodMs = thresholds.pingGood;
+            float pingBadMs = thresholds.pingBad;
+            float ticktimeGoodMs = thresholds.ticktimeGood;
+            float ticktimeBadMs = thresholds.ticktimeBad;
+            
             // Веса для разных метрик (сохраняем исходные веса для стабильности)
             float pingWeight = 0.30f;
             float tickrateWeight = 0.30f;
@@ -345,9 +401,9 @@ namespace tickMeter.Classes
             // Ping level penalty
             float avgPing = _pingHistory.Count > 0 ? _pingHistory.Average() : 0f;
             float pingLevelPenalty = 0f;
-            if (avgPing > _pingGoodMs)
+            if (avgPing > pingGoodMs)
             {
-                pingLevelPenalty = Math.Min(1f, Math.Max(0f, (avgPing - _pingGoodMs) / (_pingBadMs - _pingGoodMs)));
+                pingLevelPenalty = Math.Min(1f, Math.Max(0f, (avgPing - pingGoodMs) / (pingBadMs - pingGoodMs)));
             }
             quality += (1f - pingLevelPenalty) * pingLevelWeight;
             
@@ -364,9 +420,9 @@ namespace tickMeter.Classes
             // Ticktime level penalty
             float avgTicktime = _ticktimeHistory.Count > 0 ? _ticktimeHistory.Average() : 0f;
             float ticktimeLevelPenalty = 0f;
-            if (avgTicktime > _ticktimeGoodMs)
+            if (avgTicktime > ticktimeGoodMs)
             {
-                ticktimeLevelPenalty = Math.Min(1f, Math.Max(0f, (avgTicktime - _ticktimeGoodMs) / (_ticktimeBadMs - _ticktimeGoodMs)));
+                ticktimeLevelPenalty = Math.Min(1f, Math.Max(0f, (avgTicktime - ticktimeGoodMs) / (ticktimeBadMs - ticktimeGoodMs)));
             }
             quality += (1f - ticktimeLevelPenalty) * ticktimeLevelWeight;
             
@@ -518,7 +574,13 @@ namespace tickMeter.Classes
                     DataPoints = _pingHistory.Count,
                     AveragePing = _pingHistory.Count > 0 ? _pingHistory.Average() : 0,
                     AverageTickrate = _tickrateHistory.Count > 0 ? _tickrateHistory.Average() : 0,
-                    AveragePacketLoss = _packetLossHistory.Count > 0 ? _packetLossHistory.Average() : 0
+                    AveragePacketLoss = _packetLossHistory.Count > 0 ? _packetLossHistory.Average() : 0,
+                    // NEW: Dual Quality System
+                    StandardQuality = StandardQuality,
+                    StandardRating = StandardRating,
+                    ContextQuality = ContextQuality,
+                    ContextRating = ContextRating,
+                    ContextProfile = ContextProfile
                 };
             }
         }
@@ -613,5 +675,12 @@ namespace tickMeter.Classes
         public float AveragePing { get; set; }
         public float AverageTickrate { get; set; }
         public float AveragePacketLoss { get; set; }
+        
+        // NEW: Dual Quality System (Hybrid Mode)
+        public float StandardQuality { get; set; }         // Always Medium profile (objective)
+        public string StandardRating { get; set; }         // Rating for Standard quality
+        public float ContextQuality { get; set; }          // User's selected profile (subjective)
+        public string ContextRating { get; set; }          // Rating for Context quality
+        public string ContextProfile { get; set; }         // Current context profile name
     }
 }
