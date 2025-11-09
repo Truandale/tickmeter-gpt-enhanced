@@ -185,6 +185,7 @@ namespace tickMeter.Forms
             this.chkTicktimeGraphOverlaySmoothing = new System.Windows.Forms.CheckBox();
             this.chkPingValueOverlaySmoothing = new System.Windows.Forms.CheckBox();
             this.chkPingValueGuiSmoothing = new System.Windows.Forms.CheckBox();
+            this.chkSyncPingOverlayWithGui = new System.Windows.Forms.CheckBox();
             this.chkTickrateValueGuiSmoothing = new System.Windows.Forms.CheckBox();
             this.chkTickrateValueOverlaySmoothing = new System.Windows.Forms.CheckBox();
             this.chkTicktimeValueOverlaySmoothing = new System.Windows.Forms.CheckBox();
@@ -1030,7 +1031,7 @@ namespace tickMeter.Forms
             this.chkSpikeMetricTickrate.Location = new System.Drawing.Point(320, 30);
             this.chkSpikeMetricTickrate.Margin = new System.Windows.Forms.Padding(4);
             this.chkSpikeMetricTickrate.Name = "chkSpikeMetricTickrate";
-            this.chkSpikeMetricTickrate.Size = new System.Drawing.Size(184, 20);
+            this.chkSpikeMetricTickrate.Size = new System.Drawing.Size(84, 20);
             this.chkSpikeMetricTickrate.TabIndex = 2;
             this.chkSpikeMetricTickrate.Text = "Тикрейт";
             this.chkSpikeMetricTickrate.UseVisualStyleBackColor = true;
@@ -1041,7 +1042,7 @@ namespace tickMeter.Forms
             this.chkSpikeMetricTicktime.Location = new System.Drawing.Point(500, 30);
             this.chkSpikeMetricTicktime.Margin = new System.Windows.Forms.Padding(4);
             this.chkSpikeMetricTicktime.Name = "chkSpikeMetricTicktime";
-            this.chkSpikeMetricTicktime.Size = new System.Drawing.Size(185, 20);
+            this.chkSpikeMetricTicktime.Size = new System.Drawing.Size(85, 20);
             this.chkSpikeMetricTicktime.TabIndex = 3;
             this.chkSpikeMetricTicktime.Text = "Тиктайм";
             this.chkSpikeMetricTicktime.UseVisualStyleBackColor = true;
@@ -2328,6 +2329,7 @@ namespace tickMeter.Forms
             this.groupBox5.Controls.Add(this.chkTicktimeGraphOverlaySmoothing);
             this.groupBox5.Controls.Add(this.chkPingValueOverlaySmoothing);
             this.groupBox5.Controls.Add(this.chkPingValueGuiSmoothing);
+            this.groupBox5.Controls.Add(this.chkSyncPingOverlayWithGui);
             this.groupBox5.Controls.Add(this.chkTickrateValueGuiSmoothing);
             this.groupBox5.Controls.Add(this.chkTickrateValueOverlaySmoothing);
             this.groupBox5.Controls.Add(this.chkTicktimeValueOverlaySmoothing);
@@ -2349,7 +2351,7 @@ namespace tickMeter.Forms
             // chkUiRefreshHidden
             // 
             this.chkUiRefreshHidden.AutoSize = true;
-            this.chkUiRefreshHidden.Location = new System.Drawing.Point(363, 160);
+            this.chkUiRefreshHidden.Location = new System.Drawing.Point(364, 171);
             this.chkUiRefreshHidden.Margin = new System.Windows.Forms.Padding(4);
             this.chkUiRefreshHidden.Name = "chkUiRefreshHidden";
             this.chkUiRefreshHidden.Size = new System.Drawing.Size(241, 20);
@@ -2360,7 +2362,7 @@ namespace tickMeter.Forms
             // chkStunEnable
             // 
             this.chkStunEnable.AutoSize = true;
-            this.chkStunEnable.Location = new System.Drawing.Point(363, 56);
+            this.chkStunEnable.Location = new System.Drawing.Point(363, 59);
             this.chkStunEnable.Margin = new System.Windows.Forms.Padding(4);
             this.chkStunEnable.Name = "chkStunEnable";
             this.chkStunEnable.Size = new System.Drawing.Size(324, 20);
@@ -2371,7 +2373,7 @@ namespace tickMeter.Forms
             // chkShowPingSpikes
             // 
             this.chkShowPingSpikes.AutoSize = true;
-            this.chkShowPingSpikes.Location = new System.Drawing.Point(363, 84);
+            this.chkShowPingSpikes.Location = new System.Drawing.Point(364, 87);
             this.chkShowPingSpikes.Margin = new System.Windows.Forms.Padding(4);
             this.chkShowPingSpikes.Name = "chkShowPingSpikes";
             this.chkShowPingSpikes.Size = new System.Drawing.Size(319, 20);
@@ -2382,7 +2384,7 @@ namespace tickMeter.Forms
             // lblPingSpikeThreshold
             // 
             this.lblPingSpikeThreshold.AutoSize = true;
-            this.lblPingSpikeThreshold.Location = new System.Drawing.Point(360, 112);
+            this.lblPingSpikeThreshold.Location = new System.Drawing.Point(364, 117);
             this.lblPingSpikeThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblPingSpikeThreshold.Name = "lblPingSpikeThreshold";
             this.lblPingSpikeThreshold.Size = new System.Drawing.Size(167, 16);
@@ -2391,7 +2393,7 @@ namespace tickMeter.Forms
             // 
             // numPingSpikeThreshold
             // 
-            this.numPingSpikeThreshold.Location = new System.Drawing.Point(545, 110);
+            this.numPingSpikeThreshold.Location = new System.Drawing.Point(549, 115);
             this.numPingSpikeThreshold.Margin = new System.Windows.Forms.Padding(4);
             this.numPingSpikeThreshold.Maximum = new decimal(new int[] {
             1000,
@@ -2415,7 +2417,7 @@ namespace tickMeter.Forms
             // chkRtssOnlyActive
             // 
             this.chkRtssOnlyActive.AutoSize = true;
-            this.chkRtssOnlyActive.Location = new System.Drawing.Point(363, 28);
+            this.chkRtssOnlyActive.Location = new System.Drawing.Point(364, 31);
             this.chkRtssOnlyActive.Margin = new System.Windows.Forms.Padding(4);
             this.chkRtssOnlyActive.Name = "chkRtssOnlyActive";
             this.chkRtssOnlyActive.Size = new System.Drawing.Size(306, 20);
@@ -2426,7 +2428,7 @@ namespace tickMeter.Forms
             // chkEnableIPv6
             // 
             this.chkEnableIPv6.AutoSize = true;
-            this.chkEnableIPv6.Location = new System.Drawing.Point(20, 255);
+            this.chkEnableIPv6.Location = new System.Drawing.Point(364, 199);
             this.chkEnableIPv6.Margin = new System.Windows.Forms.Padding(4);
             this.chkEnableIPv6.Name = "chkEnableIPv6";
             this.chkEnableIPv6.Size = new System.Drawing.Size(173, 20);
@@ -2437,7 +2439,7 @@ namespace tickMeter.Forms
             // chkDedupMultiNic
             // 
             this.chkDedupMultiNic.AutoSize = true;
-            this.chkDedupMultiNic.Location = new System.Drawing.Point(20, 227);
+            this.chkDedupMultiNic.Location = new System.Drawing.Point(363, 227);
             this.chkDedupMultiNic.Margin = new System.Windows.Forms.Padding(4);
             this.chkDedupMultiNic.Name = "chkDedupMultiNic";
             this.chkDedupMultiNic.Size = new System.Drawing.Size(277, 20);
@@ -2511,6 +2513,17 @@ namespace tickMeter.Forms
             this.chkPingValueGuiSmoothing.Text = "Сглаживание значений пинга в GUI";
             this.chkPingValueGuiSmoothing.UseVisualStyleBackColor = true;
             // 
+            // chkSyncPingOverlayWithGui
+            // 
+            this.chkSyncPingOverlayWithGui.AutoSize = true;
+            this.chkSyncPingOverlayWithGui.Location = new System.Drawing.Point(20, 227);
+            this.chkSyncPingOverlayWithGui.Margin = new System.Windows.Forms.Padding(4);
+            this.chkSyncPingOverlayWithGui.Name = "chkSyncPingOverlayWithGui";
+            this.chkSyncPingOverlayWithGui.Size = new System.Drawing.Size(282, 20);
+            this.chkSyncPingOverlayWithGui.TabIndex = 15;
+            this.chkSyncPingOverlayWithGui.Text = "Синхронизировать пинг оверлея и GUI";
+            this.chkSyncPingOverlayWithGui.UseVisualStyleBackColor = true;
+            // 
             // chkTickrateValueGuiSmoothing
             // 
             this.chkTickrateValueGuiSmoothing.AutoSize = true;
@@ -2536,7 +2549,7 @@ namespace tickMeter.Forms
             // chkTicktimeValueOverlaySmoothing
             // 
             this.chkTicktimeValueOverlaySmoothing.AutoSize = true;
-            this.chkTicktimeValueOverlaySmoothing.Location = new System.Drawing.Point(20, 395);
+            this.chkTicktimeValueOverlaySmoothing.Location = new System.Drawing.Point(20, 255);
             this.chkTicktimeValueOverlaySmoothing.Margin = new System.Windows.Forms.Padding(4);
             this.chkTicktimeValueOverlaySmoothing.Name = "chkTicktimeValueOverlaySmoothing";
             this.chkTicktimeValueOverlaySmoothing.Size = new System.Drawing.Size(319, 20);
@@ -2558,7 +2571,7 @@ namespace tickMeter.Forms
             // chkPingTargetActiveOnly
             // 
             this.chkPingTargetActiveOnly.AutoSize = true;
-            this.chkPingTargetActiveOnly.Location = new System.Drawing.Point(363, 132);
+            this.chkPingTargetActiveOnly.Location = new System.Drawing.Point(363, 143);
             this.chkPingTargetActiveOnly.Margin = new System.Windows.Forms.Padding(4);
             this.chkPingTargetActiveOnly.Name = "chkPingTargetActiveOnly";
             this.chkPingTargetActiveOnly.Size = new System.Drawing.Size(317, 20);
@@ -2995,6 +3008,7 @@ namespace tickMeter.Forms
     private System.Windows.Forms.CheckBox chkTicktimeGraphOverlaySmoothing;
     private System.Windows.Forms.CheckBox chkPingValueOverlaySmoothing;
     private System.Windows.Forms.CheckBox chkPingValueGuiSmoothing;
+    private System.Windows.Forms.CheckBox chkSyncPingOverlayWithGui;
     private System.Windows.Forms.CheckBox chkTickrateValueGuiSmoothing;
     private System.Windows.Forms.CheckBox chkTickrateValueOverlaySmoothing;
     private System.Windows.Forms.CheckBox chkTicktimeValueOverlaySmoothing;

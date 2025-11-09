@@ -39,6 +39,10 @@ namespace tickMeter.Classes
         public static bool IsPingValueEnabled() => 
             App.settingsManager?.GetBool("smoothing_ping_value_gui", false, "ADVANCED") == true ||
             App.settingsManager?.GetBool("smoothing_ping_value_overlay", false, "ADVANCED") == true;
+        
+        // Проверка режима синхронизации оверлея с GUI
+        public static bool IsPingOverlaySyncWithGui() =>
+            App.settingsManager?.GetBool("sync_ping_overlay_with_gui", true, "ADVANCED") == true;
             
         public static bool IsTickrateValueEnabled() =>
             App.settingsManager?.GetBool("smoothing_tickrate_value_gui", false, "ADVANCED") == true ||
@@ -88,25 +92,47 @@ namespace tickMeter.Classes
         {
             lock (_lock)
             {
-                // Если сглаживание выключено, возвращаем RAW
-                if (!IsPingValueEnabled())
+                // Режим 1: Синхронизация с GUI через кэш
+                if (IsPingOverlaySyncWithGui())
                 {
-                    return rawPing;
+                    // Если сглаживание выключено, возвращаем RAW
+                    if (!IsPingValueEnabled())
+                    {
+                        return rawPing;
+                    }
+                    
+                    // Если значение в кэше соответствует текущему RAW, используем кэш
+                    if (_cachedRawPing == rawPing && _cachedSmoothedPing > 0)
+                    {
+                        return _cachedSmoothedPing;
+                    }
+                    
+                    // Если кэш пуст или не синхронизирован, применяем сглаживание напрямую
+                    // (это может произойти если Overlay обновляется раньше GUI)
+                    if (_emaPingValue == null)
+                    {
+                        _emaPingValue = new ExponentialMovingAverage(GetAlpha());
+                    }
+                    return (int)Math.Round(_emaPingValue.Update(rawPing));
                 }
-                
-                // Если значение в кэше соответствует текущему RAW, используем кэш
-                if (_cachedRawPing == rawPing && _cachedSmoothedPing > 0)
+                else
                 {
-                    return _cachedSmoothedPing;
+                    // Режим 2: Независимое сглаживание через общую EMA (без кэша)
+                    // Проверяем настройку сглаживания для оверлея
+                    bool overlaySmoothing = App.settingsManager?.GetBool("smoothing_ping_value_overlay", false, "ADVANCED") == true;
+                    
+                    if (!overlaySmoothing || rawPing <= 0)
+                    {
+                        return rawPing;
+                    }
+                    
+                    // Используем ту же EMA что и GUI, но без кэша
+                    if (_emaPingValue == null)
+                    {
+                        _emaPingValue = new ExponentialMovingAverage(GetAlpha());
+                    }
+                    return (int)Math.Round(_emaPingValue.Update(rawPing));
                 }
-                
-                // Если кэш пуст или не синхронизирован, применяем сглаживание напрямую
-                // (это может произойти если Overlay обновляется раньше GUI)
-                if (_emaPingValue == null)
-                {
-                    _emaPingValue = new ExponentialMovingAverage(GetAlpha());
-                }
-                return (int)Math.Round(_emaPingValue.Update(rawPing));
             }
         }
 

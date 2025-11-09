@@ -290,14 +290,14 @@ namespace tickMeter.Classes
             // Format display value with smoothing FIRST
             if (snap.PingAvgMs > 0)
             {
-                // === ИСПОЛЬЗУЕМ КЭШИРОВАННОЕ ЗНАЧЕНИЕ ИЗ GUI ===
-                // Это гарантирует синхронизацию: оверлей показывает ТО ЖЕ значение что и главное окно
+                // === ПОЛУЧАЕМ ЗНАЧЕНИЕ: из кэша GUI (если sync=true) или через независимое сглаживание ===
                 int rawPingOverlay = (int)snap.PingAvgMs;
                 int smoothedPing = Classes.SmoothingManager.GetCachedSmoothedPing(rawPingOverlay);
                 pingValue = smoothedPing.ToString();
                 
                 // DEBUG: Log overlay smoothing for verification
-                DebugLogger.log($"[OVERLAY-PING] Raw={rawPingOverlay} -> Smoothed={smoothedPing} (cached from GUI)");
+                string mode = Classes.SmoothingManager.IsPingOverlaySyncWithGui() ? "synced with GUI" : "independent";
+                DebugLogger.log($"[OVERLAY-PING] Raw={rawPingOverlay} -> Smoothed={smoothedPing} ({mode})");
                 
                 // Calculate zone from SMOOTHED display value, not raw snapshot
                 var pingZone = zoner.FromPing(smoothedPing);

@@ -82,6 +82,7 @@ namespace tickMeter.Forms
                 chkTicktimeGraphOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_ticktime_graph_overlay", "True", "ADVANCED") == "True";
                 chkPingValueOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_ping_value_overlay", "False", "ADVANCED") == "True";
                 chkPingValueGuiSmoothing.Checked = App.settingsManager.GetOption("smoothing_ping_value_gui", "False", "ADVANCED") == "True";
+                chkSyncPingOverlayWithGui.Checked = App.settingsManager.GetOption("sync_ping_overlay_with_gui", "True", "ADVANCED") == "True";
                 chkTickrateValueGuiSmoothing.Checked = App.settingsManager.GetOption("smoothing_tickrate_value_gui", "False", "ADVANCED") == "True";
                 chkTickrateValueOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_tickrate_value_overlay", "False", "ADVANCED") == "True";
                 chkTicktimeValueOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_ticktime_value_overlay", "False", "ADVANCED") == "True";
@@ -155,6 +156,11 @@ namespace tickMeter.Forms
         private void AttachEventHandlers()
         {
             chkVpnBypassAdvanced.CheckedChanged += chkVpnBypassAdvanced_CheckedChanged;
+            
+            // Взаимоисключение для галок сглаживания пинга в оверлее
+            chkSyncPingOverlayWithGui.CheckedChanged += chkSyncPingOverlayWithGui_CheckedChanged;
+            chkPingValueOverlaySmoothing.CheckedChanged += chkPingValueOverlaySmoothing_CheckedChanged;
+            chkPingGraphOverlaySmoothing.CheckedChanged += chkPingGraphOverlaySmoothing_CheckedChanged;
         }
 
         private void chkVpnBypassAdvanced_CheckedChanged(object sender, EventArgs e)
@@ -172,6 +178,46 @@ namespace tickMeter.Forms
             else
             {
                 RestoreVpnBypassSnapshot();
+            }
+        }
+
+        // Обработчик для синхронизации пинга оверлея и GUI
+        private void chkSyncPingOverlayWithGui_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_isLoadingSettings)
+                return;
+
+            if (chkSyncPingOverlayWithGui.Checked)
+            {
+                // Отключаем независимое сглаживание для оверлея
+                chkPingValueOverlaySmoothing.Checked = false;
+                chkPingGraphOverlaySmoothing.Checked = false;
+            }
+        }
+
+        // Обработчик для сглаживания значения пинга в оверлее
+        private void chkPingValueOverlaySmoothing_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_isLoadingSettings)
+                return;
+
+            if (chkPingValueOverlaySmoothing.Checked)
+            {
+                // Отключаем синхронизацию с GUI
+                chkSyncPingOverlayWithGui.Checked = false;
+            }
+        }
+
+        // Обработчик для сглаживания графика пинга в оверлее
+        private void chkPingGraphOverlaySmoothing_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_isLoadingSettings)
+                return;
+
+            if (chkPingGraphOverlaySmoothing.Checked)
+            {
+                // Отключаем синхронизацию с GUI
+                chkSyncPingOverlayWithGui.Checked = false;
             }
         }
 
@@ -395,6 +441,7 @@ namespace tickMeter.Forms
                 App.settingsManager.SetOption("smoothing_ticktime_graph_overlay", chkTicktimeGraphOverlaySmoothing.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("smoothing_ping_value_overlay", chkPingValueOverlaySmoothing.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("smoothing_ping_value_gui", chkPingValueGuiSmoothing.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("sync_ping_overlay_with_gui", chkSyncPingOverlayWithGui.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("smoothing_tickrate_value_gui", chkTickrateValueGuiSmoothing.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("smoothing_tickrate_value_overlay", chkTickrateValueOverlaySmoothing.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("smoothing_ticktime_value_overlay", chkTicktimeValueOverlaySmoothing.Checked.ToString(), "ADVANCED");
