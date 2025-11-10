@@ -28,7 +28,14 @@ namespace tickMeter.Forms
         /// </summary>
         private void InitializeComponent()
         {
-            this.panel1 = new System.Windows.Forms.Panel();
+            this.tabControl1 = new System.Windows.Forms.TabControl();
+            this.tabPageBasic = new System.Windows.Forms.TabPage();
+            this.tabPageUniversal = new System.Windows.Forms.TabPage();
+            this.tabPagePerformance = new System.Windows.Forms.TabPage();
+            this.tabPageNetworkAnalysis = new System.Windows.Forms.TabPage();
+            this.tabPageSpikeDetection = new System.Windows.Forms.TabPage();
+            this.tabPageAlerts = new System.Windows.Forms.TabPage();
+            this.tabPageAdvanced = new System.Windows.Forms.TabPage();
             this.groupBoxTickrateChart = new System.Windows.Forms.GroupBox();
             this.chkTickrateChartEnabled = new System.Windows.Forms.CheckBox();
             this.lblTickrateChartMode = new System.Windows.Forms.Label();
@@ -224,7 +231,6 @@ namespace tickMeter.Forms
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnReset = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
-            this.panel1.SuspendLayout();
             this.groupBoxTickrateChart.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numTickrateChartMaxPoints)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numTickrateChartHistoryHours)).BeginInit();
@@ -277,37 +283,122 @@ namespace tickMeter.Forms
             this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.liveMaxRowsNumeric)).BeginInit();
             this.panelButtons.SuspendLayout();
+            this.tabControl1.SuspendLayout();
+            this.tabPageBasic.SuspendLayout();
+            this.tabPageUniversal.SuspendLayout();
+            this.tabPagePerformance.SuspendLayout();
+            this.tabPageNetworkAnalysis.SuspendLayout();
+            this.tabPageSpikeDetection.SuspendLayout();
+            this.tabPageAlerts.SuspendLayout();
+            this.tabPageAdvanced.SuspendLayout();
             this.SuspendLayout();
             // 
-            // panel1
+            // tabControl1
             // 
-            this.panel1.AutoScroll = true;
-            this.panel1.Controls.Add(this.groupBoxTickrateChart);
-            this.panel1.Controls.Add(this.groupBoxExtendedOverlay);
-            this.panel1.Controls.Add(this.groupBoxDebugSettings);
-            this.panel1.Controls.Add(this.groupBoxVpnBypass);
-            this.panel1.Controls.Add(this.groupBoxPhase3);
-            this.panel1.Controls.Add(this.groupBoxPhase2);
-            this.panel1.Controls.Add(this.groupBoxPhase1);
-            this.panel1.Controls.Add(this.groupBoxSpikeDetection);
-            this.panel1.Controls.Add(this.groupBoxSpikeAdvanced);
-            this.panel1.Controls.Add(this.groupBoxAlerts);
-            this.panel1.Controls.Add(this.groupBoxAlertSounds);
-            this.panel1.Controls.Add(this.groupBoxNetworkOptimizer);
-            this.panel1.Controls.Add(this.groupBoxColorZones);
-            this.panel1.Controls.Add(this.groupBoxNetworkQuality);
-            this.panel1.Controls.Add(this.groupBox5);
-            this.panel1.Controls.Add(this.groupBox4);
-            this.panel1.Controls.Add(this.groupBox3);
-            this.panel1.Controls.Add(this.groupBox2);
-            this.panel1.Controls.Add(this.groupBox1);
-            this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel1.Location = new System.Drawing.Point(0, 0);
-            this.panel1.Margin = new System.Windows.Forms.Padding(4);
-            this.panel1.Name = "panel1";
-            this.panel1.Padding = new System.Windows.Forms.Padding(13, 12, 13, 12);
-            this.panel1.Size = new System.Drawing.Size(800, 550);
-            this.panel1.TabIndex = 0;
+            this.tabControl1.Controls.Add(this.tabPageBasic);
+            this.tabControl1.Controls.Add(this.tabPageUniversal);
+            this.tabControl1.Controls.Add(this.tabPagePerformance);
+            this.tabControl1.Controls.Add(this.tabPageNetworkAnalysis);
+            this.tabControl1.Controls.Add(this.tabPageSpikeDetection);
+            this.tabControl1.Controls.Add(this.tabPageAlerts);
+            this.tabControl1.Controls.Add(this.tabPageAdvanced);
+            this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tabControl1.Location = new System.Drawing.Point(0, 0);
+            this.tabControl1.Name = "tabControl1";
+            this.tabControl1.SelectedIndex = 0;
+            this.tabControl1.Size = new System.Drawing.Size(800, 550);
+            this.tabControl1.TabIndex = 0;
+            // 
+            // tabPageBasic
+            // 
+            this.tabPageBasic.AutoScroll = true;
+            this.tabPageBasic.Controls.Add(this.groupBox1);
+            this.tabPageBasic.Controls.Add(this.groupBox2);
+            this.tabPageBasic.Controls.Add(this.groupBox3);
+            this.tabPageBasic.Controls.Add(this.groupBox4);
+            this.tabPageBasic.Location = new System.Drawing.Point(4, 25);
+            this.tabPageBasic.Name = "tabPageBasic";
+            this.tabPageBasic.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPageBasic.Size = new System.Drawing.Size(792, 521);
+            this.tabPageBasic.TabIndex = 0;
+            this.tabPageBasic.Text = "Basic Settings";
+            this.tabPageBasic.UseVisualStyleBackColor = true;
+            // 
+            // tabPageUniversal
+            // 
+            this.tabPageUniversal.AutoScroll = true;
+            this.tabPageUniversal.Controls.Add(this.groupBox5);
+            this.tabPageUniversal.Location = new System.Drawing.Point(4, 25);
+            this.tabPageUniversal.Name = "tabPageUniversal";
+            this.tabPageUniversal.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPageUniversal.Size = new System.Drawing.Size(792, 521);
+            this.tabPageUniversal.TabIndex = 1;
+            this.tabPageUniversal.Text = "Universal Settings";
+            this.tabPageUniversal.UseVisualStyleBackColor = true;
+            // 
+            // tabPagePerformance
+            // 
+            this.tabPagePerformance.AutoScroll = true;
+            this.tabPagePerformance.Controls.Add(this.groupBoxPhase1);
+            this.tabPagePerformance.Controls.Add(this.groupBoxPhase2);
+            this.tabPagePerformance.Controls.Add(this.groupBoxPhase3);
+            this.tabPagePerformance.Location = new System.Drawing.Point(4, 25);
+            this.tabPagePerformance.Name = "tabPagePerformance";
+            this.tabPagePerformance.Size = new System.Drawing.Size(792, 521);
+            this.tabPagePerformance.TabIndex = 2;
+            this.tabPagePerformance.Text = "Performance";
+            this.tabPagePerformance.UseVisualStyleBackColor = true;
+            // 
+            // tabPageNetworkAnalysis
+            // 
+            this.tabPageNetworkAnalysis.AutoScroll = true;
+            this.tabPageNetworkAnalysis.Controls.Add(this.groupBoxNetworkQuality);
+            this.tabPageNetworkAnalysis.Controls.Add(this.groupBoxColorZones);
+            this.tabPageNetworkAnalysis.Controls.Add(this.groupBoxNetworkOptimizer);
+            this.tabPageNetworkAnalysis.Location = new System.Drawing.Point(4, 25);
+            this.tabPageNetworkAnalysis.Name = "tabPageNetworkAnalysis";
+            this.tabPageNetworkAnalysis.Size = new System.Drawing.Size(792, 521);
+            this.tabPageNetworkAnalysis.TabIndex = 3;
+            this.tabPageNetworkAnalysis.Text = "Network Analysis";
+            this.tabPageNetworkAnalysis.UseVisualStyleBackColor = true;
+            // 
+            // tabPageSpikeDetection
+            // 
+            this.tabPageSpikeDetection.AutoScroll = true;
+            this.tabPageSpikeDetection.Controls.Add(this.groupBoxSpikeDetection);
+            this.tabPageSpikeDetection.Controls.Add(this.groupBoxSpikeAdvanced);
+            this.tabPageSpikeDetection.Location = new System.Drawing.Point(4, 25);
+            this.tabPageSpikeDetection.Name = "tabPageSpikeDetection";
+            this.tabPageSpikeDetection.Size = new System.Drawing.Size(792, 521);
+            this.tabPageSpikeDetection.TabIndex = 4;
+            this.tabPageSpikeDetection.Text = "Spike Detection";
+            this.tabPageSpikeDetection.UseVisualStyleBackColor = true;
+            // 
+            // tabPageAlerts
+            // 
+            this.tabPageAlerts.AutoScroll = true;
+            this.tabPageAlerts.Controls.Add(this.groupBoxAlerts);
+            this.tabPageAlerts.Controls.Add(this.groupBoxAlertSounds);
+            this.tabPageAlerts.Location = new System.Drawing.Point(4, 25);
+            this.tabPageAlerts.Name = "tabPageAlerts";
+            this.tabPageAlerts.Size = new System.Drawing.Size(792, 521);
+            this.tabPageAlerts.TabIndex = 5;
+            this.tabPageAlerts.Text = "Alerts";
+            this.tabPageAlerts.UseVisualStyleBackColor = true;
+            // 
+            // tabPageAdvanced
+            // 
+            this.tabPageAdvanced.AutoScroll = true;
+            this.tabPageAdvanced.Controls.Add(this.groupBoxVpnBypass);
+            this.tabPageAdvanced.Controls.Add(this.groupBoxDebugSettings);
+            this.tabPageAdvanced.Controls.Add(this.groupBoxExtendedOverlay);
+            this.tabPageAdvanced.Controls.Add(this.groupBoxTickrateChart);
+            this.tabPageAdvanced.Location = new System.Drawing.Point(4, 25);
+            this.tabPageAdvanced.Name = "tabPageAdvanced";
+            this.tabPageAdvanced.Size = new System.Drawing.Size(792, 521);
+            this.tabPageAdvanced.TabIndex = 6;
+            this.tabPageAdvanced.Text = "Advanced";
+            this.tabPageAdvanced.UseVisualStyleBackColor = true;
             // 
             // groupBoxTickrateChart
             // 
@@ -3018,14 +3109,21 @@ namespace tickMeter.Forms
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 600);
-            this.Controls.Add(this.panel1);
+            this.Controls.Add(this.tabControl1);
             this.Controls.Add(this.panelButtons);
             this.Margin = new System.Windows.Forms.Padding(4);
             this.MinimumSize = new System.Drawing.Size(800, 400);
             this.Name = "AdvancedSettingsForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Дополнительные настройки";
-            this.panel1.ResumeLayout(false);
+            this.tabControl1.ResumeLayout(false);
+            this.tabPageBasic.ResumeLayout(false);
+            this.tabPageUniversal.ResumeLayout(false);
+            this.tabPagePerformance.ResumeLayout(false);
+            this.tabPageNetworkAnalysis.ResumeLayout(false);
+            this.tabPageSpikeDetection.ResumeLayout(false);
+            this.tabPageAlerts.ResumeLayout(false);
+            this.tabPageAdvanced.ResumeLayout(false);
             this.groupBoxTickrateChart.ResumeLayout(false);
             this.groupBoxTickrateChart.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numTickrateChartMaxPoints)).EndInit();
@@ -3103,7 +3201,14 @@ namespace tickMeter.Forms
 
         #endregion
 
-        private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.TabControl tabControl1;
+        private System.Windows.Forms.TabPage tabPageBasic;
+        private System.Windows.Forms.TabPage tabPageUniversal;
+        private System.Windows.Forms.TabPage tabPagePerformance;
+        private System.Windows.Forms.TabPage tabPageNetworkAnalysis;
+        private System.Windows.Forms.TabPage tabPageSpikeDetection;
+        private System.Windows.Forms.TabPage tabPageAlerts;
+        private System.Windows.Forms.TabPage tabPageAdvanced;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.NumericUpDown liveMaxRowsNumeric;

@@ -30,6 +30,12 @@ namespace tickMeter.Forms
         {
             _isLoadingSettings = true;
 
+            // Оптимизация производительности формы
+            this.SetStyle(ControlStyles.OptimizedDoubleBuffer | 
+                          ControlStyles.AllPaintingInWmPaint | 
+                          ControlStyles.UserPaint, true);
+            this.UpdateStyles();
+
             InitializeComponent();
             InitializeExtendedOverlayControls(); // Создаем контролы расширенной информации
             AttachEventHandlers();
@@ -55,6 +61,10 @@ namespace tickMeter.Forms
 
         private void LoadSettings()
         {
+            // Приостанавливаем обновление layout для улучшения производительности
+            this.SuspendLayout();
+            tabControl1.SuspendLayout();
+            
             try
             {
                 // Live View настройки
@@ -151,6 +161,12 @@ namespace tickMeter.Forms
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка загрузки настроек: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            finally
+            {
+                // Возобновляем обновление layout
+                tabControl1.ResumeLayout(true);
+                this.ResumeLayout(true);
             }
         }
 
