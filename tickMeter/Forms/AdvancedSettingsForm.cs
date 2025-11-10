@@ -99,7 +99,7 @@ namespace tickMeter.Forms
                 // chkAdvancedSpikeDetection.Checked = App.settingsManager.GetOption("advanced_spike_detection", "True", "ADVANCED") == "True";
                 
                 // Настройки порогов для спайков пинга
-                numPingSpikeThreshold.Value = decimal.Parse(App.settingsManager.GetOption("ping_spike_threshold", "150", "ADVANCED"));
+                numPingSpikeThreshold.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("ping_spike_threshold", "150", "ADVANCED"));
                 
                 // Spike Detection настройки
                 InitSpikeDetectionCombos();
@@ -117,18 +117,18 @@ namespace tickMeter.Forms
                 chkAntiReentrancy.Checked = App.settingsManager.GetOption("anti_reentrancy", "True", "ADVANCED") == "True";
                 chkRtssThrottling.Checked = App.settingsManager.GetOption("rtss_throttling", "True", "ADVANCED") == "True";
                 chkPcapOptimization.Checked = App.settingsManager.GetOption("pcap_optimization", "True", "ADVANCED") == "True";
-                numPcapKernelBufferMb.Value = decimal.Parse(App.settingsManager.GetOption("pcap_kernel_buffer_mb", "8", "ADVANCED"));
-                numPcapMinToCopy.Value = decimal.Parse(App.settingsManager.GetOption("pcap_min_to_copy", "4096", "ADVANCED"));
+                numPcapKernelBufferMb.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("pcap_kernel_buffer_mb", "8", "ADVANCED"));
+                numPcapMinToCopy.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("pcap_min_to_copy", "4096", "ADVANCED"));
                 
                 chkVirtualModeListView.Checked = App.settingsManager.GetOption("virtual_mode_listview", "True", "ADVANCED") == "True";
-                numVirtualModeThreshold.Value = decimal.Parse(App.settingsManager.GetOption("virtual_mode_threshold", "2000", "ADVANCED"));
-                numRingBufferSize.Value = decimal.Parse(App.settingsManager.GetOption("ring_buffer_size", "10000", "ADVANCED"));
+                numVirtualModeThreshold.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("virtual_mode_threshold", "2000", "ADVANCED"));
+                numRingBufferSize.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("ring_buffer_size", "10000", "ADVANCED"));
                 chkShowVirtualModeStats.Checked = App.settingsManager.GetOption("show_virtual_mode_stats", "False", "ADVANCED") == "True";
                 
                 chkHighPriorityThreads.Checked = App.settingsManager.GetOption("high_priority_threads", "True", "ADVANCED") == "True";
                 chkSingleConsumerPattern.Checked = App.settingsManager.GetOption("single_consumer_pattern", "True", "ADVANCED") == "True";
-                numUiProcessingRate.Value = decimal.Parse(App.settingsManager.GetOption("ui_processing_rate", "60", "ADVANCED"));
-                numUiBatchSize.Value = decimal.Parse(App.settingsManager.GetOption("ui_batch_size", "10", "ADVANCED"));
+                numUiProcessingRate.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("ui_processing_rate", "60", "ADVANCED"));
+                numUiBatchSize.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("ui_batch_size", "10", "ADVANCED"));
                 
                 // Загружаем настройки алертов
                 LoadAlertSettings();
@@ -1252,7 +1252,7 @@ namespace tickMeter.Forms
                 chkAlertSoundEnabled.Checked = App.settingsManager.GetOption("alert_sound_enabled", "False", "ADVANCED") == "True";
                 chkAlertDiscordEnabled.Checked = App.settingsManager.GetOption("alert_discord_enabled", "False", "ADVANCED") == "True";
                 txtAlertDiscordWebhook.Text = App.settingsManager.GetOption("alert_discord_webhook", "", "ADVANCED");
-                numAlertCooldown.Value = decimal.Parse(App.settingsManager.GetOption("alert_cooldown_seconds", "30", "ADVANCED"));
+                numAlertCooldown.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("alert_cooldown_seconds", "30", "ADVANCED"));
                 
                 // Пути к звуковым файлам
                 txtAlertPingSoundPath.Text = App.settingsManager.GetOption("alert_sound_pingspike_path", "", "ADVANCED");
@@ -1435,9 +1435,9 @@ namespace tickMeter.Forms
                 chkNetworkQualityEnabled.Checked = App.settingsManager.GetOption("network_quality_enabled", "True", "ADVANCED") == "True";
                 chkNetworkQualityOverlay.Checked = App.settingsManager.GetOption("network_quality_overlay", "False", "SETTINGS") == "True";
                 chkNetworkQualityUseSmoothed.Checked = App.settingsManager.GetOption("network_quality_use_smoothed", "False", "ADVANCED") == "True";
-                numQualityHistorySize.Value = decimal.Parse(App.settingsManager.GetOption("quality_history_size", "100", "ADVANCED"));
-                numStabilityThreshold.Value = decimal.Parse(App.settingsManager.GetOption("stability_threshold", "0.15", "ADVANCED"));
-                numQualityThreshold.Value = decimal.Parse(App.settingsManager.GetOption("quality_threshold", "0.8", "ADVANCED"));
+                numQualityHistorySize.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("quality_history_size", "100", "ADVANCED"));
+                numStabilityThreshold.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("stability_threshold", "0.15", "ADVANCED"));
+                numQualityThreshold.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("quality_threshold", "0.8", "ADVANCED"));
                 
                 // NEW: Load hybrid quality mode settings
                 string qualityMode = App.settingsManager.GetOption("network_quality_mode", "hybrid", "ADVANCED").ToLower();
@@ -1727,8 +1727,8 @@ namespace tickMeter.Forms
             try
             {
                 chkNetworkOptimizationEnabled.Checked = App.settingsManager.GetOption("network_optimization_enabled", "False", "ADVANCED") == "True";
-                numOptimizationThreshold.Value = decimal.Parse(App.settingsManager.GetOption("optimization_threshold", "70", "ADVANCED"));
-                numOptimizationInterval.Value = decimal.Parse(App.settingsManager.GetOption("optimization_interval", "5", "ADVANCED"));
+                numOptimizationThreshold.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("optimization_threshold", "70", "ADVANCED"));
+                numOptimizationInterval.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("optimization_interval", "5", "ADVANCED"));
                 chkAggressiveOptimization.Checked = App.settingsManager.GetOption("aggressive_optimization", "False", "ADVANCED") == "True";
                 
                 // Подписываемся на события
@@ -2128,8 +2128,8 @@ namespace tickMeter.Forms
                 }
                 
                 // Численные настройки
-                numTickrateChartMaxPoints.Value = decimal.Parse(App.settingsManager.GetOption("tickrate_chart_max_points", "1000", "TICKRATE_CHART"));
-                numTickrateChartHistoryHours.Value = decimal.Parse(App.settingsManager.GetOption("tickrate_chart_history_hours", "24", "TICKRATE_CHART"));
+                numTickrateChartMaxPoints.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("tickrate_chart_max_points", "1000", "TICKRATE_CHART"));
+                numTickrateChartHistoryHours.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("tickrate_chart_history_hours", "24", "TICKRATE_CHART"));
                 
                 // Подключение обработчиков событий
                 chkTickrateChartEnabled.CheckedChanged += OnTickrateChartSettingsChanged;

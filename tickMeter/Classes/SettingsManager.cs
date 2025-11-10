@@ -160,6 +160,9 @@ namespace tickMeter
             SetOption("alert_discord_webhook", "", "ADVANCED");
             SetOption("alert_cooldown_seconds", "30", "ADVANCED");
             SetOption("network_quality_enabled", "True", "ADVANCED");
+            SetOption("network_quality_mode", "hybrid", "ADVANCED");
+            SetOption("network_quality_context_sync", "True", "ADVANCED");
+            SetOption("network_quality_context_profile", "medium", "ADVANCED");
             SetOption("network_quality_use_smoothed", "False", "ADVANCED");
             SetOption("quality_history_size", "100", "ADVANCED");
             SetOption("stability_threshold", "0.15", "ADVANCED");
@@ -372,6 +375,38 @@ namespace tickMeter
         /// </summary>
         public static string ToInvariantString(int value) =>
             value.ToString(Inv);
+        
+        /// <summary>
+        /// Helper method for parsing decimal with invariant culture
+        /// </summary>
+        public static decimal ParseDecimalInvariant(string value)
+        {
+            return decimal.Parse(value, Inv);
+        }
+        
+        /// <summary>
+        /// Helper method for parsing float with invariant culture
+        /// </summary>
+        public static float ParseFloatInvariant(string value)
+        {
+            return float.Parse(value, Inv);
+        }
+        
+        /// <summary>
+        /// Helper method for parsing double with invariant culture
+        /// </summary>
+        public static double ParseDoubleInvariant(string value)
+        {
+            return double.Parse(value, Inv);
+        }
+        
+        /// <summary>
+        /// Helper method for parsing int with invariant culture
+        /// </summary>
+        public static int ParseIntInvariant(string value)
+        {
+            return int.Parse(value, Inv);
+        }
 
         public void SaveConfig()
         {
