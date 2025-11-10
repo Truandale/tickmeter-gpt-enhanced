@@ -117,7 +117,7 @@ namespace tickMeter
             SetOption("hybrid_pcap_windows", "True", "ADVANCED");
             SetOption("smoothing_ping_graph", "True", "ADVANCED");
             SetOption("smoothing_ping_graph_overlay", "True", "ADVANCED");
-            SetOption("smoothing_tickrate_graph_overlay", "True", "ADVANCED");
+            SetOption("smoothing_tickrate_graph_overlay", "False", "ADVANCED");
             SetOption("smoothing_ticktime_graph_overlay", "True", "ADVANCED");
             SetOption("smoothing_ping_value_overlay", "True", "ADVANCED");
             SetOption("smoothing_tickrate_value_overlay", "False", "ADVANCED");
@@ -127,7 +127,7 @@ namespace tickMeter
             SetOption("ping_spike_threshold", "150", "ADVANCED");
             SetOption("vpn_bypass_basic", "True", "ADVANCED");
             SetOption("vpn_bypass_advanced", "True", "ADVANCED");
-            SetOption("enable_text_logs", "True", "ADVANCED");
+            SetOption("enable_text_logs", "False", "ADVANCED");
             SetOption("anti_reentrancy", "True", "ADVANCED");
             SetOption("rtss_throttling", "True", "ADVANCED");
             SetOption("pcap_optimization", "True", "ADVANCED");
@@ -155,14 +155,14 @@ namespace tickMeter
             SetOption("spikes.refractory_period_ms", "2000", "ADVANCED");
             SetOption("spikes.min_energy_threshold", "1", "ADVANCED");
             SetOption("spikes.init_window_size", "30", "ADVANCED");
-            SetOption("alert_sound_enabled", "True", "ADVANCED");
+            SetOption("alert_sound_enabled", "False", "ADVANCED");
             SetOption("alert_discord_enabled", "True", "ADVANCED");
             SetOption("alert_discord_webhook", "", "ADVANCED");
             SetOption("alert_cooldown_seconds", "30", "ADVANCED");
             SetOption("network_quality_enabled", "True", "ADVANCED");
             SetOption("network_quality_mode", "hybrid", "ADVANCED");
-            SetOption("network_quality_context_sync", "True", "ADVANCED");
-            SetOption("network_quality_context_profile", "medium", "ADVANCED");
+            SetOption("network_quality_context_sync", "False", "ADVANCED");
+            SetOption("network_quality_context_profile", "very_low", "ADVANCED");
             SetOption("network_quality_use_smoothed", "False", "ADVANCED");
             SetOption("quality_history_size", "100", "ADVANCED");
             SetOption("stability_threshold", "0.15", "ADVANCED");
@@ -187,6 +187,8 @@ namespace tickMeter
             SetOption("alert_sound_pingspike_path", "", "ADVANCED");
             SetOption("alert_sound_tickratespike_path", "", "ADVANCED");
             SetOption("alert_sound_ticktimespike_path", "", "ADVANCED");
+            SetOption("sync_ping_overlay_with_gui", "True", "ADVANCED");
+            SetOption("sync_tickrate_overlay_with_gui", "True", "ADVANCED");
             
             // === ZONES ===
             SetOption("color_zone_profile", "Very Low", "ZONES");
