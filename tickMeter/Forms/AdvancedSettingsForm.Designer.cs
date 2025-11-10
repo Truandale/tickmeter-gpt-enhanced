@@ -308,10 +308,14 @@ namespace tickMeter.Forms
             this.tabControl1.SelectedIndex = 0;
             this.tabControl1.Size = new System.Drawing.Size(800, 550);
             this.tabControl1.TabIndex = 0;
+            this.tabControl1.DrawMode = System.Windows.Forms.TabDrawMode.Normal;
+            this.tabControl1.HotTrack = true;
             // 
             // tabPageBasic
             // 
             this.tabPageBasic.AutoScroll = true;
+            this.tabPageBasic.BackColor = System.Drawing.SystemColors.Control;
+            this.tabPageBasic.UseVisualStyleBackColor = true;
             this.tabPageBasic.Controls.Add(this.groupBox1);
             this.tabPageBasic.Controls.Add(this.groupBox2);
             this.tabPageBasic.Controls.Add(this.groupBox3);
@@ -322,11 +326,11 @@ namespace tickMeter.Forms
             this.tabPageBasic.Size = new System.Drawing.Size(792, 521);
             this.tabPageBasic.TabIndex = 0;
             this.tabPageBasic.Text = "Basic Settings";
-            this.tabPageBasic.UseVisualStyleBackColor = true;
             // 
             // tabPageUniversal
             // 
             this.tabPageUniversal.AutoScroll = true;
+            this.tabPageUniversal.BackColor = System.Drawing.SystemColors.Control;
             this.tabPageUniversal.Controls.Add(this.groupBox5);
             this.tabPageUniversal.Location = new System.Drawing.Point(4, 25);
             this.tabPageUniversal.Name = "tabPageUniversal";
@@ -334,11 +338,11 @@ namespace tickMeter.Forms
             this.tabPageUniversal.Size = new System.Drawing.Size(792, 521);
             this.tabPageUniversal.TabIndex = 1;
             this.tabPageUniversal.Text = "Universal Settings";
-            this.tabPageUniversal.UseVisualStyleBackColor = true;
             // 
             // tabPagePerformance
             // 
             this.tabPagePerformance.AutoScroll = true;
+            this.tabPagePerformance.BackColor = System.Drawing.SystemColors.Control;
             this.tabPagePerformance.Controls.Add(this.groupBoxPhase1);
             this.tabPagePerformance.Controls.Add(this.groupBoxPhase2);
             this.tabPagePerformance.Controls.Add(this.groupBoxPhase3);
@@ -347,11 +351,11 @@ namespace tickMeter.Forms
             this.tabPagePerformance.Size = new System.Drawing.Size(792, 521);
             this.tabPagePerformance.TabIndex = 2;
             this.tabPagePerformance.Text = "Performance";
-            this.tabPagePerformance.UseVisualStyleBackColor = true;
             // 
             // tabPageNetworkAnalysis
             // 
             this.tabPageNetworkAnalysis.AutoScroll = true;
+            this.tabPageNetworkAnalysis.BackColor = System.Drawing.SystemColors.Control;
             this.tabPageNetworkAnalysis.Controls.Add(this.groupBoxNetworkQuality);
             this.tabPageNetworkAnalysis.Controls.Add(this.groupBoxColorZones);
             this.tabPageNetworkAnalysis.Controls.Add(this.groupBoxNetworkOptimizer);
@@ -360,11 +364,11 @@ namespace tickMeter.Forms
             this.tabPageNetworkAnalysis.Size = new System.Drawing.Size(792, 521);
             this.tabPageNetworkAnalysis.TabIndex = 3;
             this.tabPageNetworkAnalysis.Text = "Network Analysis";
-            this.tabPageNetworkAnalysis.UseVisualStyleBackColor = true;
             // 
             // tabPageSpikeDetection
             // 
             this.tabPageSpikeDetection.AutoScroll = true;
+            this.tabPageSpikeDetection.BackColor = System.Drawing.SystemColors.Control;
             this.tabPageSpikeDetection.Controls.Add(this.groupBoxSpikeDetection);
             this.tabPageSpikeDetection.Controls.Add(this.groupBoxSpikeAdvanced);
             this.tabPageSpikeDetection.Location = new System.Drawing.Point(4, 25);
@@ -372,11 +376,11 @@ namespace tickMeter.Forms
             this.tabPageSpikeDetection.Size = new System.Drawing.Size(792, 521);
             this.tabPageSpikeDetection.TabIndex = 4;
             this.tabPageSpikeDetection.Text = "Spike Detection";
-            this.tabPageSpikeDetection.UseVisualStyleBackColor = true;
             // 
             // tabPageAlerts
             // 
             this.tabPageAlerts.AutoScroll = true;
+            this.tabPageAlerts.BackColor = System.Drawing.SystemColors.Control;
             this.tabPageAlerts.Controls.Add(this.groupBoxAlerts);
             this.tabPageAlerts.Controls.Add(this.groupBoxAlertSounds);
             this.tabPageAlerts.Location = new System.Drawing.Point(4, 25);
@@ -384,11 +388,11 @@ namespace tickMeter.Forms
             this.tabPageAlerts.Size = new System.Drawing.Size(792, 521);
             this.tabPageAlerts.TabIndex = 5;
             this.tabPageAlerts.Text = "Alerts";
-            this.tabPageAlerts.UseVisualStyleBackColor = true;
             // 
             // tabPageAdvanced
             // 
             this.tabPageAdvanced.AutoScroll = true;
+            this.tabPageAdvanced.BackColor = System.Drawing.SystemColors.Control;
             this.tabPageAdvanced.Controls.Add(this.groupBoxVpnBypass);
             this.tabPageAdvanced.Controls.Add(this.groupBoxDebugSettings);
             this.tabPageAdvanced.Controls.Add(this.groupBoxExtendedOverlay);
@@ -398,7 +402,6 @@ namespace tickMeter.Forms
             this.tabPageAdvanced.Size = new System.Drawing.Size(792, 521);
             this.tabPageAdvanced.TabIndex = 6;
             this.tabPageAdvanced.Text = "Advanced";
-            this.tabPageAdvanced.UseVisualStyleBackColor = true;
             // 
             // groupBoxTickrateChart
             // 

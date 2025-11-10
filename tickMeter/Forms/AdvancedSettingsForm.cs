@@ -30,17 +30,30 @@ namespace tickMeter.Forms
         {
             _isLoadingSettings = true;
 
-            // Оптимизация производительности формы
+            // Максимальная оптимизация производительности формы
             this.SetStyle(ControlStyles.OptimizedDoubleBuffer | 
                           ControlStyles.AllPaintingInWmPaint | 
-                          ControlStyles.UserPaint, true);
+                          ControlStyles.UserPaint |
+                          ControlStyles.ResizeRedraw |
+                          ControlStyles.ContainerControl, true);
             this.UpdateStyles();
 
+            // Приостанавливаем все обновления до полной инициализации
+            this.SuspendLayout();
+
             InitializeComponent();
+            
+            // Оптимизация TabControl
+            OptimizeTabControl();
+            
             InitializeExtendedOverlayControls(); // Создаем контролы расширенной информации
             AttachEventHandlers();
 
             LoadSettings();
+            
+            this.ResumeLayout(false);
+            this.PerformLayout();
+            
             _isLoadingSettings = false;
 
             if (chkVpnBypassAdvanced.Checked)
@@ -57,6 +70,47 @@ namespace tickMeter.Forms
                 SetVpnPresetControlsEnabled(true);
                 _vpnPresetSnapshot = default;
             }
+        }
+
+        /// <summary>
+        /// Оптимизирует TabControl для быстрого переключения между вкладками
+        /// </summary>
+        private void OptimizeTabControl()
+        {
+            if (tabControl1 == null) return;
+
+            // Включаем двойную буферизацию для TabControl через рефлексию
+            typeof(TabControl).InvokeMember("DoubleBuffered",
+                System.Reflection.BindingFlags.SetProperty | 
+                System.Reflection.BindingFlags.Instance | 
+                System.Reflection.BindingFlags.NonPublic,
+                null, tabControl1, new object[] { true });
+
+            // Подписываемся на событие переключения вкладок для оптимизации
+            tabControl1.Selected += TabControl1_Selected;
+            tabControl1.Deselecting += TabControl1_Deselecting;
+        }
+
+        /// <summary>
+        /// Оптимизирует предыдущую вкладку перед переключением
+        /// </summary>
+        private void TabControl1_Deselecting(object sender, TabControlCancelEventArgs e)
+        {
+            if (e.TabPage == null) return;
+
+            // Приостанавливаем layout на покидаемой вкладке
+            e.TabPage.SuspendLayout();
+        }
+
+        /// <summary>
+        /// Оптимизирует отрисовку при переключении вкладок
+        /// </summary>
+        private void TabControl1_Selected(object sender, TabControlEventArgs e)
+        {
+            if (e.TabPage == null) return;
+
+            // Возобновляем layout для активной вкладки
+            e.TabPage.ResumeLayout(true);
         }
 
         private void LoadSettings()
