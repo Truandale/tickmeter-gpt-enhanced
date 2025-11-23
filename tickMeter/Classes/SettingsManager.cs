@@ -49,6 +49,34 @@ namespace tickMeter
             }
         }
 
+        /// <summary>
+        /// Статический метод для чтения настройки напрямую из файла (до инициализации GUI)
+        /// </summary>
+        public static string ReadOptionDirect(string optionName, string scope = "SETTINGS")
+        {
+            try
+            {
+                string settingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.ini");
+                if (!File.Exists(settingsPath))
+                {
+                    return "";
+                }
+
+                var parser = new FileIniDataParser();
+                var data = parser.ReadFile(settingsPath);
+                
+                if (data[scope] != null && data[scope][optionName] != null)
+                {
+                    return data[scope][optionName];
+                }
+                return "";
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
         public SettingsManager()
         {
             parser = new FileIniDataParser();

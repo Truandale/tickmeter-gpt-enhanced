@@ -230,6 +230,14 @@ namespace tickMeter.Forms
             settings_ticktime_chart.Checked = App.settingsManager.GetOption("ticktime") == "True";
             settings_ping_chart.Checked = App.settingsManager.GetOption("ping_chart") == "True";
             run_minimized.Checked = App.settingsManager.GetOption("run_minimized") == "True";
+            run_on_startup.Checked = App.settingsManager.GetOption("run_on_startup") == "True";
+            
+            // Проверяем и обновляем путь в планировщике если программа была перемещена
+            if (run_on_startup.Checked)
+            {
+                CheckAndUpdateScheduledTaskPath();
+            }
+            
             ping_ports.Text = App.settingsManager.GetOption("ping_ports");
             ping_interval.Value = App.settingsManager.GetIntOption("ping_interval", 400);
             
@@ -354,6 +362,7 @@ namespace tickMeter.Forms
             if(selectedAdapter < 0) selectedAdapter = 0;
             App.settingsManager.SetOption("last_selected_adapter", App.GetAdapters()[selectedAdapter].GetGuid().ToLower());
             App.settingsManager.SetOption("run_minimized", run_minimized.Checked.ToString());
+            App.settingsManager.SetOption("run_on_startup", run_on_startup.Checked.ToString());
             App.settingsManager.SetOption("local_ip", local_ip_textbox.Text);
             App.settingsManager.SetOption("show_packet_drops", packet_drops_checkbox.Checked.ToString());
                 
@@ -616,5 +625,181 @@ namespace tickMeter.Forms
 
         // Сделайте ping_interval публичным свойством, чтобы к нему можно было обращаться из других классов
         public NumericUpDown PingIntervalControl => ping_interval;
+
+        private void run_on_startup_CheckedChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                if (run_on_startup.Checked)
+                {
+                    CreateScheduledTask();
+                }
+                else
+                {
+                    RemoveScheduledTask();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при настройке автозагрузки: {ex.Message}", 
+                    "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                run_on_startup.Checked = !run_on_startup.Checked; // Откатываем изменение
+            }
+        }
+
+        private void CheckAndUpdateScheduledTaskPath()
+        {
+            try
+            {
+                string currentPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                string taskName = "tickMeter_AutoStart";
+                
+                // Получаем информацию о существующей задаче
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = "schtasks",
+                    Arguments = $"/Query /TN \"{taskName}\" /FO LIST /V",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true
+                };
+
+                Process process = Process.Start(psi);
+                string output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
+
+                if (process.ExitCode == 0 && !string.IsNullOrEmpty(output))
+                {
+                    // Ищем строку с путем к задаче
+                    var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    string taskPath = null;
+                    
+                    foreach (var line in lines)
+                    {
+                        if (line.Contains("Task To Run:") || line.Contains("Задача для запуска:"))
+                        {
+                            taskPath = line.Split(':')[1].Trim().Trim('"');
+                            break;
+                        }
+                    }
+
+                    // Если путь изменился - обновляем задачу
+                    if (taskPath != null && !taskPath.Equals(currentPath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        Debug.Print($"[AutoStart] Путь изменился: {taskPath} -> {currentPath}");
+                        CreateScheduledTask(silent: true); // Пересоздаем задачу с новым путем без показа окна
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[AutoStart] Ошибка проверки пути: {ex.Message}");
+                // Не показываем ошибку пользователю, это фоновая проверка
+            }
+        }
+
+        private void CreateScheduledTask(bool silent = false)
+        {
+            try
+            {
+                string exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                string taskName = "tickMeter_AutoStart";
+                
+                // Создаем XML для задачи с отключенными условиями
+                string xmlPath = Path.Combine(Path.GetTempPath(), "tickMeter_task.xml");
+                string taskXml = $@"<?xml version=""1.0"" encoding=""UTF-16""?>
+<Task version=""1.2"" xmlns=""http://schemas.microsoft.com/windows/2004/02/mit/task"">
+  <RegistrationInfo>
+    <Description>tickMeter автозагрузка с правами администратора</Description>
+  </RegistrationInfo>
+  <Triggers>
+    <LogonTrigger>
+      <Enabled>true</Enabled>
+    </LogonTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id=""Author"">
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>HighestAvailable</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <AllowHardTerminate>true</AllowHardTerminate>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
+    <IdleSettings>
+      <StopOnIdleEnd>false</StopOnIdleEnd>
+      <RestartOnIdle>false</RestartOnIdle>
+    </IdleSettings>
+    <AllowStartOnDemand>true</AllowStartOnDemand>
+    <Enabled>true</Enabled>
+    <Hidden>false</Hidden>
+    <RunOnlyIfIdle>false</RunOnlyIfIdle>
+    <WakeToRun>false</WakeToRun>
+    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+    <Priority>7</Priority>
+  </Settings>
+  <Actions Context=""Author"">
+    <Exec>
+      <Command>{exePath}</Command>
+    </Exec>
+  </Actions>
+</Task>";
+
+                File.WriteAllText(xmlPath, taskXml, System.Text.Encoding.Unicode);
+                
+                // Создаем задачу из XML
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = "schtasks",
+                    Arguments = $"/Create /TN \"{taskName}\" /XML \"{xmlPath}\" /F",
+                    Verb = "runas",
+                    UseShellExecute = true,
+                    CreateNoWindow = true
+                };
+
+                Process process = Process.Start(psi);
+                process.WaitForExit();
+
+                // Удаляем временный XML
+                try { File.Delete(xmlPath); } catch { }
+
+                if (process.ExitCode != 0)
+                {
+                    throw new Exception($"schtasks вернул код ошибки: {process.ExitCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Не удалось создать задачу в планировщике: {ex.Message}");
+            }
+        }
+
+        private void RemoveScheduledTask(bool silent = false)
+        {
+            try
+            {
+                string taskName = "tickMeter_AutoStart";
+                
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = "schtasks",
+                    Arguments = $"/Delete /TN \"{taskName}\" /F",
+                    Verb = "runas",
+                    UseShellExecute = true,
+                    CreateNoWindow = true
+                };
+
+                Process process = Process.Start(psi);
+                process.WaitForExit();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Не удалось удалить задачу из планировщика: {ex.Message}");
+            }
+        }
     }
 }

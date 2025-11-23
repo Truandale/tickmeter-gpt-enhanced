@@ -60,6 +60,7 @@ namespace tickMeter.Forms
             this.ping_ports = new System.Windows.Forms.TextBox();
             this.settings_autodetect_checkbox = new System.Windows.Forms.CheckBox();
             this.run_minimized = new System.Windows.Forms.CheckBox();
+            this.run_on_startup = new System.Windows.Forms.CheckBox();
             this.local_ip_lbl = new System.Windows.Forms.Label();
             this.local_ip_textbox = new System.Windows.Forms.TextBox();
             this.btnUnlockLocalIP = new System.Windows.Forms.Button();
@@ -328,6 +329,14 @@ namespace tickMeter.Forms
             this.run_minimized.UseVisualStyleBackColor = true;
             this.run_minimized.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
             // 
+            // run_on_startup
+            // 
+            resources.ApplyResources(this.run_on_startup, "run_on_startup");
+            this.run_on_startup.ForeColor = System.Drawing.Color.Black;
+            this.run_on_startup.Name = "run_on_startup";
+            this.run_on_startup.UseVisualStyleBackColor = true;
+            this.run_on_startup.CheckedChanged += new System.EventHandler(this.run_on_startup_CheckedChanged);
+            // 
             // local_ip_lbl
             // 
             resources.ApplyResources(this.local_ip_lbl, "local_ip_lbl");
@@ -387,6 +396,7 @@ namespace tickMeter.Forms
             this.Controls.Add(this.btnUnlockLocalIP);
             this.Controls.Add(this.local_ip_textbox);
             this.Controls.Add(this.local_ip_lbl);
+            this.Controls.Add(this.run_on_startup);
             this.Controls.Add(this.run_minimized);
             this.Controls.Add(this.settings_autodetect_checkbox);
             this.Controls.Add(this.ping_ports);
@@ -445,6 +455,7 @@ namespace tickMeter.Forms
         public CheckBox settings_autodetect_checkbox;
         public CheckBox settings_ping_chart;
         public CheckBox run_minimized;
+        public CheckBox run_on_startup;
         private Label local_ip_lbl;
         public TextBox local_ip_textbox;
         private Button btnUnlockLocalIP;
