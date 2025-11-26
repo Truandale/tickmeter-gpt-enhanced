@@ -36,7 +36,15 @@ namespace tickMeter.Classes
             if (!VerifyRiva()) return "";
             if (osd == null)
             {
-                osd = new OSD("TickMeter");
+                try
+                {
+                    osd = new OSD("TickMeter");
+                }
+                catch (Exception ex)
+                {
+                    DebugLogger.log($"[RivaTuner] Не удалось создать OSD: {ex.Message}");
+                    return "";
+                }
             }
             if(graphData.Length < 512)
             {
@@ -110,13 +118,34 @@ namespace tickMeter.Classes
 
         static RivaTuner()
         {
-            if (!VerifyRiva()) return;
-            if (!IsRivaRunning())
+            try
             {
-                RunRiva();
-            } else
+                // Проверяем наличие RTSS.dll перед любыми операциями
+                string rtssPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "RTSS.dll");
+                if (!File.Exists(rtssPath))
+                {
+                    DebugLogger.log("[RivaTuner] RTSS.dll не найдена в папке программы. RivaTuner оверлей будет отключен.");
+                    return;
+                }
+
+                if (!VerifyRiva()) return;
+                if (!IsRivaRunning())
+                {
+                    RunRiva();
+                } else
+                {
+                    osd = new OSD("TickMeter");
+                }
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                osd = new OSD("TickMeter");
+                DebugLogger.log($"[RivaTuner] Не найдена зависимость RTSS.dll: {ex.Message}");
+                DebugLogger.log("[RivaTuner] Возможно отсутствует Visual C++ Redistributable. Оверлей будет отключен.");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[RivaTuner] Ошибка инициализации: {ex.Message}");
+                DebugLogger.log("[RivaTuner] RivaTuner оверлей будет отключен.");
             }
         }
 

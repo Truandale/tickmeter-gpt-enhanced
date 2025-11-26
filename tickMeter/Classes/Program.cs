@@ -124,6 +124,7 @@ namespace tickMeter
                         Debug.Print($"[AutoStart] Путь изменился: {taskPath} -> {currentPath}");
                         
                         // Создаем XML для задачи с отключенными условиями
+                        string workingDir = Path.GetDirectoryName(currentPath);
                         string xmlPath = Path.Combine(Path.GetTempPath(), "tickMeter_task_update.xml");
                         string taskXml = $@"<?xml version=""1.0"" encoding=""UTF-16""?>
 <Task version=""1.2"" xmlns=""http://schemas.microsoft.com/windows/2004/02/mit/task"">
@@ -162,7 +163,8 @@ namespace tickMeter
   </Settings>
   <Actions Context=""Author"">
     <Exec>
-      <Command>{currentPath}</Command>
+      <Command>""{currentPath}""</Command>
+      <WorkingDirectory>{workingDir}</WorkingDirectory>
     </Exec>
   </Actions>
 </Task>";

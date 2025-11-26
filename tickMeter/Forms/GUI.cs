@@ -1807,7 +1807,7 @@ namespace tickMeter.Forms
                 {
                     await Task.Run(() => {
                         try { 
-                            RivaTuner.BuildRivaOutput(); 
+                            try { RivaTuner.BuildRivaOutput(); } catch (TypeInitializationException) { /* RTSS.dll отсутствует */ } catch { } 
                             _rtssSw.Restart();
                         } catch (Exception ex) {
                             if(!RTSS_Failed)
@@ -5106,7 +5106,20 @@ namespace tickMeter.Forms
             }
             
             App.settingsForm.SaveToConfig();
-            RivaTuner.KillRtss();
+            
+            try
+            {
+                RivaTuner.KillRtss();
+            }
+            catch (TypeInitializationException ex)
+            {
+                Debug.Print($"[RivaTuner] Не удалось инициализировать (RTSS.dll отсутствует): {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[RivaTuner] Ошибка при завершении: {ex.Message}");
+            }
+            
             allowClose = true;
             Close();
         }

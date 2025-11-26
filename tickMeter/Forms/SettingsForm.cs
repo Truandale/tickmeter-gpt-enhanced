@@ -178,7 +178,7 @@ namespace tickMeter.Forms
 
             if (File.Exists(App.settingsManager.GetOption("rtss_exe_path")))
             {
-                RivaTuner.rtss_exe = App.settingsManager.GetOption("rtss_exe_path");
+                try { RivaTuner.rtss_exe = App.settingsManager.GetOption("rtss_exe_path"); } catch (TypeInitializationException) { /* RTSS.dll отсутствует */ }
                 return;
             }
 
@@ -202,7 +202,7 @@ namespace tickMeter.Forms
                 if (File.Exists(rtss_dialog.FileName))
                 {
                     App.settingsManager.SetOption("rtss_exe_path", rtss_dialog.FileName);
-                    RivaTuner.rtss_exe = rtss_dialog.FileName;
+                    try { RivaTuner.rtss_exe = rtss_dialog.FileName; } catch (TypeInitializationException) { /* RTSS.dll отсутствует */ }
                     return;
                 }
             }
@@ -274,11 +274,18 @@ namespace tickMeter.Forms
             ColorMid.ForeColor = ColorTranslator.FromHtml("#"+ App.settingsManager.GetOption("color_mid", "FF8040", "SETTINGS"));
             ColorGood.ForeColor = ColorTranslator.FromHtml("#"+ App.settingsManager.GetOption("color_good", "008000", "SETTINGS"));
             ColorChart.ForeColor = ColorTranslator.FromHtml("#"+ App.settingsManager.GetOption("color_chart", "FF0080", "SETTINGS"));
-            RivaTuner.LabelColor = App.settingsManager.GetOption("color_label");
-            RivaTuner.ColorBad = App.settingsManager.GetOption("color_bad");
-            RivaTuner.ColorMid = App.settingsManager.GetOption("color_mid");
-            RivaTuner.ColorGood = App.settingsManager.GetOption("color_good");
-            RivaTuner.ColorChart = App.settingsManager.GetOption("color_chart");
+            try
+            {
+                RivaTuner.LabelColor = App.settingsManager.GetOption("color_label");
+                RivaTuner.ColorBad = App.settingsManager.GetOption("color_bad");
+                RivaTuner.ColorMid = App.settingsManager.GetOption("color_mid");
+                RivaTuner.ColorGood = App.settingsManager.GetOption("color_good");
+                RivaTuner.ColorChart = App.settingsManager.GetOption("color_chart");
+            }
+            catch (TypeInitializationException)
+            {
+                Debug.Print("[RivaTuner] Не удалось загрузить (RTSS.dll отсутствует)");
+            }
 
             App.gui.drops_lbl_val.ForeColor = ColorBad.ForeColor;
 
@@ -703,6 +710,7 @@ namespace tickMeter.Forms
             try
             {
                 string exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                string workingDir = Path.GetDirectoryName(exePath);
                 string taskName = "tickMeter_AutoStart";
                 
                 // Создаем XML для задачи с отключенными условиями
@@ -744,7 +752,8 @@ namespace tickMeter.Forms
   </Settings>
   <Actions Context=""Author"">
     <Exec>
-      <Command>{exePath}</Command>
+      <Command>""{exePath}""</Command>
+      <WorkingDirectory>{workingDir}</WorkingDirectory>
     </Exec>
   </Actions>
 </Task>";
