@@ -43,9 +43,10 @@ namespace tickMeter.Forms
         private bool _enableSettingsCache = true;
         
         // НОВАЯ ОПТИМИЗАЦИЯ: Кэш состояний контролов для мгновенного применения
-        private Dictionary<string, object> _controlStatesCache = new Dictionary<string, object>();
+        // КРИТИЧНО: Статический кэш сохраняется между открытиями формы
+        private static Dictionary<string, object> _controlStatesCache = new Dictionary<string, object>();
         private bool _isDirty = false; // Флаг изменения настроек
-        private DateTime _settingsLastModified = DateTime.MinValue; // Timestamp для валидации кэша
+        private static DateTime _settingsLastModified = DateTime.MinValue; // Timestamp для валидации кэша
 
         public AdvancedSettingsForm()
         {
@@ -223,19 +224,25 @@ namespace tickMeter.Forms
                         // ДОПОЛНИТЕЛЬНАЯ ВАЛИДАЦИЯ: Выборочная проверка критичных значений
                         if (restoredFromCache && !ValidateRestoredValues(tabIndex))
                         {
-                            System.Diagnostics.Debug.Print($"[Cache] Tab {tabIndex}: validation failed, reloading from file");
+                            DebugLogger.log($"[Cache] Tab {tabIndex}: validation failed, reloading from file");
                             restoredFromCache = false;
                         }
+                    }
+                    else
+                    {
+                        DebugLogger.log($"[Cache] Tab {tabIndex}: cache timestamp invalid");
                     }
                     
                     // Если не удалось восстановить из кэша - загружаем из конфига
                     if (!restoredFromCache)
                     {
+                        DebugLogger.log($"[Cache] Tab {tabIndex}: loading from settings file");
                         LoadTabSettings(tabIndex);
                         // Кэшируем загруженные состояния для последующего использования
                         CacheTabStates(tabIndex);
                         // Обновляем timestamp
                         _settingsLastModified = DateTime.Now;
+                        DebugLogger.log($"[Cache] Tab {tabIndex}: cached after loading");
                     }
                     
                     _loadedSettingsTabs.Add(tabIndex);
@@ -373,7 +380,7 @@ namespace tickMeter.Forms
                     // Если файл изменился после создания кэша - кэш устарел
                     if (fileTime > _settingsLastModified)
                     {
-                        System.Diagnostics.Debug.Print($"[Cache] Settings file modified, invalidating cache");
+                        DebugLogger.log($"[Cache] Settings file modified, invalidating cache");
                         InvalidateControlStateCache();
                         return false;
                     }
@@ -383,7 +390,7 @@ namespace tickMeter.Forms
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.Print($"[Cache] Timestamp validation error: {ex.Message}");
+                DebugLogger.log($"[Cache] Timestamp validation error: {ex.Message}");
                 return false;
             }
         }
@@ -460,11 +467,11 @@ namespace tickMeter.Forms
                     CacheTabStates(tabIndex);
                 }
                 
-                System.Diagnostics.Debug.Print($"[AdvancedSettings] Updated control states cache for {_loadedSettingsTabs.Count} tabs");
+                DebugLogger.log($"[AdvancedSettings] Updated control states cache for {_loadedSettingsTabs.Count} tabs");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.Print($"[AdvancedSettings] Error updating control states cache: {ex.Message}");
+                DebugLogger.log($"[AdvancedSettings] Error updating control states cache: {ex.Message}");
             }
         }
         
@@ -630,11 +637,11 @@ namespace tickMeter.Forms
             
             if (fullyRestored)
             {
-                System.Diagnostics.Debug.Print($"[Cache] Tab {tabIndex}: restored {restoredCount}/{cacheableCount} controls from cache");
+                DebugLogger.log($"[Cache] Tab {tabIndex}: restored {restoredCount}/{cacheableCount} controls from cache");
             }
             else
             {
-                System.Diagnostics.Debug.Print($"[Cache] Tab {tabIndex}: incomplete restore ({restoredCount}/{cacheableCount}), will reload from file");
+                DebugLogger.log($"[Cache] Tab {tabIndex}: incomplete restore ({restoredCount}/{cacheableCount}), will reload from file");
             }
             
             return fullyRestored;

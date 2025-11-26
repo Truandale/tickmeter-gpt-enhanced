@@ -576,7 +576,10 @@ namespace tickMeter.Forms
 
         private void local_ip_textbox_TextChanged(object sender, EventArgs e)
         {
-            App.gui.StartTracking();
+            if (App.gui != null)
+            {
+                App.gui.StartTracking();
+            }
         }
 
         private void rtss_dialog_FileOk(object sender, System.ComponentModel.CancelEventArgs e)
