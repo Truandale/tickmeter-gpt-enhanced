@@ -1636,8 +1636,18 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("current_profile", "Стандарт (Balanced)", "PROFILES");      // Текущий профиль ✓
             App.settingsManager.SetOption("advanced_profile", "Streamer", "PROFILES");                // Продвинутый профиль ✓
             
+            // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Инвалидируем все кэши перед загрузкой
+            InvalidateSettingsCache();
+            InvalidateControlStateCache();
+            _loadedSettingsTabs.Clear(); // Сбрасываем флаги загруженных табов
+            
             // Обновляем UI-элементы формы в соответствии с настройками
-            LoadSettings();
+            // Загружаем ВСЕ табы принудительно
+            LoadAllSettings();
+            
+            // Пересоздаем кэш состояний после загрузки
+            UpdateControlStatesCacheAfterSave();
+            _settingsLastModified = DateTime.Now;
             
             // Сохраняем все изменения
             SaveSettings();
