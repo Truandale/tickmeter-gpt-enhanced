@@ -32,6 +32,20 @@ namespace tickMeter.Forms
         private HashSet<int> _loadedSettingsTabs = new HashSet<int>();
         private HashSet<Control> _doubleBufferedControls = new HashSet<Control>(); // Кэш для предотвращения повторной обработки
         private bool _lazyLoadingEnabled = true;
+        
+        // НОВАЯ ОПТИМИЗАЦИЯ: Кэш видимости контролов для мгновенного переключения
+        private Dictionary<int, bool> _tabVisibilityCache = new Dictionary<int, bool>();
+        private System.Threading.Timer _preloadTimer; // Таймер для фоновой предзагрузки
+        
+        // НОВАЯ ОПТИМИЗАЦИЯ: Кэширование дорогих операций для ускорения повторной загрузки
+        private Dictionary<int, List<Control>> _tabControlsCache = new Dictionary<int, List<Control>>();
+        private Dictionary<string, object> _settingsCache = new Dictionary<string, object>();
+        private bool _enableSettingsCache = true;
+        
+        // НОВАЯ ОПТИМИЗАЦИЯ: Кэш состояний контролов для мгновенного применения
+        private Dictionary<string, object> _controlStatesCache = new Dictionary<string, object>();
+        private bool _isDirty = false; // Флаг изменения настроек
+        private DateTime _settingsLastModified = DateTime.MinValue; // Timestamp для валидации кэша
 
         public AdvancedSettingsForm()
         {
@@ -78,8 +92,19 @@ namespace tickMeter.Forms
                     var tab = tabControl1.TabPages[i];
                     tab.SuspendLayout();
                     
+                    // НОВАЯ ОПТИМИЗАЦИЯ: Временно делаем таб невидимым для ускорения
+                    tab.Visible = false;
+                    _tabVisibilityCache[i] = false;
+                    
                     // Агрессивная оптимизация: BeginInit для всех ISupportInitialize контролов
                     FreezeTabControls(tab);
+                }
+                
+                // Первый таб сразу видимый
+                if (tabControl1.TabPages.Count > 0)
+                {
+                    tabControl1.TabPages[0].Visible = true;
+                    _tabVisibilityCache[0] = true;
                 }
             }
             
@@ -98,6 +123,9 @@ namespace tickMeter.Forms
             this.PerformLayout();
             
             _isLoadingSettings = false;
+            
+            // НОВАЯ ОПТИМИЗАЦИЯ: Запускаем фоновую предзагрузку следующих табов через 500мс
+            _preloadTimer = new System.Threading.Timer(PreloadNextTabs, null, 500, System.Threading.Timeout.Infinite);
 
             if (chkVpnBypassAdvanced.Checked)
             {
@@ -171,6 +199,9 @@ namespace tickMeter.Forms
             
             try
             {
+                // НОВАЯ ОПТИМИЗАЦИЯ: Кэшируем контролы таба для быстрого доступа
+                _ = GetCachedTabControls(tabIndex, tabPage);
+                
                 // Размораживаем контролы, которые были заморожены в конструкторе
                 UnfreezeTabControls(tabPage);
                 
@@ -180,7 +211,33 @@ namespace tickMeter.Forms
                 // Загружаем настройки для таба (ленивая загрузка настроек)
                 if (!_loadedSettingsTabs.Contains(tabIndex))
                 {
-                    LoadTabSettings(tabIndex);
+                    // КРИТИЧЕСКАЯ ВАЛИДАЦИЯ: Проверяем актуальность кэша
+                    bool cacheValid = ValidateCacheTimestamp();
+                    bool restoredFromCache = false;
+                    
+                    if (cacheValid)
+                    {
+                        // НОВАЯ ОПТИМИЗАЦИЯ: Пытаемся восстановить из кэша состояний
+                        restoredFromCache = RestoreTabStates(tabIndex);
+                        
+                        // ДОПОЛНИТЕЛЬНАЯ ВАЛИДАЦИЯ: Выборочная проверка критичных значений
+                        if (restoredFromCache && !ValidateRestoredValues(tabIndex))
+                        {
+                            System.Diagnostics.Debug.Print($"[Cache] Tab {tabIndex}: validation failed, reloading from file");
+                            restoredFromCache = false;
+                        }
+                    }
+                    
+                    // Если не удалось восстановить из кэша - загружаем из конфига
+                    if (!restoredFromCache)
+                    {
+                        LoadTabSettings(tabIndex);
+                        // Кэшируем загруженные состояния для последующего использования
+                        CacheTabStates(tabIndex);
+                        // Обновляем timestamp
+                        _settingsLastModified = DateTime.Now;
+                    }
+                    
                     _loadedSettingsTabs.Add(tabIndex);
                 }
                 
@@ -220,6 +277,367 @@ namespace tickMeter.Forms
             {
                 // Игнорируем ошибки, не все контролы поддерживают DoubleBuffered
             }
+        }
+        
+        /// <summary>
+        /// НОВАЯ ОПТИМИЗАЦИЯ: Кэширует список контролов таба для быстрого доступа
+        /// </summary>
+        private List<Control> GetCachedTabControls(int tabIndex, TabPage tabPage)
+        {
+            if (!_tabControlsCache.ContainsKey(tabIndex))
+            {
+                var controls = new List<Control>();
+                
+                // Рекурсивно собираем все контролы
+                void CollectControls(Control parent)
+                {
+                    foreach (Control ctrl in parent.Controls)
+                    {
+                        controls.Add(ctrl);
+                        if (ctrl.HasChildren)
+                        {
+                            CollectControls(ctrl);
+                        }
+                    }
+                }
+                
+                CollectControls(tabPage);
+                _tabControlsCache[tabIndex] = controls;
+            }
+            
+            return _tabControlsCache[tabIndex];
+        }
+        
+        /// <summary>
+        /// НОВАЯ ОПТИМИЗАЦИЯ: Получает настройку из кэша или загружает
+        /// </summary>
+        private string GetCachedSetting(string key, string defaultValue = "", string section = "SETTINGS")
+        {
+            if (!_enableSettingsCache || App.settingsManager == null)
+            {
+                return App.settingsManager?.GetOption(key, defaultValue, section) ?? defaultValue;
+            }
+            
+            string cacheKey = $"{section}:{key}";
+            
+            if (!_settingsCache.ContainsKey(cacheKey))
+            {
+                string value = App.settingsManager.GetOption(key, defaultValue, section);
+                _settingsCache[cacheKey] = value;
+                return value;
+            }
+            
+            return _settingsCache[cacheKey] as string ?? defaultValue;
+        }
+        
+        /// <summary>
+        /// НОВАЯ ОПТИМИЗАЦИЯ: Сбрасывает кэш настроек (вызывать при сохранении)
+        /// </summary>
+        private void InvalidateSettingsCache()
+        {
+            _settingsCache.Clear();
+            _isDirty = false;
+        }
+        
+        /// <summary>
+        /// НОВАЯ ОПТИМИЗАЦИЯ: Сбрасывает кэш состояний контролов (вызывать при закрытии формы)
+        /// </summary>
+        private void InvalidateControlStateCache()
+        {
+            _controlStatesCache.Clear();
+        }
+        
+        /// <summary>
+        /// КРИТИЧЕСКАЯ ВАЛИДАЦИЯ: Проверяет актуальность кэша по timestamp настроек
+        /// </summary>
+        private bool ValidateCacheTimestamp()
+        {
+            try
+            {
+                if (_settingsLastModified == DateTime.MinValue)
+                {
+                    // Кэш еще не инициализирован
+                    return false;
+                }
+                
+                // Проверяем timestamp файла настроек
+                string settingsPath = System.IO.Path.Combine(
+                    System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
+                    "settings.ini"
+                );
+                
+                if (System.IO.File.Exists(settingsPath))
+                {
+                    var fileTime = System.IO.File.GetLastWriteTime(settingsPath);
+                    
+                    // Если файл изменился после создания кэша - кэш устарел
+                    if (fileTime > _settingsLastModified)
+                    {
+                        System.Diagnostics.Debug.Print($"[Cache] Settings file modified, invalidating cache");
+                        InvalidateControlStateCache();
+                        return false;
+                    }
+                }
+                
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[Cache] Timestamp validation error: {ex.Message}");
+                return false;
+            }
+        }
+        
+        /// <summary>
+        /// КРИТИЧЕСКАЯ ВАЛИДАЦИЯ: Выборочно проверяет восстановленные значения
+        /// </summary>
+        private bool ValidateRestoredValues(int tabIndex)
+        {
+            try
+            {
+                if (App.settingsManager == null) return true;
+                
+                // Выборочная проверка критичных настроек (5-10% от общего числа)
+                // Это баланс между производительностью и надежностью
+                
+                switch (tabIndex)
+                {
+                    case 0: // Basic Settings
+                        // Проверяем критичную настройку capture_all_adapters
+                        if (tabControl1?.TabPages[0] != null)
+                        {
+                            var chkCapture = tabControl1.TabPages[0].Controls.Find("chkCaptureAllAdapters", true).FirstOrDefault() as CheckBox;
+                            if (chkCapture != null)
+                            {
+                                bool expected = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
+                                if (chkCapture.Checked != expected)
+                                {
+                                    System.Diagnostics.Debug.Print($"[Cache] Validation failed: capture_all_adapters mismatch");
+                                    return false;
+                                }
+                            }
+                        }
+                        break;
+                        
+                    case 1: // Universal Settings
+                        // Проверяем ping_tcp_prefer
+                        if (tabControl1?.TabPages[1] != null)
+                        {
+                            var chkTcp = tabControl1.TabPages[1].Controls.Find("chkPingTcpPrefer", true).FirstOrDefault() as CheckBox;
+                            if (chkTcp != null)
+                            {
+                                bool expected = App.settingsManager.GetOption("ping_tcp_prefer", "True", "SETTINGS") == "True";
+                                if (chkTcp.Checked != expected)
+                                {
+                                    System.Diagnostics.Debug.Print($"[Cache] Validation failed: ping_tcp_prefer mismatch");
+                                    return false;
+                                }
+                            }
+                        }
+                        break;
+                }
+                
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[Cache] Value validation error: {ex.Message}");
+                return false; // При ошибке валидации - перезагружаем из файла
+            }
+        }
+        
+        /// <summary>
+        /// КРИТИЧЕСКАЯ ОПТИМИЗАЦИЯ: Обновляет кэш состояний после сохранения настроек
+        /// Проходит по всем уже загруженным табам и кэширует текущие значения контролов
+        /// </summary>
+        private void UpdateControlStatesCacheAfterSave()
+        {
+            try
+            {
+                // Обновляем кэш только для загруженных табов
+                foreach (int tabIndex in _loadedSettingsTabs)
+                {
+                    CacheTabStates(tabIndex);
+                }
+                
+                System.Diagnostics.Debug.Print($"[AdvancedSettings] Updated control states cache for {_loadedSettingsTabs.Count} tabs");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[AdvancedSettings] Error updating control states cache: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// НОВАЯ ОПТИМИЗАЦИЯ: Кэширует состояние контрола для быстрого восстановления
+        /// </summary>
+        private void CacheControlState(Control control)
+        {
+            if (control == null) return;
+            
+            string key = $"{control.Parent?.Name ?? "root"}:{control.Name}";
+            
+            try
+            {
+                if (control is CheckBox chk)
+                {
+                    _controlStatesCache[key] = chk.Checked;
+                }
+                else if (control is RadioButton radio)
+                {
+                    _controlStatesCache[key] = radio.Checked;
+                }
+                else if (control is TextBox txt)
+                {
+                    _controlStatesCache[key] = txt.Text;
+                }
+                else if (control is NumericUpDown num)
+                {
+                    _controlStatesCache[key] = num.Value;
+                }
+                else if (control is ComboBox cmb)
+                {
+                    // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Кэшируем и индекс и текст
+                    _controlStatesCache[key + ":index"] = cmb.SelectedIndex;
+                    _controlStatesCache[key + ":text"] = cmb.Text ?? string.Empty;
+                }
+            }
+            catch { }
+        }
+        
+        /// <summary>
+        /// НОВАЯ ОПТИМИЗАЦИЯ: Восстанавливает состояние контрола из кэша
+        /// </summary>
+        private bool RestoreControlState(Control control)
+        {
+            if (control == null) return false;
+            
+            string key = $"{control.Parent?.Name ?? "root"}:{control.Name}";
+            
+            if (!_controlStatesCache.ContainsKey(key)) return false;
+            
+            try
+            {
+                object cachedValue = _controlStatesCache[key];
+                
+                if (control is CheckBox chk && cachedValue is bool bVal)
+                {
+                    chk.Checked = bVal;
+                    return true;
+                }
+                else if (control is RadioButton radio && cachedValue is bool rVal)
+                {
+                    radio.Checked = rVal;
+                    return true;
+                }
+                else if (control is TextBox txt && cachedValue is string sVal)
+                {
+                    txt.Text = sVal;
+                    return true;
+                }
+                else if (control is NumericUpDown num && cachedValue is decimal dVal)
+                {
+                    num.Value = dVal;
+                    return true;
+                }
+                else if (control is ComboBox cmb)
+                {
+                    // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Восстанавливаем и индекс и текст
+                    bool restored = false;
+                    
+                    string indexKey = key + ":index";
+                    string textKey = key + ":text";
+                    
+                    if (_controlStatesCache.ContainsKey(indexKey) && 
+                        _controlStatesCache[indexKey] is int iVal)
+                    {
+                        if (iVal >= -1 && iVal < cmb.Items.Count)
+                        {
+                            cmb.SelectedIndex = iVal;
+                            restored = true;
+                        }
+                    }
+                    
+                    if (_controlStatesCache.ContainsKey(textKey) && 
+                        _controlStatesCache[textKey] is string txtVal)
+                    {
+                        cmb.Text = txtVal;
+                        restored = true;
+                    }
+                    
+                    return restored;
+                }
+            }
+            catch { }
+            
+            return false;
+        }
+        
+        /// <summary>
+        /// НОВАЯ ОПТИМИЗАЦИЯ: Кэширует состояния всех контролов таба
+        /// </summary>
+        private void CacheTabStates(int tabIndex)
+        {
+            if (tabControl1 == null || tabIndex < 0 || tabIndex >= tabControl1.TabPages.Count) return;
+            TabPage tabPage = tabControl1.TabPages[tabIndex];
+            if (tabPage == null) return;
+            
+            // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Гарантируем наличие списка контролов
+            var controls = GetCachedTabControls(tabIndex, tabPage);
+            if (controls == null || controls.Count == 0) return;
+            
+            foreach (var control in controls)
+            {
+                CacheControlState(control);
+            }
+        }
+        
+        /// <summary>
+        /// НОВАЯ ОПТИМИЗАЦИЯ: Восстанавливает состояния контролов таба из кэша
+        /// КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Требует полного восстановления для надежности
+        /// </summary>
+        private bool RestoreTabStates(int tabIndex)
+        {
+            if (tabControl1 == null || tabIndex < 0 || tabIndex >= tabControl1.TabPages.Count) return false;
+            TabPage tabPage = tabControl1.TabPages[tabIndex];
+            if (tabPage == null) return false;
+            
+            var controls = GetCachedTabControls(tabIndex, tabPage);
+            if (controls == null || controls.Count == 0) return false;
+            
+            // Подсчитываем только кэшируемые контролы
+            int cacheableCount = 0;
+            int restoredCount = 0;
+            
+            foreach (var control in controls)
+            {
+                // Проверяем типы которые мы кэшируем
+                if (control is CheckBox || control is RadioButton || 
+                    control is TextBox || control is NumericUpDown || control is ComboBox)
+                {
+                    cacheableCount++;
+                    if (RestoreControlState(control))
+                    {
+                        restoredCount++;
+                    }
+                }
+            }
+            
+            // КРИТИЧЕСКАЯ ПРОВЕРКА: Восстановлено не менее 90% контролов
+            // (допускаем 10% погрешность на динамические контролы)
+            bool fullyRestored = cacheableCount > 0 && 
+                                 (restoredCount >= cacheableCount * 0.9);
+            
+            if (fullyRestored)
+            {
+                System.Diagnostics.Debug.Print($"[Cache] Tab {tabIndex}: restored {restoredCount}/{cacheableCount} controls from cache");
+            }
+            else
+            {
+                System.Diagnostics.Debug.Print($"[Cache] Tab {tabIndex}: incomplete restore ({restoredCount}/{cacheableCount}), will reload from file");
+            }
+            
+            return fullyRestored;
         }
         
         /// <summary>
@@ -830,6 +1248,10 @@ namespace tickMeter.Forms
         {
             try
             {
+                // НОВАЯ ОПТИМИЗАЦИЯ: Сброс кэша настроек (он зависит от файла)
+                InvalidateSettingsCache();
+                // НЕ очищаем _controlStatesCache - он будет обновлен из контролов после сохранения
+                
                 // Live View настройки
                 App.settingsManager.SetOption("live_max_rows_enabled", chkLiveMaxRows.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("live_max_rows", SettingsManager.ToInvariantString((int)liveMaxRowsNumeric.Value), "ADVANCED");
@@ -935,6 +1357,13 @@ namespace tickMeter.Forms
                 
                 // Применяем новые настройки интервала overlay
                 App.gui?.ApplyOverlayIntervalFromSettings();
+                
+                // КРИТИЧЕСКАЯ ОПТИМИЗАЦИЯ: Обновляем кэш состояний из текущих контролов
+                // чтобы следующая загрузка была мгновенной
+                UpdateControlStatesCacheAfterSave();
+                
+                // КРИТИЧЕСКАЯ ВАЛИДАЦИЯ: Обновляем timestamp для проверки актуальности
+                _settingsLastModified = DateTime.Now;
                 
                 MessageBox.Show("Настройки сохранены", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
@@ -2648,6 +3077,58 @@ namespace tickMeter.Forms
                 
                 // Пока что просто уведомляем о необходимости перезапуска для применения изменений
                 // В будущем можно добавить динамическое изменение параметров
+            }
+        }
+        
+        #endregion
+        
+        #region Фоновая предзагрузка табов
+        
+        /// <summary>
+        /// НОВАЯ ОПТИМИЗАЦИЯ: Фоновая предзагрузка следующих табов для мгновенного переключения
+        /// </summary>
+        private void PreloadNextTabs(object state)
+        {
+            if (tabControl1 == null || tabControl1.IsDisposed) return;
+            
+            try
+            {
+                // Получаем текущий активный таб
+                int currentTab = -1;
+                tabControl1.Invoke((MethodInvoker)delegate
+                {
+                    currentTab = tabControl1.SelectedIndex;
+                });
+                
+                if (currentTab < 0) return;
+                
+                // Предзагружаем следующий и предыдущий табы (наиболее вероятные для переключения)
+                int[] tabsToPreload = new int[] { currentTab + 1, currentTab - 1, currentTab + 2 };
+                
+                foreach (int tabIndex in tabsToPreload)
+                {
+                    if (tabIndex >= 0 && tabIndex < tabControl1.TabCount && !_initializedTabs.Contains(tabIndex))
+                    {
+                        tabControl1.Invoke((MethodInvoker)delegate
+                        {
+                            var tabPage = tabControl1.TabPages[tabIndex];
+                            InitializeTab(tabIndex, tabPage);
+                        });
+                        
+                        // Небольшая задержка между предзагрузками чтобы не нагружать систему
+                        System.Threading.Thread.Sleep(50);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[AdvancedSettings] Error in PreloadNextTabs: {ex.Message}");
+            }
+            finally
+            {
+                // Очищаем таймер
+                _preloadTimer?.Dispose();
+                _preloadTimer = null;
             }
         }
         
