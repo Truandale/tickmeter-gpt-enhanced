@@ -226,7 +226,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Classes\App.cs" />
-    <Compile Include="Classes\ActiveWinowTracker.cs" />
+    <Compile Include="Classes\ActiveWindowTracker.cs" />
     <Compile Include="Classes\AutoDetectMngr.cs" />
     <Compile Include="Classes\CaptureService.cs" />
     <Compile Include="Classes\ConnectionsManager.cs" />
