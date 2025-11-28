@@ -3279,48 +3279,63 @@ namespace tickMeter.Forms
                         App.meterState.Server.PingPort = (int)procStats.remotePort;
                         App.meterState.SessionStart = procStats.startTrack;
                         
-                        // КРИТИЧНО: В VPN bypass режиме применяем ту же логику проверки активности что и в обычном режиме
-                        // Проверяем есть ли реальная сетевая активность перед установкой IsTracking = true
+                        // ИСПРАВЛЕНИЕ: Проверку реальной активности применяем ТОЛЬКО в VPN bypass режиме!
+                        // В обычном PCAP режиме IsTracking управляется через StartTracking()/StopTracking()
+                        // Используем уже существующие переменные vpnBypassBasic и vpnBypassAdvanced из строки 3185
+                        bool isVpnBypassMode = vpnBypassBasic || vpnBypassAdvanced;
                         
-                        // Первая проверка: базовые условия активности
-                        bool hasBasicActivity = procStats.ticksIn > 3 && 
-                                               procStats.downloaded > 0 && 
-                                               procStats.TrackingDelta() > 3;
-                        
-                        // Вторая проверка: исключаем фиктивные данные VPN fallback
-                        // VPN fallback создает фейковые соединения с характерными значениями:
-                        bool isFakeVpnFallback = (procStats.downloaded == 1024 && procStats.sent == 512);
-                        
-                        // Третья проверка: для системных процессов требуем РАСТУЩИЙ трафик
-                        bool hasGrowingTraffic = true; // По умолчанию считаем что трафик растет
-                        string[] systemProcesses = { "explorer", "dwm", "winlogon", "csrss", "lsass", "services", "svchost", "taskhostw", "taskmgr", "notepad", "calculator", "cmd", "powershell", "powershell_ise", "mspaint", "wordpad" };
-                        bool isSystemProcess = systemProcesses.Any(proc => proc.Equals(procStats.name, StringComparison.OrdinalIgnoreCase));
-                        
-                        if (isSystemProcess)
+                        if (isVpnBypassMode)
                         {
-                            // Для системных процессов требуем трафик больше чем минимальные фейковые значения
-                            hasGrowingTraffic = procStats.downloaded > 2048 || procStats.sent > 1024;
-                        }
-                        
-                        bool hasRealActivity = hasBasicActivity && !isFakeVpnFallback && hasGrowingTraffic;
-                        
-                        if (hasRealActivity)
-                        {
-                            DebugLogger.log($"[VPN-Bypass] ✓ Real activity detected for {procStats.name}: ticksIn={procStats.ticksIn}, downloaded={procStats.downloaded}, sent={procStats.sent}, tracking={procStats.TrackingDelta():F1}s");
-                            App.meterState.IsTracking = true;
-                            _lastMetricsApplied = DateTime.Now;
-                            _metricsStateCleared = false;
+                            // КРИТИЧНО: В VPN bypass режиме применяем логику проверки активности
+                            // Проверяем есть ли реальная сетевая активность перед установкой IsTracking = true
+                            
+                            // Первая проверка: базовые условия активности
+                            bool hasBasicActivity = procStats.ticksIn > 3 && 
+                                                   procStats.downloaded > 0 && 
+                                                   procStats.TrackingDelta() > 3;
+                            
+                            // Вторая проверка: исключаем фиктивные данные VPN fallback
+                            // VPN fallback создает фейковые соединения с характерными значениями:
+                            bool isFakeVpnFallback = (procStats.downloaded == 1024 && procStats.sent == 512);
+                            
+                            // Третья проверка: для системных процессов требуем РАСТУЩИЙ трафик
+                            bool hasGrowingTraffic = true; // По умолчанию считаем что трафик растет
+                            string[] systemProcesses = { "explorer", "dwm", "winlogon", "csrss", "lsass", "services", "svchost", "taskhostw", "taskmgr", "notepad", "calculator", "cmd", "powershell", "powershell_ise", "mspaint", "wordpad" };
+                            bool isSystemProcess = systemProcesses.Any(proc => proc.Equals(procStats.name, StringComparison.OrdinalIgnoreCase));
+                            
+                            if (isSystemProcess)
+                            {
+                                // Для системных процессов требуем трафик больше чем минимальные фейковые значения
+                                hasGrowingTraffic = procStats.downloaded > 2048 || procStats.sent > 1024;
+                            }
+                            
+                            bool hasRealActivity = hasBasicActivity && !isFakeVpnFallback && hasGrowingTraffic;
+                            
+                            if (hasRealActivity)
+                            {
+                                DebugLogger.log($"[VPN-Bypass] ✓ Real activity detected for {procStats.name}: ticksIn={procStats.ticksIn}, downloaded={procStats.downloaded}, sent={procStats.sent}, tracking={procStats.TrackingDelta():F1}s");
+                                App.meterState.IsTracking = true;
+                                _lastMetricsApplied = DateTime.Now;
+                                _metricsStateCleared = false;
+                            }
+                            else
+                            {
+                                string reason = "";
+                                if (!hasBasicActivity) reason += "no basic activity; ";
+                                if (isFakeVpnFallback) reason += "fake VPN fallback data; ";
+                                if (!hasGrowingTraffic && isSystemProcess) reason += "system process without growing traffic; ";
+                                
+                                DebugLogger.log($"[VPN-Bypass] ✗ No real activity for {procStats.name}: {reason}(ticksIn={procStats.ticksIn}, downloaded={procStats.downloaded}, sent={procStats.sent}, tracking={procStats.TrackingDelta():F1}s) - keeping IsTracking=false");
+                                App.meterState.IsTracking = false;
+                                _metricsStateCleared = true;
+                            }
                         }
                         else
                         {
-                            string reason = "";
-                            if (!hasBasicActivity) reason += "no basic activity; ";
-                            if (isFakeVpnFallback) reason += "fake VPN fallback data; ";
-                            if (!hasGrowingTraffic && isSystemProcess) reason += "system process without growing traffic; ";
-                            
-                            DebugLogger.log($"[VPN-Bypass] ✗ No real activity for {procStats.name}: {reason}(ticksIn={procStats.ticksIn}, downloaded={procStats.downloaded}, sent={procStats.sent}, tracking={procStats.TrackingDelta():F1}s) - keeping IsTracking=false");
-                            App.meterState.IsTracking = false;
-                            _metricsStateCleared = true;
+                            // В обычном PCAP режиме IsTracking не сбрасываем - он управляется через StartTracking()
+                            // Просто устанавливаем флаг что метрики применены
+                            _lastMetricsApplied = DateTime.Now;
+                            _metricsStateCleared = false;
                         }
                         
                         App.meterState.loss = procStats.loss;
@@ -3896,13 +3911,16 @@ namespace tickMeter.Forms
             else
             {
                 Debug.Print($"[StartTracking] SINGLE-ADAPTER MODE - captureAll: {captureAll}, vpnBasic: {vpnBypassBasic}, vpnAdvanced: {vpnBypassAdvanced}");
+                DebugLogger.log($"[StartTracking] SINGLE-ADAPTER MODE - captureAll: {captureAll}, vpnBasic: {vpnBypassBasic}, vpnAdvanced: {vpnBypassAdvanced}");
                 int deviceId = App.settingsForm.adapters_list.SelectedIndex;
                 Debug.Print($"[StartTracking] Single adapter mode - deviceId: {deviceId}, devices.Count: {devices.Count}");
+                DebugLogger.log($"[StartTracking] Single adapter mode - deviceId: {deviceId}, devices.Count: {devices.Count}");
                 
                 if (devices.Count > deviceId && deviceId > 0)
                 {
                     selectedAdapter = devices[deviceId];
                     Debug.Print($"[StartTracking] Selected adapter: {selectedAdapter.Name} - {selectedAdapter.Description}");
+                    DebugLogger.log($"[StartTracking] Selected adapter: {selectedAdapter.Name} - {selectedAdapter.Description}");
                 }
                 else
                 {
@@ -3910,16 +3928,19 @@ namespace tickMeter.Forms
                     if (deviceId == 0)
                     {
                         Debug.Print("[StartTracking] deviceId=0, trying to load last_selected_adapter from settings...");
+                        DebugLogger.log("[StartTracking] deviceId=0, trying to load last_selected_adapter from settings...");
                         string adapterGuid = App.settingsManager.GetOption("last_selected_adapter");
                         if (!string.IsNullOrEmpty(adapterGuid))
                         {
                             Debug.Print($"[StartTracking] Found last_selected_adapter: {adapterGuid}");
+                            DebugLogger.log($"[StartTracking] Found last_selected_adapter: {adapterGuid}");
                             foreach (var device in devices)
                             {
                                 if (device.GetGuid().ToLower().Equals(adapterGuid.ToLower()))
                                 {
                                     selectedAdapter = device;
                                     Debug.Print($"[StartTracking] Restored adapter from GUID: {device.Name} - {device.Description}");
+                                    DebugLogger.log($"[StartTracking] Restored adapter from GUID: {device.Name} - {device.Description}");
                                     break;
                                 }
                             }
@@ -3928,6 +3949,7 @@ namespace tickMeter.Forms
                         if (selectedAdapter == null)
                         {
                             Debug.Print("[StartTracking] ERROR: Could not restore adapter from last_selected_adapter");
+                            DebugLogger.log("[StartTracking] ERROR: Could not restore adapter from last_selected_adapter");
                             MessageBox.Show("Пожалуйста, выберите сетевой адаптер в настройках.\n\nОткройте Settings → Network Settings и выберите ваш основной сетевой адаптер.", 
                                             "Сетевой адаптер не выбран", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                             _pendingRestoreTargetKey = string.Empty;
@@ -3937,6 +3959,7 @@ namespace tickMeter.Forms
                     else
                     {
                         Debug.Print($"[StartTracking] ERROR: Invalid deviceId {deviceId} for {devices.Count} devices");
+                        DebugLogger.log($"[StartTracking] ERROR: Invalid deviceId {deviceId} for {devices.Count} devices");
                         _pendingRestoreTargetKey = string.Empty;
                         return;
                     }
@@ -4110,17 +4133,13 @@ namespace tickMeter.Forms
                 }
                 else
                 {
-                    if (PcapThread == null)
-                    {
-                        PcapThread = new Thread(InitPcapWorker);
-                        
-                        // Phase 3: Устанавливаем высокий приоритет для одиночного PCAP потока
-                        SetHighPriorityThread(PcapThread, "PCAP-Single");
-                        
-                        PcapThread.Start();
-                        PcapThread.Join();
-                        Debug.Print("Starting thread " + PcapThread.ManagedThreadId.ToString());
-                    }
+                    // ИСПРАВЛЕНИЕ: Убираем проверку PcapThread == null
+                    // Просто вызываем InitPcapWorker() напрямую - он создаст BackgroundWorker
+                    DebugLogger.log("[StartTracking] Single-adapter mode - calling InitPcapWorker()");
+                    Debug.Print("[StartTracking] Single-adapter mode - calling InitPcapWorker()");
+                    InitPcapWorker();
+                    Debug.Print("[StartTracking] InitPcapWorker() called, BackgroundWorker started");
+                    DebugLogger.log("[StartTracking] InitPcapWorker() called, BackgroundWorker started");
                 }
             }
             catch (Exception ex)
