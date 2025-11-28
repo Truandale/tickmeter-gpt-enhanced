@@ -3184,8 +3184,8 @@ namespace tickMeter.Forms
                             int etwUploadBytes = (int)(etwUploadBytesPerSec * 1.0);
                             int etwDownloadBytes = (int)(etwDownloadBytesPerSec * 1.0);
                             
-                            App.meterState.DownloadTraffic = etwDownloadBytes;
-                            App.meterState.UploadTraffic = etwUploadBytes;
+                            App.meterState.DownloadTraffic += etwDownloadBytes;
+                            App.meterState.UploadTraffic += etwUploadBytes;
                             
                             // ДИАГНОСТИКА: Логируем переход на ETW
                             DebugLogger.log($"[ETW-VPN-FULL] Using FULL ETW traffic: download={etwDownloadBytesPerSec:F1} B/s ({etwDownloadBytes} bytes), upload={etwUploadBytesPerSec:F1} B/s ({etwUploadBytes} bytes)");
