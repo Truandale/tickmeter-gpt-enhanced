@@ -27,16 +27,31 @@ namespace tickMeter.Classes
 
         public static void AnalyzePacket(Packet packet)
         {
-            _packetCount++;
-            
-            // Логируем каждые 5 секунд
-            if ((DateTime.Now - _lastLogTime).TotalSeconds >= 5)
+            try
             {
-                DebugLogger.log($"[ActiveWindowTracker] Packets processed: {_packetCount}, connections: {connections.Count}");
-                _lastLogTime = DateTime.Now;
+                _packetCount++;
+                
+                // Логируем каждые 5 секунд
+                if ((DateTime.Now - _lastLogTime).TotalSeconds >= 5)
+                {
+                    DebugLogger.log($"[ActiveWindowTracker] Packets processed: {_packetCount}, connections: {connections.Count}");
+                    _lastLogTime = DateTime.Now;
+                }
+                
+                if (App.meterState.isBuiltInProfileActive || App.meterState.isCustomProfileActive) 
+                { 
+                    if (_packetCount < 3) // Log first few times
+                    {
+                        DebugLogger.log($"[ActiveWindowTracker] SKIPPED - Profile active (builtin={App.meterState.isBuiltInProfileActive}, custom={App.meterState.isCustomProfileActive})");
+                    }
+                    return; 
+                }
             }
-            
-            if (App.meterState.isBuiltInProfileActive || App.meterState.isCustomProfileActive) { return; }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[ActiveWindowTracker] EXCEPTION at start: {ex.Message}");
+                return;
+            }
             
             bool isEnabled = IsEnabled();
             if (!isEnabled)
@@ -92,6 +107,9 @@ namespace tickMeter.Classes
             uint packetSize = (uint)ip.TotalLength;
 
             string protocol = ip.Protocol.ToString();
+            
+            // Log packet details for debugging
+            DebugLogger.log($"[PCAP-PACKET] from={fromIp} to={toIp} protocol={protocol} size={packetSize} LocalIP={App.meterState.LocalIP}");
             uint fromPort = 0;
             uint toPort = 0;
             string processName = @"n\a";
@@ -160,6 +178,13 @@ namespace tickMeter.Classes
             }
 
             string activeProcess = AutoDetectMngr.GetActiveProcessName();
+            
+            // Log first few mismatches for debugging
+            if (_packetCount <= 20 && activeProcess != processName)
+            {
+                DebugLogger.log($"[PCAP-MISMATCH] activeProcess={activeProcess} != packetProcess={processName} from={fromIp} to={toIp}");
+            }
+            
             if (activeProcess != processName) { return; }
             uint remotePort = 0;
             uint localPort = 0;
@@ -168,6 +193,7 @@ namespace tickMeter.Classes
             {
                 if (App.meterState.LocalIP == toIp.ToString())
                 {
+                    DebugLogger.log($"[PCAP-INCOMING] from={fromIp} to={toIp} size={packetSize} activeProcess={activeProcess}");
                     switch (protocol.ToLower())
                     {
                         case "udp":
@@ -189,6 +215,7 @@ namespace tickMeter.Classes
                 }
                 else
                 {
+                    DebugLogger.log($"[PCAP-OUTGOING] from={fromIp} to={toIp} size={packetSize} activeProcess={activeProcess}");
                     switch (protocol.ToLower())
                     {
                         case "udp":

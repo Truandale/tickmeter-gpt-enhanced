@@ -44,6 +44,7 @@ namespace tickMeter.Classes
                     connections[hash].lastUpdate = tickTime;
                     connections[hash].downloaded += (int)traffic;
                     connections[hash].id = id;
+                    App.meterState.DownloadTraffic += (int)traffic;
                 }
                 if(tickOut > 0)
                 {
@@ -141,7 +142,17 @@ namespace tickMeter.Classes
                 processName = ETW.resolveProcessname(fromIp, toIp, fromPort, toPort);
             }
             string activeProcess = AutoDetectMngr.GetActiveProcessName();
-            if (activeProcess != processName) { return; }
+            
+            // In PCAP mode, we track ALL traffic, not just active window's process
+            // Only filter by process in autodetect mode
+            bool isPcapMode = App.settingsManager?.GetOption("use_windows_stats", "False", "ADVANCED") == "False";
+            
+            if (!isPcapMode && activeProcess != processName)
+            {
+                // Autodetect mode: only track active window's process
+                return;
+            }
+            
             uint remotePort = 0;
             uint localPort = 0;
             if (App.meterState.LocalIP == toIp.ToString())

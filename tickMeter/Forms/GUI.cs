@@ -670,6 +670,7 @@ namespace tickMeter.Forms
         public DbdStatsManager DbdMngr;
         public string targetKey = "";
         private int _gcCounter = 0; // Счётчик для периодической сборки мусора
+        private int _totalPacketsReceived = 0; // Счётчик всех полученных пакетов
         
         // Механизм быстрого старта для ускорения обнаружения метрик
         private DateTime _lastConnectionSearch = DateTime.MinValue;
@@ -1028,6 +1029,13 @@ namespace tickMeter.Forms
 
         private void PacketHandler(Packet packet)
         {
+            _totalPacketsReceived++;
+            
+            if (_totalPacketsReceived <= 5 || _totalPacketsReceived % 100 == 0)
+            {
+                DebugLogger.log($"[PacketHandler] Packet #{_totalPacketsReceived} received");
+            }
+            
             try 
             {
                 if (!App.meterState.IsTracking) return;
@@ -1132,16 +1140,24 @@ namespace tickMeter.Forms
             {
                 GameProfileManager.CallBuitInProfiles(packet);
                 GameProfileManager.CallCustomProfiles(packet);
+                
+                if (_totalPacketsReceived % 500 == 0)
+                {
+                    DebugLogger.log($"[GUI] Calling ActiveWindowTracker.AnalyzePacket for packet #{_totalPacketsReceived}");
+                }
+                
                 ActiveWindowTracker.AnalyzePacket(packet);
             }
-            catch (IndexOutOfRangeException)
+            catch (IndexOutOfRangeException ex)
             {
                 // Игнорируем поврежденные пакеты в профилях
+                DebugLogger.log($"[GUI] IndexOutOfRangeException in profile processing: {ex.Message}");
                 return;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // Игнорируем любые другие ошибки в обработке профилей
+                DebugLogger.log($"[GUI] Exception in profile processing: {ex.Message}");
                 return;
             }
 
