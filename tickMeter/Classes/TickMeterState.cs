@@ -383,6 +383,7 @@ namespace tickMeter
         public class GameServer
         {
             private string CurrentIP = "";
+            private string LastKnownIP = ""; // Сохраняем последний известный IP для проверки смены сервера
             public int PingPort { get; set; } = 0;
             private int gamePort;
             
@@ -1384,31 +1385,66 @@ namespace tickMeter
                 {
                     string oldIP = CurrentIP;
                     CurrentIP = value;
-                    if (oldIP != CurrentIP && !string.IsNullOrEmpty(CurrentIP))
+                    
+                    // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Сбрасываем счетчики только при смене РЕАЛЬНОГО IP сервера
+                    // Сравниваем с LastKnownIP, а не с oldIP (который может быть пустым после Reset())
+                    bool serverChanged = !string.IsNullOrEmpty(CurrentIP) && 
+                                        CurrentIP != LastKnownIP && 
+                                        !string.IsNullOrEmpty(LastKnownIP);
+                    
+                    if (!string.IsNullOrEmpty(CurrentIP))
                     {
-                        // Reset individual server data for new IP
-                        // This ensures each IP has its own fresh metrics
-                        TicksHistory.Clear();
-                        TickTimestamps.Clear();
-                        // TickrateGraph.Clear(); // ОТКЛЮЧЕНО: не очищаем график тикрейта для непрерывного отображения
-                        OutputTickRate = 0;
-                        AvgTickrate = 0;
-                        UploadTraffic = 0;
-                        DownloadTraffic = 0;
-                        TotalTicksCount = 0;
-                        LostTicks = 0;
-                        AvgStableTickrate = 0;
-                        TickRateLog = "";
-                        SessionStart = DateTime.Now;
-
-                        if (PingTimer == null || !PingTimer.Enabled)
+                        if (serverChanged)
                         {
-                            SetPingTimer();
+                            // Сервер действительно изменился - сбрасываем счетчики трафика
+                            Debug.Print($"[GameServer] IP changed: {LastKnownIP} -> {CurrentIP}, resetting traffic counters");
+                            UploadTraffic = 0;
+                            DownloadTraffic = 0;
+                            SessionStart = DateTime.Now;
                         }
-                        DetectLocation();
-                        consecutivePingFails = 0;
-                        currentFallbackPortIndex = -1;
-                        this.PingPort = this.GamePort > 0 ? this.GamePort : 0;
+                        else if (string.IsNullOrEmpty(LastKnownIP))
+                        {
+                            // Первая установка IP - инициализируем счетчики
+                            Debug.Print($"[GameServer] Initial IP set: {CurrentIP}");
+                            UploadTraffic = 0;
+                            DownloadTraffic = 0;
+                            SessionStart = DateTime.Now;
+                        }
+                        else
+                        {
+                            // Тот же IP - НЕ сбрасываем счетчики, они продолжают накапливаться
+                            Debug.Print($"[GameServer] IP unchanged: {CurrentIP}, preserving traffic counters (DL={DownloadTraffic}, UL={UploadTraffic})");
+                        }
+                        
+                        // КРИТИЧЕСКОЕ: Инициализация метрик ТОЛЬКО при первом запуске или реальной смене сервера
+                        bool needsInitialization = string.IsNullOrEmpty(LastKnownIP) || serverChanged;
+                        
+                        // Обновляем LastKnownIP для следующей проверки
+                        LastKnownIP = CurrentIP;
+                        
+                        if (needsInitialization)
+                        {
+                            // Reset individual server data for new IP
+                            // This ensures each IP has its own fresh metrics
+                            TicksHistory.Clear();
+                            TickTimestamps.Clear();
+                            // TickrateGraph.Clear(); // ОТКЛЮЧЕНО: не очищаем график тикрейта для непрерывного отображения
+                            OutputTickRate = 0;
+                            AvgTickrate = 0;
+                            TotalTicksCount = 0;
+                            LostTicks = 0;
+                            AvgStableTickrate = 0;
+                            TickRateLog = "";
+
+                            if (PingTimer == null || !PingTimer.Enabled)
+                            {
+                                SetPingTimer();
+                            }
+                            DetectLocation();
+                            consecutivePingFails = 0;
+                            currentFallbackPortIndex = -1;
+                            this.PingPort = this.GamePort > 0 ? this.GamePort : 0;
+                        }
                     }
                 }
             }
@@ -1437,6 +1473,9 @@ namespace tickMeter
             internal void Reset()
             {
                 CurrentIP = "";
+                // КРИТИЧЕСКОЕ: НЕ очищаем LastKnownIP - он нужен для проверки смены сервера
+                // LastKnownIP сохраняется между вызовами Reset()
+                
                 ExternalIp = "";
                 Location = "N/A";
                 PingPort = 0;
@@ -1452,12 +1491,14 @@ namespace tickMeter
                 OutputTickRate = 0;
                 AvgTickrate = 0;
                 
-                // Reset individual traffic data
-                UploadTraffic = 0;
-                DownloadTraffic = 0;
+                // ИСПРАВЛЕНИЕ: НЕ сбрасываем счетчики трафика в Reset()
+                // Счетчики должны сбрасываться ТОЛЬКО при смене IP в Ip setter
+                // UploadTraffic = 0;
+                // DownloadTraffic = 0;
                 
                 // Reset individual session data
-                SessionStart = DateTime.Now;
+                // НЕ сбрасываем SessionStart - он сохраняется для текущего IP
+                // SessionStart = DateTime.Now;
                 
                 // Reset individual loss data
                 TotalTicksCount = 0;

@@ -7,6 +7,7 @@ using System.Net.NetworkInformation;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using PcapDotNet.Core;
+using PcapDotNet.Core.Extensions;
 using PcapDotNet.Packets;
 using System.Threading.Tasks;
 using System.Security.Permissions;
@@ -489,25 +490,30 @@ namespace tickMeter.Forms
 
         private void AutoResumeMonitoringIfNeeded()
         {
+            DebugLogger.log("[Automation] AutoResumeMonitoringIfNeeded CALLED");
             try
             {
-                // Проверяем настройки VPN bypass - если включены, запускаем мониторинг принудительно
-                bool vpnBypassBasic = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
-                bool vpnBypassAdvanced = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+                // Проверяем настройку автозапуска мониторинга
+                bool autoStartMonitoring = App.settingsManager.GetOption("auto_start_monitoring", "True", "SETTINGS") == "True";
+                DebugLogger.log($"[Automation] Auto-start monitoring setting: {autoStartMonitoring}");
                 
-                if (vpnBypassBasic || vpnBypassAdvanced)
+                // Если автозапуск включен - запускаем мониторинг безусловно
+                if (autoStartMonitoring)
                 {
-                    Debug.Print("[Automation] VPN bypass mode detected - starting monitoring automatically");
-                    if (App.meterState == null || !App.meterState.IsTracking)
-                    {
-                        StartTracking();
-                    }
+                    DebugLogger.log("[Automation] Auto-start enabled - starting monitoring automatically");
+                    Debug.Print("[Automation] Auto-start enabled - starting monitoring automatically");
+                    // Всегда вызываем StartTracking - он сам проверит нужно ли запускать захват
+                    DebugLogger.log("[Automation] Calling StartTracking()...");
+                    StartTracking();
+                    DebugLogger.log("[Automation] StartTracking() completed");
                     return;
                 }
                 
+                // Если автозапуск выключен - проверяем snapshot для восстановления предыдущей сессии
                 var snapshot = LoadMonitoringSnapshot();
                 if (snapshot == null)
                 {
+                    DebugLogger.log("[Automation] No snapshot found, skipping auto-resume");
                     return;
                 }
 
@@ -2413,25 +2419,40 @@ namespace tickMeter.Forms
             string bestConnection = "";
             int bestTicks = 0;
             
+            DebugLogger.log($"[FindBestConnection] ENTRY: strict={strict}");
             try
             {
                 lock(ActiveWindowTracker.connectionsLock)
                 {
+                    DebugLogger.log($"[FindBestConnection] Total connections: {ActiveWindowTracker.connections.Count}");
+                    
                     foreach(var kvp in ActiveWindowTracker.connections)
                     {
+                        DebugLogger.log($"[FindBestConnection] Checking connection: {kvp.Key}, ticksIn={kvp.Value.ticksIn}, bestTicks={bestTicks}");
+                        
                         // Сначала проверяем быстрые условия
-                        if (kvp.Value.ticksIn <= bestTicks) continue;
+                        if (kvp.Value.ticksIn <= bestTicks)
+                        {
+                            DebugLogger.log($"[FindBestConnection] Skipped (ticksIn <= bestTicks)");
+                            continue;
+                        }
                         
                         // Только потом дорогую валидацию с lock
-                        if (isValidToTrack(kvp.Key, strict))
+                        DebugLogger.log($"[FindBestConnection] Calling isValidToTrack('{kvp.Key}', strict={strict})");
+                        bool isValid = isValidToTrack(kvp.Key, strict);
+                        DebugLogger.log($"[FindBestConnection] isValidToTrack returned: {isValid}");
+                        
+                        if (isValid)
                         {
                             bestTicks = kvp.Value.ticksIn;
                             bestConnection = kvp.Key;
+                            DebugLogger.log($"[FindBestConnection] New best: '{bestConnection}' with {bestTicks} ticks");
                             
                             // Ранний выход: если нашли соединение с высоким ticksIn - прерываем поиск
                             // Это экономит проверку оставшихся соединений
                             if (bestTicks > 100)
                             {
+                                DebugLogger.log($"[FindBestConnection] Early exit: found excellent connection with {bestTicks} ticks");
                                 Debug.Print($"[FindBestConnection] Early exit: found excellent connection with {bestTicks} ticks");
                                 break;
                             }
@@ -2441,9 +2462,11 @@ namespace tickMeter.Forms
             }
             catch (InvalidOperationException ex)
             {
+                DebugLogger.log($"[FindBestConnection] Exception: {ex.Message}");
                 Debug.Print($"[FindBestConnection] Exception: {ex.Message}");
             }
             
+            DebugLogger.log($"[FindBestConnection] RETURN: '{bestConnection}' with {bestTicks} ticks");
             return bestConnection;
         }
         
@@ -2546,6 +2569,7 @@ namespace tickMeter.Forms
                 // Даже если метрики еще не найдены
                 if (currentActiveProcess != previousProcessName)
                 {
+                    DebugLogger.log($"[updateMetherStateFromActiveWindow] Process CHANGED, updating Game");
                     App.meterState.Game = currentActiveProcess;
                     
                     // Для системных процессов в VPN режиме очищаем соединения чтобы показать "NO TRAFFIC"
@@ -2594,9 +2618,11 @@ namespace tickMeter.Forms
 
             // === ПРОВЕРКА СМЕНЫ АКТИВНОГО ОКНА/ПРОЦЕССА ===
             // КРИТИЧНО: Проверяем ДО любых других проверок!
+            DebugLogger.log($"[updateMetherStateFromActiveWindow] Checking process change: isEmpty={string.IsNullOrEmpty(previousProcessName)}, different={previousProcessName != currentActiveProcess}");
             if (!string.IsNullOrEmpty(previousProcessName) && 
                 previousProcessName != currentActiveProcess)
             {
+                DebugLogger.log($"[Metrics] ⚡ ACTIVE WINDOW CHANGED: {previousProcessName} -> {currentActiveProcess}");
                 Debug.Print($"[Metrics] ⚡ ACTIVE WINDOW CHANGED: {previousProcessName} -> {currentActiveProcess}");
                 
                 // ВСЕГДА сбрасываем состояние при смене процесса
@@ -2674,6 +2700,7 @@ namespace tickMeter.Forms
                 // Метрики не идут ИЛИ targetKey невалиден
                 
                 // Если метрики были активны, но targetKey невалиден - применяем HYSTERESIS
+                DebugLogger.log($"[updateMetherStateFromActiveWindow] Metrics inactive or targetKey invalid. _metricsActive={_metricsActive}, targetKeyValid={targetKeyValid}");
                 if (_metricsActive && !string.IsNullOrEmpty(targetKey))
                 {
                     _invalidTargetCount++;
@@ -2729,9 +2756,11 @@ namespace tickMeter.Forms
                 // Проверяем cooldown для поиска соединений
                 TimeSpan timeSinceLastSearch = DateTime.Now - _lastConnectionSearch;
                 
+                DebugLogger.log($"[updateMetherStateFromActiveWindow] Checking cooldown: timeSinceLastSearch={timeSinceLastSearch.TotalMilliseconds}ms, cooldown={_searchCooldown.TotalMilliseconds}ms");
                 if (timeSinceLastSearch < _searchCooldown)
                 {
                     // Слишком рано для повторного поиска
+                    DebugLogger.log($"[Metrics] Cooldown active, waiting {(_searchCooldown - timeSinceLastSearch).TotalMilliseconds:F0}ms");
                     Debug.Print($"[Metrics] Cooldown active, waiting {(_searchCooldown - timeSinceLastSearch).TotalMilliseconds:F0}ms");
                     // Но перед возвратом проверим, не включён ли fast mode слишком долго
                     try
@@ -2748,6 +2777,7 @@ namespace tickMeter.Forms
                 }
                 
                 _lastConnectionSearch = DateTime.Now;
+                DebugLogger.log($"[updateMetherStateFromActiveWindow] Cooldown passed, continuing search. _metricsActive={_metricsActive}");
                 
                 // Если метрики не активны - включаем режим быстрого старта
                 if (!_metricsActive)
@@ -2825,15 +2855,19 @@ namespace tickMeter.Forms
             } // Закрываем блок else
             
             // === ТРЕХУРОВНЕВАЯ СТРАТЕГИЯ ПОИСКА СОЕДИНЕНИЯ ===
+            DebugLogger.log($"[updateMetherStateFromActiveWindow] Starting connection search. targetKeyValid={targetKeyValid}, targetKey='{targetKey}'");
             
             // УРОВЕНЬ 1: Проверяем текущий targetKey (строгий режим)
             // Используем кэшированный результат валидации
             if(!targetKeyValid)
             {
+                DebugLogger.log($"[Metrics] Current targetKey '{targetKey}' invalid (strict), searching for best connection...");
                 Debug.Print($"[Metrics] Current targetKey '{targetKey}' invalid (strict), searching for best connection...");
                 
                 // УРОВЕНЬ 2: Ищем лучшее соединение (строгий режим)
+                DebugLogger.log($"[updateMetherStateFromActiveWindow] Calling FindBestConnection(strict: true)");
                 string bestConnection = FindBestConnection(strict: true);
+                DebugLogger.log($"[updateMetherStateFromActiveWindow] FindBestConnection returned: '{bestConnection}'");
                 
                 if (!string.IsNullOrEmpty(bestConnection))
                 {
@@ -2913,6 +2947,7 @@ namespace tickMeter.Forms
                     Debug.Print($"[Metrics] ⚠️ Metrics deactivated - connection lost, activating fast search");
                 }
 
+                Debug.Print($"[TRAFFIC DEBUG] ResetMetricsState called from line 2916 (targetKey empty), currentProcess={currentActiveProcess}");
                 ResetMetricsState(currentActiveProcess);
             }
             
@@ -3871,18 +3906,40 @@ namespace tickMeter.Forms
                 }
                 else
                 {
+                    // Фоллбэк: пытаемся загрузить last_selected_adapter из settings
                     if (deviceId == 0)
                     {
-                        Debug.Print("[StartTracking] ERROR: Please select a network adapter in settings (deviceId=0 means no adapter selected)");
-                        MessageBox.Show("Пожалуйста, выберите сетевой адаптер в настройках.\n\nОткройте Settings → Network Settings и выберите ваш основной сетевой адаптер.", 
-                                        "Сетевой адаптер не выбран", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        Debug.Print("[StartTracking] deviceId=0, trying to load last_selected_adapter from settings...");
+                        string adapterGuid = App.settingsManager.GetOption("last_selected_adapter");
+                        if (!string.IsNullOrEmpty(adapterGuid))
+                        {
+                            Debug.Print($"[StartTracking] Found last_selected_adapter: {adapterGuid}");
+                            foreach (var device in devices)
+                            {
+                                if (device.GetGuid().ToLower().Equals(adapterGuid.ToLower()))
+                                {
+                                    selectedAdapter = device;
+                                    Debug.Print($"[StartTracking] Restored adapter from GUID: {device.Name} - {device.Description}");
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (selectedAdapter == null)
+                        {
+                            Debug.Print("[StartTracking] ERROR: Could not restore adapter from last_selected_adapter");
+                            MessageBox.Show("Пожалуйста, выберите сетевой адаптер в настройках.\n\nОткройте Settings → Network Settings и выберите ваш основной сетевой адаптер.", 
+                                            "Сетевой адаптер не выбран", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            _pendingRestoreTargetKey = string.Empty;
+                            return;
+                        }
                     }
                     else
                     {
                         Debug.Print($"[StartTracking] ERROR: Invalid deviceId {deviceId} for {devices.Count} devices");
+                        _pendingRestoreTargetKey = string.Empty;
+                        return;
                     }
-                    _pendingRestoreTargetKey = string.Empty;
-                    return;
                 }
             }
             

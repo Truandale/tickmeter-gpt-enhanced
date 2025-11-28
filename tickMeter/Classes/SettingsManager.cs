@@ -95,7 +95,7 @@ namespace tickMeter
             // === ОСНОВНЫЕ [SETTINGS] НАСТРОЙКИ ===
             SetOption("rtss", "True", "SETTINGS");
             SetOption("autodetect", "True", "SETTINGS");
-            SetOption("capture_all_adapters", "True", "SETTINGS");
+            SetOption("capture_all_adapters", "False", "SETTINGS");
             SetOption("chart", "True", "SETTINGS");
             SetOption("ip", "True", "SETTINGS");
             SetOption("tickrate", "True", "SETTINGS");
@@ -129,6 +129,7 @@ namespace tickMeter
             SetOption("color_chart", "FF0080", "SETTINGS");
             SetOption("last_selected_adapter", "", "SETTINGS");
             SetOption("local_ip", "", "SETTINGS");
+            SetOption("auto_start_monitoring", "True", "SETTINGS"); // Автозапуск мониторинга при старте программы
             
             // === ADVANCED НАСТРОЙКИ ===
             SetOption("live_max_rows_enabled", "True", "ADVANCED");

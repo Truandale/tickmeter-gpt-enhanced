@@ -15,6 +15,10 @@ namespace tickMeter.Classes
         public static Dictionary<string, ProcessNetworkStats> connections = new Dictionary<string, ProcessNetworkStats>();
         public static readonly object connectionsLock = new object();
         
+        // Диагностика
+        private static int _packetCount = 0;
+        private static DateTime _lastLogTime = DateTime.MinValue;
+        
         // Кэш для Windows Statistics в обычном режиме
         private static long _lastTotalDownloaded = 0;
         private static long _lastTotalUploaded = 0;
@@ -23,8 +27,27 @@ namespace tickMeter.Classes
 
         public static void AnalyzePacket(Packet packet)
         {
+            _packetCount++;
+            
+            // Логируем каждые 5 секунд
+            if ((DateTime.Now - _lastLogTime).TotalSeconds >= 5)
+            {
+                DebugLogger.log($"[ActiveWindowTracker] Packets processed: {_packetCount}, connections: {connections.Count}");
+                _lastLogTime = DateTime.Now;
+            }
+            
             if (App.meterState.isBuiltInProfileActive || App.meterState.isCustomProfileActive) { return; }
-            if (!IsEnabled()) return;
+            
+            bool isEnabled = IsEnabled();
+            if (!isEnabled)
+            {
+                if (_packetCount < 5) // Логируем только первые 5 раз
+                {
+                    DebugLogger.log("[ActiveWindowTracker] AnalyzePacket: NOT ENABLED (autodetect=False)");
+                }
+                return;
+            }
+            
             if (packet?.Ethernet == null) return; // Защита от null/поврежденных пакетов
             
             IpV4Datagram ip;
