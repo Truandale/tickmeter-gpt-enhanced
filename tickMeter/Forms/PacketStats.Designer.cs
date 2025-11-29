@@ -62,7 +62,7 @@ namespace tickMeter
             this.columnHeader10 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.active_refresh = new System.Windows.Forms.Timer(this.components);
-            this.listView1 = new tickMeter.Classes.ListViewNF();
+            this.listView1 = new System.Windows.Forms.ListView();
             this.time = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.ID = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.to_ip = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -423,7 +423,7 @@ namespace tickMeter
         private Button stop;
         private Button clear;
         private StatusStrip statusStrip1;
-        public ListViewNF listView1;
+        private System.Windows.Forms.ListView listView1;
         private Timer RefreshTimer;
         private Button filter;
         private GroupBox groupBox1;

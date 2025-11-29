@@ -93,6 +93,28 @@ namespace tickMeter
         public PacketStats()
         {
             InitializeComponent();
+            
+            // Заменяем стандартный ListView на оптимизированный ListViewNF
+            var oldListView = listView1;
+            listView1 = new tickMeter.Classes.ListViewNF();
+            listView1.Activation = oldListView.Activation;
+            listView1.AllowColumnReorder = oldListView.AllowColumnReorder;
+            listView1.Columns.AddRange(oldListView.Columns.Cast<System.Windows.Forms.ColumnHeader>().ToArray());
+            listView1.FullRowSelect = oldListView.FullRowSelect;
+            listView1.GridLines = oldListView.GridLines;
+            listView1.HideSelection = oldListView.HideSelection;
+            listView1.HoverSelection = oldListView.HoverSelection;
+            listView1.Location = oldListView.Location;
+            listView1.Margin = oldListView.Margin;
+            listView1.MinimumSize = oldListView.MinimumSize;
+            listView1.Name = oldListView.Name;
+            listView1.Size = oldListView.Size;
+            listView1.TabIndex = oldListView.TabIndex;
+            listView1.UseCompatibleStateImageBehavior = oldListView.UseCompatibleStateImageBehavior;
+            listView1.View = oldListView.View;
+            this.Controls.Remove(oldListView);
+            this.Controls.Add(listView1);
+            
             packetFilter = new PacketFilter();
 
             // Инициализация VirtualMode на основе настроек
