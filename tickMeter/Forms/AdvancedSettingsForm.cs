@@ -39,14 +39,7 @@ namespace tickMeter.Forms
         
         // НОВАЯ ОПТИМИЗАЦИЯ: Кэширование дорогих операций для ускорения повторной загрузки
         private Dictionary<int, List<Control>> _tabControlsCache = new Dictionary<int, List<Control>>();
-        private Dictionary<string, object> _settingsCache = new Dictionary<string, object>();
-        private bool _enableSettingsCache = true;
-        
-        // НОВАЯ ОПТИМИЗАЦИЯ: Кэш состояний контролов для мгновенного применения
-        // КРИТИЧНО: Статический кэш сохраняется между открытиями формы
-        private static Dictionary<string, object> _controlStatesCache = new Dictionary<string, object>();
         private bool _isDirty = false; // Флаг изменения настроек
-        private static DateTime _settingsLastModified = DateTime.MinValue; // Timestamp для валидации кэша
 
         public AdvancedSettingsForm()
         {
@@ -212,39 +205,9 @@ namespace tickMeter.Forms
                 // Загружаем настройки для таба (ленивая загрузка настроек)
                 if (!_loadedSettingsTabs.Contains(tabIndex))
                 {
-                    // КРИТИЧЕСКАЯ ВАЛИДАЦИЯ: Проверяем актуальность кэша
-                    bool cacheValid = ValidateCacheTimestamp();
-                    bool restoredFromCache = false;
-                    
-                    if (cacheValid)
-                    {
-                        // НОВАЯ ОПТИМИЗАЦИЯ: Пытаемся восстановить из кэша состояний
-                        restoredFromCache = RestoreTabStates(tabIndex);
-                        
-                        // ДОПОЛНИТЕЛЬНАЯ ВАЛИДАЦИЯ: Выборочная проверка критичных значений
-                        if (restoredFromCache && !ValidateRestoredValues(tabIndex))
-                        {
-                            DebugLogger.log($"[Cache] Tab {tabIndex}: validation failed, reloading from file");
-                            restoredFromCache = false;
-                        }
-                    }
-                    else
-                    {
-                        DebugLogger.log($"[Cache] Tab {tabIndex}: cache timestamp invalid");
-                    }
-                    
-                    // Если не удалось восстановить из кэша - загружаем из конфига
-                    if (!restoredFromCache)
-                    {
-                        DebugLogger.log($"[Cache] Tab {tabIndex}: loading from settings file");
-                        LoadTabSettings(tabIndex);
-                        // Кэшируем загруженные состояния для последующего использования
-                        CacheTabStates(tabIndex);
-                        // Обновляем timestamp
-                        _settingsLastModified = DateTime.Now;
-                        DebugLogger.log($"[Cache] Tab {tabIndex}: cached after loading");
-                    }
-                    
+                    // Загружаем настройки напрямую из конфига без кэширования
+                    DebugLogger.log($"[Settings] Tab {tabIndex}: loading from settings file");
+                    LoadTabSettings(tabIndex);
                     _loadedSettingsTabs.Add(tabIndex);
                 }
                 
@@ -320,21 +283,7 @@ namespace tickMeter.Forms
         /// </summary>
         private string GetCachedSetting(string key, string defaultValue = "", string section = "SETTINGS")
         {
-            if (!_enableSettingsCache || App.settingsManager == null)
-            {
-                return App.settingsManager?.GetOption(key, defaultValue, section) ?? defaultValue;
-            }
-            
-            string cacheKey = $"{section}:{key}";
-            
-            if (!_settingsCache.ContainsKey(cacheKey))
-            {
-                string value = App.settingsManager.GetOption(key, defaultValue, section);
-                _settingsCache[cacheKey] = value;
-                return value;
-            }
-            
-            return _settingsCache[cacheKey] as string ?? defaultValue;
+            return App.settingsManager?.GetOption(key, defaultValue, section) ?? defaultValue;
         }
         
         /// <summary>
@@ -342,7 +291,6 @@ namespace tickMeter.Forms
         /// </summary>
         private void InvalidateSettingsCache()
         {
-            _settingsCache.Clear();
             _isDirty = false;
         }
         
@@ -351,106 +299,7 @@ namespace tickMeter.Forms
         /// </summary>
         private void InvalidateControlStateCache()
         {
-            _controlStatesCache.Clear();
-        }
-        
-        /// <summary>
-        /// КРИТИЧЕСКАЯ ВАЛИДАЦИЯ: Проверяет актуальность кэша по timestamp настроек
-        /// </summary>
-        private bool ValidateCacheTimestamp()
-        {
-            try
-            {
-                if (_settingsLastModified == DateTime.MinValue)
-                {
-                    // Кэш еще не инициализирован
-                    return false;
-                }
-                
-                // Проверяем timestamp файла настроек
-                string settingsPath = System.IO.Path.Combine(
-                    System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
-                    "settings.ini"
-                );
-                
-                if (System.IO.File.Exists(settingsPath))
-                {
-                    var fileTime = System.IO.File.GetLastWriteTime(settingsPath);
-                    
-                    // Если файл изменился после создания кэша - кэш устарел
-                    if (fileTime > _settingsLastModified)
-                    {
-                        DebugLogger.log($"[Cache] Settings file modified, invalidating cache");
-                        InvalidateControlStateCache();
-                        return false;
-                    }
-                }
-                
-                return true;
-            }
-            catch (Exception ex)
-            {
-                DebugLogger.log($"[Cache] Timestamp validation error: {ex.Message}");
-                return false;
-            }
-        }
-        
-        /// <summary>
-        /// КРИТИЧЕСКАЯ ВАЛИДАЦИЯ: Выборочно проверяет восстановленные значения
-        /// </summary>
-        private bool ValidateRestoredValues(int tabIndex)
-        {
-            try
-            {
-                if (App.settingsManager == null) return true;
-                
-                // Выборочная проверка критичных настроек (5-10% от общего числа)
-                // Это баланс между производительностью и надежностью
-                
-                switch (tabIndex)
-                {
-                    case 0: // Basic Settings
-                        // Проверяем критичную настройку capture_all_adapters
-                        if (tabControl1?.TabPages[0] != null)
-                        {
-                            var chkCapture = tabControl1.TabPages[0].Controls.Find("chkCaptureAllAdapters", true).FirstOrDefault() as CheckBox;
-                            if (chkCapture != null)
-                            {
-                                bool expected = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
-                                if (chkCapture.Checked != expected)
-                                {
-                                    System.Diagnostics.Debug.Print($"[Cache] Validation failed: capture_all_adapters mismatch");
-                                    return false;
-                                }
-                            }
-                        }
-                        break;
-                        
-                    case 1: // Universal Settings
-                        // Проверяем ping_tcp_prefer
-                        if (tabControl1?.TabPages[1] != null)
-                        {
-                            var chkTcp = tabControl1.TabPages[1].Controls.Find("chkPingTcpPrefer", true).FirstOrDefault() as CheckBox;
-                            if (chkTcp != null)
-                            {
-                                bool expected = App.settingsManager.GetOption("ping_tcp_prefer", "True", "SETTINGS") == "True";
-                                if (chkTcp.Checked != expected)
-                                {
-                                    System.Diagnostics.Debug.Print($"[Cache] Validation failed: ping_tcp_prefer mismatch");
-                                    return false;
-                                }
-                            }
-                        }
-                        break;
-                }
-                
-                return true;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.Print($"[Cache] Value validation error: {ex.Message}");
-                return false; // При ошибке валидации - перезагружаем из файла
-            }
+            // Removed: control states caching disabled
         }
         
         /// <summary>
@@ -459,192 +308,7 @@ namespace tickMeter.Forms
         /// </summary>
         private void UpdateControlStatesCacheAfterSave()
         {
-            try
-            {
-                // Обновляем кэш только для загруженных табов
-                foreach (int tabIndex in _loadedSettingsTabs)
-                {
-                    CacheTabStates(tabIndex);
-                }
-                
-                DebugLogger.log($"[AdvancedSettings] Updated control states cache for {_loadedSettingsTabs.Count} tabs");
-            }
-            catch (Exception ex)
-            {
-                DebugLogger.log($"[AdvancedSettings] Error updating control states cache: {ex.Message}");
-            }
-        }
-        
-        /// <summary>
-        /// НОВАЯ ОПТИМИЗАЦИЯ: Кэширует состояние контрола для быстрого восстановления
-        /// </summary>
-        private void CacheControlState(Control control)
-        {
-            if (control == null) return;
-            
-            string key = $"{control.Parent?.Name ?? "root"}:{control.Name}";
-            
-            try
-            {
-                if (control is CheckBox chk)
-                {
-                    _controlStatesCache[key] = chk.Checked;
-                }
-                else if (control is RadioButton radio)
-                {
-                    _controlStatesCache[key] = radio.Checked;
-                }
-                else if (control is TextBox txt)
-                {
-                    _controlStatesCache[key] = txt.Text;
-                }
-                else if (control is NumericUpDown num)
-                {
-                    _controlStatesCache[key] = num.Value;
-                }
-                else if (control is ComboBox cmb)
-                {
-                    // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Кэшируем и индекс и текст
-                    _controlStatesCache[key + ":index"] = cmb.SelectedIndex;
-                    _controlStatesCache[key + ":text"] = cmb.Text ?? string.Empty;
-                }
-            }
-            catch { }
-        }
-        
-        /// <summary>
-        /// НОВАЯ ОПТИМИЗАЦИЯ: Восстанавливает состояние контрола из кэша
-        /// </summary>
-        private bool RestoreControlState(Control control)
-        {
-            if (control == null) return false;
-            
-            string key = $"{control.Parent?.Name ?? "root"}:{control.Name}";
-            
-            if (!_controlStatesCache.ContainsKey(key)) return false;
-            
-            try
-            {
-                object cachedValue = _controlStatesCache[key];
-                
-                if (control is CheckBox chk && cachedValue is bool bVal)
-                {
-                    chk.Checked = bVal;
-                    return true;
-                }
-                else if (control is RadioButton radio && cachedValue is bool rVal)
-                {
-                    radio.Checked = rVal;
-                    return true;
-                }
-                else if (control is TextBox txt && cachedValue is string sVal)
-                {
-                    txt.Text = sVal;
-                    return true;
-                }
-                else if (control is NumericUpDown num && cachedValue is decimal dVal)
-                {
-                    num.Value = dVal;
-                    return true;
-                }
-                else if (control is ComboBox cmb)
-                {
-                    // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Восстанавливаем и индекс и текст
-                    bool restored = false;
-                    
-                    string indexKey = key + ":index";
-                    string textKey = key + ":text";
-                    
-                    if (_controlStatesCache.ContainsKey(indexKey) && 
-                        _controlStatesCache[indexKey] is int iVal)
-                    {
-                        if (iVal >= -1 && iVal < cmb.Items.Count)
-                        {
-                            cmb.SelectedIndex = iVal;
-                            restored = true;
-                        }
-                    }
-                    
-                    if (_controlStatesCache.ContainsKey(textKey) && 
-                        _controlStatesCache[textKey] is string txtVal)
-                    {
-                        cmb.Text = txtVal;
-                        restored = true;
-                    }
-                    
-                    return restored;
-                }
-            }
-            catch { }
-            
-            return false;
-        }
-        
-        /// <summary>
-        /// НОВАЯ ОПТИМИЗАЦИЯ: Кэширует состояния всех контролов таба
-        /// </summary>
-        private void CacheTabStates(int tabIndex)
-        {
-            if (tabControl1 == null || tabIndex < 0 || tabIndex >= tabControl1.TabPages.Count) return;
-            TabPage tabPage = tabControl1.TabPages[tabIndex];
-            if (tabPage == null) return;
-            
-            // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Гарантируем наличие списка контролов
-            var controls = GetCachedTabControls(tabIndex, tabPage);
-            if (controls == null || controls.Count == 0) return;
-            
-            foreach (var control in controls)
-            {
-                CacheControlState(control);
-            }
-        }
-        
-        /// <summary>
-        /// НОВАЯ ОПТИМИЗАЦИЯ: Восстанавливает состояния контролов таба из кэша
-        /// КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Требует полного восстановления для надежности
-        /// </summary>
-        private bool RestoreTabStates(int tabIndex)
-        {
-            if (tabControl1 == null || tabIndex < 0 || tabIndex >= tabControl1.TabPages.Count) return false;
-            TabPage tabPage = tabControl1.TabPages[tabIndex];
-            if (tabPage == null) return false;
-            
-            var controls = GetCachedTabControls(tabIndex, tabPage);
-            if (controls == null || controls.Count == 0) return false;
-            
-            // Подсчитываем только кэшируемые контролы
-            int cacheableCount = 0;
-            int restoredCount = 0;
-            
-            foreach (var control in controls)
-            {
-                // Проверяем типы которые мы кэшируем
-                if (control is CheckBox || control is RadioButton || 
-                    control is TextBox || control is NumericUpDown || control is ComboBox)
-                {
-                    cacheableCount++;
-                    if (RestoreControlState(control))
-                    {
-                        restoredCount++;
-                    }
-                }
-            }
-            
-            // КРИТИЧЕСКАЯ ПРОВЕРКА: Восстановлено не менее 90% контролов
-            // (допускаем 10% погрешность на динамические контролы)
-            bool fullyRestored = cacheableCount > 0 && 
-                                 (restoredCount >= cacheableCount * 0.9);
-            
-            if (fullyRestored)
-            {
-                DebugLogger.log($"[Cache] Tab {tabIndex}: restored {restoredCount}/{cacheableCount} controls from cache");
-            }
-            else
-            {
-                DebugLogger.log($"[Cache] Tab {tabIndex}: incomplete restore ({restoredCount}/{cacheableCount}), will reload from file");
-            }
-            
-            return fullyRestored;
+            // Removed: control states caching disabled
         }
         
         /// <summary>
@@ -1257,7 +921,6 @@ namespace tickMeter.Forms
             {
                 // НОВАЯ ОПТИМИЗАЦИЯ: Сброс кэша настроек (он зависит от файла)
                 InvalidateSettingsCache();
-                // НЕ очищаем _controlStatesCache - он будет обновлен из контролов после сохранения
                 
                 // Live View настройки
                 App.settingsManager.SetOption("live_max_rows_enabled", chkLiveMaxRows.Checked.ToString(), "ADVANCED");
@@ -1368,9 +1031,6 @@ namespace tickMeter.Forms
                 // КРИТИЧЕСКАЯ ОПТИМИЗАЦИЯ: Обновляем кэш состояний из текущих контролов
                 // чтобы следующая загрузка была мгновенной
                 UpdateControlStatesCacheAfterSave();
-                
-                // КРИТИЧЕСКАЯ ВАЛИДАЦИЯ: Обновляем timestamp для проверки актуальности
-                _settingsLastModified = DateTime.Now;
                 
                 MessageBox.Show("Настройки сохранены", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
@@ -1654,7 +1314,6 @@ namespace tickMeter.Forms
             
             // Пересоздаем кэш состояний после загрузки
             UpdateControlStatesCacheAfterSave();
-            _settingsLastModified = DateTime.Now;
             
             // Сохраняем все изменения
             SaveSettings();
@@ -2766,6 +2425,14 @@ namespace tickMeter.Forms
 
         private void CmbColorZoneProfile_SelectedIndexChanged(object sender, EventArgs e)
         {
+            // Защита от рекурсивных вызовов во время загрузки
+            if (_isLoadingSettings)
+            {
+                System.Diagnostics.Debug.Print($"[ColorZoneProfile] Skipped - loading in progress");
+                DebugLogger.log($"[ColorZoneProfile] Skipped - loading in progress");
+                return;
+            }
+            
             try
             {
                 // Защита от COM ошибок при работе с ComboBox
@@ -2777,34 +2444,58 @@ namespace tickMeter.Forms
 
                 string selectedProfile = cmbColorZoneProfile.SelectedItem?.ToString() ?? "Medium";
                 System.Diagnostics.Debug.Print($"[ColorZoneProfile] Selected: {selectedProfile}");
+                DebugLogger.log($"[ColorZoneProfile] Selected: {selectedProfile}");
                 
                 var profile = ColorZoneProfile.GetProfile(selectedProfile);
+                System.Diagnostics.Debug.Print($"[ColorZoneProfile] Profile loaded - Ping Green: {profile.PingGreenMs}, Yellow: {profile.PingYellowMs}");
+                DebugLogger.log($"[ColorZoneProfile] Profile loaded - Ping Green: {profile.PingGreenMs}, Yellow: {profile.PingYellowMs}");
                 
-                // Update numeric controls с защитой от COM ошибок
-                Application.DoEvents(); // Обрабатываем pending UI events
+                // КРИТИЧНО: Устанавливаем флаг чтобы избежать рекурсии
+                _isLoadingSettings = true;
                 
-                numPingGreen.Value = (decimal)profile.PingGreenMs;
-                numPingYellow.Value = (decimal)profile.PingYellowMs;
-                numTickrateGreen.Value = (decimal)profile.TickrateGreenRatio;
-                numTickrateYellow.Value = (decimal)profile.TickrateYellowRatio;
-                numTicktimeGreen.Value = (decimal)profile.TicktimeGreenRatio;
-                numTicktimeYellow.Value = (decimal)profile.TicktimeYellowRatio;
-                
-                // Enable/disable controls
-                bool isCustom = selectedProfile == "Custom";
-                numPingGreen.Enabled = isCustom;
-                numPingYellow.Enabled = isCustom;
-                numTickrateGreen.Enabled = isCustom;
-                numTickrateYellow.Enabled = isCustom;
-                numTicktimeGreen.Enabled = isCustom;
-                numTicktimeYellow.Enabled = isCustom;
-                
-                System.Diagnostics.Debug.Print($"[ColorZoneProfile] Updated UI for: {selectedProfile}");
+                try
+                {
+                    // Приостанавливаем обновление UI
+                    this.SuspendLayout();
+                    
+                    // Update numeric controls
+                    System.Diagnostics.Debug.Print($"[ColorZoneProfile] Before update - numPingGreen.Value: {numPingGreen.Value}");
+                    DebugLogger.log($"[ColorZoneProfile] Before update - numPingGreen.Value: {numPingGreen.Value}");
+                    
+                    numPingGreen.Value = (decimal)profile.PingGreenMs;
+                    
+                    System.Diagnostics.Debug.Print($"[ColorZoneProfile] After update - numPingGreen.Value: {numPingGreen.Value}");
+                    DebugLogger.log($"[ColorZoneProfile] After update - numPingGreen.Value: {numPingGreen.Value}");
+                    
+                    numPingYellow.Value = (decimal)profile.PingYellowMs;
+                    numTickrateGreen.Value = (decimal)profile.TickrateGreenRatio;
+                    numTickrateYellow.Value = (decimal)profile.TickrateYellowRatio;
+                    numTicktimeGreen.Value = (decimal)profile.TicktimeGreenRatio;
+                    numTicktimeYellow.Value = (decimal)profile.TicktimeYellowRatio;
+                    
+                    DebugLogger.log($"[ColorZoneProfile] All values updated - Green: {numPingGreen.Value}, Yellow: {numPingYellow.Value}");
+                    
+                    // Enable/disable controls
+                    bool isCustom = selectedProfile == "Custom";
+                    numPingGreen.Enabled = isCustom;
+                    numPingYellow.Enabled = isCustom;
+                    numTickrateGreen.Enabled = isCustom;
+                    numTickrateYellow.Enabled = isCustom;
+                    numTicktimeGreen.Enabled = isCustom;
+                    numTicktimeYellow.Enabled = isCustom;
+                    
+                    System.Diagnostics.Debug.Print($"[ColorZoneProfile] Updated - Ping Green: {numPingGreen.Value}, Yellow: {numPingYellow.Value}");
+                }
+                finally
+                {
+                    // Возобновляем обновление UI
+                    this.ResumeLayout(true);
+                    _isLoadingSettings = false;
+                }
             }
             catch (System.Runtime.InteropServices.COMException comEx)
             {
                 System.Diagnostics.Debug.Print($"[CmbColorZoneProfile_SelectedIndexChanged] COM Error (ignored): {comEx.Message}");
-                // COM ошибки с ComboBox можно игнорировать - они не критичны
             }
             catch (Exception ex)
             {
