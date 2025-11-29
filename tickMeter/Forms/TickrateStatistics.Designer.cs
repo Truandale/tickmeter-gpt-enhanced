@@ -1,6 +1,6 @@
 ﻿namespace tickMeter.Forms
 {
-    partial class TickrateStatistics
+    partial class TickrateStatistics : System.Windows.Forms.Form
     {
         /// <summary>
         /// Required designer variable.

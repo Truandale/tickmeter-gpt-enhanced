@@ -5,7 +5,7 @@ namespace tickMeter
 {
     
 
-    partial class PacketStats
+    partial class PacketStats : System.Windows.Forms.Form
     {
         
         /// <summary>

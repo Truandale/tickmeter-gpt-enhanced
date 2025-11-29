@@ -1,6 +1,6 @@
 namespace tickMeter.Forms
 {
-    partial class GUI
+    partial class GUI : System.Windows.Forms.Form
     {
         /// <summary>
         /// Required designer variable.

@@ -1,6 +1,6 @@
 ﻿namespace tickMeter.Forms
 {
-    partial class PacketFilterForm
+    partial class PacketFilterForm : System.Windows.Forms.Form
     {
         /// <summary>
         /// Required designer variable.

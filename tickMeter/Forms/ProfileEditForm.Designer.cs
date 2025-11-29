@@ -1,6 +1,6 @@
 ﻿namespace tickMeter.Forms
 {
-    partial class ProfileEditForm
+    partial class ProfileEditForm : System.Windows.Forms.Form
     {
         /// <summary>
         /// Required designer variable.

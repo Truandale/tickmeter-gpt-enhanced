@@ -1,6 +1,6 @@
 namespace tickMeter.Forms
 {
-    partial class AdvancedSettingsForm
+    partial class AdvancedSettingsForm : System.Windows.Forms.Form
     {
         /// <summary>
         /// Required designer variable.

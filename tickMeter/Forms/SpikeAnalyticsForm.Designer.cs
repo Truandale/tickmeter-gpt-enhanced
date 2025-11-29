@@ -1,6 +1,6 @@
 namespace tickMeter.Forms
 {
-    partial class SpikeAnalyticsForm
+    partial class SpikeAnalyticsForm : System.Windows.Forms.Form
     {
         /// <summary>
         /// Required designer variable.
