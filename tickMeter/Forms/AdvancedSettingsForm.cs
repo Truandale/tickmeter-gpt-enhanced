@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -27,99 +26,16 @@ namespace tickMeter.Forms
         private bool _suppressVpnPresetUpdates;
         private VpnPresetSnapshot _vpnPresetSnapshot;
 
-        // Ленивая загрузка табов
-        private HashSet<int> _initializedTabs = new HashSet<int>();
-        private HashSet<int> _loadedSettingsTabs = new HashSet<int>();
-        private HashSet<Control> _doubleBufferedControls = new HashSet<Control>(); // Кэш для предотвращения повторной обработки
-        private bool _lazyLoadingEnabled = true;
-        
-        // НОВАЯ ОПТИМИЗАЦИЯ: Кэш видимости контролов для мгновенного переключения
-        private Dictionary<int, bool> _tabVisibilityCache = new Dictionary<int, bool>();
-        private System.Threading.Timer _preloadTimer; // Таймер для фоновой предзагрузки
-        
-        // НОВАЯ ОПТИМИЗАЦИЯ: Кэширование дорогих операций для ускорения повторной загрузки
-        private Dictionary<int, List<Control>> _tabControlsCache = new Dictionary<int, List<Control>>();
-        private bool _isDirty = false; // Флаг изменения настроек
-
         public AdvancedSettingsForm()
         {
             _isLoadingSettings = true;
 
-            // Максимальная оптимизация производительности формы
-            this.SetStyle(ControlStyles.OptimizedDoubleBuffer | 
-                          ControlStyles.AllPaintingInWmPaint | 
-                          ControlStyles.UserPaint |
-                          ControlStyles.ResizeRedraw |
-                          ControlStyles.ContainerControl, true);
-            this.UpdateStyles();
-
-            // Приостанавливаем все обновления до полной инициализации
-            this.SuspendLayout();
-
             InitializeComponent();
-            
-            // КРИТИЧЕСКАЯ ОПТИМИЗАЦИЯ: Включаем двойную буферизацию для всех табов СРАЗУ
-            if (tabControl1 != null)
-            {
-                for (int i = 0; i < tabControl1.TabPages.Count; i++)
-                {
-                    var tab = tabControl1.TabPages[i];
-                    EnableDoubleBuffering(tab);
-                    
-                    // Включаем для всех GroupBox и Panel на табе
-                    foreach (Control ctrl in tab.Controls)
-                    {
-                        if (ctrl is Panel || ctrl is GroupBox)
-                        {
-                            EnableDoubleBuffering(ctrl);
-                        }
-                    }
-                }
-            }
-            
-            // КРИТИЧЕСКАЯ ОПТИМИЗАЦИЯ: Скрываем неактивные табы для ускорения загрузки
-            if (_lazyLoadingEnabled && tabControl1 != null && tabControl1.TabPages.Count > 1)
-            {
-                // Скрываем все табы кроме первого (они будут показаны при первом клике)
-                for (int i = 1; i < tabControl1.TabPages.Count; i++)
-                {
-                    var tab = tabControl1.TabPages[i];
-                    tab.SuspendLayout();
-                    
-                    // НОВАЯ ОПТИМИЗАЦИЯ: Временно делаем таб невидимым для ускорения
-                    tab.Visible = false;
-                    _tabVisibilityCache[i] = false;
-                    
-                    // Агрессивная оптимизация: BeginInit для всех ISupportInitialize контролов
-                    FreezeTabControls(tab);
-                }
-                
-                // Первый таб сразу видимый
-                if (tabControl1.TabPages.Count > 0)
-                {
-                    tabControl1.TabPages[0].Visible = true;
-                    _tabVisibilityCache[0] = true;
-                }
-            }
-            
-            // Оптимизация TabControl
-            OptimizeTabControl();
-            
-            // ОПТИМИЗАЦИЯ: InitializeExtendedOverlayControls() пустой - убран
-            // ОПТИМИЗАЦИЯ: AttachEventHandlers() будет вызван после LoadSettings для ускорения
-            
-            LoadSettings();
-            
-            // Подключаем обработчики только после загрузки всех настроек
+            InitializeExtendedOverlayControls(); // Создаем контролы расширенной информации
             AttachEventHandlers();
-            
-            this.ResumeLayout(false);
-            this.PerformLayout();
-            
+
+            LoadSettings();
             _isLoadingSettings = false;
-            
-            // НОВАЯ ОПТИМИЗАЦИЯ: Запускаем фоновую предзагрузку следующих табов через 500мс
-            _preloadTimer = new System.Threading.Timer(PreloadNextTabs, null, 500, System.Threading.Timeout.Infinite);
 
             if (chkVpnBypassAdvanced.Checked)
             {
@@ -137,490 +53,105 @@ namespace tickMeter.Forms
             }
         }
 
-        /// <summary>
-        /// Оптимизирует TabControl для быстрого переключения между вкладками
-        /// </summary>
-        private void OptimizeTabControl()
-        {
-            if (tabControl1 == null) return;
-
-            // Включаем двойную буферизацию для TabControl через рефлексию
-            typeof(TabControl).InvokeMember("DoubleBuffered",
-                System.Reflection.BindingFlags.SetProperty | 
-                System.Reflection.BindingFlags.Instance | 
-                System.Reflection.BindingFlags.NonPublic,
-                null, tabControl1, new object[] { true });
-
-            // Подписываемся на событие переключения вкладок для оптимизации
-            tabControl1.Selected += TabControl1_Selected;
-            // ОПТИМИЗАЦИЯ: Убираем Deselecting - он создаёт задержку при каждом переключении
-            // tabControl1.Deselecting += TabControl1_Deselecting;
-            
-            // Инициализируем первую вкладку сразу (она видна по умолчанию)
-            if (_lazyLoadingEnabled && tabControl1.TabPages.Count > 0)
-            {
-                _initializedTabs.Add(0);
-                // Остальные вкладки будут загружены при первом открытии
-            }
-        }
-
-        /// <summary>
-        /// Оптимизирует отрисовку при переключении вкладок и выполняет ленивую загрузку
-        /// </summary>
-        private void TabControl1_Selected(object sender, TabControlEventArgs e)
-        {
-            if (e.TabPage == null) return;
-
-            int tabIndex = e.TabPageIndex;
-            
-            // Ленивая загрузка: инициализируем таб при первом открытии
-            if (_lazyLoadingEnabled && !_initializedTabs.Contains(tabIndex))
-            {
-                // ОПТИМИЗАЦИЯ: InitializeTab сам вызывает ResumeLayout внутри
-                InitializeTab(tabIndex, e.TabPage);
-                _initializedTabs.Add(tabIndex);
-            }
-            // ОПТИМИЗАЦИЯ: Для уже инициализированных табов вообще ничего не делаем
-            // TabControl сам управляет отображением, наше вмешательство только замедляет
-        }
-        
-        /// <summary>
-        /// Инициализирует конкретный таб при первом открытии (ленивая загрузка)
-        /// </summary>
-        private void InitializeTab(int tabIndex, TabPage tabPage)
-        {
-            if (tabPage == null) return;
-            
-            try
-            {
-                // НОВАЯ ОПТИМИЗАЦИЯ: Кэшируем контролы таба для быстрого доступа
-                _ = GetCachedTabControls(tabIndex, tabPage);
-                
-                // Размораживаем контролы, которые были заморожены в конструкторе
-                UnfreezeTabControls(tabPage);
-                
-                // ОПТИМИЗАЦИЯ: Двойная буферизация уже включена в конструкторе для всех контролов
-                // Убираем лишние циклы по контролам - они создают задержку
-                
-                // Загружаем настройки для таба (ленивая загрузка настроек)
-                if (!_loadedSettingsTabs.Contains(tabIndex))
-                {
-                    // Загружаем настройки напрямую из конфига без кэширования
-                    DebugLogger.log($"[Settings] Tab {tabIndex}: loading from settings file");
-                    LoadTabSettings(tabIndex);
-                    _loadedSettingsTabs.Add(tabIndex);
-                }
-                
-                // ОПТИМИЗАЦИЯ: Убрали OptimizeHeavyTab - он тоже создаёт задержку
-                // Все оптимизации уже применены в конструкторе
-            }
-            finally
-            {
-                // ОПТИМИЗАЦИЯ: PerformLayout будет вызван автоматически при ResumeLayout(true)
-                // Двойной вызов создаёт задержку
-                tabPage.ResumeLayout(true);
-            }
-        }
-        
-        /// <summary>
-        /// Включает двойную буферизацию для контрола через рефлексию
-        /// </summary>
-        private void EnableDoubleBuffering(Control control)
-        {
-            if (control == null) return;
-            
-            // ОПТИМИЗАЦИЯ: Проверяем кэш чтобы не обрабатывать контрол повторно
-            if (_doubleBufferedControls.Contains(control)) return;
-            
-            try
-            {
-                typeof(Control).InvokeMember("DoubleBuffered",
-                    System.Reflection.BindingFlags.SetProperty | 
-                    System.Reflection.BindingFlags.Instance | 
-                    System.Reflection.BindingFlags.NonPublic,
-                    null, control, new object[] { true });
-                
-                // Добавляем в кэш после успешной обработки
-                _doubleBufferedControls.Add(control);
-            }
-            catch
-            {
-                // Игнорируем ошибки, не все контролы поддерживают DoubleBuffered
-            }
-        }
-        
-        /// <summary>
-        /// НОВАЯ ОПТИМИЗАЦИЯ: Кэширует список контролов таба для быстрого доступа
-        /// </summary>
-        private List<Control> GetCachedTabControls(int tabIndex, TabPage tabPage)
-        {
-            if (!_tabControlsCache.ContainsKey(tabIndex))
-            {
-                var controls = new List<Control>();
-                
-                // Рекурсивно собираем все контролы
-                void CollectControls(Control parent)
-                {
-                    foreach (Control ctrl in parent.Controls)
-                    {
-                        controls.Add(ctrl);
-                        if (ctrl.HasChildren)
-                        {
-                            CollectControls(ctrl);
-                        }
-                    }
-                }
-                
-                CollectControls(tabPage);
-                _tabControlsCache[tabIndex] = controls;
-            }
-            
-            return _tabControlsCache[tabIndex];
-        }
-        
-        /// <summary>
-        /// НОВАЯ ОПТИМИЗАЦИЯ: Получает настройку из кэша или загружает
-        /// </summary>
-        private string GetCachedSetting(string key, string defaultValue = "", string section = "SETTINGS")
-        {
-            return App.settingsManager?.GetOption(key, defaultValue, section) ?? defaultValue;
-        }
-        
-        /// <summary>
-        /// НОВАЯ ОПТИМИЗАЦИЯ: Сбрасывает кэш настроек (вызывать при сохранении)
-        /// </summary>
-        private void InvalidateSettingsCache()
-        {
-            _isDirty = false;
-        }
-        
-        /// <summary>
-        /// НОВАЯ ОПТИМИЗАЦИЯ: Сбрасывает кэш состояний контролов (вызывать при закрытии формы)
-        /// </summary>
-        private void InvalidateControlStateCache()
-        {
-            // Removed: control states caching disabled
-        }
-        
-        /// <summary>
-        /// КРИТИЧЕСКАЯ ОПТИМИЗАЦИЯ: Обновляет кэш состояний после сохранения настроек
-        /// Проходит по всем уже загруженным табам и кэширует текущие значения контролов
-        /// </summary>
-        private void UpdateControlStatesCacheAfterSave()
-        {
-            // Removed: control states caching disabled
-        }
-        
-        /// <summary>
-        /// "Замораживает" все контролы на табе для ускорения инициализации
-        /// </summary>
-        private void FreezeTabControls(TabPage tabPage)
-        {
-            if (tabPage == null) return;
-            
-            foreach (Control ctrl in tabPage.Controls)
-            {
-                if (ctrl is GroupBox groupBox)
-                {
-                    groupBox.SuspendLayout();
-                    
-                    // Рекурсивно замораживаем все вложенные контролы
-                    foreach (Control innerCtrl in groupBox.Controls)
-                    {
-                        if (innerCtrl is System.ComponentModel.ISupportInitialize initializable)
-                        {
-                            try
-                            {
-                                initializable.BeginInit();
-                            }
-                            catch { }
-                        }
-                    }
-                }
-            }
-        }
-        
-        /// <summary>
-        /// "Размораживает" контролы на табе при первом открытии
-        /// </summary>
-        private void UnfreezeTabControls(TabPage tabPage)
-        {
-            if (tabPage == null) return;
-            
-            foreach (Control ctrl in tabPage.Controls)
-            {
-                if (ctrl is GroupBox groupBox)
-                {
-                    groupBox.ResumeLayout(false);
-                    
-                    // Рекурсивно размораживаем все вложенные контролы
-                    foreach (Control innerCtrl in groupBox.Controls)
-                    {
-                        if (innerCtrl is System.ComponentModel.ISupportInitialize initializable)
-                        {
-                            try
-                            {
-                                initializable.EndInit();
-                            }
-                            catch { }
-                        }
-                    }
-                }
-            }
-        }
-        
-        /// <summary>
-        /// Дополнительная оптимизация для "тяжёлых" табов с большим количеством контролов
-        /// </summary>
-        private void OptimizeHeavyTab(TabPage tabPage)
-        {
-            if (tabPage == null) return;
-            
-            // Оптимизация всех NumericUpDown и ComboBox контролов
-            OptimizeControlsRecursive(tabPage);
-        }
-        
-        /// <summary>
-        /// Рекурсивно оптимизирует контролы на вкладке
-        /// </summary>
-        private void OptimizeControlsRecursive(Control parent)
-        {
-            foreach (Control ctrl in parent.Controls)
-            {
-                // Оптимизация NumericUpDown
-                if (ctrl is NumericUpDown numeric)
-                {
-                    numeric.BeginInit();
-                    numeric.EndInit();
-                }
-                // Оптимизация ComboBox
-                else if (ctrl is ComboBox combo)
-                {
-                    combo.BeginUpdate();
-                    combo.EndUpdate();
-                }
-                // Оптимизация CheckBox - отключаем автообновление
-                else if (ctrl is CheckBox check)
-                {
-                    check.AutoCheck = check.AutoCheck; // Триггер оптимизации
-                }
-                
-                // Рекурсивно обрабатываем контейнеры
-                if (ctrl.HasChildren && (ctrl is Panel || ctrl is GroupBox || ctrl is TabPage))
-                {
-                    OptimizeControlsRecursive(ctrl);
-                }
-            }
-        }
-        
-        /// <summary>
-        /// Загружает настройки для конкретного таба (ленивая загрузка)
-        /// </summary>
-        private void LoadTabSettings(int tabIndex)
-        {
-            try
-            {
-                _isLoadingSettings = true;
-                
-                switch (tabIndex)
-                {
-                    case 0: // Tab 1 - Basic Settings (Live View, RTSS, Capture, Adapters)
-                        LoadTab0Settings();
-                        break;
-                        
-                    case 1: // Tab 2 - Universal Settings
-                        LoadTab1Settings();
-                        break;
-                        
-                    case 2: // Tab 3 - Performance (Phase 1, 2, 3)
-                        LoadTab2Settings();
-                        break;
-                        
-                    case 3: // Tab 4 - Network Analysis (Quality, Color Zones, Optimizer)
-                        LoadTab3Settings();
-                        break;
-                        
-                    case 4: // Tab 5 - Spike Detection
-                        LoadTab4Settings();
-                        break;
-                        
-                    case 5: // Tab 6 - Alerts
-                        LoadTab5Settings();
-                        break;
-                        
-                    case 6: // Tab 7 - Advanced (VPN, Debug, Extended Overlay, Tickrate Chart)
-                        LoadTab6Settings();
-                        break;
-                }
-            }
-            finally
-            {
-                _isLoadingSettings = false;
-            }
-        }
-
         private void LoadSettings()
         {
-            // ОПТИМИЗАЦИЯ: Layout уже приостановлен в конструкторе, не дублируем вызовы
-            
             try
             {
-                // При ленивой загрузке грузим только первый таб сразу
-                if (_lazyLoadingEnabled)
-                {
-                    LoadTabSettings(0); // Загружаем только Tab 0 (Basic Settings)
-                    _loadedSettingsTabs.Add(0); // Отмечаем как загруженный
-                }
-                else
-                {
-                    // Если ленивая загрузка отключена - грузим всё сразу (старое поведение)
-                    LoadAllSettings();
-                }
+                // Live View настройки
+                chkLiveMaxRows.Checked = App.settingsManager.GetOption("live_max_rows_enabled", "False", "ADVANCED") == "True";
+                liveMaxRowsNumeric.Value = int.Parse(App.settingsManager.GetOption("live_max_rows", "1000", "ADVANCED"));
+                chkOverlayFps.Checked = App.settingsManager.GetOption("overlay_fps_enabled", "False", "ADVANCED") == "True";
+                overlayFpsNumeric.Value = int.Parse(App.settingsManager.GetOption("overlay_fps", "60", "ADVANCED"));
+                
+                // BPF фильтр
+                chkBpfFilter.Checked = App.settingsManager.GetOption("bpf_filter_enabled", "False", "ADVANCED") == "True";
+                captureFilterTextBox.Text = App.settingsManager.GetOption("capture_filter", "ip or ip6", "ADVANCED");
+                
+                // Capture all adapters
+                chkCaptureAllAdapters.Checked = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
+                chkIgnoreVirtualAdapters.Checked = App.settingsManager.GetOption("ignore_virtual_adapters", "True", "SETTINGS") == "True";
+
+                // Универсальные чекбоксы
+                chkPingBindToInterface.Checked = App.settingsManager.GetOption("ping_bind_to_interface", "True", "SETTINGS") == "True";
+                chkPingTcpPrefer.Checked = App.settingsManager.GetOption("ping_tcp_prefer", "True", "SETTINGS") == "True";
+                chkPingFallbackIcmp.Checked = App.settingsManager.GetOption("ping_fallback_icmp", "True", "SETTINGS") == "True";
+                chkPingTargetActiveOnly.Checked = App.settingsManager.GetOption("ping_target_active_only", "True", "SETTINGS") == "True";
+                chkTickrateSmoothing.Checked = App.settingsManager.GetOption("tickrate_smoothing", "True", "SETTINGS") == "True";
+                chkPingGraphOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_ping_graph_overlay", "True", "ADVANCED") == "True";
+                chkTickrateGraphOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_tickrate_graph_overlay", "True", "ADVANCED") == "True";
+                chkTicktimeGraphOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_ticktime_graph_overlay", "True", "ADVANCED") == "True";
+                chkPingValueOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_ping_value_overlay", "False", "ADVANCED") == "True";
+                chkPingValueGuiSmoothing.Checked = App.settingsManager.GetOption("smoothing_ping_value_gui", "False", "ADVANCED") == "True";
+                chkSyncPingOverlayWithGui.Checked = App.settingsManager.GetOption("sync_ping_overlay_with_gui", "True", "ADVANCED") == "True";
+                chkTickrateValueGuiSmoothing.Checked = App.settingsManager.GetOption("smoothing_tickrate_value_gui", "False", "ADVANCED") == "True";
+                chkSyncTickrateOverlayWithGui.Checked = App.settingsManager.GetOption("sync_tickrate_overlay_with_gui", "True", "ADVANCED") == "True";
+                chkTickrateValueOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_tickrate_value_overlay", "False", "ADVANCED") == "True";
+                chkTicktimeValueOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_ticktime_value_overlay", "False", "ADVANCED") == "True";
+                chkTrafficValueOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_traffic_value_overlay", "False", "ADVANCED") == "True";
+                chkDedupMultiNic.Checked = App.settingsManager.GetOption("dedup_multi_nic", "True", "SETTINGS") == "True";
+                chkEnableIPv6.Checked = App.settingsManager.GetOption("enable_ipv6", "True", "SETTINGS") == "True";
+                chkRtssOnlyActive.Checked = App.settingsManager.GetOption("rtss_only_active", "True", "SETTINGS") == "True";
+                chkUiRefreshHidden.Checked = App.settingsManager.GetOption("ui_refresh_hidden", "False", "SETTINGS") == "True";
+                chkStunEnable.Checked = App.settingsManager.GetOption("stun_enable", "True", "SETTINGS") == "True";
+                chkShowPingSpikes.Checked = App.settingsManager.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
+                
+                // TODO: Добавить chkAdvancedSpikeDetection в designer файл
+                // chkAdvancedSpikeDetection.Checked = App.settingsManager.GetOption("advanced_spike_detection", "True", "ADVANCED") == "True";
+                
+                // Настройки порогов для спайков пинга
+                numPingSpikeThreshold.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("ping_spike_threshold", "150", "ADVANCED"));
+                
+                // Spike Detection настройки
+                InitSpikeDetectionCombos();
+                LoadSpikeDetectionSettings();
+                LoadAdvancedSpikeSettings();
+                
+                // VPN bypass настройки
+                chkVpnBypassBasic.Checked = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
+                chkVpnBypassAdvanced.Checked = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
+                
+                // Debug settings
+                chkEnableTextLogs.Checked = App.settingsManager.GetOption("enable_text_logs", "True", "ADVANCED") == "True";
+                
+                // Performance Optimization Phase 1-3 настройки
+                chkAntiReentrancy.Checked = App.settingsManager.GetOption("anti_reentrancy", "True", "ADVANCED") == "True";
+                chkRtssThrottling.Checked = App.settingsManager.GetOption("rtss_throttling", "True", "ADVANCED") == "True";
+                chkPcapOptimization.Checked = App.settingsManager.GetOption("pcap_optimization", "True", "ADVANCED") == "True";
+                numPcapKernelBufferMb.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("pcap_kernel_buffer_mb", "8", "ADVANCED"));
+                numPcapMinToCopy.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("pcap_min_to_copy", "4096", "ADVANCED"));
+                
+                chkVirtualModeListView.Checked = App.settingsManager.GetOption("virtual_mode_listview", "True", "ADVANCED") == "True";
+                numVirtualModeThreshold.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("virtual_mode_threshold", "2000", "ADVANCED"));
+                numRingBufferSize.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("ring_buffer_size", "10000", "ADVANCED"));
+                chkShowVirtualModeStats.Checked = App.settingsManager.GetOption("show_virtual_mode_stats", "False", "ADVANCED") == "True";
+                
+                chkHighPriorityThreads.Checked = App.settingsManager.GetOption("high_priority_threads", "True", "ADVANCED") == "True";
+                chkSingleConsumerPattern.Checked = App.settingsManager.GetOption("single_consumer_pattern", "True", "ADVANCED") == "True";
+                numUiProcessingRate.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("ui_processing_rate", "60", "ADVANCED"));
+                numUiBatchSize.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("ui_batch_size", "10", "ADVANCED"));
+                
+                // Загружаем настройки алертов
+                LoadAlertSettings();
+                
+                // Stage 6: Network Quality Analysis настройки
+                LoadNetworkQualitySettings();
+                
+                // Stage 7: Network Optimizer настройки
+                LoadNetworkOptimizerSettings();
+                
+                // Color Zone settings
+                LoadColorZoneSettings();
+                
+                // Extended Overlay settings
+                LoadExtendedOverlaySettings();
+                
+                // Tickrate Chart settings
+                LoadTickrateChartSettings();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка загрузки настроек: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
-            // ОПТИМИЗАЦИЯ: ResumeLayout будет вызван в конструкторе
-        }
-        
-        /// <summary>
-        /// Загружает все настройки сразу (используется если ленивая загрузка отключена)
-        /// </summary>
-        private void LoadAllSettings()
-        {
-            for (int i = 0; i < 7; i++)
-            {
-                LoadTabSettings(i);
-            }
-        }
-        
-        /// <summary>
-        /// Tab 0 - Basic Settings: Live View, RTSS, Capture, Adapters
-        /// </summary>
-        private void LoadTab0Settings()
-        {
-            // Live View настройки
-            chkLiveMaxRows.Checked = App.settingsManager.GetOption("live_max_rows_enabled", "False", "ADVANCED") == "True";
-            liveMaxRowsNumeric.Value = int.Parse(App.settingsManager.GetOption("live_max_rows", "1000", "ADVANCED"));
-            chkOverlayFps.Checked = App.settingsManager.GetOption("overlay_fps_enabled", "False", "ADVANCED") == "True";
-            overlayFpsNumeric.Value = int.Parse(App.settingsManager.GetOption("overlay_fps", "60", "ADVANCED"));
-            
-            // RTSS
-            chkRtssOnlyActive.Checked = App.settingsManager.GetOption("rtss_only_active", "True", "SETTINGS") == "True";
-            
-            // Capture/BPF фильтр
-            chkBpfFilter.Checked = App.settingsManager.GetOption("bpf_filter_enabled", "False", "ADVANCED") == "True";
-            captureFilterTextBox.Text = App.settingsManager.GetOption("capture_filter", "ip or ip6", "ADVANCED");
-            
-            // Adapters
-            chkCaptureAllAdapters.Checked = App.settingsManager.GetOption("capture_all_adapters", "False", "SETTINGS") == "True";
-            chkIgnoreVirtualAdapters.Checked = App.settingsManager.GetOption("ignore_virtual_adapters", "True", "SETTINGS") == "True";
-        }
-        
-        /// <summary>
-        /// Tab 1 - Universal Settings
-        /// </summary>
-        private void LoadTab1Settings()
-        {
-            chkPingBindToInterface.Checked = App.settingsManager.GetOption("ping_bind_to_interface", "True", "SETTINGS") == "True";
-            chkPingTcpPrefer.Checked = App.settingsManager.GetOption("ping_tcp_prefer", "True", "SETTINGS") == "True";
-            chkPingFallbackIcmp.Checked = App.settingsManager.GetOption("ping_fallback_icmp", "True", "SETTINGS") == "True";
-            chkPingTargetActiveOnly.Checked = App.settingsManager.GetOption("ping_target_active_only", "True", "SETTINGS") == "True";
-            chkTickrateSmoothing.Checked = App.settingsManager.GetOption("tickrate_smoothing", "True", "SETTINGS") == "True";
-            chkPingGraphOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_ping_graph_overlay", "True", "ADVANCED") == "True";
-            chkTickrateGraphOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_tickrate_graph_overlay", "True", "ADVANCED") == "True";
-            chkTicktimeGraphOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_ticktime_graph_overlay", "True", "ADVANCED") == "True";
-            chkPingValueOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_ping_value_overlay", "False", "ADVANCED") == "True";
-            chkPingValueGuiSmoothing.Checked = App.settingsManager.GetOption("smoothing_ping_value_gui", "False", "ADVANCED") == "True";
-            chkSyncPingOverlayWithGui.Checked = App.settingsManager.GetOption("sync_ping_overlay_with_gui", "True", "ADVANCED") == "True";
-            chkTickrateValueGuiSmoothing.Checked = App.settingsManager.GetOption("smoothing_tickrate_value_gui", "False", "ADVANCED") == "True";
-            chkSyncTickrateOverlayWithGui.Checked = App.settingsManager.GetOption("sync_tickrate_overlay_with_gui", "True", "ADVANCED") == "True";
-            chkTickrateValueOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_tickrate_value_overlay", "False", "ADVANCED") == "True";
-            chkTicktimeValueOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_ticktime_value_overlay", "False", "ADVANCED") == "True";
-            chkTrafficValueOverlaySmoothing.Checked = App.settingsManager.GetOption("smoothing_traffic_value_overlay", "False", "ADVANCED") == "True";
-            chkDedupMultiNic.Checked = App.settingsManager.GetOption("dedup_multi_nic", "True", "SETTINGS") == "True";
-            chkEnableIPv6.Checked = App.settingsManager.GetOption("enable_ipv6", "True", "SETTINGS") == "True";
-            chkUiRefreshHidden.Checked = App.settingsManager.GetOption("ui_refresh_hidden", "False", "SETTINGS") == "True";
-            chkStunEnable.Checked = App.settingsManager.GetOption("stun_enable", "True", "SETTINGS") == "True";
-        }
-        
-        /// <summary>
-        /// Tab 2 - Performance: Phase 1, Phase 2, Phase 3
-        /// </summary>
-        private void LoadTab2Settings()
-        {
-            // Phase 1
-            chkAntiReentrancy.Checked = App.settingsManager.GetOption("anti_reentrancy", "True", "ADVANCED") == "True";
-            chkRtssThrottling.Checked = App.settingsManager.GetOption("rtss_throttling", "True", "ADVANCED") == "True";
-            chkPcapOptimization.Checked = App.settingsManager.GetOption("pcap_optimization", "True", "ADVANCED") == "True";
-            numPcapKernelBufferMb.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("pcap_kernel_buffer_mb", "8", "ADVANCED"));
-            numPcapMinToCopy.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("pcap_min_to_copy", "4096", "ADVANCED"));
-            
-            // Phase 2
-            chkVirtualModeListView.Checked = App.settingsManager.GetOption("virtual_mode_listview", "True", "ADVANCED") == "True";
-            numVirtualModeThreshold.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("virtual_mode_threshold", "2000", "ADVANCED"));
-            numRingBufferSize.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("ring_buffer_size", "10000", "ADVANCED"));
-            chkShowVirtualModeStats.Checked = App.settingsManager.GetOption("show_virtual_mode_stats", "False", "ADVANCED") == "True";
-            
-            // Phase 3
-            chkHighPriorityThreads.Checked = App.settingsManager.GetOption("high_priority_threads", "True", "ADVANCED") == "True";
-            chkSingleConsumerPattern.Checked = App.settingsManager.GetOption("single_consumer_pattern", "True", "ADVANCED") == "True";
-            numUiProcessingRate.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("ui_processing_rate", "60", "ADVANCED"));
-            numUiBatchSize.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("ui_batch_size", "10", "ADVANCED"));
-        }
-        
-        /// <summary>
-        /// Tab 3 - Network Analysis: Quality, Color Zones, Optimizer
-        /// </summary>
-        private void LoadTab3Settings()
-        {
-            LoadNetworkQualitySettings();
-            LoadColorZoneSettings();
-            LoadNetworkOptimizerSettings();
-        }
-        
-        /// <summary>
-        /// Tab 4 - Spike Detection
-        /// </summary>
-        private void LoadTab4Settings()
-        {
-            chkShowPingSpikes.Checked = App.settingsManager.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
-            numPingSpikeThreshold.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("ping_spike_threshold", "150", "ADVANCED"));
-            
-            InitSpikeDetectionCombos();
-            LoadSpikeDetectionSettings();
-            LoadAdvancedSpikeSettings();
-        }
-        
-        /// <summary>
-        /// Tab 5 - Alerts
-        /// </summary>
-        private void LoadTab5Settings()
-        {
-            LoadAlertSettings();
-        }
-        
-        /// <summary>
-        /// Tab 6 - Advanced: VPN, Debug, Extended Overlay, Tickrate Chart
-        /// </summary>
-        private void LoadTab6Settings()
-        {
-            // VPN bypass настройки
-            chkVpnBypassBasic.Checked = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
-            chkVpnBypassAdvanced.Checked = App.settingsManager.GetOption("vpn_bypass_advanced", "False", "ADVANCED") == "True";
-            
-            // Debug settings
-            chkEnableTextLogs.Checked = App.settingsManager.GetOption("enable_text_logs", "True", "ADVANCED") == "True";
-            
-            // Extended Overlay settings
-            LoadExtendedOverlaySettings();
-            
-            // Tickrate Chart settings
-            LoadTickrateChartSettings();
-            
-            // ОПТИМИЗАЦИЯ: Подключаем обработчики событий Tickrate Chart только при первом открытии таба
-            AttachTickrateChartEventHandlers();
         }
 
         private void AttachEventHandlers()
@@ -919,9 +450,6 @@ namespace tickMeter.Forms
         {
             try
             {
-                // НОВАЯ ОПТИМИЗАЦИЯ: Сброс кэша настроек (он зависит от файла)
-                InvalidateSettingsCache();
-                
                 // Live View настройки
                 App.settingsManager.SetOption("live_max_rows_enabled", chkLiveMaxRows.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("live_max_rows", SettingsManager.ToInvariantString((int)liveMaxRowsNumeric.Value), "ADVANCED");
@@ -1027,10 +555,6 @@ namespace tickMeter.Forms
                 
                 // Применяем новые настройки интервала overlay
                 App.gui?.ApplyOverlayIntervalFromSettings();
-                
-                // КРИТИЧЕСКАЯ ОПТИМИЗАЦИЯ: Обновляем кэш состояний из текущих контролов
-                // чтобы следующая загрузка была мгновенной
-                UpdateControlStatesCacheAfterSave();
                 
                 MessageBox.Show("Настройки сохранены", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
@@ -1303,17 +827,8 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("current_profile", "Стандарт (Balanced)", "PROFILES");      // Текущий профиль ✓
             App.settingsManager.SetOption("advanced_profile", "Streamer", "PROFILES");                // Продвинутый профиль ✓
             
-            // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Инвалидируем все кэши перед загрузкой
-            InvalidateSettingsCache();
-            InvalidateControlStateCache();
-            _loadedSettingsTabs.Clear(); // Сбрасываем флаги загруженных табов
-            
             // Обновляем UI-элементы формы в соответствии с настройками
-            // Загружаем ВСЕ табы принудительно
-            LoadAllSettings();
-            
-            // Пересоздаем кэш состояний после загрузки
-            UpdateControlStatesCacheAfterSave();
+            LoadSettings();
             
             // Сохраняем все изменения
             SaveSettings();
@@ -2425,14 +1940,6 @@ namespace tickMeter.Forms
 
         private void CmbColorZoneProfile_SelectedIndexChanged(object sender, EventArgs e)
         {
-            // Защита от рекурсивных вызовов во время загрузки
-            if (_isLoadingSettings)
-            {
-                System.Diagnostics.Debug.Print($"[ColorZoneProfile] Skipped - loading in progress");
-                DebugLogger.log($"[ColorZoneProfile] Skipped - loading in progress");
-                return;
-            }
-            
             try
             {
                 // Защита от COM ошибок при работе с ComboBox
@@ -2444,58 +1951,34 @@ namespace tickMeter.Forms
 
                 string selectedProfile = cmbColorZoneProfile.SelectedItem?.ToString() ?? "Medium";
                 System.Diagnostics.Debug.Print($"[ColorZoneProfile] Selected: {selectedProfile}");
-                DebugLogger.log($"[ColorZoneProfile] Selected: {selectedProfile}");
                 
                 var profile = ColorZoneProfile.GetProfile(selectedProfile);
-                System.Diagnostics.Debug.Print($"[ColorZoneProfile] Profile loaded - Ping Green: {profile.PingGreenMs}, Yellow: {profile.PingYellowMs}");
-                DebugLogger.log($"[ColorZoneProfile] Profile loaded - Ping Green: {profile.PingGreenMs}, Yellow: {profile.PingYellowMs}");
                 
-                // КРИТИЧНО: Устанавливаем флаг чтобы избежать рекурсии
-                _isLoadingSettings = true;
+                // Update numeric controls с защитой от COM ошибок
+                Application.DoEvents(); // Обрабатываем pending UI events
                 
-                try
-                {
-                    // Приостанавливаем обновление UI
-                    this.SuspendLayout();
-                    
-                    // Update numeric controls
-                    System.Diagnostics.Debug.Print($"[ColorZoneProfile] Before update - numPingGreen.Value: {numPingGreen.Value}");
-                    DebugLogger.log($"[ColorZoneProfile] Before update - numPingGreen.Value: {numPingGreen.Value}");
-                    
-                    numPingGreen.Value = (decimal)profile.PingGreenMs;
-                    
-                    System.Diagnostics.Debug.Print($"[ColorZoneProfile] After update - numPingGreen.Value: {numPingGreen.Value}");
-                    DebugLogger.log($"[ColorZoneProfile] After update - numPingGreen.Value: {numPingGreen.Value}");
-                    
-                    numPingYellow.Value = (decimal)profile.PingYellowMs;
-                    numTickrateGreen.Value = (decimal)profile.TickrateGreenRatio;
-                    numTickrateYellow.Value = (decimal)profile.TickrateYellowRatio;
-                    numTicktimeGreen.Value = (decimal)profile.TicktimeGreenRatio;
-                    numTicktimeYellow.Value = (decimal)profile.TicktimeYellowRatio;
-                    
-                    DebugLogger.log($"[ColorZoneProfile] All values updated - Green: {numPingGreen.Value}, Yellow: {numPingYellow.Value}");
-                    
-                    // Enable/disable controls
-                    bool isCustom = selectedProfile == "Custom";
-                    numPingGreen.Enabled = isCustom;
-                    numPingYellow.Enabled = isCustom;
-                    numTickrateGreen.Enabled = isCustom;
-                    numTickrateYellow.Enabled = isCustom;
-                    numTicktimeGreen.Enabled = isCustom;
-                    numTicktimeYellow.Enabled = isCustom;
-                    
-                    System.Diagnostics.Debug.Print($"[ColorZoneProfile] Updated - Ping Green: {numPingGreen.Value}, Yellow: {numPingYellow.Value}");
-                }
-                finally
-                {
-                    // Возобновляем обновление UI
-                    this.ResumeLayout(true);
-                    _isLoadingSettings = false;
-                }
+                numPingGreen.Value = (decimal)profile.PingGreenMs;
+                numPingYellow.Value = (decimal)profile.PingYellowMs;
+                numTickrateGreen.Value = (decimal)profile.TickrateGreenRatio;
+                numTickrateYellow.Value = (decimal)profile.TickrateYellowRatio;
+                numTicktimeGreen.Value = (decimal)profile.TicktimeGreenRatio;
+                numTicktimeYellow.Value = (decimal)profile.TicktimeYellowRatio;
+                
+                // Enable/disable controls
+                bool isCustom = selectedProfile == "Custom";
+                numPingGreen.Enabled = isCustom;
+                numPingYellow.Enabled = isCustom;
+                numTickrateGreen.Enabled = isCustom;
+                numTickrateYellow.Enabled = isCustom;
+                numTicktimeGreen.Enabled = isCustom;
+                numTicktimeYellow.Enabled = isCustom;
+                
+                System.Diagnostics.Debug.Print($"[ColorZoneProfile] Updated UI for: {selectedProfile}");
             }
             catch (System.Runtime.InteropServices.COMException comEx)
             {
                 System.Diagnostics.Debug.Print($"[CmbColorZoneProfile_SelectedIndexChanged] COM Error (ignored): {comEx.Message}");
+                // COM ошибки с ComboBox можно игнорировать - они не критичны
             }
             catch (Exception ex)
             {
@@ -2648,28 +2131,7 @@ namespace tickMeter.Forms
                 numTickrateChartMaxPoints.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("tickrate_chart_max_points", "1000", "TICKRATE_CHART"));
                 numTickrateChartHistoryHours.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("tickrate_chart_history_hours", "24", "TICKRATE_CHART"));
                 
-                // ОПТИМИЗАЦИЯ: Подключение обработчиков событий перенесено в AttachTickrateChartEventHandlers()
-                // Это ускоряет загрузку формы, т.к. подключение будет при первом открытии Tab 6
-                
-                // Обновляем состояние контролов
-                UpdateTickrateChartControlsState();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.Print($"[AdvancedSettings] Error loading tickrate chart settings: {ex.Message}");
-            }
-        }
-        
-        /// <summary>
-        /// Подключает обработчики событий для Tickrate Chart (вызывается при первом открытии Tab 6)
-        /// </summary>
-        private bool _tickrateChartEventHandlersAttached = false;
-        private void AttachTickrateChartEventHandlers()
-        {
-            if (_tickrateChartEventHandlersAttached) return;
-            
-            try
-            {
+                // Подключение обработчиков событий
                 chkTickrateChartEnabled.CheckedChanged += OnTickrateChartSettingsChanged;
                 cmbTickrateChartMode.SelectedIndexChanged += OnTickrateChartSettingsChanged;
                 chkTickrateChartPerServer.CheckedChanged += OnTickrateChartSettingsChanged;
@@ -2680,11 +2142,12 @@ namespace tickMeter.Forms
                 numTickrateChartHistoryHours.ValueChanged += OnTickrateChartSettingsChanged;
                 btnTickrateChartReset.Click += OnTickrateChartReset;
                 
-                _tickrateChartEventHandlersAttached = true;
+                // Обновляем состояние контролов
+                UpdateTickrateChartControlsState();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.Print($"[AdvancedSettings] Error attaching tickrate chart event handlers: {ex.Message}");
+                System.Diagnostics.Debug.Print($"[AdvancedSettings] Error loading tickrate chart settings: {ex.Message}");
             }
         }
         
@@ -2785,58 +2248,6 @@ namespace tickMeter.Forms
                 
                 // Пока что просто уведомляем о необходимости перезапуска для применения изменений
                 // В будущем можно добавить динамическое изменение параметров
-            }
-        }
-        
-        #endregion
-        
-        #region Фоновая предзагрузка табов
-        
-        /// <summary>
-        /// НОВАЯ ОПТИМИЗАЦИЯ: Фоновая предзагрузка следующих табов для мгновенного переключения
-        /// </summary>
-        private void PreloadNextTabs(object state)
-        {
-            if (tabControl1 == null || tabControl1.IsDisposed) return;
-            
-            try
-            {
-                // Получаем текущий активный таб
-                int currentTab = -1;
-                tabControl1.Invoke((MethodInvoker)delegate
-                {
-                    currentTab = tabControl1.SelectedIndex;
-                });
-                
-                if (currentTab < 0) return;
-                
-                // Предзагружаем следующий и предыдущий табы (наиболее вероятные для переключения)
-                int[] tabsToPreload = new int[] { currentTab + 1, currentTab - 1, currentTab + 2 };
-                
-                foreach (int tabIndex in tabsToPreload)
-                {
-                    if (tabIndex >= 0 && tabIndex < tabControl1.TabCount && !_initializedTabs.Contains(tabIndex))
-                    {
-                        tabControl1.Invoke((MethodInvoker)delegate
-                        {
-                            var tabPage = tabControl1.TabPages[tabIndex];
-                            InitializeTab(tabIndex, tabPage);
-                        });
-                        
-                        // Небольшая задержка между предзагрузками чтобы не нагружать систему
-                        System.Threading.Thread.Sleep(50);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.Print($"[AdvancedSettings] Error in PreloadNextTabs: {ex.Message}");
-            }
-            finally
-            {
-                // Очищаем таймер
-                _preloadTimer?.Dispose();
-                _preloadTimer = null;
             }
         }
         
