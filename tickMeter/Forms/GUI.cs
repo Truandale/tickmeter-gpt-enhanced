@@ -1579,9 +1579,10 @@ namespace tickMeter.Forms
                     procStats.ticksIn += realTickrateBoost;
                     procStats.totalTicksCnt += realTickrateBoost;
                     
-                    // Обновляем отображение в главном окне
-                    App.meterState.DownloadTraffic = procStats.downloaded;
-                    App.meterState.UploadTraffic = procStats.sent;
+                    // В VPN bypass режиме счётчики накапливаются через ETW (строки 3197-3198)
+                    // НЕ перезаписываем их здесь!
+                    // App.meterState.DownloadTraffic = procStats.downloaded;
+                    // App.meterState.UploadTraffic = procStats.sent;
                     
                     // Обновляем PING данные в VPN режиме
                     if (realTraffic.RealPingMs > 0)
@@ -1603,9 +1604,10 @@ namespace tickMeter.Forms
                     procStats.ticksIn += 1; // Минимальный прирост
                     procStats.totalTicksCnt += 1;
                     
-                    // Обновляем отображение
-                    App.meterState.DownloadTraffic = procStats.downloaded;
-                    App.meterState.UploadTraffic = procStats.sent;
+                    // В VPN bypass режиме счётчики накапливаются через ETW
+                    // НЕ перезаписываем их здесь!
+                    // App.meterState.DownloadTraffic = procStats.downloaded;
+                    // App.meterState.UploadTraffic = procStats.sent;
                     
                     DebugLogger.log($"[VPN-FallbackTraffic] Using minimal traffic - Download: +{minDownload}, Upload: +{minUpload}");
                 }
@@ -1617,8 +1619,10 @@ namespace tickMeter.Forms
                 // Аварийный fallback
                 procStats.downloaded += 1024;
                 procStats.sent += 512;
-                App.meterState.DownloadTraffic = procStats.downloaded;
-                App.meterState.UploadTraffic = procStats.sent;
+                // В VPN bypass режиме счётчики накапливаются через ETW
+                // НЕ перезаписываем их здесь!
+                // App.meterState.DownloadTraffic = procStats.downloaded;
+                // App.meterState.UploadTraffic = procStats.sent;
             }
         }
         
@@ -3168,7 +3172,23 @@ namespace tickMeter.Forms
                         }
                         
                         App.meterState.Game = procStats.name;
+                        
+                        // В VPN bypass режиме сохраняем старый IP для проверки смены
+                        string oldIp = App.meterState.Server.Ip;
                         App.meterState.Server.Ip = procStats.remoteIp.ToString();
+                        string newIp = App.meterState.Server.Ip;
+                        
+                        // Проверяем смену IP и сбрасываем счётчики если нужно
+                        if (vpnBypassBasic || vpnBypassAdvanced)
+                        {
+                            if (!string.IsNullOrEmpty(oldIp) && oldIp != newIp)
+                            {
+                                // IP изменился - сбрасываем счётчики трафика
+                                App.meterState.Server.UploadTraffic = 0;
+                                App.meterState.Server.DownloadTraffic = 0;
+                                DebugLogger.log($"[VPN-BYPASS] IP changed: {oldIp} -> {newIp}, resetting traffic counters");
+                            }
+                        }
                         
                         // ИСПРАВЛЕНИЕ: ETW трафик используем ТОЛЬКО в VPN bypass режиме!
                         // В обычном PCAP режиме трафик накапливается через GameServer.UploadTraffic/DownloadTraffic
