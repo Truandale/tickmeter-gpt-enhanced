@@ -40,8 +40,13 @@ namespace tickMeter
             // Проверяем и обновляем путь автозагрузки если программа была перемещена
             CheckAndUpdateAutoStartPath();
             
+            // ВАЖНО: SetCompatibleTextRenderingDefault должен вызываться ДО создания форм
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            
+            // КРИТИЧНО: Инициализируем App перед созданием GUI
+            App.Init();
+            
             Application.Run(new GUI());
         }
 

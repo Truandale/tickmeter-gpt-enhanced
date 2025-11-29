@@ -782,7 +782,7 @@ namespace tickMeter.Forms
             try
             {
                 InitializeComponent();
-                App.Init();
+                // App.Init() теперь вызывается в Program.cs перед созданием GUI
                 App.gui = this;
                 InitializeAutomationInfrastructure();
                 StartAutomationTimers();

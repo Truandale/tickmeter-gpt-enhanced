@@ -212,6 +212,15 @@ namespace tickMeter.Forms
         public void ApplyFromConfig()
         {
             System.Diagnostics.Debug.WriteLine("ApplyFromConfig() НАЧАЛО");
+            
+            // SAFETY: Проверяем инициализацию контролов
+            if (settings_chart_checkbox == null)
+            {
+                System.Diagnostics.Debug.WriteLine("ОШИБКА: settings_chart_checkbox = null. InitializeComponent() не завершился!");
+                MessageBox.Show("Критическая ошибка инициализации формы настроек. Контролы не созданы.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            
             // CRITICAL: Перечитываем настройки из файла перед загрузкой в UI
             App.settingsManager.ReloadConfig();
             System.Diagnostics.Debug.WriteLine("ApplyFromConfig() - ReloadConfig() завершен");

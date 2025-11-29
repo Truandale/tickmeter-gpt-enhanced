@@ -97,9 +97,16 @@ namespace tickMeter
             // Заменяем стандартный ListView на оптимизированный ListViewNF
             var oldListView = listView1;
             listView1 = new tickMeter.Classes.ListViewNF();
+            
+            // Копируем свойства
             listView1.Activation = oldListView.Activation;
             listView1.AllowColumnReorder = oldListView.AllowColumnReorder;
-            listView1.Columns.AddRange(oldListView.Columns.Cast<System.Windows.Forms.ColumnHeader>().ToArray());
+            
+            // ВАЖНО: Сначала извлекаем колонки из старого контрола, затем добавляем в новый
+            var columns = oldListView.Columns.Cast<System.Windows.Forms.ColumnHeader>().ToArray();
+            oldListView.Columns.Clear();
+            listView1.Columns.AddRange(columns);
+            
             listView1.FullRowSelect = oldListView.FullRowSelect;
             listView1.GridLines = oldListView.GridLines;
             listView1.HideSelection = oldListView.HideSelection;
@@ -112,6 +119,8 @@ namespace tickMeter
             listView1.TabIndex = oldListView.TabIndex;
             listView1.UseCompatibleStateImageBehavior = oldListView.UseCompatibleStateImageBehavior;
             listView1.View = oldListView.View;
+            
+            // Заменяем контрол в форме
             this.Controls.Remove(oldListView);
             this.Controls.Add(listView1);
             
