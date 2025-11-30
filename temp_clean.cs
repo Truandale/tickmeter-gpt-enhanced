@@ -42,11 +42,6 @@ namespace tickMeter.Forms
 
             LoadSettings();
             _isLoadingSettings = false;
-            
-            // Force update color zone controls state after loading
-            CmbColorZoneProfile_SelectedIndexChanged(cmbColorZoneProfile, EventArgs.Empty);
-            
-            MessageBox.Show($"CONSTRUCTOR DONE!\nnumPingGreen.Enabled = {numPingGreen.Enabled}\nnumPingYellow.Enabled = {numPingYellow.Enabled}\nProfile = {cmbColorZoneProfile.SelectedItem}", "DEBUG Constructor End");
 
             if (chkVpnBypassAdvanced.Checked)
             {
@@ -1900,22 +1895,7 @@ namespace tickMeter.Forms
             {
                 // Load current profile
                 var profile = App.settingsManager.GetColorZoneProfile();
-                
-                MessageBox.Show($"Loading profile: '{profile.Name}'\nisCustom will be: {profile.Name == "Custom"}\nControls will be Enabled: {profile.Name == "Custom"}", "DEBUG LoadColorZoneSettings");
-                
-                // Find and select profile in combobox by name
-                int foundIndex = -1;
-                for (int i = 0; i < cmbColorZoneProfile.Items.Count; i++)
-                {
-                    if (cmbColorZoneProfile.Items[i].ToString() == profile.Name)
-                    {
-                        foundIndex = i;
-                        cmbColorZoneProfile.SelectedIndex = i;
-                        break;
-                    }
-                }
-                
-                MessageBox.Show($"Profile '{profile.Name}' found at index: {foundIndex}\nSelectedIndex now: {cmbColorZoneProfile.SelectedIndex}\nSelectedItem: {cmbColorZoneProfile.SelectedItem}", "DEBUG After Selection");
+                cmbColorZoneProfile.SelectedItem = profile.Name;
                 
                 // Load values from profile
                 numPingGreen.Value = (decimal)profile.PingGreenMs;
@@ -1934,9 +1914,8 @@ namespace tickMeter.Forms
                 numTicktimeGreen.Enabled = isCustom;
                 numTicktimeYellow.Enabled = isCustom;
                 
-                MessageBox.Show($"SET Enabled = {isCustom}\nAfter setting:\nnumPingGreen.Enabled = {numPingGreen.Enabled}\nnumPingYellow.Enabled = {numPingYellow.Enabled}", "DEBUG After Enabled Set");
-                
-                // Setup button event
+                // Setup events
+                cmbColorZoneProfile.SelectedIndexChanged += CmbColorZoneProfile_SelectedIndexChanged;
                 btnResetColorZones.Click += BtnResetColorZones_Click;
             }
             catch (Exception ex)
@@ -1979,13 +1958,6 @@ namespace tickMeter.Forms
         {
             try
             {
-                string callStack = $"Called from: {new System.Diagnostics.StackTrace().GetFrame(1)?.GetMethod()?.Name ?? "Unknown"}";
-                MessageBox.Show($"EVENT FIRED!\n_isLoadingSettings = {_isLoadingSettings}\nWill continue: {!_isLoadingSettings}\n{callStack}", "DEBUG Event Start");
-                
-                // Skip if loading settings
-                if (_isLoadingSettings)
-                    return;
-                
                 // Защита от COM ошибок при работе с ComboBox
                 if (cmbColorZoneProfile.InvokeRequired)
                 {
@@ -1995,8 +1967,6 @@ namespace tickMeter.Forms
 
                 string selectedProfile = cmbColorZoneProfile.SelectedItem?.ToString() ?? "Medium";
                 System.Diagnostics.Debug.Print($"[ColorZoneProfile] Selected: {selectedProfile}");
-                
-                MessageBox.Show($"Selected: '{selectedProfile}'\nSelectedItem: {cmbColorZoneProfile.SelectedItem}\nSelectedIndex: {cmbColorZoneProfile.SelectedIndex}\nisCustom will be: {(selectedProfile == "Custom")}", "DEBUG Before Update");
                 
                 var profile = ColorZoneProfile.GetProfile(selectedProfile);
                 
@@ -2010,8 +1980,6 @@ namespace tickMeter.Forms
                 numTicktimeGreen.Value = (decimal)profile.TicktimeGreenRatio;
                 numTicktimeYellow.Value = (decimal)profile.TicktimeYellowRatio;
                 
-                MessageBox.Show($"Values updated to:\nPingGreen: {profile.PingGreenMs}\nPingYellow: {profile.PingYellowMs}", "DEBUG After Values");
-                
                 // Enable/disable controls
                 bool isCustom = selectedProfile == "Custom";
                 numPingGreen.Enabled = isCustom;
@@ -2021,19 +1989,15 @@ namespace tickMeter.Forms
                 numTicktimeGreen.Enabled = isCustom;
                 numTicktimeYellow.Enabled = isCustom;
                 
-                MessageBox.Show($"IMMEDIATELY AFTER ASSIGNMENT:\nProfile: {selectedProfile}\nisCustom: {isCustom}\nnumPingGreen.Enabled = {numPingGreen.Enabled}\nnumPingYellow.Enabled = {numPingYellow.Enabled}\nnumTickrateGreen.Enabled = {numTickrateGreen.Enabled}", "DEBUG After Setting Enabled");
-                
                 System.Diagnostics.Debug.Print($"[ColorZoneProfile] Updated UI for: {selectedProfile}");
             }
             catch (System.Runtime.InteropServices.COMException comEx)
             {
-                MessageBox.Show($"COM ERROR:\n{comEx.Message}\n\nStack:\n{comEx.StackTrace}", "DEBUG COM Exception");
                 System.Diagnostics.Debug.Print($"[CmbColorZoneProfile_SelectedIndexChanged] COM Error (ignored): {comEx.Message}");
                 // COM ошибки с ComboBox можно игнорировать - они не критичны
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"EXCEPTION:\n{ex.Message}\n\nStack:\n{ex.StackTrace}", "DEBUG Exception");
                 System.Diagnostics.Debug.Print($"[CmbColorZoneProfile_SelectedIndexChanged] Error: {ex.Message}");
             }
         }

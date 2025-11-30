@@ -2007,6 +2007,7 @@ namespace tickMeter.Forms
             this.cmbColorZoneProfile.Name = "cmbColorZoneProfile";
             this.cmbColorZoneProfile.Size = new System.Drawing.Size(100, 24);
             this.cmbColorZoneProfile.TabIndex = 1;
+            this.cmbColorZoneProfile.SelectedIndexChanged += new System.EventHandler(this.CmbColorZoneProfile_SelectedIndexChanged);
             // 
             // lblPingGreen
             // 
@@ -2094,7 +2095,7 @@ namespace tickMeter.Forms
             0,
             0});
             this.numTickrateGreen.Minimum = new decimal(new int[] {
-            50,
+            1,
             0,
             0,
             131072});
@@ -2131,7 +2132,7 @@ namespace tickMeter.Forms
             0,
             0});
             this.numTickrateYellow.Minimum = new decimal(new int[] {
-            50,
+            1,
             0,
             0,
             131072});
@@ -2163,12 +2164,12 @@ namespace tickMeter.Forms
             131072});
             this.numTicktimeGreen.Location = new System.Drawing.Point(540, 58);
             this.numTicktimeGreen.Maximum = new decimal(new int[] {
-            1,
+            2,
             0,
             0,
             0});
             this.numTicktimeGreen.Minimum = new decimal(new int[] {
-            10,
+            1,
             0,
             0,
             131072});
@@ -2200,12 +2201,12 @@ namespace tickMeter.Forms
             131072});
             this.numTicktimeYellow.Location = new System.Drawing.Point(540, 86);
             this.numTicktimeYellow.Maximum = new decimal(new int[] {
-            1,
+            2,
             0,
             0,
             0});
             this.numTicktimeYellow.Minimum = new decimal(new int[] {
-            10,
+            1,
             0,
             0,
             131072});
