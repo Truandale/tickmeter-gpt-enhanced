@@ -469,6 +469,9 @@ namespace tickMeter.Forms
         {
             try
             {
+                // Начинаем пакетное обновление (не сохраняем после каждого SetOption)
+                App.settingsManager.BeginBatchUpdate();
+
                 // Live View настройки
                 App.settingsManager.SetOption("live_max_rows_enabled", chkLiveMaxRows.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("live_max_rows", SettingsManager.ToInvariantString((int)liveMaxRowsNumeric.Value), "ADVANCED");
@@ -572,6 +575,9 @@ namespace tickMeter.Forms
                 // Tickrate Chart settings
                 SaveTickrateChartSettings();
                 
+                // Завершаем пакетное обновление и сохраняем все изменения одним разом
+                App.settingsManager.EndBatchUpdate();
+                
                 // Применяем новые настройки интервала overlay
                 App.gui?.ApplyOverlayIntervalFromSettings();
                 
@@ -579,6 +585,8 @@ namespace tickMeter.Forms
             }
             catch (Exception ex)
             {
+                // В случае ошибки отменяем пакетный режим
+                try { App.settingsManager.EndBatchUpdate(); } catch { }
                 MessageBox.Show($"Ошибка сохранения настроек: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }

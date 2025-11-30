@@ -12,6 +12,7 @@ namespace tickMeter
     {
         FileIniDataParser parser;
         IniData data;
+        private bool _batchMode = false; // Режим пакетного сохранения (не сохраняем после каждого SetOption)
 
         /// <summary>
         /// Проверяет наличие settings.ini и создает его с оптимальными настройками если файл отсутствует
@@ -295,7 +296,31 @@ namespace tickMeter
                 data.Sections.AddSection(scope);
             }
             data[scope][optionName] = value;
-            SaveConfig(); // Автоматически сохраняем изменения
+            
+            // Сохраняем только если не в режиме пакетного обновления
+            if (!_batchMode)
+            {
+                SaveConfig();
+            }
+        }
+
+        /// <summary>
+        /// Начинает пакетное обновление настроек (без автосохранения после каждого SetOption)
+        /// </summary>
+        public void BeginBatchUpdate()
+        {
+            _batchMode = true;
+            DebugLogger.log("[SettingsManager] Начато пакетное обновление настроек");
+        }
+
+        /// <summary>
+        /// Завершает пакетное обновление и сохраняет все изменения одним вызовом
+        /// </summary>
+        public void EndBatchUpdate()
+        {
+            _batchMode = false;
+            SaveConfig();
+            DebugLogger.log("[SettingsManager] Завершено пакетное обновление, настройки сохранены");
         }
 
         // Дополнительные методы для универсальности
@@ -441,21 +466,109 @@ namespace tickMeter
 
         public void SaveConfig()
         {
-            try { 
-                parser.WriteFile("settings.ini", data);
-            } catch(Exception) { MessageBox.Show("Не могу сохранить настройки. Не хватает прав на запись."); }
+            int maxRetries = 3;
+            int retryDelayMs = 100;
+            Exception lastException = null;
+
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    parser.WriteFile("settings.ini", data);
+                    DebugLogger.log($"[SettingsManager] Настройки успешно сохранены (попытка {attempt})");
+                    return; // Успешно сохранено
+                }
+                catch (IOException ioEx)
+                {
+                    lastException = ioEx;
+                    DebugLogger.log($"[SettingsManager] Попытка {attempt}/{maxRetries} сохранения не удалась: {ioEx.Message}");
+                    
+                    if (attempt < maxRetries)
+                    {
+                        System.Threading.Thread.Sleep(retryDelayMs);
+                    }
+                }
+                catch (UnauthorizedAccessException uaEx)
+                {
+                    lastException = uaEx;
+                    DebugLogger.log($"[SettingsManager] Нет прав доступа для записи: {uaEx.Message}");
+                    break; // Нет смысла повторять, если нет прав
+                }
+                catch (Exception ex)
+                {
+                    lastException = ex;
+                    DebugLogger.log($"[SettingsManager] Неожиданная ошибка при сохранении: {ex.Message}");
+                    break;
+                }
+            }
+
+            // Если мы здесь, то все попытки не удались
+            string errorMessage = "Не удалось сохранить настройки в settings.ini";
+            
+            if (lastException is UnauthorizedAccessException)
+            {
+                errorMessage += "\n\nПричина: Недостаточно прав доступа.\n" +
+                               "Решение: Запустите программу от имени администратора.";
+            }
+            else if (lastException is IOException)
+            {
+                errorMessage += "\n\nПричина: Файл может быть заблокирован другим процессом.\n" +
+                               "Решение: Закройте другие программы, которые могут использовать файл настроек.";
+            }
+            else if (lastException != null)
+            {
+                errorMessage += $"\n\nОшибка: {lastException.Message}";
+            }
+
+            MessageBox.Show(errorMessage, "Ошибка сохранения", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
         public void ReloadConfig()
         {
-            try 
+            int maxRetries = 3;
+            int retryDelayMs = 100;
+            Exception lastException = null;
+
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
-                data = parser.ReadFile("settings.ini");
-            } 
-            catch(Exception) 
-            { 
-                MessageBox.Show("Не могу загрузить настройки."); 
+                try
+                {
+                    data = parser.ReadFile("settings.ini");
+                    DebugLogger.log($"[SettingsManager] Настройки успешно загружены (попытка {attempt})");
+                    return; // Успешно загружено
+                }
+                catch (IOException ioEx)
+                {
+                    lastException = ioEx;
+                    DebugLogger.log($"[SettingsManager] Попытка {attempt}/{maxRetries} загрузки не удалась: {ioEx.Message}");
+                    
+                    if (attempt < maxRetries)
+                    {
+                        System.Threading.Thread.Sleep(retryDelayMs);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    lastException = ex;
+                    DebugLogger.log($"[SettingsManager] Неожиданная ошибка при загрузке: {ex.Message}");
+                    break;
+                }
             }
+
+            // Если мы здесь, то все попытки не удались
+            string errorMessage = "Не удалось загрузить настройки из settings.ini";
+            
+            if (lastException is IOException)
+            {
+                errorMessage += "\n\nПричина: Файл может быть заблокирован или поврежден.\n" +
+                               "Решение: Проверьте файл настроек или попробуйте перезапустить программу.";
+            }
+            else if (lastException != null)
+            {
+                errorMessage += $"\n\nОшибка: {lastException.Message}";
+            }
+
+            MessageBox.Show(errorMessage, "Ошибка загрузки", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
         // Color Zone Profile management

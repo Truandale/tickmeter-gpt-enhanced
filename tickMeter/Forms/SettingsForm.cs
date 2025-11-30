@@ -356,35 +356,41 @@ namespace tickMeter.Forms
 
         public void SaveToConfig()
         {
-            App.settingsManager.SetOption("chart", settings_chart_checkbox.Checked.ToString());
-            App.settingsManager.SetOption("ip", settings_ip_checkbox.Checked.ToString());
-            App.settingsManager.SetOption("tickrate", settings_tickrate_show.Checked.ToString());
-            App.settingsManager.SetOption("ticktime", settings_ticktime_chart.Checked.ToString());
-            App.settingsManager.SetOption("ping_chart", settings_ping_chart.Checked.ToString());
-            App.settingsManager.SetOption("ping", settings_ping_checkbox.Checked.ToString());
-            App.settingsManager.SetOption("ping_interval", SettingsManager.ToInvariantString((int)ping_interval.Value));
-            App.settingsManager.SetOption("ping_ports", ping_ports.Text);
-            App.settingsManager.SetOption("traffic", settings_traffic_checkbox.Checked.ToString());
-            App.settingsManager.SetOption("color_label", HexConverter(ColorLabel.ForeColor));
-            App.settingsManager.SetOption("color_bad", HexConverter(ColorBad.ForeColor));
-            App.settingsManager.SetOption("color_mid", HexConverter(ColorMid.ForeColor));
-            App.settingsManager.SetOption("color_good", HexConverter(ColorGood.ForeColor));
-            App.settingsManager.SetOption("color_chart", HexConverter(ColorChart.ForeColor));
-            App.settingsManager.SetOption("rtss", settings_rtss_output.Checked.ToString());
-            App.settingsManager.SetOption("autodetect", settings_autodetect_checkbox.Checked.ToString());
-            App.settingsManager.SetOption("data_send", settings_data_send.Checked.ToString());
-            App.settingsManager.SetOption("session_time", settings_session_time_checkbox.Checked.ToString());
-            int selectedAdapter = adapters_list.SelectedIndex;
-            if(selectedAdapter < 0) selectedAdapter = 0;
-            App.settingsManager.SetOption("last_selected_adapter", App.GetAdapters()[selectedAdapter].GetGuid().ToLower());
-            App.settingsManager.SetOption("run_minimized", run_minimized.Checked.ToString());
-            App.settingsManager.SetOption("run_on_startup", run_on_startup.Checked.ToString());
-            App.settingsManager.SetOption("local_ip", local_ip_textbox.Text);
-            App.settingsManager.SetOption("show_packet_drops", packet_drops_checkbox.Checked.ToString());
-                
-            // Advanced flags сохраняются через AdvancedSettingsForm
-            
-            App.settingsManager.SaveConfig();
+            App.settingsManager.BeginBatchUpdate();
+            try
+            {
+                App.settingsManager.SetOption("chart", settings_chart_checkbox.Checked.ToString());
+                App.settingsManager.SetOption("ip", settings_ip_checkbox.Checked.ToString());
+                App.settingsManager.SetOption("tickrate", settings_tickrate_show.Checked.ToString());
+                App.settingsManager.SetOption("ticktime", settings_ticktime_chart.Checked.ToString());
+                App.settingsManager.SetOption("ping_chart", settings_ping_chart.Checked.ToString());
+                App.settingsManager.SetOption("ping", settings_ping_checkbox.Checked.ToString());
+                App.settingsManager.SetOption("ping_interval", SettingsManager.ToInvariantString((int)ping_interval.Value));
+                App.settingsManager.SetOption("ping_ports", ping_ports.Text);
+                App.settingsManager.SetOption("traffic", settings_traffic_checkbox.Checked.ToString());
+                App.settingsManager.SetOption("color_label", HexConverter(ColorLabel.ForeColor));
+                App.settingsManager.SetOption("color_bad", HexConverter(ColorBad.ForeColor));
+                App.settingsManager.SetOption("color_mid", HexConverter(ColorMid.ForeColor));
+                App.settingsManager.SetOption("color_good", HexConverter(ColorGood.ForeColor));
+                App.settingsManager.SetOption("color_chart", HexConverter(ColorChart.ForeColor));
+                App.settingsManager.SetOption("rtss", settings_rtss_output.Checked.ToString());
+                App.settingsManager.SetOption("autodetect", settings_autodetect_checkbox.Checked.ToString());
+                App.settingsManager.SetOption("data_send", settings_data_send.Checked.ToString());
+                App.settingsManager.SetOption("session_time", settings_session_time_checkbox.Checked.ToString());
+                int selectedAdapter = adapters_list.SelectedIndex;
+                if(selectedAdapter < 0) selectedAdapter = 0;
+                App.settingsManager.SetOption("last_selected_adapter", App.GetAdapters()[selectedAdapter].GetGuid().ToLower());
+                App.settingsManager.SetOption("run_minimized", run_minimized.Checked.ToString());
+                App.settingsManager.SetOption("run_on_startup", run_on_startup.Checked.ToString());
+                App.settingsManager.SetOption("local_ip", local_ip_textbox.Text);
+                App.settingsManager.SetOption("show_packet_drops", packet_drops_checkbox.Checked.ToString());
+                    
+                // Advanced flags сохраняются через AdvancedSettingsForm
+            }
+            finally
+            {
+                App.settingsManager.EndBatchUpdate();
+            }
         }
 
         public void SwitchToEnglish()

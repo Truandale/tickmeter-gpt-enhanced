@@ -32,11 +32,18 @@ namespace tickMeter.Forms
 
         private void ApplyBtn_Click(object sender, EventArgs e)
         {
-            for (int i = 0; i < built_in_profiles.Items.Count; i++)
+            App.settingsManager.BeginBatchUpdate();
+            try
             {
-                App.settingsManager.SetOption(built_in_profiles.Items[i].ToString().Replace(" ", "_").ToUpper(), built_in_profiles.GetItemChecked(i).ToString());
+                for (int i = 0; i < built_in_profiles.Items.Count; i++)
+                {
+                    App.settingsManager.SetOption(built_in_profiles.Items[i].ToString().Replace(" ", "_").ToUpper(), built_in_profiles.GetItemChecked(i).ToString());
+                }
             }
-            App.settingsManager.SaveConfig();
+            finally
+            {
+                App.settingsManager.EndBatchUpdate();
+            }
             Hide();
         }
 
