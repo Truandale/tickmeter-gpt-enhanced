@@ -1954,6 +1954,16 @@ namespace tickMeter.Forms
                 
                 var profile = ColorZoneProfile.GetProfile(selectedProfile);
                 
+                // Enable/disable controls BEFORE updating values
+                // Это важно, чтобы состояние Enabled применилось до изменения значений
+                bool isCustom = selectedProfile == "Custom";
+                numPingGreen.Enabled = isCustom;
+                numPingYellow.Enabled = isCustom;
+                numTickrateGreen.Enabled = isCustom;
+                numTickrateYellow.Enabled = isCustom;
+                numTicktimeGreen.Enabled = isCustom;
+                numTicktimeYellow.Enabled = isCustom;
+                
                 // Update numeric controls с защитой от COM ошибок
                 Application.DoEvents(); // Обрабатываем pending UI events
                 
@@ -1964,16 +1974,7 @@ namespace tickMeter.Forms
                 numTicktimeGreen.Value = (decimal)profile.TicktimeGreenRatio;
                 numTicktimeYellow.Value = (decimal)profile.TicktimeYellowRatio;
                 
-                // Enable/disable controls
-                bool isCustom = selectedProfile == "Custom";
-                numPingGreen.Enabled = isCustom;
-                numPingYellow.Enabled = isCustom;
-                numTickrateGreen.Enabled = isCustom;
-                numTickrateYellow.Enabled = isCustom;
-                numTicktimeGreen.Enabled = isCustom;
-                numTicktimeYellow.Enabled = isCustom;
-                
-                System.Diagnostics.Debug.Print($"[ColorZoneProfile] Updated UI for: {selectedProfile}");
+                System.Diagnostics.Debug.Print($"[ColorZoneProfile] Updated UI for: {selectedProfile}, controls enabled: {isCustom}");
             }
             catch (System.Runtime.InteropServices.COMException comEx)
             {
