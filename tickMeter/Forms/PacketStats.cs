@@ -84,6 +84,11 @@ namespace tickMeter
     private int _maxLiveRows = 5000; // Rolling buffer лимит
     private int _packetIdCounter = 0;
     private bool _pendingUIUpdate = false; // Флаг отложенного обновления UI
+    
+    // Умная прокрутка и сортировка
+    private bool _isScrolling = false; // Предотвращаем рекурсию в событии Scroll
+    private int _sortColumn = -1;
+    private SortOrder _sortOrder = SortOrder.None;
 
     // Synthetic tunnel/live view state
     private bool _vpnSyntheticEnabled;
@@ -131,6 +136,15 @@ namespace tickMeter
             listView1.VirtualMode = true;
             listView1.RetrieveVirtualItem += ListView1_RetrieveVirtualItem;
             listView1.VirtualListSize = 0;
+            
+            // Умная прокрутка: автоснятие галки при скролле вверх
+            listView1.Scroll += ListView1_Scroll;
+            
+            // Сортировка по клику на заголовок колонки
+            listView1.ColumnClick += ListView1_ColumnClick;
+            
+            // Обработчик изменения галки autoscroll
+            autoscroll.CheckedChanged += Autoscroll_CheckedChanged;
             
             Debug.Print($"[PacketStats] VirtualMode enabled with max rows: {_maxLiveRows}");
             
@@ -1256,6 +1270,99 @@ namespace tickMeter
         }
         
         /// <summary>
+        /// Умная прокрутка: автоматически снимает галку autoscroll при прокрутке вверх
+        /// </summary>
+        private void ListView1_Scroll(object sender, ScrollEventArgs e)
+        {
+            if (_isScrolling || !autoscroll.Checked) return;
+            
+            try
+            {
+                _isScrolling = true;
+                
+                // Проверяем, находимся ли мы в самом низу
+                if (listView1.VirtualListSize > 0 && listView1.TopItem != null)
+                {
+                    int topIndex = listView1.TopItem.Index;
+                    int visibleCount = Math.Max(1, listView1.ClientSize.Height / Math.Max(1, listView1.GetItemRect(0).Height));
+                    int lastVisibleIndex = topIndex + visibleCount;
+                    
+                    // Если пользователь прокрутил НЕ до самого низа - снимаем галку
+                    if (lastVisibleIndex < listView1.VirtualListSize - 1)
+                    {
+                        autoscroll.Checked = false;
+                    }
+                }
+            }
+            finally
+            {
+                _isScrolling = false;
+            }
+        }
+        
+        /// <summary>
+        /// Обработчик изменения галки autoscroll:
+        /// Когда галку ставят - сразу прокручиваем вниз
+        /// </summary>
+        private void Autoscroll_CheckedChanged(object sender, EventArgs e)
+        {
+            if (autoscroll.Checked && listView1.VirtualListSize > 0 && !_isScrolling)
+            {
+                try
+                {
+                    _isScrolling = true;
+                    listView1.EnsureVisible(listView1.VirtualListSize - 1);
+                }
+                finally
+                {
+                    _isScrolling = false;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Сортировка по клику на заголовок колонки
+        /// </summary>
+        private void ListView1_ColumnClick(object sender, ColumnClickEventArgs e)
+        {
+            // Определяем направление сортировки
+            if (e.Column == _sortColumn)
+            {
+                // Та же колонка - меняем направление
+                _sortOrder = (_sortOrder == SortOrder.Ascending) ? SortOrder.Descending : SortOrder.Ascending;
+            }
+            else
+            {
+                // Новая колонка - сортируем по возрастанию
+                _sortColumn = e.Column;
+                _sortOrder = SortOrder.Ascending;
+            }
+            
+            // Выполняем сортировку
+            SortLivePackets();
+        }
+        
+        /// <summary>
+        /// Сортирует _livePackets по выбранной колонке
+        /// </summary>
+        private void SortLivePackets()
+        {
+            if (_sortColumn < 0 || _sortOrder == SortOrder.None) return;
+            
+            lock (_livePacketsLock)
+            {
+                var comparer = new LivePacketComparer(_sortColumn, _sortOrder);
+                _livePackets.Sort(comparer);
+                
+                // Обновляем ListView
+                if (listView1.VirtualListSize > 0)
+                {
+                    listView1.Invalidate();
+                }
+            }
+        }
+        
+        /// <summary>
         /// НОВЫЙ: Добавляет готовый LivePacketRow в коллекцию с rolling buffer
         /// Вызывается из фонового потока обработки пакетов
         /// </summary>
@@ -1310,6 +1417,75 @@ namespace tickMeter
                 protocol,                                    // Protocol
                 processName ?? "n/a"                         // Process
             );
+        }
+    }
+    
+    /// <summary>
+    /// Компаратор для сортировки LivePacketRow по разным колонкам
+    /// </summary>
+    public class LivePacketComparer : IComparer<LivePacketRow>
+    {
+        private int _column;
+        private SortOrder _order;
+        
+        public LivePacketComparer(int column, SortOrder order)
+        {
+            _column = column;
+            _order = order;
+        }
+        
+        public int Compare(LivePacketRow x, LivePacketRow y)
+        {
+            if (x == null && y == null) return 0;
+            if (x == null) return _order == SortOrder.Ascending ? -1 : 1;
+            if (y == null) return _order == SortOrder.Ascending ? 1 : -1;
+            
+            int result = 0;
+            
+            // Определяем какое поле сравнивать (0=Time, 1=Id, 2=FromIP, 3=FromPort, 4=ToIP, 5=ToPort, 6=Size, 7=Protocol, 8=Process)
+            switch (_column)
+            {
+                case 0: // Time
+                    result = string.Compare(x.Time, y.Time, StringComparison.Ordinal);
+                    break;
+                case 1: // Id - числовое сравнение
+                    result = CompareNumeric(x.Id, y.Id);
+                    break;
+                case 2: // FromIP
+                    result = string.Compare(x.FromIP, y.FromIP, StringComparison.Ordinal);
+                    break;
+                case 3: // FromPort - числовое сравнение
+                    result = CompareNumeric(x.FromPort, y.FromPort);
+                    break;
+                case 4: // ToIP
+                    result = string.Compare(x.ToIP, y.ToIP, StringComparison.Ordinal);
+                    break;
+                case 5: // ToPort - числовое сравнение
+                    result = CompareNumeric(x.ToPort, y.ToPort);
+                    break;
+                case 6: // Size - числовое сравнение
+                    result = CompareNumeric(x.Size, y.Size);
+                    break;
+                case 7: // Protocol
+                    result = string.Compare(x.Protocol, y.Protocol, StringComparison.Ordinal);
+                    break;
+                case 8: // Process
+                    result = string.Compare(x.Process, y.Process, StringComparison.Ordinal);
+                    break;
+            }
+            
+            // Применяем направление сортировки
+            return _order == SortOrder.Ascending ? result : -result;
+        }
+        
+        private int CompareNumeric(string a, string b)
+        {
+            if (int.TryParse(a, out int numA) && int.TryParse(b, out int numB))
+            {
+                return numA.CompareTo(numB);
+            }
+            // Если не числа - сравниваем как строки
+            return string.Compare(a, b, StringComparison.Ordinal);
         }
     }
 }
