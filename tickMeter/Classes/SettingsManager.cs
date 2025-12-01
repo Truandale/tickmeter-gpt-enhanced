@@ -163,14 +163,7 @@ namespace tickMeter
             SetOption("pcap_optimization", "True", "ADVANCED");
             SetOption("pcap_kernel_buffer_mb", "8", "ADVANCED");
             SetOption("pcap_min_to_copy", "4096", "ADVANCED");
-            SetOption("virtual_mode_listview", "True", "ADVANCED");
-            SetOption("virtual_mode_threshold", "1000", "ADVANCED");
-            SetOption("ring_buffer_size", "10000", "ADVANCED");
-            SetOption("show_virtual_mode_stats", "True", "ADVANCED");
-            SetOption("high_priority_threads", "True", "ADVANCED");
-            SetOption("single_consumer_pattern", "False", "ADVANCED");
-            SetOption("ui_processing_rate", "60", "ADVANCED");
-            SetOption("ui_batch_size", "10", "ADVANCED");
+            // Phase 2/3 settings removed - obsolete after optimizations
             SetOption("spikes.enable", "True", "ADVANCED");
             SetOption("spikes.metrics", "ping,tickrate,ticktime", "ADVANCED");
             SetOption("spikes.display", "both", "ADVANCED");

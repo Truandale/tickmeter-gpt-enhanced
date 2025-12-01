@@ -133,12 +133,7 @@ namespace tickMeter.Forms
                 numPcapKernelBufferMb.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("pcap_kernel_buffer_mb", "8", "ADVANCED"));
                 numPcapMinToCopy.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("pcap_min_to_copy", "4096", "ADVANCED"));
                 
-                numRingBufferSize.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("ring_buffer_size", "10000", "ADVANCED"));
-                
-                chkHighPriorityThreads.Checked = App.settingsManager.GetOption("high_priority_threads", "True", "ADVANCED") == "True";
-                chkSingleConsumerPattern.Checked = App.settingsManager.GetOption("single_consumer_pattern", "True", "ADVANCED") == "True";
-                numUiProcessingRate.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("ui_processing_rate", "60", "ADVANCED"));
-                numUiBatchSize.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("ui_batch_size", "10", "ADVANCED"));
+                // Phase 2/3 settings removed - obsolete after optimizations
                 
                 // Загружаем настройки алертов
                 LoadAlertSettings();
@@ -540,12 +535,7 @@ namespace tickMeter.Forms
                 App.settingsManager.SetOption("pcap_kernel_buffer_mb", SettingsManager.ToInvariantString((int)numPcapKernelBufferMb.Value), "ADVANCED");
                 App.settingsManager.SetOption("pcap_min_to_copy", SettingsManager.ToInvariantString((int)numPcapMinToCopy.Value), "ADVANCED");
                 
-                App.settingsManager.SetOption("ring_buffer_size", SettingsManager.ToInvariantString((int)numRingBufferSize.Value), "ADVANCED");
-                
-                App.settingsManager.SetOption("high_priority_threads", chkHighPriorityThreads.Checked.ToString(), "ADVANCED");
-                App.settingsManager.SetOption("single_consumer_pattern", chkSingleConsumerPattern.Checked.ToString(), "ADVANCED");
-                App.settingsManager.SetOption("ui_processing_rate", SettingsManager.ToInvariantString((int)numUiProcessingRate.Value), "ADVANCED");
-                App.settingsManager.SetOption("ui_batch_size", SettingsManager.ToInvariantString((int)numUiBatchSize.Value), "ADVANCED");
+                // Phase 2/3 settings removed - obsolete after optimizations
                 
                 // Spike Detection настройки
                 SaveSpikeDetectionSettings();
@@ -758,14 +748,7 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("pcap_kernel_buffer_mb", "8", "ADVANCED");       // Буфер ядра 8MB ✓
             App.settingsManager.SetOption("pcap_min_to_copy", "4096", "ADVANCED");         // Минимум копирования 4KB ✓
             
-            // Virtual Mode (всегда включен, настройки не нужны)
-            App.settingsManager.SetOption("ring_buffer_size", "10000", "ADVANCED");        // Размер буфера 10000 ✓
-            
-            // Thread Management (ваши оптимальные значения)
-            App.settingsManager.SetOption("high_priority_threads", "True", "ADVANCED");    // Высокий приоритет потоков ✓
-            App.settingsManager.SetOption("single_consumer_pattern", "False", "ADVANCED"); // Single consumer ✗
-            App.settingsManager.SetOption("ui_processing_rate", "60", "ADVANCED");         // Частота UI 60Hz ✓
-            App.settingsManager.SetOption("ui_batch_size", "10", "ADVANCED");              // Размер пакета UI 10 ✓
+            // Phase 2/3 settings removed - obsolete after optimizations
             
             // Spike Detection (ваши РЕАЛЬНЫЕ настройки со скриншота)
             App.settingsManager.SetOption("spikes.enable", "True", "ADVANCED");            // Детекция спайков ✓
