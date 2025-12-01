@@ -126,7 +126,7 @@ namespace tickMeter
             // 
             // RefreshTimer
             // 
-            this.RefreshTimer.Interval = 5;
+            this.RefreshTimer.Interval = 100;
             this.RefreshTimer.Tick += new System.EventHandler(this.RefreshTick);
             // 
             // filter
