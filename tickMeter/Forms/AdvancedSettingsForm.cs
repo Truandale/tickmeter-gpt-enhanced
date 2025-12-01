@@ -133,10 +133,7 @@ namespace tickMeter.Forms
                 numPcapKernelBufferMb.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("pcap_kernel_buffer_mb", "8", "ADVANCED"));
                 numPcapMinToCopy.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("pcap_min_to_copy", "4096", "ADVANCED"));
                 
-                chkVirtualModeListView.Checked = App.settingsManager.GetOption("virtual_mode_listview", "True", "ADVANCED") == "True";
-                numVirtualModeThreshold.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("virtual_mode_threshold", "2000", "ADVANCED"));
                 numRingBufferSize.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("ring_buffer_size", "10000", "ADVANCED"));
-                chkShowVirtualModeStats.Checked = App.settingsManager.GetOption("show_virtual_mode_stats", "False", "ADVANCED") == "True";
                 
                 chkHighPriorityThreads.Checked = App.settingsManager.GetOption("high_priority_threads", "True", "ADVANCED") == "True";
                 chkSingleConsumerPattern.Checked = App.settingsManager.GetOption("single_consumer_pattern", "True", "ADVANCED") == "True";
@@ -543,10 +540,7 @@ namespace tickMeter.Forms
                 App.settingsManager.SetOption("pcap_kernel_buffer_mb", SettingsManager.ToInvariantString((int)numPcapKernelBufferMb.Value), "ADVANCED");
                 App.settingsManager.SetOption("pcap_min_to_copy", SettingsManager.ToInvariantString((int)numPcapMinToCopy.Value), "ADVANCED");
                 
-                App.settingsManager.SetOption("virtual_mode_listview", chkVirtualModeListView.Checked.ToString(), "ADVANCED");
-                App.settingsManager.SetOption("virtual_mode_threshold", SettingsManager.ToInvariantString((int)numVirtualModeThreshold.Value), "ADVANCED");
                 App.settingsManager.SetOption("ring_buffer_size", SettingsManager.ToInvariantString((int)numRingBufferSize.Value), "ADVANCED");
-                App.settingsManager.SetOption("show_virtual_mode_stats", chkShowVirtualModeStats.Checked.ToString(), "ADVANCED");
                 
                 App.settingsManager.SetOption("high_priority_threads", chkHighPriorityThreads.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("single_consumer_pattern", chkSingleConsumerPattern.Checked.ToString(), "ADVANCED");
@@ -764,11 +758,8 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("pcap_kernel_buffer_mb", "8", "ADVANCED");       // Буфер ядра 8MB ✓
             App.settingsManager.SetOption("pcap_min_to_copy", "4096", "ADVANCED");         // Минимум копирования 4KB ✓
             
-            // Virtual Mode (ваши настройки)
-            App.settingsManager.SetOption("virtual_mode_listview", "True", "ADVANCED");    // Виртуальный режим ✓
-            App.settingsManager.SetOption("virtual_mode_threshold", "1000", "ADVANCED");   // Порог 1000 ✓
+            // Virtual Mode (всегда включен, настройки не нужны)
             App.settingsManager.SetOption("ring_buffer_size", "10000", "ADVANCED");        // Размер буфера 10000 ✓
-            App.settingsManager.SetOption("show_virtual_mode_stats", "True", "ADVANCED");  // Статистика виртуального режима ✓
             
             // Thread Management (ваши оптимальные значения)
             App.settingsManager.SetOption("high_priority_threads", "True", "ADVANCED");    // Высокий приоритет потоков ✓

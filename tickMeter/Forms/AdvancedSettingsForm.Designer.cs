@@ -71,12 +71,8 @@ namespace tickMeter.Forms
             this.lblUiBatchSize = new System.Windows.Forms.Label();
             this.numUiBatchSize = new System.Windows.Forms.NumericUpDown();
             this.groupBoxPhase2 = new System.Windows.Forms.GroupBox();
-            this.chkVirtualModeListView = new System.Windows.Forms.CheckBox();
-            this.lblVirtualModeThreshold = new System.Windows.Forms.Label();
-            this.numVirtualModeThreshold = new System.Windows.Forms.NumericUpDown();
             this.lblRingBufferSize = new System.Windows.Forms.Label();
             this.numRingBufferSize = new System.Windows.Forms.NumericUpDown();
-            this.chkShowVirtualModeStats = new System.Windows.Forms.CheckBox();
             this.groupBoxPhase1 = new System.Windows.Forms.GroupBox();
             this.chkAntiReentrancy = new System.Windows.Forms.CheckBox();
             this.chkRtssThrottling = new System.Windows.Forms.CheckBox();
@@ -241,7 +237,6 @@ namespace tickMeter.Forms
             ((System.ComponentModel.ISupportInitialize)(this.numUiProcessingRate)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numUiBatchSize)).BeginInit();
             this.groupBoxPhase2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numVirtualModeThreshold)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numRingBufferSize)).BeginInit();
             this.groupBoxPhase1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numPcapKernelBufferMb)).BeginInit();
@@ -851,79 +846,31 @@ namespace tickMeter.Forms
             // 
             // groupBoxPhase2
             // 
-            this.groupBoxPhase2.Controls.Add(this.chkVirtualModeListView);
-            this.groupBoxPhase2.Controls.Add(this.lblVirtualModeThreshold);
-            this.groupBoxPhase2.Controls.Add(this.numVirtualModeThreshold);
             this.groupBoxPhase2.Controls.Add(this.lblRingBufferSize);
             this.groupBoxPhase2.Controls.Add(this.numRingBufferSize);
-            this.groupBoxPhase2.Controls.Add(this.chkShowVirtualModeStats);
             this.groupBoxPhase2.Dock = System.Windows.Forms.DockStyle.Top;
             this.groupBoxPhase2.Location = new System.Drawing.Point(13, 2514);
             this.groupBoxPhase2.Margin = new System.Windows.Forms.Padding(4);
             this.groupBoxPhase2.Name = "groupBoxPhase2";
             this.groupBoxPhase2.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBoxPhase2.Size = new System.Drawing.Size(753, 150);
+            this.groupBoxPhase2.Size = new System.Drawing.Size(753, 80);
             this.groupBoxPhase2.TabIndex = 7;
             this.groupBoxPhase2.TabStop = false;
-            this.groupBoxPhase2.Text = "Phase 2: VirtualMode ListView";
-            // 
-            // chkVirtualModeListView
-            // 
-            this.chkVirtualModeListView.AutoSize = true;
-            this.chkVirtualModeListView.Location = new System.Drawing.Point(20, 31);
-            this.chkVirtualModeListView.Margin = new System.Windows.Forms.Padding(4);
-            this.chkVirtualModeListView.Name = "chkVirtualModeListView";
-            this.chkVirtualModeListView.Size = new System.Drawing.Size(292, 20);
-            this.chkVirtualModeListView.TabIndex = 0;
-            this.chkVirtualModeListView.Text = "Автоматический VirtualMode для ListView";
-            this.chkVirtualModeListView.UseVisualStyleBackColor = true;
-            // 
-            // lblVirtualModeThreshold
-            // 
-            this.lblVirtualModeThreshold.AutoSize = true;
-            this.lblVirtualModeThreshold.Location = new System.Drawing.Point(20, 65);
-            this.lblVirtualModeThreshold.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblVirtualModeThreshold.Name = "lblVirtualModeThreshold";
-            this.lblVirtualModeThreshold.Size = new System.Drawing.Size(207, 16);
-            this.lblVirtualModeThreshold.TabIndex = 1;
-            this.lblVirtualModeThreshold.Text = "Порог переключения (пакеты):";
-            // 
-            // numVirtualModeThreshold
-            // 
-            this.numVirtualModeThreshold.Location = new System.Drawing.Point(248, 63);
-            this.numVirtualModeThreshold.Margin = new System.Windows.Forms.Padding(4);
-            this.numVirtualModeThreshold.Maximum = new decimal(new int[] {
-            10000,
-            0,
-            0,
-            0});
-            this.numVirtualModeThreshold.Minimum = new decimal(new int[] {
-            100,
-            0,
-            0,
-            0});
-            this.numVirtualModeThreshold.Name = "numVirtualModeThreshold";
-            this.numVirtualModeThreshold.Size = new System.Drawing.Size(80, 22);
-            this.numVirtualModeThreshold.TabIndex = 2;
-            this.numVirtualModeThreshold.Value = new decimal(new int[] {
-            2000,
-            0,
-            0,
-            0});
+            this.groupBoxPhase2.Text = "Phase 2: VirtualMode ListView (всегда включен)";
             // 
             // lblRingBufferSize
             // 
             this.lblRingBufferSize.AutoSize = true;
-            this.lblRingBufferSize.Location = new System.Drawing.Point(361, 65);
+            this.lblRingBufferSize.Location = new System.Drawing.Point(20, 31);
             this.lblRingBufferSize.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblRingBufferSize.Name = "lblRingBufferSize";
             this.lblRingBufferSize.Size = new System.Drawing.Size(144, 16);
-            this.lblRingBufferSize.TabIndex = 3;
+            this.lblRingBufferSize.TabIndex = 0;
             this.lblRingBufferSize.Text = "Размер буфера (шт.):";
             // 
             // numRingBufferSize
             // 
-            this.numRingBufferSize.Location = new System.Drawing.Point(523, 63);
+            this.numRingBufferSize.Location = new System.Drawing.Point(180, 29);
             this.numRingBufferSize.Margin = new System.Windows.Forms.Padding(4);
             this.numRingBufferSize.Maximum = new decimal(new int[] {
             50000,
@@ -936,24 +883,13 @@ namespace tickMeter.Forms
             0,
             0});
             this.numRingBufferSize.Name = "numRingBufferSize";
-            this.numRingBufferSize.Size = new System.Drawing.Size(80, 22);
-            this.numRingBufferSize.TabIndex = 4;
+            this.numRingBufferSize.Size = new System.Drawing.Size(100, 22);
+            this.numRingBufferSize.TabIndex = 1;
             this.numRingBufferSize.Value = new decimal(new int[] {
             10000,
             0,
             0,
             0});
-            // 
-            // chkShowVirtualModeStats
-            // 
-            this.chkShowVirtualModeStats.AutoSize = true;
-            this.chkShowVirtualModeStats.Location = new System.Drawing.Point(20, 95);
-            this.chkShowVirtualModeStats.Margin = new System.Windows.Forms.Padding(4);
-            this.chkShowVirtualModeStats.Name = "chkShowVirtualModeStats";
-            this.chkShowVirtualModeStats.Size = new System.Drawing.Size(270, 20);
-            this.chkShowVirtualModeStats.TabIndex = 5;
-            this.chkShowVirtualModeStats.Text = "Показывать диагностику VirtualMode";
-            this.chkShowVirtualModeStats.UseVisualStyleBackColor = true;
             // 
             // groupBoxPhase1
             // 
@@ -3144,7 +3080,6 @@ namespace tickMeter.Forms
             ((System.ComponentModel.ISupportInitialize)(this.numUiBatchSize)).EndInit();
             this.groupBoxPhase2.ResumeLayout(false);
             this.groupBoxPhase2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numVirtualModeThreshold)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numRingBufferSize)).EndInit();
             this.groupBoxPhase1.ResumeLayout(false);
             this.groupBoxPhase1.PerformLayout();
@@ -3273,12 +3208,8 @@ namespace tickMeter.Forms
         private System.Windows.Forms.NumericUpDown numPcapMinToCopy;
         
         private System.Windows.Forms.GroupBox groupBoxPhase2;
-        private System.Windows.Forms.CheckBox chkVirtualModeListView;
-        private System.Windows.Forms.Label lblVirtualModeThreshold;
-        private System.Windows.Forms.NumericUpDown numVirtualModeThreshold;
         private System.Windows.Forms.Label lblRingBufferSize;
         private System.Windows.Forms.NumericUpDown numRingBufferSize;
-        private System.Windows.Forms.CheckBox chkShowVirtualModeStats;
         
         private System.Windows.Forms.GroupBox groupBoxPhase3;
         private System.Windows.Forms.CheckBox chkHighPriorityThreads;
