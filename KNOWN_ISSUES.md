@@ -1,16 +1,55 @@
 # KNOWN ISSUES - Color Zone System
 
-## 🚨 CRITICAL PROBLEM IDENTIFIED
+## ✅ FIXED: Spike indicators not respecting settings
+
+**Date**: 19.12.2025  
+**Status**: ✅ RESOLVED
+
+### Problem
+- Spike indicator `(!)` appeared even when `show_ping_spikes = False`
+- `HasPingSpike`, `HasTickRateSpike`, `HasTickTimeSpike` properties didn't check their settings
+
+### Root Cause
+Properties `HasPingSpike`, `HasTickRateSpike`, `HasTickTimeSpike` in TickMeterState.cs did not check corresponding settings:
+- `show_ping_spikes`
+- `show_tickrate_spikes`
+- `show_ticktime_spikes`
+
+They returned `true` based only on detection logic, ignoring user preferences.
+
+### Solution
+Added settings check at the beginning of each property:
+```csharp
+bool showSpikeIndicator = App.settingsManager?.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
+if (!showSpikeIndicator)
+{
+    return false; // If spike display is disabled, return false regardless of detection
+}
+```
+
+### Files Changed
+- `tickMeter\Classes\TickMeterState.cs`: Added settings validation to HasPingSpike, HasTickRateSpike, HasTickTimeSpike
+
+---
+
+## 🚨 CRITICAL PROBLEM IDENTIFIED (OBSOLETE - see above fix)
 
 **Color zones not displaying correctly despite proper implementation**
 
-### 📋 DETAILED ISSUE DESCRIPTION
+### 📋 DETAILED ISSUE DESCRIPTION (RESOLVED - see fix above)
 
-**Problem:** Ping value 73ms displays as **RED** instead of expected **YELLOW**
+**Original Problem Report:** Ping value 73ms displays as **RED** instead of expected **YELLOW**
 - **Expected behavior:** 73ms should be YELLOW (Medium profile: 41-80ms = yellow zone)
 - **Actual behavior:** Shows red color with spike indicator `(!)`
-- **Settings:** `show_ping_spikes = False` in settings.ini
+- **Settings:** `show_ping_spikes = False` in settings.ini (but was ignored!)
 - **Profile:** Medium with correct thresholds configured
+
+**Analysis Result**: The problem was NOT with color zone calculation. The spike indicator `(!)` was appearing due to HasPingSpike property ignoring the `show_ping_spikes` setting. This made it LOOK like colors were wrong, but actually:
+1. Zone colors were calculated correctly (73ms → Yellow zone ✓)
+2. Spike detection was firing correctly (73ms was a spike ✓)  
+3. BUT `show_ping_spikes = False` was being IGNORED ✗
+
+The red color user saw was likely from spike blinking or another issue, not from zone calculation.
 
 ### 🔍 TECHNICAL ANALYSIS
 

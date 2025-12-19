@@ -1069,9 +1069,16 @@ namespace tickMeter.Classes
                 var now = DateTime.UtcNow;
                 if (now - _lastSessionStatsUpdate > SESSION_STATS_TTL)
                 {
-                    if (App.meterState?.pingBuffer != null && App.meterState.pingBuffer.Count > 10)
+                    if (App.meterState?.pingBuffer != null)
                     {
-                        var pings = App.meterState.pingBuffer.ToArray();
+                        float[] pings;
+                        lock (App.meterState._pingBufferLock)
+                        {
+                            if (App.meterState.pingBuffer.Count < 10)
+                                return string.Empty;
+                            pings = App.meterState.pingBuffer.ToArray();
+                        }
+                        
                         var validPings = pings.Where(p => p > 0).ToArray();
                         
                         if (validPings.Length > 5)
@@ -1082,7 +1089,11 @@ namespace tickMeter.Classes
                             // Также показываем ticktime если доступен
                             if (App.meterState.tickTimeBuffer?.Count > 5)
                             {
-                                var ticktimes = App.meterState.tickTimeBuffer.Where(t => t > 0).ToArray();
+                                float[] ticktimes;
+                                lock (App.meterState._tickTimeBufferLock)
+                                {
+                                    ticktimes = App.meterState.tickTimeBuffer.Where(t => t > 0).ToArray();
+                                }
                                 if (ticktimes.Length > 0)
                                 {
                                     var avgTt = ticktimes.Average();

@@ -375,9 +375,15 @@ namespace tickMeter.Classes
             }
             
             // Fallback: если нет тикрейта, используем последнее значение из буфера
-            if (App.meterState.tickTimeBuffer?.Count > 0)
+            if (App.meterState.tickTimeBuffer != null)
             {
-                return App.meterState.tickTimeBuffer.Last();
+                lock (App.meterState._tickTimeBufferLock)
+                {
+                    if (App.meterState.tickTimeBuffer.Count > 0)
+                    {
+                        return App.meterState.tickTimeBuffer.Last();
+                    }
+                }
             }
             
             return 7.8; // Fallback значение

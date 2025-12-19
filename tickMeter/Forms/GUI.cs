@@ -2178,9 +2178,15 @@ namespace tickMeter.Forms
                     }
                     
                     // Получаем ticktime из буфера
-                    if (App.meterState.tickTimeBuffer != null && App.meterState.tickTimeBuffer.Count > 0)
+                    if (App.meterState.tickTimeBuffer != null)
                     {
-                        currentTicktime = App.meterState.tickTimeBuffer[App.meterState.tickTimeBuffer.Count - 1];
+                        lock (App.meterState._tickTimeBufferLock)
+                        {
+                            if (App.meterState.tickTimeBuffer.Count > 0)
+                            {
+                                currentTicktime = App.meterState.tickTimeBuffer[App.meterState.tickTimeBuffer.Count - 1];
+                            }
+                        }
                     }
                     
                     // Передаем данные в анализатор
@@ -3293,12 +3299,15 @@ namespace tickMeter.Forms
                             // Обновляем буфер тиктайма для отображения в оверлее
                             if (App.meterState.tickTimeBuffer == null)
                                 App.meterState.tickTimeBuffer = new List<float>();
-                                
-                            App.meterState.tickTimeBuffer.Add(currentTicktime);
                             
-                            // Ограничиваем размер буфера
-                            if (App.meterState.tickTimeBuffer.Count > 100)
-                                App.meterState.tickTimeBuffer.RemoveAt(0);
+                            lock (App.meterState._tickTimeBufferLock)
+                            {
+                                App.meterState.tickTimeBuffer.Add(currentTicktime);
+                                
+                                // Ограничиваем размер буфера
+                                if (App.meterState.tickTimeBuffer.Count > 100)
+                                    App.meterState.tickTimeBuffer.RemoveAt(0);
+                            }
                                 
                             DebugLogger.log($"[VPN-TickTime] Calculated ticktime for VPN bypass: {currentTicktime:F1}ms (from tickrate {currentTickRate} Hz)");
                         }

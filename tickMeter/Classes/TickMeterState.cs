@@ -39,8 +39,10 @@ namespace tickMeter
         public List<float> tickrateBuffer = new List<float>(); // Новый буфер для графика тикрейта
         public List<float> pingBuffer = new List<float>();
         
-        // Thread-safe access to pingBuffer
-        private readonly object _pingBufferLock = new object();
+        // Thread-safe access to buffers
+        public readonly object _pingBufferLock = new object();
+        public readonly object _tickTimeBufferLock = new object();
+        public readonly object _tickrateBufferLock = new object();
 
         public int TickRate
         {
@@ -75,16 +77,23 @@ namespace tickMeter
                 Server.TotalTicksCount++;
             }
             
-            if (tickTimeBuffer.Count > 511)
+            lock (_tickTimeBufferLock)
             {
-                tickTimeBuffer.RemoveAt(0);
+                if (tickTimeBuffer.Count > 511)
+                {
+                    tickTimeBuffer.RemoveAt(0);
+                }
             }
+            
             if (timeStamp != DateTime.MinValue)
             {
                 float tickTime = ComputeTickTimeMs(timeStamp.Ticks, packetTicks);
                 if (tickTime > 0f)
                 {
-                    tickTimeBuffer.Add(tickTime);
+                    lock (_tickTimeBufferLock)
+                    {
+                        tickTimeBuffer.Add(tickTime);
+                    }
                     
                     // Детекция спайков ticktime
                     if (Server != null)
@@ -98,11 +107,14 @@ namespace tickMeter
         public void updateTickrateBuffer(int currentTickrate)
         {
             // Обновление буфера тикрейта для графика
-            if (tickrateBuffer.Count > 511)
+            lock (_tickrateBufferLock)
             {
-                tickrateBuffer.RemoveAt(0);
+                if (tickrateBuffer.Count > 511)
+                {
+                    tickrateBuffer.RemoveAt(0);
+                }
+                tickrateBuffer.Add(currentTickrate);
             }
-            tickrateBuffer.Add(currentTickrate);
             DebugLogger.log($"[TickrateBuffer] Added {currentTickrate} Hz to buffer (size: {tickrateBuffer.Count})");
         }
 
@@ -123,11 +135,17 @@ namespace tickMeter
             // Инициализация буферов
             for (int i = 0; i < 513; i++)
             {
-                tickTimeBuffer.Add(0);
-                tickrateBuffer.Add(0); // Инициализация нового буфера тикрейта
+                lock (_tickTimeBufferLock)
+                {
+                    tickTimeBuffer.Add(0);
+                }
+                lock (_tickrateBufferLock)
+                {
+                    tickrateBuffer.Add(0);
+                }
                 lock (_pingBufferLock)
                 {
-                    pingBuffer.Add(30); // Начальное значение для графика пинга
+                    pingBuffer.Add(30);
                 }
             }
             Server = new GameServer(); // Инициализация сервера до Reset
@@ -293,6 +311,12 @@ namespace tickMeter
         {
             get
             {
+                // FIX: Проверяем настройку show_tickrate_spikes
+                bool showSpikeIndicator = App.settingsManager?.GetOption("show_tickrate_spikes", "True", "ADVANCED") == "True";
+                if (!showSpikeIndicator)
+                {
+                    return false; // Если показ спайков выключен - возвращаем false
+                }
                 return Server != null && Server.HasActiveTickRateSpike;
             }
         }
@@ -301,6 +325,12 @@ namespace tickMeter
         {
             get
             {
+                // FIX: Проверяем настройку show_ticktime_spikes
+                bool showSpikeIndicator = App.settingsManager?.GetOption("show_ticktime_spikes", "True", "ADVANCED") == "True";
+                if (!showSpikeIndicator)
+                {
+                    return false; // Если показ спайков выключен - возвращаем false
+                }
                 return Server != null && Server.HasActiveTickTimeSpike;
             }
         }
@@ -331,16 +361,29 @@ namespace tickMeter
                 Server.Reset();
             }
 
-            tickTimeBuffer.Clear();
-            tickrateBuffer.Clear(); // Очистка нового буфера тикрейта
+            lock (_tickTimeBufferLock)
+            {
+                tickTimeBuffer.Clear();
+            }
+            lock (_tickrateBufferLock)
+            {
+                tickrateBuffer.Clear();
+            }
             lock (_pingBufferLock)
             {
                 pingBuffer.Clear();
             }
+            
             for (int i = 0; i < 513; i++)
             {
-                tickTimeBuffer.Add(0);
-                tickrateBuffer.Add(0); // Инициализация нового буфера тикрейта
+                lock (_tickTimeBufferLock)
+                {
+                    tickTimeBuffer.Add(0);
+                }
+                lock (_tickrateBufferLock)
+                {
+                    tickrateBuffer.Add(0);
+                }
                 lock (_pingBufferLock)
                 {
                     pingBuffer.Add(30);
@@ -424,8 +467,9 @@ namespace tickMeter
             private const int MaxGraphDataPoints = 1000; // Максимум точек для графика
 
             // --- Individual Traffic tracking for this server ---
-            public int UploadTraffic { get; set; } = 0;
-            public int DownloadTraffic { get; set; } = 0;
+            // NOTE: Must be fields (not auto-properties) for Interlocked.Add compatibility
+            public int UploadTraffic = 0;
+            public int DownloadTraffic = 0;
             
             // --- Individual Session tracking for this server ---
             public DateTime SessionStart { get; set; } = DateTime.Now;
@@ -517,6 +561,13 @@ namespace tickMeter
             {
                 get
                 {
+                    // FIX: Проверяем настройку show_ping_spikes В ПЕРВУЮ ОЧЕРЕДЬ
+                    bool showSpikeIndicator = App.settingsManager?.GetOption("show_ping_spikes", "True", "ADVANCED") == "True";
+                    if (!showSpikeIndicator)
+                    {
+                        return false; // Если показ спайков выключен - возвращаем false независимо от детекции
+                    }
+                    
                     // Проверяем настройки продвинутой детекции
                     bool useAdvancedDetection = App.settingsManager?.GetOption("advanced_spike_detection", "True", "ADVANCED") == "True";
                     

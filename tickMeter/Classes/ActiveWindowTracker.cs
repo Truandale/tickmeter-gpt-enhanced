@@ -44,12 +44,20 @@ namespace tickMeter.Classes
                     connections[hash].lastUpdate = tickTime;
                     connections[hash].downloaded += (int)traffic;
                     connections[hash].id = id;
-                    App.meterState.DownloadTraffic += (int)traffic;
+                    // FIX: Use Interlocked for thread-safe atomic addition (race condition protection)
+                    if (App.meterState?.Server != null)
+                    {
+                        System.Threading.Interlocked.Add(ref App.meterState.Server.DownloadTraffic, (int)traffic);
+                    }
                 }
                 if(tickOut > 0)
                 {
                     connections[hash].sent += (int)traffic;
-                    App.meterState.UploadTraffic += (int)traffic;
+                    // FIX: Use Interlocked for thread-safe atomic addition (race condition protection)
+                    if (App.meterState?.Server != null)
+                    {
+                        System.Threading.Interlocked.Add(ref App.meterState.Server.UploadTraffic, (int)traffic);
+                    }
                 }
             }
         }
