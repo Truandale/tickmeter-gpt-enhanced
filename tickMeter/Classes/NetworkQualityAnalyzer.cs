@@ -73,6 +73,9 @@ namespace tickMeter.Classes
         public static event Action<string> QualityRatingChanged;
         public static event Action<bool, string> PredictionChanged;
         
+        // Кэш для отслеживания изменений профиля
+        private static string _lastContextProfile = "";
+        
         /// <summary>
         /// Загружает настройки Context профиля
         /// </summary>
@@ -80,6 +83,8 @@ namespace tickMeter.Classes
         {
             try
             {
+                string oldProfile = ContextProfile;
+                
                 // Проверяем синхронизацию с color zones
                 bool contextSync = App.settingsManager?.GetOption("network_quality_context_sync", "True", "ADVANCED") == "True";
                 
@@ -95,6 +100,13 @@ namespace tickMeter.Classes
                 }
                 
                 ContextProfile = QualityDisplayThresholds.GetProfileDisplayName(ContextProfile);
+                
+                // Логируем изменение профиля (только один раз при изменении)
+                if (oldProfile != ContextProfile && _lastContextProfile != ContextProfile)
+                {
+                    Debug.Print($"[NetworkQualityAnalyzer] Context Profile changed: {oldProfile} -> {ContextProfile}");
+                    _lastContextProfile = ContextProfile;
+                }
             }
             catch (Exception ex)
             {
@@ -280,6 +292,9 @@ namespace tickMeter.Classes
         {
             try
             {
+                // FIX: Обновляем Context Profile перед каждым анализом для поддержки динамической смены профилей
+                LoadContextProfile();
+                
                 // Рассчитываем стабильность для каждой метрики
                 var oldPingStability = PingStability;
                 var oldTickrateStability = TickrateStability;
@@ -331,10 +346,10 @@ namespace tickMeter.Classes
                     PredictionChanged?.Invoke(IsPredictingIssues, PredictionDetails);
                 }
                 
-                Debug.Print($"[NetworkQualityAnalyzer] Quality: {OverallQuality:F2} ({QualityRating}), " +
-                           $"Ping: {PingStability:F2}, Tickrate: {TickrateStability:F2}, " +
-                           $"Ticktime: {TicktimeStability:F2}, Jitter: {AverageJitter:F1}ms, " +
-                           $"Target={GetCurrentTargetTickrate():F1}Hz, missingPing={_missingPingSamples}");
+                Debug.Print($"[NetworkQualityAnalyzer] Standard: {StandardQuality:F2} ({StandardRating}) | " +
+                           $"Context[{ContextProfile}]: {ContextQuality:F2} ({ContextRating}) | " +
+                           $"Stability=> Ping:{PingStability:F2} TR:{TickrateStability:F2} TT:{TicktimeStability:F2} | " +
+                           $"Jitter:{AverageJitter:F1}ms Target:{GetCurrentTargetTickrate():F1}Hz");
             }
             catch (Exception ex)
             {

@@ -710,9 +710,14 @@ namespace tickMeter.Classes
         }
 
         // Hysteresis для предотвращения дребезга рейтинга
-        private static double _lastQuality = 1.0;
-        private static DateTime _lastQualityChange = DateTime.MinValue;
-        private static string _lastQualityLevel = "excellent";
+        // FIX: Раздельное отслеживание для Standard и Context (гибридный режим)
+        private static double _lastStandardQuality = 1.0;
+        private static DateTime _lastStandardQualityChange = DateTime.MinValue;
+        private static string _lastStandardQualityLevel = "excellent";
+        
+        private static double _lastContextQuality = 1.0;
+        private static DateTime _lastContextQualityChange = DateTime.MinValue;
+        private static string _lastContextQualityLevel = "excellent";
 
         /// <summary>
         /// Форматирует рейтинг качества сети для RTSS оверлея с анти-дребезгом и компактным форматом
@@ -748,13 +753,13 @@ namespace tickMeter.Classes
                 {
                     case "standard":
                         // Только стандартное качество (объективное, Medium профиль)
-                        result = FormatSingleQuality("NET", qualityStats.StandardQuality, "Medium", extras);
+                        result = FormatSingleQuality("NET", qualityStats.StandardQuality, "Medium", extras, isContextMode: false);
                         break;
                     
                     case "context":
                         // Только контекстное качество (субъективное, пользовательский профиль)
                         string contextLabel = GetContextLabel(qualityStats.ContextProfile);
-                        result = FormatSingleQuality(contextLabel, qualityStats.ContextQuality, qualityStats.ContextProfile, extras);
+                        result = FormatSingleQuality(contextLabel, qualityStats.ContextQuality, qualityStats.ContextProfile, extras, isContextMode: true);
                         break;
                     
                     case "hybrid":
@@ -776,9 +781,9 @@ namespace tickMeter.Classes
         /// <summary>
         /// Форматирует одно значение качества для RTSS
         /// </summary>
-        private static string FormatSingleQuality(string label, double quality, string profileName, List<string> extras)
+        private static string FormatSingleQuality(string label, double quality, string profileName, List<string> extras, bool isContextMode = false)
         {
-            var (level, color, icon) = GetQualityLevelWithHysteresis(quality, profileName);
+            var (level, color, icon) = GetQualityLevelWithHysteresis(quality, profileName, isContextMode);
             int qualityPercent = (int)Math.Round(quality * 100);
             
             var result = $"<S><C0>{label}: {color}{icon} {qualityPercent}%<C>";
@@ -801,13 +806,12 @@ namespace tickMeter.Classes
         }
         
         /// <summary>
-        /// <summary>
         /// Форматирует гибридный режим (Standard + Context)
         /// </summary>
         private static string FormatHybridQuality(tickMeter.Classes.NetworkQualityStats stats, List<string> extras)
         {
-            var (stdLevel, stdColor, stdIcon) = GetQualityLevelWithHysteresis(stats.StandardQuality, "Medium");
-            var (ctxLevel, ctxColor, ctxIcon) = GetQualityLevelWithHysteresis(stats.ContextQuality, stats.ContextProfile);
+            var (stdLevel, stdColor, stdIcon) = GetQualityLevelWithHysteresis(stats.StandardQuality, "Medium", isContextMode: false);
+            var (ctxLevel, ctxColor, ctxIcon) = GetQualityLevelWithHysteresis(stats.ContextQuality, stats.ContextProfile, isContextMode: true);
             
             int stdPercent = (int)Math.Round(stats.StandardQuality * 100);
             int ctxPercent = (int)Math.Round(stats.ContextQuality * 100);
@@ -848,7 +852,8 @@ namespace tickMeter.Classes
         /// </summary>
         /// <param name="quality">Значение качества (0.0-1.0)</param>
         /// <param name="profileName">Имя профиля для адаптивных порогов (Very Low/Low/Medium/High). По умолчанию Medium.</param>
-        private static (string level, string color, string icon) GetQualityLevelWithHysteresis(double quality, string profileName = "Medium")
+        /// <param name="isContextMode">True для Context mode, false для Standard mode (разное состояние гистерезиса)</param>
+        private static (string level, string color, string icon) GetQualityLevelWithHysteresis(double quality, string profileName = "Medium", bool isContextMode = false)
         {
             // Получаем адаптивные пороги для профиля
             var (excellentIn, excellentOut, goodIn, goodOut, fairIn, fairOut) = 
@@ -857,14 +862,20 @@ namespace tickMeter.Classes
             const double HOLD_TIME_SECONDS = 3.0; // Минимальное время удержания уровня
             
             var now = DateTime.Now;
-            bool shouldHold = (now - _lastQualityChange).TotalSeconds < HOLD_TIME_SECONDS;
+            
+            // Выбираем состояние в зависимости от режима
+            ref double lastQuality = ref (isContextMode ? ref _lastContextQuality : ref _lastStandardQuality);
+            ref DateTime lastQualityChange = ref (isContextMode ? ref _lastContextQualityChange : ref _lastStandardQualityChange);
+            ref string lastQualityLevel = ref (isContextMode ? ref _lastContextQualityLevel : ref _lastStandardQualityLevel);
+            
+            bool shouldHold = (now - lastQualityChange).TotalSeconds < HOLD_TIME_SECONDS;
             
             string newLevel;
             
             if (shouldHold)
             {
                 // Применяем выходные пороги для текущего уровня
-                switch (_lastQualityLevel)
+                switch (lastQualityLevel)
                 {
                     case "excellent":
                         newLevel = quality < excellentOut ? GetQualityLevel(quality, goodIn, fairIn) : "excellent";
@@ -889,11 +900,11 @@ namespace tickMeter.Classes
             }
             
             // Обновляем состояние если изменился уровень
-            if (newLevel != _lastQualityLevel)
+            if (newLevel != lastQualityLevel)
             {
-                _lastQuality = quality;
-                _lastQualityChange = now;
-                _lastQualityLevel = newLevel;
+                lastQuality = quality;
+                lastQualityChange = now;
+                lastQualityLevel = newLevel;
             }
             
             // Возвращаем параметры отображения с прямыми цветовыми кодами
