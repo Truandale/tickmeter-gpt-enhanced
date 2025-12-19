@@ -3332,7 +3332,11 @@ namespace tickMeter.Forms
                             System.Diagnostics.Debug.Print($"[updateMetherStateFromActiveWindow] Error adding tickrate to spike detector: {ex.Message}");
                         }
                         
-                        App.meterState.Server.PingPort = (int)procStats.remotePort;
+                        // CRITICAL FIX: Null-check для App.meterState.Server перед доступом к свойствам
+                        if (App.meterState.Server != null)
+                        {
+                            App.meterState.Server.PingPort = (int)procStats.remotePort;
+                        }
                         App.meterState.SessionStart = procStats.startTrack;
                         
                         // ИСПРАВЛЕНИЕ: Проверку реальной активности применяем ТОЛЬКО в VPN bypass режиме!

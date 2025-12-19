@@ -312,6 +312,12 @@ namespace tickMeter.Classes
                 // Сглаживание применяется один раз в месте отображения (GUI или Overlay)
                 int rawPing = 0;
                 
+                // CRITICAL FIX: Null-check для App.meterState.Server перед доступом к свойствам
+                if (App.meterState.Server == null)
+                {
+                    return GetFallbackPing();
+                }
+                
                 // Same priority as GUI: UDP > TCP > ICMP
                 if (App.meterState.TcpPing >= 1000 && App.meterState.IsUdpPingValid)
                 {

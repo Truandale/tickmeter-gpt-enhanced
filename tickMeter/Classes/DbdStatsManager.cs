@@ -105,8 +105,14 @@ namespace tickMeter
                 App.meterState.updateTicktimeBuffer(packet.Timestamp.Ticks);
                 App.meterState.CurrentTimestamp = packet.Timestamp;
                 App.meterState.Game = GameCode;
-                App.meterState.Server.GamePort = packet.Ethernet.IpV4.Udp.SourcePort;
-                App.meterState.Server.Ip = packet.Ethernet.IpV4.Source.ToString();
+                
+                // CRITICAL FIX: Null-check для App.meterState.Server перед доступом к свойствам
+                if (App.meterState.Server != null)
+                {
+                    App.meterState.Server.GamePort = packet.Ethernet.IpV4.Udp.SourcePort;
+                    App.meterState.Server.Ip = packet.Ethernet.IpV4.Source.ToString();
+                }
+                
                 App.meterState.DownloadTraffic += packet.Ethernet.IpV4.Udp.TotalLength;
                 App.meterState.TickRate++;
                 NetworkActivityFlag = true;
