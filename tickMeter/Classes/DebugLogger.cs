@@ -117,29 +117,51 @@ namespace tickMeter.Classes
                 return true;
             }
         }
-        public static async void log(String[] messages)
+        
+        // CRITICAL FIX: Changed from async void to fire-and-forget Task to prevent unhandled exceptions
+        // async void methods cannot be awaited and exceptions crash the application
+        public static void log(String[] messages)
         {
             if (!IsLoggingEnabled())
                 return;
 
-            await Task.Run(() =>
+            // Fire-and-forget pattern with exception handling
+            Task.Run(() =>
             {
-                foreach (String message in messages)
+                try
                 {
-                    log(message);
+                    foreach (String message in messages)
+                    {
+                        log(message);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Fallback logging to prevent exception propagation
+                    System.Diagnostics.Debug.WriteLine($"[DebugLogger] Failed to log messages: {ex.Message}");
                 }
             });
         }
 
-        public static async void log(Exception ex)
+        // CRITICAL FIX: Changed from async void to fire-and-forget Task to prevent unhandled exceptions
+        public static void log(Exception ex)
         {
             if (!IsLoggingEnabled())
                 return;
 
-            await Task.Run(() =>
+            // Fire-and-forget pattern with exception handling
+            Task.Run(() =>
             {
-                log(ex.Message);
-                log(ex.StackTrace);
+                try
+                {
+                    log(ex.Message);
+                    log(ex.StackTrace);
+                }
+                catch (Exception logEx)
+                {
+                    // Fallback logging to prevent exception propagation
+                    System.Diagnostics.Debug.WriteLine($"[DebugLogger] Failed to log exception: {logEx.Message}");
+                }
             });
         }
     }
