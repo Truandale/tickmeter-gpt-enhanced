@@ -79,27 +79,33 @@ namespace tickMeter.Classes
             if (string.IsNullOrEmpty(processName))
                 return null;
 
-            lock (_lock)
+            try
             {
-                try
+                // Обновляем данные не чаще раза в секунду
+                if ((DateTime.Now - _lastGlobalUpdate).TotalMilliseconds < 1000)
                 {
-                    // Обновляем данные не чаще раза в секунду
+                    return _processTrafficCache.TryGetValue(processName, out var cached) ? cached : null;
+                }
+
+                lock (_lock) // Lock только для координации обновления, не для ConcurrentDictionary
+                {
+                    // Double-check после получения lock
                     if ((DateTime.Now - _lastGlobalUpdate).TotalMilliseconds < 1000)
                     {
-                        return _processTrafficCache.ContainsKey(processName) ? _processTrafficCache[processName] : null;
+                        return _processTrafficCache.TryGetValue(processName, out var cached) ? cached : null;
                     }
 
                     UpdateNetworkStatistics();
                     _lastGlobalUpdate = DateTime.Now;
+                }
 
-                    // Пытаемся получить данные для конкретного процесса
-                    return GetProcessSpecificTraffic(processName);
-                }
-                catch (Exception ex)
-                {
-                    DebugLogger.log($"[RealTrafficMonitor] Error getting traffic for {processName}: {ex.Message}");
-                    return null;
-                }
+                // Пытаемся получить данные для конкретного процесса (вне lock)
+                return GetProcessSpecificTraffic(processName);
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.log($"[RealTrafficMonitor] Error getting traffic for {processName}: {ex.Message}");
+                return null;
             }
         }
 
@@ -433,18 +439,16 @@ namespace tickMeter.Classes
         /// </summary>
         public static void CleanupCache()
         {
-            lock (_lock)
-            {
-                var cutoff = DateTime.Now.AddMinutes(-5);
-                var keysToRemove = _processTrafficCache
-                    .Where(kvp => kvp.Value.LastUpdate < cutoff)
-                    .Select(kvp => kvp.Key)
-                    .ToList();
+            // ConcurrentDictionary operations are thread-safe, no lock needed
+            var cutoff = DateTime.Now.AddMinutes(-5);
+            var keysToRemove = _processTrafficCache
+                .Where(kvp => kvp.Value.LastUpdate < cutoff)
+                .Select(kvp => kvp.Key)
+                .ToList();
 
-                foreach (var key in keysToRemove)
-                {
-                    _processTrafficCache.TryRemove(key, out _);
-                }
+            foreach (var key in keysToRemove)
+            {
+                _processTrafficCache.TryRemove(key, out _);
             }
         }
 
@@ -608,20 +612,15 @@ namespace tickMeter.Classes
         {
             try
             {
-                lock (_lock)
+                if (_processTrafficCache.TryGetValue(processName, out var trafficData))
                 {
-                    if (_processTrafficCache.ContainsKey(processName))
-                    {
-                        var trafficData = _processTrafficCache[processName];
-                        
-                        // Добавляем интервал в список
-                        trafficData.UdpIntervals.Add(intervalMs);
-                        
-                        // Пересчитываем UDP ping
-                        CalculateUdpPingFromIntervals(trafficData);
-                        
-                        DebugLogger.log($"[RealPing] Added UDP interval {intervalMs:F1}ms for {processName}, UDP ping: {trafficData.UdpPingMs}ms");
-                    }
+                    // Добавляем интервал в список
+                    trafficData.UdpIntervals.Add(intervalMs);
+                    
+                    // Пересчитываем UDP ping
+                    CalculateUdpPingFromIntervals(trafficData);
+                    
+                    DebugLogger.log($"[RealPing] Added UDP interval {intervalMs:F1}ms for {processName}, UDP ping: {trafficData.UdpPingMs}ms");
                 }
             }
             catch (Exception ex)
@@ -840,6 +839,7 @@ namespace tickMeter.Classes
         /// </summary>
         public static void CleanupCounters()
         {
+            // Lock нужен для _processIOCounters (обычный Dictionary, не Concurrent)
             lock (_lock)
             {
                 try

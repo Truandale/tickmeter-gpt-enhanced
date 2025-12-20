@@ -368,20 +368,19 @@ namespace tickMeter.Classes
             return "<S><C0>Ping: " + pingFont + pingValue + " <S0>ms" + spikeIndicator + "<C> <C0>(" + geo + ")" + diagnostic + Environment.NewLine;
         }
 
-        private static bool _buildRivaOutputInProgress = false;
+        private static int _buildRivaOutputInProgress = 0; // Interlocked flag
 
         public static void BuildRivaOutput()
         {
-            // Anti-reentrancy protection
+            // Anti-reentrancy protection with Interlocked for thread-safety
             bool antiReentrancy = App.settingsManager?.GetOption("anti_reentrancy", "True", "ADVANCED") == "True";
-            if (antiReentrancy && _buildRivaOutputInProgress)
+            if (antiReentrancy && System.Threading.Interlocked.Exchange(ref _buildRivaOutputInProgress, 1) == 1)
             {
-                return; // Предотвращаем повторный вход
+                return; // Already in progress - prevent reentrant call
             }
 
             try
             {
-                if (antiReentrancy) _buildRivaOutputInProgress = true;
                 
                 string output = "";
                 var state = App.meterState;
@@ -645,7 +644,7 @@ namespace tickMeter.Classes
             {
                 if (App.settingsManager?.GetOption("anti_reentrancy", "True", "ADVANCED") == "True") 
                 {
-                    _buildRivaOutputInProgress = false;
+                    System.Threading.Interlocked.Exchange(ref _buildRivaOutputInProgress, 0);
                 }
             }
         }
