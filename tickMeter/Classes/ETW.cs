@@ -245,9 +245,9 @@ namespace tickMeter.Classes
             t.Start();
         }
 
-        private static async void ETWSessionThread()
+        private static void ETWSessionThread()
         {
-            await Task.Run(() =>
+            _ = Task.Run(() =>
             {
                 using (var kernelSession = new TraceEventSession(KernelTraceEventParser.KernelSessionName))
                 {

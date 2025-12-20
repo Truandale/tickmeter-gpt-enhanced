@@ -54,9 +54,19 @@ namespace tickMeter
         private readonly object _udpLock = new object();
         private readonly object _processInfoLock = new object();
 
-        private async void MngrTimerTick(Object source, System.Timers.ElapsedEventArgs e)
+        private void MngrTimerTick(Object source, System.Timers.ElapsedEventArgs e)
         {
-            await RefreshConnectionsAsync(waitForGate: false);
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await RefreshConnectionsAsync(waitForGate: false);
+                }
+                catch (Exception ex)
+                {
+                    DebugLogger.log($"[ConnectionsManager] Error in MngrTimerTick: {ex.Message}");
+                }
+            });
         }
 
         public ConnectionsManager(int timerInt = 5000)

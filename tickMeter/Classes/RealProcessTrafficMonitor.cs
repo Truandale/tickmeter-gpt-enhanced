@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.NetworkInformation;
@@ -40,12 +41,12 @@ namespace tickMeter.Classes
             public int CalculatedTickrate { get; set; } = 0; // Реальный тикрейт на основе трафика
         }
 
-        private static readonly Dictionary<string, RealTrafficData> _processTrafficCache = new Dictionary<string, RealTrafficData>();
-        private static readonly Dictionary<string, NetworkInterface> _networkInterfaces = new Dictionary<string, NetworkInterface>();
-        private static readonly Dictionary<string, PerformanceCounter> _processIOCounters = new Dictionary<string, PerformanceCounter>();
-        private static readonly Dictionary<string, DateTime> _lastProcessUpdate = new Dictionary<string, DateTime>();
-        private static readonly Dictionary<string, long> _lastProcessBytesRead = new Dictionary<string, long>();
-        private static readonly Dictionary<string, long> _lastProcessBytesWrite = new Dictionary<string, long>();
+        private static readonly ConcurrentDictionary<string, RealTrafficData> _processTrafficCache = new ConcurrentDictionary<string, RealTrafficData>();
+        private static readonly ConcurrentDictionary<string, NetworkInterface> _networkInterfaces = new ConcurrentDictionary<string, NetworkInterface>();
+        private static readonly ConcurrentDictionary<string, PerformanceCounter> _processIOCounters = new ConcurrentDictionary<string, PerformanceCounter>();
+        private static readonly ConcurrentDictionary<string, DateTime> _lastProcessUpdate = new ConcurrentDictionary<string, DateTime>();
+        private static readonly ConcurrentDictionary<string, long> _lastProcessBytesRead = new ConcurrentDictionary<string, long>();
+        private static readonly ConcurrentDictionary<string, long> _lastProcessBytesWrite = new ConcurrentDictionary<string, long>();
         private static DateTime _lastGlobalUpdate = DateTime.MinValue;
         private static readonly object _lock = new object();
 
@@ -442,7 +443,7 @@ namespace tickMeter.Classes
 
                 foreach (var key in keysToRemove)
                 {
-                    _processTrafficCache.Remove(key);
+                    _processTrafficCache.TryRemove(key, out _);
                 }
             }
         }
@@ -862,11 +863,11 @@ namespace tickMeter.Classes
                     
                     foreach (var key in keysToRemove)
                     {
-                        _processIOCounters.Remove(key);
+                        _processIOCounters.TryRemove(key, out _);
                         string baseKey = key.Replace("_read", "").Replace("_write", "");
-                        _lastProcessUpdate.Remove(baseKey);
-                        _lastProcessBytesRead.Remove(baseKey);
-                        _lastProcessBytesWrite.Remove(baseKey);
+                        _lastProcessUpdate.TryRemove(baseKey, out _);
+                        _lastProcessBytesRead.TryRemove(baseKey, out _);
+                        _lastProcessBytesWrite.TryRemove(baseKey, out _);
                     }
                     
                     if (keysToRemove.Count > 0)

@@ -24,10 +24,6 @@ namespace tickMeter.Forms
         public string verInfo;
         TagCollection TagsInfo;
         
-    // Флаг чтобы избежать дублирования write-through обработчиков (больше не используется на главной форме)
-    private bool universalHandlersInitialized = false; // kept for compatibility; no longer used
-    private bool captureAllAdaptersHandlerInitialized = false; // kept for compatibility; no longer used
-    
     // Флаг для предотвращения рекурсивного обновления при программном изменении адаптера
     public bool IsUpdatingAdapter = false;
 
@@ -135,7 +131,7 @@ namespace tickMeter.Forms
         private void SetBool(string key, bool val) =>
             App.settingsManager.SetOption(key, val.ToString());
 
-        public async void CheckNewVersion()
+        public async Task CheckNewVersion()
         {
             await Task.Run(() =>
             {
@@ -512,10 +508,17 @@ namespace tickMeter.Forms
             Process.Start("https://www.youtube.com/channel/UConzx4k6IVXSs9PsY9Snkbg");
         }
 
-        private async void settings_rtss_output_CheckedChanged(object sender, EventArgs e)
+        private void settings_rtss_output_CheckedChanged(object sender, EventArgs e)
         {
-            await Task.Run(() => { try { RivaTuner.PrintData(""); } catch (Exception exc) { MessageBox.Show(exc.Message); } });
-            App.gui.UpdateStyle(settings_rtss_output.Checked);
+            _ = Task.Run(async () => {
+                try { 
+                    await Task.Run(() => RivaTuner.PrintData(""));
+                    this.Invoke(new Action(() => App.gui.UpdateStyle(settings_rtss_output.Checked)));
+                } 
+                catch (Exception exc) { 
+                    this.Invoke(new Action(() => MessageBox.Show(exc.Message))); 
+                }
+            });
         }
 
         private void adapters_list_SelectedIndexChanged(object sender, EventArgs e)

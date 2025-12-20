@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -27,7 +28,7 @@ namespace tickMeter.Classes
         public double TargetTickrateHz { get; set; }  // target tickrate (128)
 
         // ChatGPT Enhancement: Zone calculation cache for performance
-        private static readonly Dictionary<string, (Zone zone, DateTime time)> _zoneCache = new Dictionary<string, (Zone zone, DateTime time)>();
+        private static readonly ConcurrentDictionary<string, (Zone zone, DateTime time)> _zoneCache = new ConcurrentDictionary<string, (Zone zone, DateTime time)>();
         private static readonly TimeSpan CACHE_DURATION = TimeSpan.FromMilliseconds(50); // 50ms cache
         
         // Hysteresis state for anti-flicker
@@ -99,7 +100,7 @@ namespace tickMeter.Classes
                                            .Select(kvp => kvp.Key)
                                            .ToList();
                 foreach (var expiredKey in expiredKeys)
-                    _zoneCache.Remove(expiredKey);
+                    _zoneCache.TryRemove(expiredKey, out _);
             }
             
             // Return cached result if valid

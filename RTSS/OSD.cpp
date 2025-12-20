@@ -96,86 +96,89 @@ namespace RTSS {
 
 		HANDLE hMapFile = NULL;
 		LPRTSS_SHARED_MEMORY pMem = NULL;
-		openSharedMemory(&hMapFile, &pMem);
-		LPVOID pMapAddr = MapViewOfFile(hMapFile, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-
-		if (hMapFile)
+		LPVOID pMapAddr = NULL;
+		
+		try
 		{
+			openSharedMemory(&hMapFile, &pMem);
 			
-
-			if (pMem)
+			if (!hMapFile || !pMem)
+				return 0;
+				
+			pMapAddr = MapViewOfFile(hMapFile, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+			if (!pMapAddr)
 			{
-				for (DWORD i = (m_osdSlot == 0 ? 1 : m_osdSlot); i < pMem->dwOSDArrSize; i++)
+				closeSharedMemory(hMapFile, pMem);
+				return 0;
+			}
+
+			for (DWORD i = (m_osdSlot == 0 ? 1 : m_osdSlot); i < pMem->dwOSDArrSize; i++)
+			{
+				auto pEntry = (RTSS_SHARED_MEMORY::LPRTSS_SHARED_MEMORY_OSD_ENTRY)((LPBYTE)pMem + pMem->dwOSDArrOffset + (i * pMem->dwOSDEntrySize));
+				//if we need a new slot and this one is unused, claim it
+				if (m_osdSlot == 0 && !strlen(pEntry->szOSDOwner))
 				{
-					auto pEntry = (RTSS_SHARED_MEMORY::LPRTSS_SHARED_MEMORY_OSD_ENTRY)((LPBYTE)pMem + pMem->dwOSDArrOffset + (i * pMem->dwOSDEntrySize));
-					//if we need a new slot and this one is unused, claim it
-					if (m_osdSlot == 0 && !strlen(pEntry->szOSDOwner))
-					{
-						m_osdSlot = i;
-						strcpy_s(pEntry->szOSDOwner, m_entryName);
-					}
-
-
-					if (STRMATCHES(strcmp(pEntry->szOSDOwner, m_entryName)))
-					{
-						if (pMem->dwVersion >= 0x0002000c)
-							//embedded graphs are supported for v2.12 and higher shared memory
-						{
-							if (dwOffset + sizeof(RTSS_EMBEDDED_OBJECT_GRAPH) + dwBufferSize * sizeof(FLOAT) > sizeof(pEntry->buffer))
-								//validate embedded object offset and size and ensure that we don't overrun the buffer
-							{
-								UnmapViewOfFile(pMapAddr);
-
-								CloseHandle(hMapFile);
-
-								return 0;
-							}
-
-							LPRTSS_EMBEDDED_OBJECT_GRAPH lpGraph = (LPRTSS_EMBEDDED_OBJECT_GRAPH)(pEntry->buffer + dwOffset);
-							//get pointer to object in buffer
-
-							lpGraph->header.dwSignature = RTSS_EMBEDDED_OBJECT_GRAPH_SIGNATURE;
-							lpGraph->header.dwSize = sizeof(RTSS_EMBEDDED_OBJECT_GRAPH) + dwBufferSize * sizeof(FLOAT);
-							lpGraph->header.dwWidth = dwWidth;
-							lpGraph->header.dwHeight = dwHeight;
-							lpGraph->header.dwMargin = dwMargin;
-							lpGraph->dwFlags = dwFlags;
-							lpGraph->fltMin = fltMin;
-							lpGraph->fltMax = fltMax;
-							lpGraph->dwDataCount = dwBufferSize;
-
-							if (lpBuffer && dwBufferSize)
-							{
-								for (DWORD dwPos = 0; dwPos < dwBufferSize; dwPos++)
-								{
-                                    FLOAT fltData = 0;
-                                    try {
-                                        fltData = lpBuffer[dwBufferPos];
-                                    } catch(...) { }
-                                    lpGraph->fltData[dwPos] = (fltData == 120) ? 0 : fltData;
-                                    dwBufferPos = (dwBufferPos + 1) & (dwBufferSize - 1);
-
-								}
-							}
-
-							dwResult = lpGraph->header.dwSize;
-						}
-
-						break;
-					}
-
+					m_osdSlot = i;
+					strcpy_s(pEntry->szOSDOwner, m_entryName);
 				}
 
 
+				if (STRMATCHES(strcmp(pEntry->szOSDOwner, m_entryName)))
+				{
+					if (pMem->dwVersion >= 0x0002000c)
+						//embedded graphs are supported for v2.12 and higher shared memory
+					{
+						if (dwOffset + sizeof(RTSS_EMBEDDED_OBJECT_GRAPH) + dwBufferSize * sizeof(FLOAT) > sizeof(pEntry->buffer))
+							//validate embedded object offset and size and ensure that we don't overrun the buffer
+						{
+							break;
+						}
 
+						LPRTSS_EMBEDDED_OBJECT_GRAPH lpGraph = (LPRTSS_EMBEDDED_OBJECT_GRAPH)(pEntry->buffer + dwOffset);
+						//get pointer to object in buffer
 
-				UnmapViewOfFile(pMapAddr);
+						lpGraph->header.dwSignature = RTSS_EMBEDDED_OBJECT_GRAPH_SIGNATURE;
+						lpGraph->header.dwSize = sizeof(RTSS_EMBEDDED_OBJECT_GRAPH) + dwBufferSize * sizeof(FLOAT);
+						lpGraph->header.dwWidth = dwWidth;
+						lpGraph->header.dwHeight = dwHeight;
+						lpGraph->header.dwMargin = dwMargin;
+						lpGraph->dwFlags = dwFlags;
+						lpGraph->fltMin = fltMin;
+						lpGraph->fltMax = fltMax;
+						lpGraph->dwDataCount = dwBufferSize;
 
+						if (lpBuffer && dwBufferSize)
+						{
+							for (DWORD dwPos = 0; dwPos < dwBufferSize; dwPos++)
+							{
+								FLOAT fltData = 0;
+								try {
+									fltData = lpBuffer[dwBufferPos];
+								} catch(...) { }
+								lpGraph->fltData[dwPos] = (fltData == 120) ? 0 : fltData;
+								dwBufferPos = (dwBufferPos + 1) & (dwBufferSize - 1);
 
-				closeSharedMemory(hMapFile, pMem);
-				
+							}
+						}
+
+						dwResult = lpGraph->header.dwSize;
+					}
+
+					break;
+				}
+
 			}
 		}
+		catch(...)
+		{
+			// Error handling
+		}
+		
+		if (pMapAddr)
+			UnmapViewOfFile(pMapAddr);
+
+		closeSharedMemory(hMapFile, pMem);
+		
 		return dwResult;
 	}
 

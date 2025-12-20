@@ -51,9 +51,18 @@ namespace tickMeter
             SetGameInfoTimer();
         }
 
-        private async void GameInfoTimerTick(Object source, ElapsedEventArgs e)
+        private void GameInfoTimerTick(Object source, ElapsedEventArgs e)
         {
-            await Task.Run(() => { FetchGameInfo(); });
+            _ = Task.Run(() => {
+                try
+                {
+                    FetchGameInfo();
+                }
+                catch (Exception ex)
+                {
+                    DebugLogger.log($"[DbdStats] Error in GameInfoTimerTick: {ex.Message}");
+                }
+            });
         }
 
         public void FetchGameInfo()

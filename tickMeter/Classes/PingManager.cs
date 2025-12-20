@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
@@ -15,7 +16,7 @@ namespace tickMeter.Classes
         private readonly ConnectionsManager _connectionsManager;
         
         private Timer _pingTimer;
-        private readonly Dictionary<string, PingResult> _lastPingResults = new Dictionary<string, PingResult>();
+        private readonly ConcurrentDictionary<string, PingResult> _lastPingResults = new ConcurrentDictionary<string, PingResult>();
         private readonly object _pingLock = new object();
     private int _immediatePingActive = 0;
         
@@ -79,16 +80,19 @@ namespace tickMeter.Classes
             });
         }
         
-        private async void OnPingTimer(object state)
+        private void OnPingTimer(object state)
         {
-            try
+            _ = Task.Run(async () =>
             {
-                await PerformPingAsync();
-            }
-            catch (Exception)
-            {
-                // Ошибка ping - игнорируем
-            }
+                try
+                {
+                    await PerformPingAsync();
+                }
+                catch (Exception ex)
+                {
+                    DebugLogger.log($"[PingManager] Ping error: {ex.Message}");
+                }
+            });
         }
         
         private async Task PerformPingAsync()
@@ -102,10 +106,7 @@ namespace tickMeter.Classes
                     var result = await PingTargetAsync(target);
                     if (result != null)
                     {
-                        lock (_pingLock)
-                        {
-                            _lastPingResults[target.Address] = result;
-                        }
+                        _lastPingResults[target.Address] = result;
                         
                         PingResultReceived?.Invoke(this, new PingResultEventArgs(result));
                     }

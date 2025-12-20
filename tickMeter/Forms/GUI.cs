@@ -1776,7 +1776,7 @@ namespace tickMeter.Forms
 
         bool RTSS_Failed = false;
         
-        private async void TicksLoop_Tick(object sender, EventArgs e)
+        private void TicksLoop_Tick(object sender, EventArgs e)
         {
             // Анти-реэнтерабельность: если предыдущий тик еще не завершен - пропускаем
             if (Interlocked.Exchange(ref _tickBusy, 1) == 1) 
@@ -1785,7 +1785,9 @@ namespace tickMeter.Forms
                 return;
             }
             
-            try
+            _ = Task.Run(async () =>
+            {
+                try
             {
                 AutoDetectMngr.GetActiveProcessName(true);
                 
@@ -2252,6 +2254,7 @@ namespace tickMeter.Forms
                 // Всегда освобождаем блокировку
                 Volatile.Write(ref _tickBusy, 0);
             }
+            });
         }
 
         /// <summary>

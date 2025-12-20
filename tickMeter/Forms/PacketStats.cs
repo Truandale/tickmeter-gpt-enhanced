@@ -1207,12 +1207,13 @@ namespace tickMeter
             }
         }
 
-        private async void active_refresh_Tick(object sender, EventArgs e)
+        private void active_refresh_Tick(object sender, EventArgs e)
         {
-            await Task.Run(() =>
+            _ = Task.Run(() =>
             {
-
-                listView2.Invoke(new Action(() => {
+                try
+                {
+                    listView2.Invoke(new Action(() => {
 
                     listView2.BeginUpdate();
                     ListView.ListViewItemCollection lvic = new ListView.ListViewItemCollection(listView2);
@@ -1228,6 +1229,11 @@ namespace tickMeter
 
                     listView2.EndUpdate();
                 }));
+                }
+                catch (Exception ex)
+                {
+                    DebugLogger.log($"[PacketStats] Error in active_refresh_Tick: {ex.Message}");
+                }
             });
         }
         

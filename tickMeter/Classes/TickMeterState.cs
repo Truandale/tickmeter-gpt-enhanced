@@ -1605,13 +1605,25 @@ namespace tickMeter
                 }
             }
 
-            private async void PingServerTimer(Object source, System.Timers.ElapsedEventArgs e)
+            private void PingServerTimer(Object source, System.Timers.ElapsedEventArgs e)
             {
                 if (string.IsNullOrEmpty(Ip) || isPinging) return;
 
                 isPinging = true;
-                await Task.Run(() => { PingServer(); }).ConfigureAwait(false);
-                isPinging = false;
+                _ = Task.Run(async () => {
+                    try
+                    {
+                        await Task.Run(() => PingServer()).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        DebugLogger.log($"[PingServerTimer] Error: {ex.Message}");
+                    }
+                    finally
+                    {
+                        isPinging = false;
+                    }
+                });
             }
 
             /// <summary>
@@ -1834,73 +1846,83 @@ namespace tickMeter
                 TickTimestamps = downsampledTimestamps;
             }
 
-            private async void DetectLocation()
+            private void DetectLocation()
             {
                 if (string.IsNullOrEmpty(Ip)) { Location = "N/A"; return; }
-
-                string ipToDetect = Ip;
                 
-                // Если включен STUN, попробуем определить внешний IP
-                if (StunManager.IsEnabled())
+                _ = Task.Run(async () =>
                 {
                     try
                     {
-                        var externalIp = await StunManager.GetExternalIpStringAsync();
-                        if (!string.IsNullOrEmpty(externalIp))
+                        string ipToDetect = Ip;
+                        
+                        // Если включен STUN, попробуем определить внешний IP
+                        if (StunManager.IsEnabled())
                         {
-                            ExternalIp = externalIp;
-                            Debug.WriteLine($"STUN detected external IP: {externalIp}, current server IP: {ipToDetect}");
+                            try
+                            {
+                                var externalIp = await StunManager.GetExternalIpStringAsync();
+                                if (!string.IsNullOrEmpty(externalIp))
+                                {
+                                    ExternalIp = externalIp;
+                                    Debug.WriteLine($"STUN detected external IP: {externalIp}, current server IP: {ipToDetect}");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine($"STUN detection failed: {ex.Message}");
+                            }
+                        }
+                        
+                        // Используем новый robust геолокационный сервис с fallback'ами
+                        try
+                        {
+                            // Проверяем статистику геолокации - новая система автоматически обрабатывает rate limiting
+                            string cacheInfo = Classes.GeolocationService.GetCacheInfo();
+                            DebugLogger.log($"[DetectLocation] Starting geolocation for IP: {ipToDetect}. Cache: {cacheInfo}");
+                            
+                            var locationInfo = await Classes.GeolocationService.GetLocationAsync(ipToDetect);
+                            
+                            if (this.CurrentIP == ipToDetect)
+                            {
+                                Location = locationInfo?.FormattedLocation ?? "N/A";
+                                
+                                DebugLogger.log($"[DetectLocation] Location detected: {Location} (Source: {locationInfo?.Source})");
+                                
+                                // Дополнительная информация для дебага
+                                if (locationInfo != null && !string.IsNullOrEmpty(locationInfo.Isp))
+                                {
+                                    DebugLogger.log($"[DetectLocation] ISP: {locationInfo.Isp}");
+                                }
+                                
+                                // Логируем статус провайдеров при проблемах
+                                if (locationInfo?.Country == "Error" || locationInfo?.Country == "Service Disabled" || locationInfo?.Country == "All Providers Failed")
+                                {
+                                    string providerStatus = Classes.GeolocationService.GetProviderStatus();
+                                    DebugLogger.log($"[DetectLocation] Provider status:\n{providerStatus}");
+                                }
+                            }
+                        }
+                        catch (WebException webEx) when (webEx.Response is HttpWebResponse response && (int)response.StatusCode == 429)
+                        {
+                            DebugLogger.log($"[DetectLocation] Geolocation rate limited (429) for IP {ipToDetect}. Keeping previous location: {Location}");
+                            // Не обновляем Location если получили rate limit - оставляем предыдущее значение
+                        }
+                        catch (Exception ex)
+                        {
+                            DebugLogger.log($"[DetectLocation] Geolocation failed for IP {ipToDetect}: {ex.Message}");
+                            
+                            if (this.CurrentIP == ipToDetect)
+                            {
+                                Location = "Error";
+                            }
                         }
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine($"STUN detection failed: {ex.Message}");
+                        DebugLogger.log($"[DetectLocation] Task exception: {ex.Message}");
                     }
-                }
-                
-                // Используем новый robust геолокационный сервис с fallback'ами
-                try
-                {
-                    // Проверяем статистику геолокации - новая система автоматически обрабатывает rate limiting
-                    string cacheInfo = Classes.GeolocationService.GetCacheInfo();
-                    DebugLogger.log($"[DetectLocation] Starting geolocation for IP: {ipToDetect}. Cache: {cacheInfo}");
-                    
-                    var locationInfo = await Classes.GeolocationService.GetLocationAsync(ipToDetect);
-                    
-                    if (this.CurrentIP == ipToDetect)
-                    {
-                        Location = locationInfo?.FormattedLocation ?? "N/A";
-                        
-                        DebugLogger.log($"[DetectLocation] Location detected: {Location} (Source: {locationInfo?.Source})");
-                        
-                        // Дополнительная информация для дебага
-                        if (locationInfo != null && !string.IsNullOrEmpty(locationInfo.Isp))
-                        {
-                            DebugLogger.log($"[DetectLocation] ISP: {locationInfo.Isp}");
-                        }
-                        
-                        // Логируем статус провайдеров при проблемах
-                        if (locationInfo?.Country == "Error" || locationInfo?.Country == "Service Disabled" || locationInfo?.Country == "All Providers Failed")
-                        {
-                            string providerStatus = Classes.GeolocationService.GetProviderStatus();
-                            DebugLogger.log($"[DetectLocation] Provider status:\n{providerStatus}");
-                        }
-                    }
-                }
-                catch (WebException webEx) when (webEx.Response is HttpWebResponse response && (int)response.StatusCode == 429)
-                {
-                    DebugLogger.log($"[DetectLocation] Geolocation rate limited (429) for IP {ipToDetect}. Keeping previous location: {Location}");
-                    // Не обновляем Location если получили rate limit - оставляем предыдущее значение
-                }
-                catch (Exception ex)
-                {
-                    DebugLogger.log($"[DetectLocation] Geolocation failed for IP {ipToDetect}: {ex.Message}");
-                    
-                    if (this.CurrentIP == ipToDetect)
-                    {
-                        Location = "Error";
-                    }
-                }
+                });
             }
 
             public static IPEndPoint CreateIPEndPoint(string endPoint, int port)

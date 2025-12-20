@@ -35,20 +35,27 @@ namespace tickMeter.Classes
             }
         }
 
-        private async void MngrTimerTick(Object source, System.Timers.ElapsedEventArgs e)
+        private void MngrTimerTick(Object source, System.Timers.ElapsedEventArgs e)
         {
-            await Task.Run(() =>
+            _ = Task.Run(() =>
             {
-                ActivePorts = GetNetStatPorts();
-                ProcessInfoList = Process.GetProcesses();
-                Process procc;
-                for (var i = 0; i < ActivePorts.Count; i++)
+                try
                 {
-                    procc = ProcessInfoList.Where(process => ActivePorts[i].ProcessId == process.Id).First();
-                    if (procc != null)
+                    ActivePorts = GetNetStatPorts();
+                    ProcessInfoList = Process.GetProcesses();
+                    Process procc;
+                    for (var i = 0; i < ActivePorts.Count; i++)
                     {
-                        ActivePorts[i].ProcessName = procc.ProcessName;
+                        procc = ProcessInfoList.Where(process => ActivePorts[i].ProcessId == process.Id).First();
+                        if (procc != null)
+                        {
+                            ActivePorts[i].ProcessName = procc.ProcessName;
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    DebugLogger.log($"[NetworkStats] Error in MngrTimerTick: {ex.Message}");
                 }
             });
 

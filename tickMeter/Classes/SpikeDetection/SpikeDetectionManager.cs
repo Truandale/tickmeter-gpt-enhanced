@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace tickMeter.Classes.SpikeDetection
 {
@@ -288,45 +289,48 @@ namespace tickMeter.Classes.SpikeDetection
         /// Отправляет алерт о спайке (Этап 8: Advanced Alerting System)
         /// </summary>
         /// <param name="spikeEvent">Событие спайка</param>
-        private static async void SendSpikeAlert(SpikeEvent spikeEvent)
+        private static void SendSpikeAlert(SpikeEvent spikeEvent)
         {
-            try
+            _ = Task.Run(async () =>
             {
-                if (spikeEvent.Phase != SpikeEventPhase.End || !spikeEvent.IsConfirmed)
+                try
                 {
-                    return;
-                }
+                    if (spikeEvent.Phase != SpikeEventPhase.End || !spikeEvent.IsConfirmed)
+                    {
+                        return;
+                    }
 
-                // Определяем тип алерта на основе метрики
-                AlertManager.AlertType alertType;
-                switch (spikeEvent.Metric)
-                {
-                    case MetricKind.Ping:
-                        alertType = AlertManager.AlertType.PingSpike;
-                        break;
-                    case MetricKind.Tickrate:
-                        alertType = AlertManager.AlertType.TickrateSpike;
-                        break;
-                    case MetricKind.Ticktime:
-                        alertType = AlertManager.AlertType.TicktimeSpike;
-                        break;
-                    default:
-                        alertType = AlertManager.AlertType.CriticalSpike;
-                        break;
+                    // Определяем тип алерта на основе метрики
+                    AlertManager.AlertType alertType;
+                    switch (spikeEvent.Metric)
+                    {
+                        case MetricKind.Ping:
+                            alertType = AlertManager.AlertType.PingSpike;
+                            break;
+                        case MetricKind.Tickrate:
+                            alertType = AlertManager.AlertType.TickrateSpike;
+                            break;
+                        case MetricKind.Ticktime:
+                            alertType = AlertManager.AlertType.TicktimeSpike;
+                            break;
+                        default:
+                            alertType = AlertManager.AlertType.CriticalSpike;
+                            break;
+                    }
+                    
+                    // Отправляем алерт
+                    await AlertManager.SendAlert(
+                        alertType,
+                        spikeEvent.Metric.ToString(),
+                        spikeEvent.PeakValue,
+                        spikeEvent.Threshold
+                    );
                 }
-                
-                // Отправляем алерт
-                await AlertManager.SendAlert(
-                    alertType,
-                    spikeEvent.Metric.ToString(),
-                    spikeEvent.PeakValue,
-                    spikeEvent.Threshold
-                );
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.Print($"[SpikeDetectionManager] Error sending spike alert: {ex.Message}");
-            }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.Print($"[SpikeDetectionManager] Error sending spike alert: {ex.Message}");
+                }
+            });
         }
     }
 }
