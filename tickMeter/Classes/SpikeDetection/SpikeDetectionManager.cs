@@ -330,7 +330,7 @@ namespace tickMeter.Classes.SpikeDetection
                 {
                     System.Diagnostics.Debug.Print($"[SpikeDetectionManager] Error sending spike alert: {ex.Message}");
                 }
-            });
-        }
-    }
+            }); // конец Task.Run
+        } // конец SendSpikeAlert
+    } // конец класса SpikeDetectionManager
 }
