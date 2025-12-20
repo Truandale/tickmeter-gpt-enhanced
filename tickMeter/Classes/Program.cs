@@ -54,7 +54,18 @@ namespace tickMeter
         {
             try
             {
+                // Освобождаем IDisposable ресурсы
+                App.networkOptimizer?.Dispose();
+                DebugLogger.log("[Program] Network optimizer disposed");
+                
+                App.connectionTracker?.Dispose();
+                DebugLogger.log("[Program] Connection tracker disposed");
+                
+                App.Capture?.Dispose();
+                DebugLogger.log("[Program] Capture service disposed");
+                
                 RealProcessTrafficMonitor.DisposeAll();
+                DebugLogger.log("[Program] All resources disposed successfully");
             }
             catch (Exception ex)
             {
@@ -66,6 +77,10 @@ namespace tickMeter
         {
             try
             {
+                // Освобождаем IDisposable ресурсы
+                App.networkOptimizer?.Dispose();
+                App.connectionTracker?.Dispose();
+                App.Capture?.Dispose();
                 RealProcessTrafficMonitor.DisposeAll();
             }
             catch (Exception ex)

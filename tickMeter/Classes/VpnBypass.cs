@@ -586,9 +586,13 @@ namespace tickMeter.Classes
             try 
             { 
                 _etwTracker?.Dispose();
-                _thread.Join(1000); 
+                _thread?.Join(1000);
+                DebugLogger.log("[ConnectionTracker] Disposed successfully");
             } 
-            catch { } 
+            catch (Exception ex)
+            { 
+                DebugLogger.log($"[ConnectionTracker] Dispose error: {ex.Message}");
+            } 
         }
 
         // ETW Event Handlers
