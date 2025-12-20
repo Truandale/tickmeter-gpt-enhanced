@@ -300,13 +300,16 @@ namespace tickMeter.Forms
 
             App.gui.drops_lbl_val.ForeColor = ColorBad.ForeColor;
 
-            App.gui.tickrate_lbl.ForeColor =
-                App.gui.ping_lbl.ForeColor =
-                App.gui.ip_lbl.ForeColor =
-                App.gui.traffic_lbl.ForeColor =
-                App.gui.drops_lbl.ForeColor =
-                App.gui.time_lbl.ForeColor =
-                ColorLabel.ForeColor;
+            if (App.gui != null)
+            {
+                App.gui.tickrate_lbl.ForeColor =
+                    App.gui.ping_lbl.ForeColor =
+                    App.gui.ip_lbl.ForeColor =
+                    App.gui.traffic_lbl.ForeColor =
+                    App.gui.drops_lbl.ForeColor =
+                    App.gui.time_lbl.ForeColor =
+                    ColorLabel.ForeColor;
+            }
             InitRtss();
             
             // NEW: инициализация состояния чекбокса после загрузки всех настроек

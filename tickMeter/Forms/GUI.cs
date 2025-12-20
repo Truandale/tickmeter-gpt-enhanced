@@ -5229,6 +5229,23 @@ namespace tickMeter.Forms
                 // Принудительно останавливаем все воркеры при закрытии формы
                 Debug.Print("[GUI_FormClosing] Force stopping all workers");
                 StopAutomationTimers();
+                
+                // CRITICAL FIX: Отписываемся от событий для предотвращения memory leak
+                try
+                {
+                    if (App.pingManager != null)
+                    {
+                        App.pingManager.PingResultReceived -= OnPingResultReceived;
+                        Debug.Print("[GUI_FormClosing] Unsubscribed from PingResultReceived");
+                    }
+                    Classes.SpikeDetection.SpikeDetectionManager.SpikeDetected -= OnSpikeDetected;
+                    Debug.Print("[GUI_FormClosing] Unsubscribed from SpikeDetected");
+                }
+                catch (Exception ex)
+                {
+                    Debug.Print($"[GUI_FormClosing] Event unsubscription error: {ex.Message}");
+                }
+                
                 try
                 {
                     _selfHealTimer?.Dispose();

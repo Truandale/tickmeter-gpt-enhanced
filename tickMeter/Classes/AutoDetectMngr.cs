@@ -190,7 +190,10 @@ namespace tickMeter.Classes
             }
             if (activeProcess != newName)
             {
-                App.gui.targetKey = "";
+                if (App.gui != null)
+                {
+                    App.gui.targetKey = "";
+                }
                 Debug.Print($"[AutoDetect] Active process changed: '{activeProcess}' -> '{newName}'");
                 
                 // Сбрасываем метрики при смене процесса
@@ -204,8 +207,11 @@ namespace tickMeter.Classes
                         {
                             try
                             {
-                                App.gui.InitMeterState();
-                                App.meterState.IsTracking = true; // Восстанавливаем флаг трекинга
+                                if (App.gui != null)
+                                {
+                                    App.gui.InitMeterState();
+                                    App.meterState.IsTracking = true; // Восстанавливаем флаг трекинга
+                                }
                             }
                             catch (Exception ex)
                             {
