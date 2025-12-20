@@ -1180,17 +1180,20 @@ namespace tickMeter.Forms
 
                     // Проверяем, что пакет пришёл ОТ игрового сервера К НАМ (входящий)
                     // Сравниваем с App.meterState.Server.Ip и PingPort/GamePort
-                    string serverIp = App.meterState.Server.Ip;
-                    int serverPort = App.meterState.Server.PingPort > 0 ? App.meterState.Server.PingPort : App.meterState.Server.GamePort;
-                    string localIp = App.meterState.LocalIP;
-
-                    // Если серверный IP совпадает с источником, а наш IP совпадает с получателем
-                    if (!string.IsNullOrEmpty(serverIp) && !string.IsNullOrEmpty(localIp)
-                        && srcIp == serverIp && dstIp == localIp
-                        && (serverPort == 0 || srcPort == serverPort))
+                    if (App.meterState.Server != null)
                     {
-                        // Вызовем обновление UDP ping
-                        App.meterState.Server.UpdateUdpPing(packet.Timestamp);
+                        string serverIp = App.meterState.Server.Ip;
+                        int serverPort = App.meterState.Server.PingPort > 0 ? App.meterState.Server.PingPort : App.meterState.Server.GamePort;
+                        string localIp = App.meterState.LocalIP;
+
+                        // Если серверный IP совпадает с источником, а наш IP совпадает с получателем
+                        if (!string.IsNullOrEmpty(serverIp) && !string.IsNullOrEmpty(localIp)
+                            && srcIp == serverIp && dstIp == localIp
+                            && (serverPort == 0 || srcPort == serverPort))
+                        {
+                            // Вызовем обновление UDP ping
+                            App.meterState.Server.UpdateUdpPing(packet.Timestamp);
+                        }
                     }
                 }
             }
@@ -1585,7 +1588,7 @@ namespace tickMeter.Forms
                     // App.meterState.UploadTraffic = procStats.sent;
                     
                     // Обновляем PING данные в VPN режиме
-                    if (realTraffic.RealPingMs > 0)
+                    if (realTraffic.RealPingMs > 0 && App.meterState.Server != null)
                     {
                         App.meterState.Server.Ping = realTraffic.RealPingMs;
                         DebugLogger.log($"[VPN-RealPing] Updated REAL ping: {realTraffic.RealPingMs}ms (jitter: {realTraffic.JitterMs:F1}ms)");
@@ -3183,19 +3186,22 @@ namespace tickMeter.Forms
                         App.meterState.Game = procStats.name;
                         
                         // В VPN bypass режиме сохраняем старый IP для проверки смены
-                        string oldIp = App.meterState.Server.Ip;
-                        App.meterState.Server.Ip = procStats.remoteIp.ToString();
-                        string newIp = App.meterState.Server.Ip;
-                        
-                        // Проверяем смену IP и сбрасываем счётчики если нужно
-                        if (vpnBypassBasic || vpnBypassAdvanced)
+                        if (App.meterState.Server != null)
                         {
-                            if (!string.IsNullOrEmpty(oldIp) && oldIp != newIp)
+                            string oldIp = App.meterState.Server.Ip;
+                            App.meterState.Server.Ip = procStats.remoteIp.ToString();
+                            string newIp = App.meterState.Server.Ip;
+                            
+                            // Проверяем смену IP и сбрасываем счётчики если нужно
+                            if (vpnBypassBasic || vpnBypassAdvanced)
                             {
-                                // IP изменился - сбрасываем счётчики трафика
-                                App.meterState.Server.UploadTraffic = 0;
-                                App.meterState.Server.DownloadTraffic = 0;
-                                DebugLogger.log($"[VPN-BYPASS] IP changed: {oldIp} -> {newIp}, resetting traffic counters");
+                                if (!string.IsNullOrEmpty(oldIp) && oldIp != newIp)
+                                {
+                                    // IP изменился - сбрасываем счётчики трафика
+                                    App.meterState.Server.UploadTraffic = 0;
+                                    App.meterState.Server.DownloadTraffic = 0;
+                                    DebugLogger.log($"[VPN-BYPASS] IP changed: {oldIp} -> {newIp}, resetting traffic counters");
+                                }
                             }
                         }
                         
@@ -3256,14 +3262,14 @@ namespace tickMeter.Forms
                             double etwJitter = Classes.ETW.GetJitterMs(procStats.name);
                             
                             // УБИРАЕМ ВСЕ ОГРАНИЧЕНИЯ - показываем реальные данные
-                            if (etwAvgRtt > 0)
+                            if (etwAvgRtt > 0 && App.meterState.Server != null)
                             {
                                 App.meterState.Server.Ping = (int)etwAvgRtt;
                                 
                                 DebugLogger.log($"[ETW-VPN-RTT-RAW] Using RAW ETW RTT data: avg={etwAvgRtt}ms, min={etwMinRtt}ms, max={etwMaxRtt}ms, jitter={etwJitter:F1}ms");
                                 DebugLogger.log($"[ETW-VPN-RTT-RAW] ETW RTT replaces realTraffic data: old_ping={realTraffic?.RealPingMs ?? -1}ms");
                             }
-                            else if (realTraffic != null && realTraffic.RealPingMs > 0)
+                            else if (realTraffic != null && realTraffic.RealPingMs > 0 && App.meterState.Server != null)
                             {
                                 // Fallback: используем realTraffic ping если ETW данных нет
                                 App.meterState.Server.Ping = realTraffic.RealPingMs;
