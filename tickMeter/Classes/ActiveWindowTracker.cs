@@ -124,7 +124,10 @@ namespace tickMeter.Classes
                         id = tcp.AcknowledgmentNumber;
                     }
                 }
-                catch (Exception) { }
+                catch (Exception)
+                {
+                    // Expected - packet parsing can fail for malformed packets
+                }
 
                 try
                 {

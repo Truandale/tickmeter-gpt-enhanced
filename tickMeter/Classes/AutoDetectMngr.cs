@@ -183,7 +183,11 @@ namespace tickMeter.Classes
                 GetWindowThreadProcessId(hwnd, out pid);
                 Process p = Process.GetProcessById((int)pid);
                 newName = p.ProcessName != null ? p.ProcessName : pid.ToString();
-            } catch (Exception) { }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[AutoDetect] GetActiveProcessName error: {ex.Message}");
+            }
             if (activeProcess != newName)
             {
                 App.gui.targetKey = "";

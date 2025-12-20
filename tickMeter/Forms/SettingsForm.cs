@@ -159,7 +159,10 @@ namespace tickMeter.Forms
                         App.settingsManager.SetOption("last_checked_version", TagsInfo.Tags[TagsInfo.Tags.Count - 1].Version.ToString());
                     }
                 }
-                catch (Exception) { }
+                catch (Exception ex)
+                {
+                    Debug.Print($"[SettingsForm] Version check error: {ex.Message}");
+                }
                 
             });
         }
@@ -267,7 +270,10 @@ namespace tickMeter.Forms
                     }
                 }
             }
-            catch (Exception) { }
+            catch (Exception ex)
+            {
+                Debug.Print($"[SettingsForm] Adapter selection restore error: {ex.Message}");
+            }
                 
             string localIp = App.settingsManager.GetOption("local_ip");
             if(localIp != null && localIp != "")

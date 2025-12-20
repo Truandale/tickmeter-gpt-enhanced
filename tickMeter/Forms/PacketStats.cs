@@ -665,7 +665,11 @@ namespace tickMeter
             {
                 pcapWorker.RunWorkerAsync();
 
-            } catch(Exception) { }
+            }
+            catch(Exception ex)
+            {
+                Debug.Print($"[PacketStats] Worker start error: {ex.Message}");
+            }
 
         }
 

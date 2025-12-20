@@ -4877,7 +4877,14 @@ namespace tickMeter.Forms
             countryLbl.Text = string.Empty;
             process_val.ForeColor = Color.Gray;
             process_val.Text = "n/a";
-            try { ResetTickrateChart(); } catch(Exception) {  }
+            try
+            {
+                ResetTickrateChart();
+            }
+            catch(Exception ex)
+            {
+                Debug.Print($"[GUI] ResetTickrateChart error: {ex.Message}");
+            }
             
             
             if (App.settingsForm.settings_log_checkbox.Checked)
@@ -4892,7 +4899,10 @@ namespace tickMeter.Forms
                     {
                         File.AppendAllText(@"logs\" + App.meterState.Server.Ip + "_ticks.csv", "timestamp;tickrate" + Environment.NewLine + App.meterState.TickRateLog);
                     }
-                    catch (Exception) { }
+                    catch (Exception ex)
+                    {
+                        Debug.Print($"[GUI] CSV log write error: {ex.Message}");
+                    }
                 }
             }
 
@@ -4915,7 +4925,10 @@ namespace tickMeter.Forms
                 {
                     File.AppendAllText(@"logs\"+App.meterState.Game+"_SERVERS-STATS.log", serverStat);
                 }
-                catch (Exception) { }
+                catch (Exception ex)
+                {
+                    Debug.Print($"[GUI] Server stats log write error: {ex.Message}");
+                }
             }
 
 

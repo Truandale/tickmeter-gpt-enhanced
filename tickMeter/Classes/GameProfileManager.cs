@@ -49,7 +49,10 @@ namespace tickMeter.Classes
                 gameProfs[profileIndex].isEnabled = state;
                 gameProfs[profileIndex].Save();
             }
-            catch (Exception) { }
+            catch (Exception ex)
+            {
+                Debug.Print($"[GameProfileManager] Toggle profile error: {ex.Message}");
+            }
         }
 
         public static void LoadProfiles()

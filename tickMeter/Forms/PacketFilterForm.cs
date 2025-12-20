@@ -35,7 +35,11 @@ namespace tickMeter.Forms
                 packetFilter.ProtocolFilter     = protocol_filter.SelectedItem.ToString();
                 
 
-            } catch(Exception) { }
+            }
+            catch(Exception ex)
+            {
+                Debug.Print($"[PacketFilterForm] Apply filter error: {ex.Message}");
+            }
         }
 
         private void ApplyBtn_Click(object sender, EventArgs e)
