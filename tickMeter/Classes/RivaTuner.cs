@@ -392,7 +392,7 @@ namespace tickMeter.Classes
                 }
 
                 // Добавляем заголовок "tickmeter" бирюзовым цветом (используем C5 из палитры)
-                output += "<C5>tickmeter<C>" + Environment.NewLine;
+                output += Environment.NewLine + "<C5>tickmeter<C>" + Environment.NewLine;
 
                 chartOffset = 0;
                 meterState = state;
@@ -703,7 +703,7 @@ namespace tickMeter.Classes
 
         private static string FormatNoTrafficPlaceholder()
         {
-            return "<C5>tickmeter<C>" + Environment.NewLine + "<S><C1>NO TRAFFIC!<C>" + Environment.NewLine;
+            return Environment.NewLine + "<C5>tickmeter<C>" + Environment.NewLine + "<S><C1>NO TRAFFIC!<C>" + Environment.NewLine;
         }
 
         public static void ShowNoTrafficPlaceholder()
