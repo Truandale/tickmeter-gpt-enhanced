@@ -391,8 +391,8 @@ namespace tickMeter.Classes
                     return;
                 }
 
-                // Добавляем заголовок "tickmeter" бирюзовым цветом (BGR формат для RTSS: D1CE00)
-                output += "<C=D1CE00>tickmeter</C>" + Environment.NewLine;
+                // Добавляем заголовок "tickmeter" бирюзовым цветом (RRGGBB: 00CED1)
+                output += "<C0=00CED1><S1>tickmeter</S1></C0>" + Environment.NewLine;
 
                 chartOffset = 0;
                 meterState = state;
@@ -703,7 +703,7 @@ namespace tickMeter.Classes
 
         private static string FormatNoTrafficPlaceholder()
         {
-            return "<C=D1CE00>tickmeter</C>" + Environment.NewLine + "<S><C1>NO TRAFFIC!<C>" + Environment.NewLine;
+            return "<C0=00CED1><S1>tickmeter</S1></C0>" + Environment.NewLine + "<S><C1>NO TRAFFIC!<C>" + Environment.NewLine;
         }
 
         public static void ShowNoTrafficPlaceholder()
