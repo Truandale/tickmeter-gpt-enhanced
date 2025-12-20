@@ -391,6 +391,9 @@ namespace tickMeter.Classes
                     return;
                 }
 
+                // Добавляем заголовок "tickmeter" бирюзовым цветом
+                output += "<C0=00CED1>tickmeter</C0>" + Environment.NewLine;
+
                 chartOffset = 0;
                 meterState = state;
             if(App.settingsForm.settings_tickrate_show.Checked)
