@@ -202,7 +202,7 @@ namespace tickMeter.Classes
         {
             // ChatGPT Enhancement: Debug color values
             Console.WriteLine($"[RTSS] Colors: Good={ColorGood}, Mid={ColorMid}, Bad={ColorBad}");
-            return "<C0=" + LabelColor + "><C1=" + ColorBad+ "><C2=" + ColorMid + "><C3=" + ColorGood + "><C4="+ColorChart+"><S0=47><S1=65><S2=55><A0=-2><A1=2>";
+            return "<C0=" + LabelColor + "><C1=" + ColorBad+ "><C2=" + ColorMid + "><C3=" + ColorGood + "><C4="+ColorChart+"><C5=00CED1><S0=47><S1=65><S2=55><A0=-2><A1=2>";
         }
 
         public static string FormatTickrate()
@@ -391,8 +391,8 @@ namespace tickMeter.Classes
                     return;
                 }
 
-                // Добавляем заголовок "tickmeter" бирюзовым цветом (RRGGBB: 00CED1)
-                output += "<C0=00CED1><S1>tickmeter</S1></C0>" + Environment.NewLine;
+                // Добавляем заголовок "tickmeter" бирюзовым цветом (используем C5 из палитры)
+                output += "<C5>tickmeter<C>" + Environment.NewLine;
 
                 chartOffset = 0;
                 meterState = state;
@@ -703,7 +703,7 @@ namespace tickMeter.Classes
 
         private static string FormatNoTrafficPlaceholder()
         {
-            return "<C0=00CED1><S1>tickmeter</S1></C0>" + Environment.NewLine + "<S><C1>NO TRAFFIC!<C>" + Environment.NewLine;
+            return "<C5>tickmeter<C>" + Environment.NewLine + "<S><C1>NO TRAFFIC!<C>" + Environment.NewLine;
         }
 
         public static void ShowNoTrafficPlaceholder()
