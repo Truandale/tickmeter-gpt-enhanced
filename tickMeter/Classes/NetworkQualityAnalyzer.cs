@@ -456,10 +456,15 @@ namespace tickMeter.Classes
                 // Определяем источник данных для анализа
                 Queue<float> pingData, tickrateData, ticktimeData;
                 bool usingEndpointData = false;
+                string fallbackReason = "";
+                int endpointPingCount = 0, endpointTickrateCount = 0;
                 
                 // NEW: Пытаемся использовать данные активного endpoint'а
                 if (!string.IsNullOrEmpty(_activeEndpointKey) && _endpointStates.TryGetValue(_activeEndpointKey, out var activeState))
                 {
+                    endpointPingCount = activeState.PingHistory.Count;
+                    endpointTickrateCount = activeState.TickrateHistory.Count;
+                    
                     // Проверяем достаточно ли данных в endpoint'е
                     if (activeState.PingHistory.Count >= 10 || activeState.TickrateHistory.Count >= 10)
                     {
@@ -474,6 +479,7 @@ namespace tickMeter.Classes
                         pingData = _pingHistory;
                         tickrateData = _tickrateHistory;
                         ticktimeData = _ticktimeHistory;
+                        fallbackReason = $"NotEnoughData(Ping={endpointPingCount},TR={endpointTickrateCount})";
                     }
                 }
                 else
@@ -482,6 +488,7 @@ namespace tickMeter.Classes
                     pingData = _pingHistory;
                     tickrateData = _tickrateHistory;
                     ticktimeData = _ticktimeHistory;
+                    fallbackReason = string.IsNullOrEmpty(_activeEndpointKey) ? "NoActiveEndpoint" : "EndpointNotFound";
                 }
                 
                 // Рассчитываем стабильность для каждой метрики
@@ -536,9 +543,18 @@ namespace tickMeter.Classes
                     PredictionChanged?.Invoke(IsPredictingIssues, PredictionDetails);
                 }
                 
-                // Логирование для анализа
-                string dataSource = usingEndpointData ? $"Endpoint[{_activeEndpointKey}]" : "Global";
-                DebugLogger.log($"[Quality] {dataSource} Standard={StandardQuality:F3}({StandardRating}) Context={ContextQuality:F3}({ContextRating}) Profile={ContextProfile}");
+                // Логирование для анализа (расширенное для диагностики)
+                string dataSource = usingEndpointData 
+                    ? $"Endpoint[{_activeEndpointKey}]" 
+                    : $"Global[Fallback:{fallbackReason}]";
+                
+                // Получаем пороги для диагностики
+                var standardThresholds = QualityCalculationThresholds.GetThresholds("Medium");
+                var contextThresholds = QualityCalculationThresholds.GetThresholds(ContextProfile);
+                
+                DebugLogger.log($"[Quality] {dataSource} Endpoints={_endpointStates.Count}");
+                DebugLogger.log($"[Quality] Standard={StandardQuality:F3}({StandardRating}) [Medium: ping {standardThresholds.pingGood}-{standardThresholds.pingBad}ms, ticktime {standardThresholds.ticktimeGood}-{standardThresholds.ticktimeBad}ms]");
+                DebugLogger.log($"[Quality] Context={ContextQuality:F3}({ContextRating}) [{ContextProfile}: ping {contextThresholds.pingGood}-{contextThresholds.pingBad}ms, ticktime {contextThresholds.ticktimeGood}-{contextThresholds.ticktimeBad}ms]");
                 DebugLogger.log($"[Quality] Stability: Ping={PingStability:F2} TR={TickrateStability:F2} TT={TicktimeStability:F2} Jitter={AverageJitter:F1}ms");
                 if (pingData.Count > 0 || tickrateData.Count > 0)
                 {
@@ -546,6 +562,10 @@ namespace tickMeter.Classes
                     float avgTickrate = tickrateData.Count > 0 ? tickrateData.Average() : 0;
                     float avgTicktime = ticktimeData.Count > 0 ? ticktimeData.Average() : 0;
                     DebugLogger.log($"[Quality] Metrics: Ping={avgPing:F1}ms TR={avgTickrate:F1}Hz TT={avgTicktime:F1}ms DataPoints={pingData.Count}");
+                }
+                if (usingEndpointData)
+                {
+                    DebugLogger.log($"[Quality] EndpointData: Ping={endpointPingCount} TR={endpointTickrateCount} samples");
                 }
                 
                 Debug.Print($"[NetworkQualityAnalyzer] {dataSource} | Standard: {StandardQuality:F2} ({StandardRating}) | " +
@@ -849,6 +869,10 @@ namespace tickMeter.Classes
                 _ticktimeHistory.Clear();
                 _jitterHistory.Clear();
                 _packetLossHistory.Clear();
+                
+                // Очищаем словарь endpoint'ов
+                _endpointStates.Clear();
+                _activeEndpointKey = "";
                 
                 PingStability = 1.0f;
                 TickrateStability = 1.0f;
