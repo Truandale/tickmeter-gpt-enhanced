@@ -251,6 +251,7 @@
     <Compile Include="Classes\SpikeDetection\SpikeDetector.cs" />
     <Compile Include="Classes\SpikeDetection\SpikeDetectionManager.cs" />
     <Compile Include="Classes\AlertManager.cs" />
+    <Compile Include="Classes\EndpointQualityState.cs" />
     <Compile Include="Classes\NetworkQualityAnalyzer.cs" />
     <Compile Include="Classes\QualityDisplayThresholds.cs" />
     <Compile Include="Classes\NetworkOptimizer.cs" />

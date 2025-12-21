@@ -2202,10 +2202,56 @@ namespace tickMeter.Forms
                         }
                     }
                     
-                    // Передаем данные в анализатор
+                    // NEW: Формируем endpoint key из Server IP и Port
+                    string endpointKey = null;
+                    if (App.meterState.Server != null && !string.IsNullOrEmpty(App.meterState.Server.Ip))
+                    {
+                        // Пытаемся получить порт из targetKey если он есть
+                        int port = 0;
+                        if (!string.IsNullOrEmpty(targetKey))
+                        {
+                            try
+                            {
+                                lock(ActiveWindowTracker.connectionsLock)
+                                {
+                                    if(ActiveWindowTracker.connections.TryGetValue(targetKey, out var activeConn))
+                                    {
+                                        port = (int)activeConn.remotePort;
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+                        
+                        // Формируем endpoint key: "IP:Port"
+                        if (port > 0)
+                        {
+                            endpointKey = $"{App.meterState.Server.Ip}:{port}";
+                        }
+                        else
+                        {
+                            // Если порт неизвестен, используем только IP
+                            endpointKey = App.meterState.Server.Ip;
+                        }
+                    }
+                    
+                    // Передаем данные в анализатор с endpoint key
                     if (networkQualityPing > 0 || currentTickrate > 0)
                     {
-                        Classes.NetworkQualityAnalyzer.AddNetworkData(networkQualityPing, currentTickrate, currentTicktime, currentPacketLoss);
+                        if (!string.IsNullOrEmpty(endpointKey))
+                        {
+                            // NEW: Передаём данные для конкретного endpoint'а
+                            Classes.NetworkQualityAnalyzer.AddNetworkData(endpointKey, networkQualityPing, currentTickrate, currentTicktime, currentPacketLoss);
+                            Classes.NetworkQualityAnalyzer.SetActiveEndpoint(endpointKey);
+                            
+                            Debug.Print($"[NetworkQuality] Added data for endpoint: {endpointKey}");
+                        }
+                        else
+                        {
+                            // Fallback: используем глобальный метод без endpoint'а
+                            Classes.NetworkQualityAnalyzer.AddNetworkData(networkQualityPing, currentTickrate, currentTicktime, currentPacketLoss);
+                            Debug.Print($"[NetworkQuality] Added data (no endpoint)");
+                        }
                     }
                 }
                 catch (Exception ex)

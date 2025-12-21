@@ -11,15 +11,29 @@ namespace tickMeter.Classes
     /// Stage 6: Real-time Network Quality Analysis
     /// Анализирует качество сети в реальном времени, рассчитывает показатели стабильности
     /// и предсказывает потенциальные проблемы
+    /// 
+    /// NEW: Per-Endpoint Quality Tracking
+    /// - Отслеживает качество для каждого IP:Port отдельно
+    /// - Автоматически переключается на активный endpoint
+    /// - TTL cleanup для неактивных endpoint'ов (120-300 секунд)
     /// </summary>
     public static class NetworkQualityAnalyzer
     {
-        // Буферы для хранения исторических данных
+        // Буферы для хранения исторических данных (ГЛОБАЛЬНЫЕ - для fallback)
         private static readonly Queue<float> _pingHistory = new Queue<float>();
         private static readonly Queue<float> _tickrateHistory = new Queue<float>();
         private static readonly Queue<float> _ticktimeHistory = new Queue<float>();
         private static readonly Queue<float> _jitterHistory = new Queue<float>();
         private static readonly Queue<float> _packetLossHistory = new Queue<float>();
+        
+        // NEW: Per-Endpoint Quality Tracking
+        // Словарь: "IP:Port" -> EndpointQualityState
+        private static readonly Dictionary<string, EndpointQualityState> _endpointStates = new Dictionary<string, EndpointQualityState>();
+        private static string _activeEndpointKey = ""; // Текущий активный endpoint
+        private static TimeSpan _endpointTtl = TimeSpan.FromSeconds(180); // TTL для неактивных endpoint'ов
+        private static int _maxEndpoints = 64; // Максимальное количество отслеживаемых endpoint'ов
+        private static DateTime _lastCleanup = DateTime.MinValue; // Время последней очистки
+        private static TimeSpan _cleanupInterval = TimeSpan.FromSeconds(60); // Интервал очистки
         
         // Настройки анализа
     private static int _historySize = 100; // Размер буфера для анализа
@@ -256,6 +270,143 @@ namespace tickMeter.Classes
         }
         
         /// <summary>
+        /// NEW: Добавляет данные для конкретного endpoint'а (IP:Port)
+        /// </summary>
+        /// <param name="endpointKey">Ключ endpoint'а в формате "IP:Port"</param>
+        /// <param name="ping">Пинг (мс)</param>
+        /// <param name="tickrate">Тикрейт (пакетов/сек)</param>
+        /// <param name="ticktime">Тиктайм (мс)</param>
+        /// <param name="packetLoss">Потери пакетов (%)</param>
+        public static void AddNetworkData(string endpointKey, float ping, float tickrate, float ticktime, float packetLoss)
+        {
+            if (string.IsNullOrEmpty(endpointKey))
+            {
+                // Если endpoint не указан - используем глобальный fallback
+                AddNetworkData(ping, tickrate, ticktime, packetLoss);
+                return;
+            }
+
+            lock (_lockObject)
+            {
+                try
+                {
+                    // Получаем или создаём состояние endpoint'а
+                    if (!_endpointStates.TryGetValue(endpointKey, out var state))
+                    {
+                        state = new EndpointQualityState(endpointKey, _historySize);
+                        _endpointStates[endpointKey] = state;
+                        Debug.Print($"[NetworkQualityAnalyzer] NEW endpoint tracked: {endpointKey}");
+                    }
+
+                    // Обновляем время последнего обращения
+                    state.Touch();
+
+                    // Добавляем данные в буферы endpoint'а
+                    AddToBuffer(state.PingHistory, ping);
+                    AddToBuffer(state.TickrateHistory, tickrate);
+                    AddToBuffer(state.TicktimeHistory, ticktime);
+
+                    // Обновляем метаданные
+                    state.PacketCount++;
+
+                    // ТАКЖЕ добавляем в глобальные буферы для fallback и общей статистики
+                    if (TryAddPingSample(ping))
+                    {
+                        UpdateJitterFromPingHistory();
+                    }
+                    AddToBuffer(_tickrateHistory, tickrate);
+                    AddToBuffer(_ticktimeHistory, ticktime);
+                    AddToBuffer(_packetLossHistory, packetLoss);
+
+                    // Периодическая очистка устаревших endpoint'ов
+                    CleanupExpiredEndpoints();
+
+                    // Выполняем анализ если достаточно данных
+                    if (state.PingHistory.Count >= 10 || state.TickrateHistory.Count >= 10 || state.TicktimeHistory.Count >= 10)
+                    {
+                        PerformQualityAnalysis();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    DebugLogger.log($"[Quality] AddData(endpoint={endpointKey}) ERROR: {ex.Message}");
+                    Debug.Print($"[NetworkQualityAnalyzer] Error adding data for endpoint {endpointKey}: {ex.Message}");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Устанавливает активный endpoint для расчёта качества
+        /// </summary>
+        public static void SetActiveEndpoint(string endpointKey)
+        {
+            lock (_lockObject)
+            {
+                if (_activeEndpointKey != endpointKey && !string.IsNullOrEmpty(endpointKey))
+                {
+                    string oldEndpoint = _activeEndpointKey;
+                    _activeEndpointKey = endpointKey;
+                    Debug.Print($"[NetworkQualityAnalyzer] Active endpoint changed: {oldEndpoint} -> {endpointKey}");
+                    
+                    // При смене активного endpoint'а сбрасываем EMA для быстрой адаптации
+                    _standardEma = -1f;
+                    _contextEma = -1f;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Очищает устаревшие endpoint'ы по TTL
+        /// </summary>
+        private static void CleanupExpiredEndpoints()
+        {
+            var now = DateTime.UtcNow;
+            if ((now - _lastCleanup) < _cleanupInterval)
+                return;
+
+            _lastCleanup = now;
+
+            try
+            {
+                var expiredKeys = _endpointStates
+                    .Where(kvp => kvp.Value.IsExpired(_endpointTtl))
+                    .Select(kvp => kvp.Key)
+                    .ToList();
+
+                foreach (var key in expiredKeys)
+                {
+                    _endpointStates.Remove(key);
+                    Debug.Print($"[NetworkQualityAnalyzer] Removed expired endpoint: {key}");
+                }
+
+                // Ограничиваем количество endpoint'ов (удаляем самые старые)
+                if (_endpointStates.Count > _maxEndpoints)
+                {
+                    var toRemove = _endpointStates
+                        .OrderBy(kvp => kvp.Value.LastUpdate)
+                        .Take(_endpointStates.Count - _maxEndpoints)
+                        .Select(kvp => kvp.Key)
+                        .ToList();
+
+                    foreach (var key in toRemove)
+                    {
+                        _endpointStates.Remove(key);
+                        Debug.Print($"[NetworkQualityAnalyzer] Removed oldest endpoint (limit reached): {key}");
+                    }
+                }
+
+                if (expiredKeys.Count > 0 || _endpointStates.Count > _maxEndpoints)
+                {
+                    Debug.Print($"[NetworkQualityAnalyzer] Cleanup complete. Active endpoints: {_endpointStates.Count}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Print($"[NetworkQualityAnalyzer] Cleanup error: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
         /// Добавляет значение в буфер с ограничением размера
         /// </summary>
         private static void AddToBuffer(Queue<float> buffer, float value)
@@ -293,6 +444,7 @@ namespace tickMeter.Classes
         
         /// <summary>
         /// Выполняет анализ качества сети
+        /// NEW: Использует данные активного endpoint'а если установлен
         /// </summary>
         private static void PerformQualityAnalysis()
         {
@@ -300,6 +452,37 @@ namespace tickMeter.Classes
             {
                 // FIX: Обновляем Context Profile перед каждым анализом для поддержки динамической смены профилей
                 LoadContextProfile();
+                
+                // Определяем источник данных для анализа
+                Queue<float> pingData, tickrateData, ticktimeData;
+                bool usingEndpointData = false;
+                
+                // NEW: Пытаемся использовать данные активного endpoint'а
+                if (!string.IsNullOrEmpty(_activeEndpointKey) && _endpointStates.TryGetValue(_activeEndpointKey, out var activeState))
+                {
+                    // Проверяем достаточно ли данных в endpoint'е
+                    if (activeState.PingHistory.Count >= 10 || activeState.TickrateHistory.Count >= 10)
+                    {
+                        pingData = activeState.PingHistory;
+                        tickrateData = activeState.TickrateHistory;
+                        ticktimeData = activeState.TicktimeHistory;
+                        usingEndpointData = true;
+                    }
+                    else
+                    {
+                        // Недостаточно данных - используем глобальные буферы
+                        pingData = _pingHistory;
+                        tickrateData = _tickrateHistory;
+                        ticktimeData = _ticktimeHistory;
+                    }
+                }
+                else
+                {
+                    // Нет активного endpoint'а - используем глобальные буферы (fallback)
+                    pingData = _pingHistory;
+                    tickrateData = _tickrateHistory;
+                    ticktimeData = _ticktimeHistory;
+                }
                 
                 // Рассчитываем стабильность для каждой метрики
                 var oldPingStability = PingStability;
@@ -310,11 +493,12 @@ namespace tickMeter.Classes
                 var oldPredicting = IsPredictingIssues;
                 var oldPredictionDetails = PredictionDetails;
                 
-                PingStability = CalculateStability(_pingHistory, _pingStabilityThreshold);
-                TickrateStability = CalculateStability(_tickrateHistory, _tickrateStabilityThreshold);
-                TicktimeStability = CalculateStability(_ticktimeHistory, _ticktimeStabilityThreshold);
+                // Используем выбранный источник данных
+                PingStability = CalculateStability(pingData, _pingStabilityThreshold);
+                TickrateStability = CalculateStability(tickrateData, _tickrateStabilityThreshold);
+                TicktimeStability = CalculateStability(ticktimeData, _ticktimeStabilityThreshold);
                 
-                // Рассчитываем средний jitter
+                // Рассчитываем средний jitter (всегда из глобального буфера)
                 if (_jitterHistory.Count > 0)
                 {
                     AverageJitter = _jitterHistory.Average();
@@ -322,11 +506,11 @@ namespace tickMeter.Classes
                 
                 // NEW: Рассчитываем обе оценки качества
                 // Standard Quality - всегда используется Medium профиль (объективная оценка)
-                StandardQuality = CalculateQualityWithProfile("Medium");
+                StandardQuality = CalculateQualityWithProfile("Medium", pingData, tickrateData, ticktimeData);
                 StandardRating = GetQualityRating(StandardQuality, "Medium");
                 
                 // Context Quality - используется профиль из настроек (контекстная оценка)
-                ContextQuality = CalculateQualityWithProfile(ContextProfile);
+                ContextQuality = CalculateQualityWithProfile(ContextProfile, pingData, tickrateData, ticktimeData);
                 ContextRating = GetQualityRating(ContextQuality, ContextProfile);
                 
                 // OverallQuality - по умолчанию = StandardQuality для обратной совместимости
@@ -353,20 +537,22 @@ namespace tickMeter.Classes
                 }
                 
                 // Логирование для анализа
-                DebugLogger.log($"[Quality] Standard={StandardQuality:F3}({StandardRating}) Context={ContextQuality:F3}({ContextRating}) Profile={ContextProfile}");
+                string dataSource = usingEndpointData ? $"Endpoint[{_activeEndpointKey}]" : "Global";
+                DebugLogger.log($"[Quality] {dataSource} Standard={StandardQuality:F3}({StandardRating}) Context={ContextQuality:F3}({ContextRating}) Profile={ContextProfile}");
                 DebugLogger.log($"[Quality] Stability: Ping={PingStability:F2} TR={TickrateStability:F2} TT={TicktimeStability:F2} Jitter={AverageJitter:F1}ms");
-                if (_pingHistory.Count > 0 || _tickrateHistory.Count > 0)
+                if (pingData.Count > 0 || tickrateData.Count > 0)
                 {
-                    float avgPing = _pingHistory.Count > 0 ? _pingHistory.Average() : 0;
-                    float avgTickrate = _tickrateHistory.Count > 0 ? _tickrateHistory.Average() : 0;
-                    float avgTicktime = _ticktimeHistory.Count > 0 ? _ticktimeHistory.Average() : 0;
-                    DebugLogger.log($"[Quality] Metrics: Ping={avgPing:F1}ms TR={avgTickrate:F1}Hz TT={avgTicktime:F1}ms DataPoints={_pingHistory.Count}");
+                    float avgPing = pingData.Count > 0 ? pingData.Average() : 0;
+                    float avgTickrate = tickrateData.Count > 0 ? tickrateData.Average() : 0;
+                    float avgTicktime = ticktimeData.Count > 0 ? ticktimeData.Average() : 0;
+                    DebugLogger.log($"[Quality] Metrics: Ping={avgPing:F1}ms TR={avgTickrate:F1}Hz TT={avgTicktime:F1}ms DataPoints={pingData.Count}");
                 }
                 
-                Debug.Print($"[NetworkQualityAnalyzer] Standard: {StandardQuality:F2} ({StandardRating}) | " +
+                Debug.Print($"[NetworkQualityAnalyzer] {dataSource} | Standard: {StandardQuality:F2} ({StandardRating}) | " +
                            $"Context[{ContextProfile}]: {ContextQuality:F2} ({ContextRating}) | " +
                            $"Stability=> Ping:{PingStability:F2} TR:{TickrateStability:F2} TT:{TicktimeStability:F2} | " +
-                           $"Jitter:{AverageJitter:F1}ms Target:{GetCurrentTargetTickrate():F1}Hz");
+                           $"Jitter:{AverageJitter:F1}ms Target:{GetCurrentTargetTickrate():F1}Hz | " +
+                           $"Endpoints: {_endpointStates.Count}");
             }
             catch (Exception ex)
             {
@@ -402,8 +588,18 @@ namespace tickMeter.Classes
         /// Рассчитывает общее качество сети с ChatGPT улучшениями
         /// </summary>
         /// <param name="profileName">Название профиля (Very Low/Low/Medium/High)</param>
-        private static float CalculateQualityWithProfile(string profileName = "Medium")
+        /// <param name="pingData">Данные пинга (null = использовать глобальные)</param>
+        /// <param name="tickrateData">Данные тикрейта (null = использовать глобальные)</param>
+        /// <param name="ticktimeData">Данные тиктайма (null = использовать глобальные)</param>
+        private static float CalculateQualityWithProfile(string profileName = "Medium", 
+            Queue<float> pingData = null, 
+            Queue<float> tickrateData = null, 
+            Queue<float> ticktimeData = null)
         {
+            // Используем переданные данные или fallback на глобальные
+            pingData = pingData ?? _pingHistory;
+            tickrateData = tickrateData ?? _tickrateHistory;
+            ticktimeData = ticktimeData ?? _ticktimeHistory;
             // Получаем пороги для выбранного профиля
             var thresholds = QualityCalculationThresholds.GetThresholds(profileName);
             float pingGoodMs = thresholds.pingGood;
@@ -457,7 +653,7 @@ namespace tickMeter.Classes
             
             // === LEVEL PENALTIES (FIXED: убран ticktime) ===
             // Ping level penalty
-            float avgPing = _pingHistory.Count > 0 ? _pingHistory.Average() : 0f;
+            float avgPing = pingData.Count > 0 ? pingData.Average() : 0f;
             float pingLevelPenalty = 0f;
             float pingRange = pingBadMs - pingGoodMs;
             if (pingRange > 0 && avgPing > pingGoodMs)
@@ -468,7 +664,7 @@ namespace tickMeter.Classes
             
             // Tickrate level penalty
             float effectiveTargetTickrate = GetEffectiveTargetTickrate();
-            float avgTickrate = _tickrateHistory.Count > 0 ? _tickrateHistory.Average() : 0f;
+            float avgTickrate = tickrateData.Count > 0 ? tickrateData.Average() : 0f;
             float tickrateLevelPenalty = 0f;
             if (effectiveTargetTickrate > 0 && avgTickrate < effectiveTargetTickrate)
             {
