@@ -59,8 +59,9 @@ namespace tickMeter.Classes
         public static string ContextRating { get; private set; } = "Excellent";
         public static string ContextProfile { get; private set; } = "Medium";
         
-        // EMA smoothing для общего качества
-        private static float _overallEma = -1f; // -1 означает неинициализировано
+        // EMA smoothing - раздельное для Standard и Context
+        private static float _standardEma = -1f; // -1 означает неинициализировано
+        private static float _contextEma = -1f;  // -1 означает неинициализировано
 
         // Отслеживание валидного пинга для борьбы с ложными скачками
         private static float _lastValidPing = -1f;
@@ -317,11 +318,11 @@ namespace tickMeter.Classes
                 // NEW: Рассчитываем обе оценки качества
                 // Standard Quality - всегда используется Medium профиль (объективная оценка)
                 StandardQuality = CalculateQualityWithProfile("Medium");
-                StandardRating = GetQualityRating(StandardQuality);
+                StandardRating = GetQualityRating(StandardQuality, "Medium");
                 
                 // Context Quality - используется профиль из настроек (контекстная оценка)
                 ContextQuality = CalculateQualityWithProfile(ContextProfile);
-                ContextRating = GetQualityRating(ContextQuality);
+                ContextRating = GetQualityRating(ContextQuality, ContextProfile);
                 
                 // OverallQuality - по умолчанию = StandardQuality для обратной совместимости
                 OverallQuality = StandardQuality;
@@ -416,9 +417,10 @@ namespace tickMeter.Classes
             // Ping level penalty
             float avgPing = _pingHistory.Count > 0 ? _pingHistory.Average() : 0f;
             float pingLevelPenalty = 0f;
-            if (avgPing > pingGoodMs)
+            float pingRange = pingBadMs - pingGoodMs;
+            if (pingRange > 0 && avgPing > pingGoodMs)
             {
-                pingLevelPenalty = Math.Min(1f, Math.Max(0f, (avgPing - pingGoodMs) / (pingBadMs - pingGoodMs)));
+                pingLevelPenalty = Math.Min(1f, Math.Max(0f, (avgPing - pingGoodMs) / pingRange));
             }
             quality += (1f - pingLevelPenalty) * pingLevelWeight;
             
@@ -435,9 +437,10 @@ namespace tickMeter.Classes
             // Ticktime level penalty
             float avgTicktime = _ticktimeHistory.Count > 0 ? _ticktimeHistory.Average() : 0f;
             float ticktimeLevelPenalty = 0f;
-            if (avgTicktime > ticktimeGoodMs)
+            float ticktimeRange = ticktimeBadMs - ticktimeGoodMs;
+            if (ticktimeRange > 0 && avgTicktime > ticktimeGoodMs)
             {
-                ticktimeLevelPenalty = Math.Min(1f, Math.Max(0f, (avgTicktime - ticktimeGoodMs) / (ticktimeBadMs - ticktimeGoodMs)));
+                ticktimeLevelPenalty = Math.Min(1f, Math.Max(0f, (avgTicktime - ticktimeGoodMs) / ticktimeRange));
             }
             quality += (1f - ticktimeLevelPenalty) * ticktimeLevelWeight;
             
@@ -468,26 +471,33 @@ namespace tickMeter.Classes
             quality = Math.Max(0f, Math.Min(1.0f, quality));
             
             // === EMA СГЛАЖИВАНИЕ (ChatGPT recommendation) ===
-            if (_overallEma < 0)
+            // Используем раздельный EMA для Standard (Medium) и Context профилей
+            bool isStandardProfile = profileName == "Medium";
+            ref float emaRef = ref (isStandardProfile ? ref _standardEma : ref _contextEma);
+            
+            if (emaRef < 0)
             {
-                _overallEma = quality; // Первая инициализация
+                emaRef = quality; // Первая инициализация
             }
             else 
             {
-                _overallEma = _overallEma + _emaAlpha * (quality - _overallEma);
+                emaRef = emaRef + _emaAlpha * (quality - emaRef);
             }
             
-            return _overallEma;
+            return emaRef;
         }
         
         /// <summary>
-        /// Получает текстовый рейтинг качества
+        /// Получает текстовый рейтинг качества с учетом профиля
         /// </summary>
-        private static string GetQualityRating(float quality)
+        private static string GetQualityRating(float quality, string profileName = "Medium")
         {
-            if (quality >= 0.9f) return "Excellent";
-            if (quality >= 0.8f) return "Good";
-            if (quality >= 0.6f) return "Fair";
+            // Используем адаптивные пороги для профиля
+            var (excellentIn, _, goodIn, _, fairIn, _) = QualityDisplayThresholds.GetThresholds(profileName);
+            
+            if (quality >= excellentIn) return "Excellent";
+            if (quality >= goodIn) return "Good";
+            if (quality >= fairIn) return "Fair";
             if (quality >= 0.4f) return "Poor";
             return "Critical";
         }
@@ -622,8 +632,9 @@ namespace tickMeter.Classes
                 IsPredictingIssues = false;
                 PredictionDetails = "";
                 
-                // Сбрасываем EMA
-                _overallEma = -1f;
+                // Сбрасываем раздельные EMA
+                _standardEma = -1f;
+                _contextEma = -1f;
                 _dynamicTargetTickrate = _manualTargetTickrate;
                 _lastValidPing = -1f;
                 _missingPingSamples = 0;
