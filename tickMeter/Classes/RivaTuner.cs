@@ -880,25 +880,25 @@ namespace tickMeter.Classes
                 switch (lastQualityLevel)
                 {
                     case "excellent":
-                        newLevel = quality < excellentOut ? GetQualityLevel(quality, goodIn, fairIn) : "excellent";
+                        newLevel = quality < excellentOut ? GetQualityLevel(quality, excellentIn, goodIn, fairIn) : "excellent";
                         break;
                     case "good":
                         newLevel = quality >= excellentIn ? "excellent" : 
-                                  quality < goodOut ? GetQualityLevel(quality, goodIn, fairIn) : "good";
+                                  quality < goodOut ? GetQualityLevel(quality, excellentIn, goodIn, fairIn) : "good";
                         break;
                     case "fair":
-                        newLevel = quality >= goodIn ? GetQualityLevel(quality, goodIn, fairIn) : 
+                        newLevel = quality >= goodIn ? GetQualityLevel(quality, excellentIn, goodIn, fairIn) : 
                                   quality < fairOut ? "poor" : "fair";
                         break;
                     default: // poor
-                        newLevel = quality >= fairIn ? GetQualityLevel(quality, goodIn, fairIn) : "poor";
+                        newLevel = quality >= fairIn ? GetQualityLevel(quality, excellentIn, goodIn, fairIn) : "poor";
                         break;
                 }
             }
             else
             {
                 // Применяем входные пороги
-                newLevel = GetQualityLevel(quality, goodIn, fairIn);
+                newLevel = GetQualityLevel(quality, excellentIn, goodIn, fairIn);
             }
             
             // Обновляем состояние если изменился уровень
@@ -926,9 +926,9 @@ namespace tickMeter.Classes
         /// <summary>
         /// Определяет базовый уровень качества по входным порогам
         /// </summary>
-        private static string GetQualityLevel(double quality, double goodThreshold, double fairThreshold)
+        private static string GetQualityLevel(double quality, double excellentThreshold, double goodThreshold, double fairThreshold)
         {
-            if (quality >= 0.90) return "excellent";
+            if (quality >= excellentThreshold) return "excellent";
             if (quality >= goodThreshold) return "good";
             if (quality >= fairThreshold) return "fair";
             return "poor";
