@@ -2202,12 +2202,13 @@ namespace tickMeter.Forms
                         }
                     }
                     
-                    // NEW: Формируем endpoint key из Server IP и Port
+                    // NEW: Формируем endpoint key из Server IP, Port и Protocol
                     string endpointKey = null;
                     if (App.meterState.Server != null && !string.IsNullOrEmpty(App.meterState.Server.Ip))
                     {
-                        // Пытаемся получить порт из targetKey если он есть
+                        // Пытаемся получить порт и протокол из targetKey если он есть
                         int port = 0;
+                        string protocol = "";
                         if (!string.IsNullOrEmpty(targetKey))
                         {
                             try
@@ -2217,14 +2218,19 @@ namespace tickMeter.Forms
                                     if(ActiveWindowTracker.connections.TryGetValue(targetKey, out var activeConn))
                                     {
                                         port = (int)activeConn.remotePort;
+                                        protocol = activeConn.protocol.ToString().ToUpper();
                                     }
                                 }
                             }
                             catch { }
                         }
                         
-                        // Формируем endpoint key: "IP:Port"
-                        if (port > 0)
+                        // Формируем endpoint key: "IP:Port:Protocol"
+                        if (port > 0 && !string.IsNullOrEmpty(protocol))
+                        {
+                            endpointKey = $"{App.meterState.Server.Ip}:{port}:{protocol}";
+                        }
+                        else if (port > 0)
                         {
                             endpointKey = $"{App.meterState.Server.Ip}:{port}";
                         }
