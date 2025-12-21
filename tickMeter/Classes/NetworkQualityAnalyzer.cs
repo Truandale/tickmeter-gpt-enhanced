@@ -411,30 +411,51 @@ namespace tickMeter.Classes
             float ticktimeGoodMs = thresholds.ticktimeGood;
             float ticktimeBadMs = thresholds.ticktimeBad;
             
-            // Веса для разных метрик - TOTAL MUST = 1.0
-            // Stability: 27% + 27% + 16% = 70%
-            // Level penalties: 5% + 3% + 2% = 10%
-            // Additional factors: 10% + 10% = 20%
-            // TOTAL: 70% + 10% + 20% = 100% ✓
-            float pingWeight = 0.27f;
-            float tickrateWeight = 0.27f;
-            float ticktimeWeight = 0.16f;
-            float jitterWeight = 0.10f;
-            float packetLossWeight = 0.10f;
+            // FIXED: Адаптивные веса по профилю (строгий профиль = больше вес stability)
+            float stabilityFactor, levelFactor;
+            switch (profileName?.ToLower().Replace(" ", ""))
+            {
+                case "verylow":
+                case "very_low":
+                    stabilityFactor = 0.50f; // 50% stability (мягче к скачкам)
+                    levelFactor = 0.40f;     // 40% level (важнее средние значения)
+                    break;
+                case "low":
+                    stabilityFactor = 0.60f;
+                    levelFactor = 0.30f;
+                    break;
+                case "high":
+                    stabilityFactor = 0.75f; // 75% stability (строго к скачкам)
+                    levelFactor = 0.15f;     // 15% level
+                    break;
+                default: // medium
+                    stabilityFactor = 0.65f;
+                    levelFactor = 0.25f;
+                    break;
+            }
             
-            // Веса для level penalties (небольшие, чтобы не сломать базовую модель)
-            float pingLevelWeight = 0.05f;
-            float tickrateLevelWeight = 0.03f;
-            float ticktimeLevelWeight = 0.02f;
+            // FIXED: Убрали двойной счёт - оставили только уникальные метрики
+            // Stability weights (распределение внутри stabilityFactor)
+            float pingStabilityWeight = stabilityFactor * 0.50f;     // 50% от stability
+            float tickrateStabilityWeight = stabilityFactor * 0.50f; // 50% от stability
+            // REMOVED: ticktimeWeight (это производная от tickrate - двойной счёт)
+            // REMOVED: jitterWeight (уже входит в PingStability через CV)
+            
+            // Level penalties (распределение внутри levelFactor)
+            float pingLevelWeight = levelFactor * 0.55f;      // 55% от level
+            float tickrateLevelWeight = levelFactor * 0.45f;  // 45% от level
+            
+            // Packet loss (оставшиеся 10%)
+            float packetLossWeight = 0.10f;
             
             float quality = 0;
             
-            // === СТАБИЛЬНОСТЬ (как раньше) ===
-            quality += PingStability * pingWeight;
-            quality += TickrateStability * tickrateWeight;
-            quality += TicktimeStability * ticktimeWeight;
+            // === СТАБИЛЬНОСТЬ (FIXED: убран двойной счёт) ===
+            quality += PingStability * pingStabilityWeight;
+            quality += TickrateStability * tickrateStabilityWeight;
+            // REMOVED: TicktimeStability (производная от tickrate)
             
-            // === LEVEL PENALTIES (ChatGPT recommendation) ===
+            // === LEVEL PENALTIES (FIXED: убран ticktime) ===
             // Ping level penalty
             float avgPing = _pingHistory.Count > 0 ? _pingHistory.Average() : 0f;
             float pingLevelPenalty = 0f;
@@ -455,21 +476,10 @@ namespace tickMeter.Classes
             }
             quality += (1f - tickrateLevelPenalty) * tickrateLevelWeight;
             
-            // Ticktime level penalty
-            float avgTicktime = _ticktimeHistory.Count > 0 ? _ticktimeHistory.Average() : 0f;
-            float ticktimeLevelPenalty = 0f;
-            float ticktimeRange = ticktimeBadMs - ticktimeGoodMs;
-            if (ticktimeRange > 0 && avgTicktime > ticktimeGoodMs)
-            {
-                ticktimeLevelPenalty = Math.Min(1f, Math.Max(0f, (avgTicktime - ticktimeGoodMs) / ticktimeRange));
-            }
-            quality += (1f - ticktimeLevelPenalty) * ticktimeLevelWeight;
+            // REMOVED: Ticktime level penalty (двойной счёт с tickrate)
+            // REMOVED: Jitter penalty (уже учтён в PingStability через CV)
             
-            // === JITTER И PACKET LOSS (как раньше) ===
-            // Jitter penalty
-            float jitterPenalty = Math.Min(1.0f, AverageJitter / 50.0f);
-            quality += (1.0f - jitterPenalty) * jitterWeight;
-            
+            // === PACKET LOSS ===
             // Packet loss penalty
             if (_packetLossHistory.Count > 0)
             {
