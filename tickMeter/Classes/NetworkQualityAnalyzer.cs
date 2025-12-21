@@ -107,6 +107,10 @@ namespace tickMeter.Classes
                 {
                     Debug.Print($"[NetworkQualityAnalyzer] Context Profile changed: {oldProfile} -> {ContextProfile}");
                     _lastContextProfile = ContextProfile;
+                    
+                    // CRITICAL FIX: Сбрасываем Context EMA при смене профиля
+                    // Иначе старые значения будут смешиваться с новыми
+                    _contextEma = -1f;
                 }
             }
             catch (Exception ex)
@@ -394,10 +398,14 @@ namespace tickMeter.Classes
             float ticktimeGoodMs = thresholds.ticktimeGood;
             float ticktimeBadMs = thresholds.ticktimeBad;
             
-            // Веса для разных метрик (сохраняем исходные веса для стабильности)
-            float pingWeight = 0.30f;
-            float tickrateWeight = 0.30f;
-            float ticktimeWeight = 0.20f;
+            // Веса для разных метрик - TOTAL MUST = 1.0
+            // Stability: 27% + 27% + 16% = 70%
+            // Level penalties: 5% + 3% + 2% = 10%
+            // Additional factors: 10% + 10% = 20%
+            // TOTAL: 70% + 10% + 20% = 100% ✓
+            float pingWeight = 0.27f;
+            float tickrateWeight = 0.27f;
+            float ticktimeWeight = 0.16f;
             float jitterWeight = 0.10f;
             float packetLossWeight = 0.10f;
             
