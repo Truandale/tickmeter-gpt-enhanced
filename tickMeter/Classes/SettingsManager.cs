@@ -605,33 +605,36 @@ namespace tickMeter
             {
                 case "very low":
                 case "verylow":
+                    // SYNC: Синхронизировано с QualityCalculationThresholds
                     return new ColorZoneProfile
                     {
                         Name = "Very Low",
-                        PingGreenMs = 50f,          // 0-50ms = зеленый (идеально для VPN gaming)
-                        PingYellowMs = 150f,        // 50-150ms = желтый (терпимо для VPN)
+                        PingGreenMs = 50f,          // = pingGood (QualityCalculationThresholds)
+                        PingYellowMs = 150f,        // = pingBad (QualityCalculationThresholds)
                         TickrateGreenRatio = 120f / 128f, // Зеленая зона ~120 Гц
                         TickrateYellowRatio = 60f / 128f, // Желтая зона ~60-90 Гц
                         TicktimeGreenRatio = 0.80f, // Толерантность к медленной обработке
                         TicktimeYellowRatio = 1.20f  // Даже +20% от целевого времени = желтый
                     };
                 case "low":
+                    // SYNC: Синхронизировано с QualityCalculationThresholds
                     return new ColorZoneProfile
                     {
                         Name = "Low",
-                        PingGreenMs = 55f,
-                        PingYellowMs = 100f,
+                        PingGreenMs = 45f,          // = pingGood (QualityCalculationThresholds)
+                        PingYellowMs = 100f,        // = pingBad (QualityCalculationThresholds)
                         TickrateGreenRatio = 0.97f,
                         TickrateYellowRatio = 0.93f,
                         TicktimeGreenRatio = 0.70f,
                         TicktimeYellowRatio = 0.95f
                     };
                 case "high":
+                    // SYNC: Синхронизировано с QualityCalculationThresholds
                     return new ColorZoneProfile
                     {
                         Name = "High",
-                        PingGreenMs = 30f,
-                        PingYellowMs = 60f,
+                        PingGreenMs = 20f,          // = pingGood (QualityCalculationThresholds)
+                        PingYellowMs = 60f,         // = pingBad (QualityCalculationThresholds)
                         TickrateGreenRatio = 0.99f,
                         TickrateYellowRatio = 0.97f,
                         TicktimeGreenRatio = 0.50f,
@@ -640,11 +643,12 @@ namespace tickMeter
                 case "custom":
                     return LoadCustomProfile(settings);
                 default: // Medium
+                    // SYNC: Синхронизировано с QualityCalculationThresholds
                     return new ColorZoneProfile
                     {
                         Name = "Medium",
-                        PingGreenMs = 40f,
-                        PingYellowMs = 80f,
+                        PingGreenMs = 30f,          // = pingGood (QualityCalculationThresholds)
+                        PingYellowMs = 80f,         // = pingBad (QualityCalculationThresholds)
                         TickrateGreenRatio = 0.98f,
                         TickrateYellowRatio = 0.95f,
                         TicktimeGreenRatio = 0.60f,
