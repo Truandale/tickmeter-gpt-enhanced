@@ -249,6 +249,7 @@ namespace tickMeter.Classes
                 }
                 catch (Exception ex)
                 {
+                    DebugLogger.log($"[Quality] AddData ERROR: {ex.Message}");
                     Debug.Print($"[NetworkQualityAnalyzer] Error adding data: {ex.Message}");
                 }
             }
@@ -351,6 +352,17 @@ namespace tickMeter.Classes
                     PredictionChanged?.Invoke(IsPredictingIssues, PredictionDetails);
                 }
                 
+                // Логирование для анализа
+                DebugLogger.log($"[Quality] Standard={StandardQuality:F3}({StandardRating}) Context={ContextQuality:F3}({ContextRating}) Profile={ContextProfile}");
+                DebugLogger.log($"[Quality] Stability: Ping={PingStability:F2} TR={TickrateStability:F2} TT={TicktimeStability:F2} Jitter={AverageJitter:F1}ms");
+                if (_pingHistory.Count > 0 || _tickrateHistory.Count > 0)
+                {
+                    float avgPing = _pingHistory.Count > 0 ? _pingHistory.Average() : 0;
+                    float avgTickrate = _tickrateHistory.Count > 0 ? _tickrateHistory.Average() : 0;
+                    float avgTicktime = _ticktimeHistory.Count > 0 ? _ticktimeHistory.Average() : 0;
+                    DebugLogger.log($"[Quality] Metrics: Ping={avgPing:F1}ms TR={avgTickrate:F1}Hz TT={avgTicktime:F1}ms DataPoints={_pingHistory.Count}");
+                }
+                
                 Debug.Print($"[NetworkQualityAnalyzer] Standard: {StandardQuality:F2} ({StandardRating}) | " +
                            $"Context[{ContextProfile}]: {ContextQuality:F2} ({ContextRating}) | " +
                            $"Stability=> Ping:{PingStability:F2} TR:{TickrateStability:F2} TT:{TicktimeStability:F2} | " +
@@ -358,6 +370,7 @@ namespace tickMeter.Classes
             }
             catch (Exception ex)
             {
+                DebugLogger.log($"[Quality] ERROR: {ex.Message}");
                 Debug.Print($"[NetworkQualityAnalyzer] Analysis error: {ex.Message}");
             }
         }

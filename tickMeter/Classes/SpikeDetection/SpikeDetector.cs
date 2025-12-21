@@ -314,6 +314,9 @@ namespace tickMeter.Classes.SpikeDetection
                 PeakValue = value,
                 LastValue = value
             };
+            
+            // Логирование начала спайка
+            tickMeter.Classes.DebugLogger.log($"[Spike] {metric} START: value={value:F1} baseline={state.EmaValue:F1} threshold={threshold:F1} time={timestamp:HH:mm:ss.fff}");
 
             SpikeDetected?.Invoke(spikeEvent);
         }
@@ -332,6 +335,9 @@ namespace tickMeter.Classes.SpikeDetection
                 PeakValue = state.PeakValue,
                 LastValue = state.LastValue
             };
+            
+            // Логирование окончания спайка
+            tickMeter.Classes.DebugLogger.log($"[Spike] {metric} END: peak={state.PeakValue:F1} duration={spikeDuration.TotalMilliseconds:F0}ms energy={state.SpikeEnergy:F1} confirmed={isConfirmed}");
 
             SpikeDetected?.Invoke(spikeEvent);
 

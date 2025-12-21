@@ -1838,7 +1838,15 @@ namespace tickMeter.Forms
                 {
                     await Task.Run(() => {
                         try { 
+                            var sw = System.Diagnostics.Stopwatch.StartNew();
                             try { RivaTuner.BuildRivaOutput(); } catch (TypeInitializationException) { /* RTSS.dll отсутствует */ } catch { } 
+                            sw.Stop();
+                            
+                            // Логируем раз в 5 секунд для мониторинга производительности
+                            if (_rtssSw.ElapsedMilliseconds > 5000)
+                            {
+                                DebugLogger.log($"[RTSS] Update: exec={sw.ElapsedMilliseconds}ms period={_rtssSw.ElapsedMilliseconds}ms throttle={rtssThrottlingEnabled}");
+                            }
                             _rtssSw.Restart();
                         } catch (Exception ex) {
                             if(!RTSS_Failed)

@@ -85,6 +85,12 @@ namespace tickMeter.Classes
                 _cachedSmoothedPing = smoothed;
                 _cachedRawPing = raw;
                 
+                // Логирование для анализа (только при значительном изменении)
+                if (Math.Abs(raw - smoothed) > 5)
+                {
+                    DebugLogger.log($"[Smooth-Ping] Raw={raw}ms Smoothed={smoothed}ms Delta={raw-smoothed}ms Alpha={GetAlpha():F2}");
+                }
+                
                 return smoothed;
             }
         }
@@ -160,6 +166,12 @@ namespace tickMeter.Classes
                 // Сохраняем в кэш для использования в Overlay
                 _cachedSmoothedTickrate = smoothed;
                 _cachedRawTickrate = raw;
+                
+                // Логирование для анализа (только при значительном изменении)
+                if (Math.Abs(raw - smoothed) > 3)
+                {
+                    DebugLogger.log($"[Smooth-Tickrate] Raw={raw}Hz Smoothed={smoothed}Hz Delta={raw-smoothed}Hz Alpha={GetAlpha():F2}");
+                }
                 
                 return smoothed;
             }
