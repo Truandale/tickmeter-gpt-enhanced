@@ -461,6 +461,22 @@ namespace tickMeter.Forms
         {
             try
             {
+                SaveSettingsInternal();
+                MessageBox.Show("Настройки сохранены", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка сохранения настроек: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Внутренний метод сохранения настроек без показа MessageBox
+        /// </summary>
+        private void SaveSettingsInternal()
+        {
+            try
+            {
                 // Начинаем пакетное обновление (не сохраняем после каждого SetOption)
                 App.settingsManager.BeginBatchUpdate();
 
@@ -564,14 +580,12 @@ namespace tickMeter.Forms
                 
                 // Применяем новые настройки интервала overlay
                 App.gui?.ApplyOverlayIntervalFromSettings();
-                
-                MessageBox.Show("Настройки сохранены", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
                 // В случае ошибки отменяем пакетный режим
                 try { App.settingsManager.EndBatchUpdate(); } catch { }
-                MessageBox.Show($"Ошибка сохранения настроек: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                throw; // Пробрасываем исключение выше
             }
         }
 
@@ -832,18 +846,28 @@ namespace tickMeter.Forms
             // Обновляем UI-элементы формы в соответствии с настройками
             LoadSettings();
             
-            // Сохраняем все изменения
-            SaveSettings();
+            // Сохраняем все изменения без показа MessageBox
+            SaveSettingsInternal();
             
             // Принудительно перезагружаем настройки
             try
             {
                 App.settingsManager.ReloadConfig();
                 
-                // Обновляем основную форму настроек
+                // Обновляем основную форму настроек асинхронно, чтобы избежать зависания
                 if (App.settingsForm != null && !App.settingsForm.IsDisposed)
                 {
-                    App.settingsForm.ApplyFromConfig();
+                    App.settingsForm.BeginInvoke(new Action(() =>
+                    {
+                        try
+                        {
+                            App.settingsForm.ApplyFromConfig();
+                        }
+                        catch (Exception ex2)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Ошибка применения настроек: {ex2.Message}");
+                        }
+                    }));
                 }
             }
             catch (Exception ex)

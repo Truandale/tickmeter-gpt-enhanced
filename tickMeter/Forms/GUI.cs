@@ -2204,8 +2204,11 @@ namespace tickMeter.Forms
                     
                     // NEW: Формируем endpoint key из Server IP, Port и Protocol
                     string endpointKey = null;
-                    if (App.meterState.Server != null && !string.IsNullOrEmpty(App.meterState.Server.Ip))
+                    if (App.meterState?.Server != null && !string.IsNullOrEmpty(App.meterState.Server.Ip))
                     {
+                        // Сохраняем IP в локальную переменную для безопасности
+                        string serverIp = App.meterState.Server.Ip;
+                        
                         // Пытаемся получить порт и протокол из targetKey если он есть
                         int port = 0;
                         string protocol = "";
@@ -2218,7 +2221,7 @@ namespace tickMeter.Forms
                                     if(ActiveWindowTracker.connections.TryGetValue(targetKey, out var activeConn))
                                     {
                                         port = (int)activeConn.remotePort;
-                                        protocol = activeConn.protocol.ToString().ToUpper();
+                                        protocol = activeConn.protocol?.ToString()?.ToUpper() ?? "";
                                     }
                                 }
                             }
@@ -2228,16 +2231,16 @@ namespace tickMeter.Forms
                         // Формируем endpoint key: "IP:Port:Protocol"
                         if (port > 0 && !string.IsNullOrEmpty(protocol))
                         {
-                            endpointKey = $"{App.meterState.Server.Ip}:{port}:{protocol}";
+                            endpointKey = $"{serverIp}:{port}:{protocol}";
                         }
                         else if (port > 0)
                         {
-                            endpointKey = $"{App.meterState.Server.Ip}:{port}";
+                            endpointKey = $"{serverIp}:{port}";
                         }
                         else
                         {
                             // Если порт неизвестен, используем только IP
-                            endpointKey = App.meterState.Server.Ip;
+                            endpointKey = serverIp;
                         }
                     }
                     
