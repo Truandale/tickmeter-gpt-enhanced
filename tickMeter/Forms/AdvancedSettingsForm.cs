@@ -668,9 +668,14 @@ namespace tickMeter.Forms
         /// </summary>
         private void SetOptimalSettings()
         {
-            // === ОСНОВНЫЕ [SETTINGS] НАСТРОЙКИ ИЗ ВАШИХ РАБОЧИХ ЗНАЧЕНИЙ ===
-            
-            // Output - что отображать (все включено, как у вас)
+            try
+            {
+                // Начинаем пакетное обновление для всех изменений
+                App.settingsManager.BeginBatchUpdate();
+                
+                // === ОСНОВНЫЕ [SETTINGS] НАСТРОЙКИ ИЗ ВАШИХ РАБОЧИХ ЗНАЧЕНИЙ ===
+                
+                // Output - что отображать (все включено, как у вас)
             App.settingsManager.SetOption("rtss", "True", "SETTINGS");                    // RTSS оверлей ✓
             App.settingsManager.SetOption("autodetect", "True", "SETTINGS");              // Автоматическое отслеживание ✓
             App.settingsManager.SetOption("capture_all_adapters", "True", "SETTINGS");    // Захват всех адаптеров ✓
@@ -845,11 +850,11 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("current_profile", "Стандарт (Balanced)", "PROFILES");      // Текущий профиль ✓
             App.settingsManager.SetOption("advanced_profile", "Streamer", "PROFILES");                // Продвинутый профиль ✓
             
+            // Завершаем пакетное обновление и сохраняем все изменения одним разом
+            App.settingsManager.EndBatchUpdate();
+            
             // Обновляем UI-элементы формы в соответствии с настройками
             LoadSettings();
-            
-            // Сохраняем все изменения без показа MessageBox
-            SaveSettingsInternal();
             
             // Принудительно перезагружаем настройки из файла
             try
@@ -859,6 +864,14 @@ namespace tickMeter.Forms
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Ошибка перезагрузки настроек: {ex.Message}");
+            }
+            }
+            catch (Exception ex)
+            {
+                // В случае ошибки отменяем пакетный режим
+                try { App.settingsManager.EndBatchUpdate(); } catch { }
+                MessageBox.Show($"Ошибка установки оптимальных настроек: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
             
             // Уведомляем об успешном применении ВАШИХ оптимальных настроек
