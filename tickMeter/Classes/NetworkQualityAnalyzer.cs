@@ -582,6 +582,55 @@ namespace tickMeter.Classes
         }
         
         /// <summary>
+        /// Вычисляет медиану из массива значений
+        /// </summary>
+        private static float GetMedian(Queue<float> data)
+        {
+            var sorted = data.Where(x => x > 0).OrderBy(x => x).ToArray();
+            if (sorted.Length == 0) return 0f;
+            if (sorted.Length == 1) return sorted[0];
+            
+            int mid = sorted.Length / 2;
+            if (sorted.Length % 2 == 0)
+                return (sorted[mid - 1] + sorted[mid]) / 2f;
+            return sorted[mid];
+        }
+        
+        /// <summary>
+        /// Вычисляет Median Absolute Deviation (MAD)
+        /// </summary>
+        private static float GetMAD(float[] values, float median)
+        {
+            if (values.Length == 0) return 0f;
+            var deviations = values.Select(v => Math.Abs(v - median)).OrderBy(d => d).ToArray();
+            int mid = deviations.Length / 2;
+            if (deviations.Length % 2 == 0)
+                return (deviations[mid - 1] + deviations[mid]) / 2f;
+            return deviations[mid];
+        }
+        
+        /// <summary>
+        /// Вычисляет устойчивое среднее значение с фильтрацией выбросов
+        /// </summary>
+        private static float GetRobustAverage(Queue<float> data, float outlierThreshold = 3.0f)
+        {
+            var values = data.Where(x => x > 0).ToArray();
+            if (values.Length == 0) return 0f;
+            if (values.Length <= 3) return values.Average();
+            
+            float median = GetMedian(data);
+            float mad = GetMAD(values, median);
+            
+            // Если MAD слишком маленький, используем обычное среднее
+            if (mad < 0.01f) return values.Average();
+            
+            // Фильтруем выбросы (>3 MAD от медианы)
+            var filtered = values.Where(v => Math.Abs(v - median) <= outlierThreshold * mad).ToArray();
+            
+            return filtered.Length > 0 ? filtered.Average() : median;
+        }
+        
+        /// <summary>
         /// Рассчитывает стабильность метрики (коэффициент вариации)
         /// </summary>
         private static float CalculateStability(Queue<float> data, float threshold)
@@ -605,7 +654,12 @@ namespace tickMeter.Classes
         }
         
         /// <summary>
-        /// Рассчитывает общее качество сети с ChatGPT улучшениями
+        /// Рассчитывает общее качество сети с улучшениями:
+        /// - Adaptive EMA (по профилям)
+        /// - Recovery Detection (бонус за улучшение)
+        /// - Stability Bonus (компенсация за хорошие средние значения)
+        /// - Robust averaging (устойчивость к выбросам)
+        /// - Умный Missing Ping Handler
         /// </summary>
         /// <param name="profileName">Название профиля (Very Low/Low/Medium/High)</param>
         /// <param name="pingData">Данные пинга (null = использовать глобальные)</param>
@@ -627,26 +681,57 @@ namespace tickMeter.Classes
             float ticktimeGoodMs = thresholds.ticktimeGood;
             float ticktimeBadMs = thresholds.ticktimeBad;
             
-            // FIXED: Адаптивные веса по профилю (строгий профиль = больше вес stability)
+            // Адаптивные параметры по профилю
             float stabilityFactor, levelFactor;
+            float stabilityToleranceFactor; // Множитель для порога стабильности
+            float recoveryBonusMax;          // Максимальный бонус за восстановление
+            float stabilityBonusMax;         // Максимальный бонус за хорошие средние значения
+            float missingPingSoftening;      // Смягчение штрафа за missing ping
+            float availabilityPenaltyWeight; // Вес штрафа за отсутствие пинга
+            bool useMedianForPing;           // Использовать median вместо mean для пинга
+            
             switch (profileName?.ToLower().Replace(" ", ""))
             {
                 case "verylow":
                 case "very_low":
-                    stabilityFactor = 0.50f; // 50% stability (мягче к скачкам)
-                    levelFactor = 0.40f;     // 40% level (важнее средние значения)
+                    stabilityFactor = 0.50f;          // 50% stability (мягче к скачкам)
+                    levelFactor = 0.40f;              // 40% level (важнее средние значения)
+                    stabilityToleranceFactor = 1.8f;  // На 80% мягче к скачкам
+                    recoveryBonusMax = 0.12f;         // +12% за восстановление
+                    stabilityBonusMax = 0.20f;        // +20% за хорошие средние
+                    missingPingSoftening = 0.85f;     // Почти не карать за missing ping
+                    availabilityPenaltyWeight = 0.08f;// Минимальный штраф
+                    useMedianForPing = true;          // Median устойчивее к выбросам
                     break;
                 case "low":
                     stabilityFactor = 0.60f;
                     levelFactor = 0.30f;
+                    stabilityToleranceFactor = 1.4f;  // На 40% мягче
+                    recoveryBonusMax = 0.10f;         // +10%
+                    stabilityBonusMax = 0.16f;        // +16%
+                    missingPingSoftening = 0.65f;
+                    availabilityPenaltyWeight = 0.15f;
+                    useMedianForPing = true;          // Взвешенный median-mean
                     break;
                 case "high":
-                    stabilityFactor = 0.75f; // 75% stability (строго к скачкам)
-                    levelFactor = 0.15f;     // 15% level
+                    stabilityFactor = 0.75f;          // 75% stability (строго к скачкам)
+                    levelFactor = 0.15f;              // 15% level
+                    stabilityToleranceFactor = 0.75f; // На 25% строже
+                    recoveryBonusMax = 0.05f;         // +5% (маленький)
+                    stabilityBonusMax = 0.10f;        // +10% (строго)
+                    missingPingSoftening = 0.30f;     // Строго карать
+                    availabilityPenaltyWeight = 0.28f;// Высокий штраф
+                    useMedianForPing = false;         // Mean (чувствителен к выбросам)
                     break;
                 default: // medium
                     stabilityFactor = 0.65f;
                     levelFactor = 0.25f;
+                    stabilityToleranceFactor = 1.0f;  // Базовая
+                    recoveryBonusMax = 0.08f;         // +8%
+                    stabilityBonusMax = 0.12f;        // +12%
+                    missingPingSoftening = 0.50f;
+                    availabilityPenaltyWeight = 0.18f;
+                    useMedianForPing = false;         // Обычное среднее
                     break;
             }
             
@@ -671,9 +756,29 @@ namespace tickMeter.Classes
             quality += TickrateStability * tickrateStabilityWeight;
             // REMOVED: TicktimeStability (производная от tickrate)
             
-            // === LEVEL PENALTIES (FIXED: убран ticktime) ===
-            // Ping level penalty
-            float avgPing = pingData.Count > 0 ? pingData.Average() : 0f;
+            // === LEVEL PENALTIES ===
+            // Ping level penalty с учётом профиля (median или robust average)
+            float avgPing;
+            if (useMedianForPing && pingData.Count >= 10)
+            {
+                // Very Low/Low профили: используем median или robust average
+                if (profileName?.ToLower().Replace(" ", "") == "verylow" || 
+                    profileName?.ToLower().Replace(" ", "") == "very_low")
+                {
+                    avgPing = GetMedian(pingData); // Чистый median
+                }
+                else // Low
+                {
+                    // Взвешенный median-mean (70% median, 30% mean)
+                    avgPing = GetMedian(pingData) * 0.7f + pingData.Average() * 0.3f;
+                }
+            }
+            else
+            {
+                // Medium/High: обычное среднее (High чувствителен к выбросам)
+                avgPing = pingData.Count > 0 ? pingData.Average() : 0f;
+            }
+            
             float pingLevelPenalty = 0f;
             float pingRange = pingBadMs - pingGoodMs;
             if (pingRange > 0 && avgPing > pingGoodMs)
@@ -695,6 +800,57 @@ namespace tickMeter.Classes
             // REMOVED: Ticktime level penalty (двойной счёт с tickrate)
             // REMOVED: Jitter penalty (уже учтён в PingStability через CV)
             
+            // === RECOVERY DETECTION (бонус за улучшение) ===
+            float recoveryBonus = 0f;
+            if (pingData.Count >= 20)
+            {
+                var recentPing = pingData.Skip(pingData.Count - 10).Average();
+                var olderPing = pingData.Skip(pingData.Count - 20).Take(10).Average();
+                
+                // Порог улучшения зависит от профиля
+                float improvementThreshold;
+                string normalizedProfile = profileName?.ToLower().Replace(" ", "");
+                if (normalizedProfile == "verylow" || normalizedProfile == "very_low")
+                {
+                    improvementThreshold = 0.90f;  // Улучшение на 10%+
+                }
+                else if (normalizedProfile == "low")
+                {
+                    improvementThreshold = 0.85f;  // Улучшение на 15%+
+                }
+                else if (normalizedProfile == "high")
+                {
+                    improvementThreshold = 0.80f;  // Нужно значительное улучшение (20%+)
+                }
+                else
+                {
+                    improvementThreshold = 0.85f;  // Medium: 15%+
+                }
+                
+                if (recentPing < olderPing * improvementThreshold)
+                {
+                    // Линейный бонус в зависимости от степени улучшения
+                    float improvementRatio = 1f - (recentPing / olderPing);
+                    recoveryBonus = Math.Min(recoveryBonusMax, improvementRatio * recoveryBonusMax * 2f);
+                }
+            }
+            
+            // === STABILITY BONUS (компенсация за хорошие средние значения) ===
+            float stabilityBonus = 0f;
+            if (avgPing > 0 && avgPing < pingGoodMs)
+            {
+                // Качество пинга относительно порога "хорошего"
+                float pingQuality = 1f - (avgPing / pingGoodMs);
+                stabilityBonus = pingQuality * stabilityBonusMax;
+            }
+            
+            // Дополнительный бонус если и стабильность хорошая (только для High профиля)
+            if (profileName?.ToLower().Replace(" ", "") == "high" && 
+                avgPing > 0 && avgPing < pingGoodMs * 0.8f && PingStability > 0.90f)
+            {
+                stabilityBonus *= 1.2f; // +20% к бонусу за идеальные условия
+            }
+            
             // === PACKET LOSS ===
             // Packet loss penalty
             if (_packetLossHistory.Count > 0)
@@ -708,16 +864,37 @@ namespace tickMeter.Classes
                 quality += packetLossWeight;
             }
 
-            if (_missingPingSamples >= MissingPingTolerance)
+            // === УМНЫЙ MISSING PING HANDLER ===
+            if (_missingPingSamples >= MissingPingTolerance && _lastValidPing > 0)
             {
-                float availabilityPenalty = Math.Min(1f, (_missingPingSamples - MissingPingTolerance) / (float)Math.Max(1, MissingPingCritical - MissingPingTolerance));
-                quality *= (1f - 0.25f * availabilityPenalty);
+                // Если последний известный пинг был хорошим → смягчаем штраф
+                float lastPingQuality = _lastValidPing < pingGoodMs ? 0.8f : 0.3f;
+                
+                float availabilityPenalty = Math.Min(1f, 
+                    (_missingPingSamples - MissingPingTolerance) / 
+                    (float)Math.Max(1, MissingPingCritical - MissingPingTolerance));
+                
+                // Применяем смягчение в зависимости от профиля и качества последнего пинга
+                availabilityPenalty *= (1f - lastPingQuality * missingPingSoftening);
+                
+                quality *= (1f - availabilityPenaltyWeight * availabilityPenalty);
             }
+            else if (_missingPingSamples >= MissingPingTolerance)
+            {
+                // Нет информации о последнем валидном пинге → обычный штраф
+                float availabilityPenalty = Math.Min(1f, 
+                    (_missingPingSamples - MissingPingTolerance) / 
+                    (float)Math.Max(1, MissingPingCritical - MissingPingTolerance));
+                quality *= (1f - availabilityPenaltyWeight * availabilityPenalty);
+            }
+            
+            // Применяем бонусы
+            quality += recoveryBonus + stabilityBonus;
             
             // Ограничиваем результат перед применением EMA
             quality = Math.Max(0f, Math.Min(1.0f, quality));
             
-            // === EMA СГЛАЖИВАНИЕ (ChatGPT recommendation) ===
+            // === ADAPTIVE EMA СГЛАЖИВАНИЕ (адаптивная скорость восстановления/ухудшения) ===
             // Используем раздельный EMA для Standard (Medium) и Context профилей
             bool isStandardProfile = profileName == "Medium";
             ref float emaRef = ref (isStandardProfile ? ref _standardEma : ref _contextEma);
@@ -728,24 +905,98 @@ namespace tickMeter.Classes
             }
             else 
             {
-                emaRef = emaRef + _emaAlpha * (quality - emaRef);
+                // Определяем тренд (качество растёт или падает)
+                float trend = quality - emaRef;
+                
+                // Адаптивный alpha на основе тренда и профиля
+                float adaptiveAlpha;
+                string normalizedProfile = profileName?.ToLower().Replace(" ", "");
+                
+                if (trend > 0)
+                {
+                    // Качество растёт → ускоряем восстановление
+                    if (normalizedProfile == "verylow" || normalizedProfile == "very_low")
+                    {
+                        adaptiveAlpha = _emaAlpha * 3.5f;  // Очень быстрое
+                    }
+                    else if (normalizedProfile == "low")
+                    {
+                        adaptiveAlpha = _emaAlpha * 2.8f;  // Быстрое
+                    }
+                    else if (normalizedProfile == "high")
+                    {
+                        adaptiveAlpha = _emaAlpha * 2.0f;  // Умеренное
+                    }
+                    else
+                    {
+                        adaptiveAlpha = _emaAlpha * 2.5f;  // Medium: стандартное
+                    }
+                }
+                else
+                {
+                    // Качество падает → медленное ухудшение (сохраняем стабильность)
+                    if (normalizedProfile == "verylow" || normalizedProfile == "very_low")
+                    {
+                        adaptiveAlpha = _emaAlpha * 0.6f;  // Очень медленное
+                    }
+                    else if (normalizedProfile == "low")
+                    {
+                        adaptiveAlpha = _emaAlpha * 0.75f; // Медленное
+                    }
+                    else if (normalizedProfile == "high")
+                    {
+                        adaptiveAlpha = _emaAlpha * 1.2f;  // Быстрое (строгость)
+                    }
+                    else
+                    {
+                        adaptiveAlpha = _emaAlpha * 0.8f;  // Medium
+                    }
+                }
+                
+                // Ограничиваем alpha разумными пределами
+                adaptiveAlpha = Math.Min(0.5f, Math.Max(0.05f, adaptiveAlpha));
+                
+                emaRef = emaRef + adaptiveAlpha * (quality - emaRef);
             }
             
             return emaRef;
         }
         
         /// <summary>
-        /// Получает текстовый рейтинг качества с учетом профиля
+        /// Получает текстовый рейтинг качества с адаптивными порогами Poor/Critical по профилю
         /// </summary>
         private static string GetQualityRating(float quality, string profileName = "Medium")
         {
             // Используем адаптивные пороги для профиля
             var (excellentIn, _, goodIn, _, fairIn, _) = QualityDisplayThresholds.GetThresholds(profileName);
             
+            // Адаптивные пороги Poor/Critical в зависимости от профиля
+            float poorThreshold, criticalThreshold;
+            switch (profileName?.ToLower().Replace(" ", ""))
+            {
+                case "verylow":
+                case "very_low":
+                    poorThreshold = 0.25f;    // Мягче: Poor только при <25%
+                    criticalThreshold = 0.10f;
+                    break;
+                case "low":
+                    poorThreshold = 0.28f;
+                    criticalThreshold = 0.12f;
+                    break;
+                case "high":
+                    poorThreshold = 0.45f;    // Строже: Poor уже при <45%
+                    criticalThreshold = 0.25f;
+                    break;
+                default: // medium
+                    poorThreshold = 0.35f;    // Снижено с 0.40 до 0.35
+                    criticalThreshold = 0.15f;
+                    break;
+            }
+            
             if (quality >= excellentIn) return "Excellent";
             if (quality >= goodIn) return "Good";
             if (quality >= fairIn) return "Fair";
-            if (quality >= 0.4f) return "Poor";
+            if (quality >= poorThreshold) return "Poor";
             return "Critical";
         }
         
