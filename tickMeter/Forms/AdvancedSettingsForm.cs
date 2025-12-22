@@ -748,6 +748,9 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("smoothing_tickrate_value_overlay", "True", "ADVANCED"); // Оверлей значения тикрейта ✓
             App.settingsManager.SetOption("smoothing_traffic_value_overlay", "True", "ADVANCED");  // Оверлей значения трафика ✓
             App.settingsManager.SetOption("smoothing_ping_value_gui", "True", "ADVANCED");          // GUI сглаживание пинга ✓
+            App.settingsManager.SetOption("smoothing_tickrate_value_gui", "False", "ADVANCED");     // GUI сглаживание тикрейта ✗
+            App.settingsManager.SetOption("sync_ping_overlay_with_gui", "True", "ADVANCED");        // Синхронизация пинга оверлей/GUI ✓
+            App.settingsManager.SetOption("sync_tickrate_overlay_with_gui", "True", "ADVANCED");    // Синхронизация тикрейта оверлей/GUI ✓
             
             // Ping Spikes (ваши настройки)
             App.settingsManager.SetOption("show_ping_spikes", "True", "ADVANCED");         // Показывать спайки пинга ✓
