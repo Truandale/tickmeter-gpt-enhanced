@@ -394,10 +394,19 @@ namespace tickMeter.Forms
                 return;
             }
 
-            manager.SetOption(VpnRestoreCaptureAllKey, snapshot.CaptureAll.ToString(), "ADVANCED");
-            manager.SetOption(VpnRestoreIgnoreVirtualKey, snapshot.IgnoreVirtual.ToString(), "ADVANCED");
-            manager.SetOption(VpnRestoreDedupKey, snapshot.DedupMultiNic.ToString(), "ADVANCED");
-            manager.SetOption(VpnRestoreBasicKey, snapshot.BasicMode.ToString(), "ADVANCED");
+            // Используем BeginBatchUpdate/EndBatchUpdate для атомарной записи всех 4 настроек
+            manager.BeginBatchUpdate();
+            try
+            {
+                manager.SetOption(VpnRestoreCaptureAllKey, snapshot.CaptureAll.ToString(), "ADVANCED");
+                manager.SetOption(VpnRestoreIgnoreVirtualKey, snapshot.IgnoreVirtual.ToString(), "ADVANCED");
+                manager.SetOption(VpnRestoreDedupKey, snapshot.DedupMultiNic.ToString(), "ADVANCED");
+                manager.SetOption(VpnRestoreBasicKey, snapshot.BasicMode.ToString(), "ADVANCED");
+            }
+            finally
+            {
+                manager.EndBatchUpdate();
+            }
         }
 
         private void ClearPersistedVpnPresetSnapshot()
@@ -408,10 +417,19 @@ namespace tickMeter.Forms
                 return;
             }
 
-            manager.SetOption(VpnRestoreCaptureAllKey, string.Empty, "ADVANCED");
-            manager.SetOption(VpnRestoreIgnoreVirtualKey, string.Empty, "ADVANCED");
-            manager.SetOption(VpnRestoreDedupKey, string.Empty, "ADVANCED");
-            manager.SetOption(VpnRestoreBasicKey, string.Empty, "ADVANCED");
+            // Используем BeginBatchUpdate/EndBatchUpdate для атомарной записи всех 4 настроек
+            manager.BeginBatchUpdate();
+            try
+            {
+                manager.SetOption(VpnRestoreCaptureAllKey, string.Empty, "ADVANCED");
+                manager.SetOption(VpnRestoreIgnoreVirtualKey, string.Empty, "ADVANCED");
+                manager.SetOption(VpnRestoreDedupKey, string.Empty, "ADVANCED");
+                manager.SetOption(VpnRestoreBasicKey, string.Empty, "ADVANCED");
+            }
+            finally
+            {
+                manager.EndBatchUpdate();
+            }
         }
 
         private void PersistVpnPresetSnapshotForSave()
