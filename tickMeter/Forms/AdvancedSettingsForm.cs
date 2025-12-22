@@ -71,17 +71,27 @@ namespace tickMeter.Forms
 
         private void LoadSettings()
         {
+            // Защита от null - на случай вызова формы вне нормального flow (unit tests, etc)
+            if (App.settingsManager == null)
+            {
+                System.Diagnostics.Debug.Print("[AdvancedSettingsForm] App.settingsManager is null, cannot load settings");
+                return;
+            }
+
             // Приостанавливаем обновление layout для улучшения производительности
             this.SuspendLayout();
             tabControl1.SuspendLayout();
             
             try
             {
-                // Live View настройки
+                // Live View настройки (с безопасным парсингом)
                 chkLiveMaxRows.Checked = App.settingsManager.GetOption("live_max_rows_enabled", "False", "ADVANCED") == "True";
-                liveMaxRowsNumeric.Value = int.Parse(App.settingsManager.GetOption("live_max_rows", "1000", "ADVANCED"));
+                if (int.TryParse(App.settingsManager.GetOption("live_max_rows", "1000", "ADVANCED"), out int maxRows) && maxRows >= liveMaxRowsNumeric.Minimum && maxRows <= liveMaxRowsNumeric.Maximum)
+                    liveMaxRowsNumeric.Value = maxRows;
+                
                 chkOverlayFps.Checked = App.settingsManager.GetOption("overlay_fps_enabled", "False", "ADVANCED") == "True";
-                overlayFpsNumeric.Value = int.Parse(App.settingsManager.GetOption("overlay_fps", "60", "ADVANCED"));
+                if (int.TryParse(App.settingsManager.GetOption("overlay_fps", "60", "ADVANCED"), out int fps) && fps >= overlayFpsNumeric.Minimum && fps <= overlayFpsNumeric.Maximum)
+                    overlayFpsNumeric.Value = fps;
                 
                 // BPF фильтр
                 chkBpfFilter.Checked = App.settingsManager.GetOption("bpf_filter_enabled", "False", "ADVANCED") == "True";

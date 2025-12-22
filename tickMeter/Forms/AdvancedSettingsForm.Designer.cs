@@ -13,9 +13,24 @@ namespace tickMeter.Forms
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing && (components != null))
+            if (disposing)
             {
-                components.Dispose();
+                // Отписываемся от событий NetworkQualityAnalyzer для предотвращения memory leaks
+                try
+                {
+                    tickMeter.Classes.NetworkQualityAnalyzer.QualityChanged -= OnQualityChanged;
+                    tickMeter.Classes.NetworkQualityAnalyzer.QualityRatingChanged -= OnQualityRatingChanged;
+                    tickMeter.Classes.NetworkQualityAnalyzer.PredictionChanged -= OnPredictionChanged;
+                }
+                catch (System.Exception ex)
+                {
+                    System.Diagnostics.Debug.Print($"[AdvancedSettingsForm.Dispose] Error unsubscribing from events: {ex.Message}");
+                }
+
+                if (components != null)
+                {
+                    components.Dispose();
+                }
             }
             base.Dispose(disposing);
         }
