@@ -30,35 +30,42 @@ namespace tickMeter.Forms
         {
             _isLoadingSettings = true;
 
-            // Оптимизация производительности формы
-            this.SetStyle(ControlStyles.OptimizedDoubleBuffer | 
-                          ControlStyles.AllPaintingInWmPaint | 
-                          ControlStyles.UserPaint, true);
-            this.UpdateStyles();
-
-            InitializeComponent();
-            InitializeExtendedOverlayControls(); // Создаем контролы расширенной информации
-            AttachEventHandlers();
-
-            LoadSettings();
-            _isLoadingSettings = false;
-            
-            // Force update color zone controls state after loading
-            CmbColorZoneProfile_SelectedIndexChanged(cmbColorZoneProfile, EventArgs.Empty);
-
-            if (chkVpnBypassAdvanced.Checked)
+            try
             {
-                if (!TryLoadVpnPresetSnapshot(out _vpnPresetSnapshot))
+                // Оптимизация производительности формы
+                this.SetStyle(ControlStyles.OptimizedDoubleBuffer | 
+                              ControlStyles.AllPaintingInWmPaint | 
+                              ControlStyles.UserPaint, true);
+                this.UpdateStyles();
+
+                InitializeComponent();
+                InitializeExtendedOverlayControls(); // Создаем контролы расширенной информации
+                AttachEventHandlers();
+
+                LoadSettings();
+                
+                // Force update color zone controls state after loading
+                CmbColorZoneProfile_SelectedIndexChanged(cmbColorZoneProfile, EventArgs.Empty);
+
+                if (chkVpnBypassAdvanced.Checked)
                 {
+                    if (!TryLoadVpnPresetSnapshot(out _vpnPresetSnapshot))
+                    {
+                        _vpnPresetSnapshot = default;
+                    }
+
+                    ApplyVpnBypassAdvancedPreset(captureSnapshot: false);
+                }
+                else
+                {
+                    SetVpnPresetControlsEnabled(true);
                     _vpnPresetSnapshot = default;
                 }
-
-                ApplyVpnBypassAdvancedPreset(captureSnapshot: false);
             }
-            else
+            finally
             {
-                SetVpnPresetControlsEnabled(true);
-                _vpnPresetSnapshot = default;
+                // Гарантируем сброс флага загрузки даже при исключении
+                _isLoadingSettings = false;
             }
         }
 
@@ -286,11 +293,17 @@ namespace tickMeter.Forms
             }
 
             _suppressVpnPresetUpdates = true;
-            chkVpnBypassBasic.Checked = true;
-            chkCaptureAllAdapters.Checked = true;
-            chkIgnoreVirtualAdapters.Checked = false;
-            chkDedupMultiNic.Checked = true;
-            _suppressVpnPresetUpdates = false;
+            try
+            {
+                chkVpnBypassBasic.Checked = true;
+                chkCaptureAllAdapters.Checked = true;
+                chkIgnoreVirtualAdapters.Checked = false;
+                chkDedupMultiNic.Checked = true;
+            }
+            finally
+            {
+                _suppressVpnPresetUpdates = false;
+            }
 
             SetVpnPresetControlsEnabled(false);
         }
@@ -310,11 +323,17 @@ namespace tickMeter.Forms
             SetVpnPresetControlsEnabled(true);
 
             _suppressVpnPresetUpdates = true;
-            chkCaptureAllAdapters.Checked = snapshot.CaptureAll;
-            chkIgnoreVirtualAdapters.Checked = snapshot.IgnoreVirtual;
-            chkDedupMultiNic.Checked = snapshot.DedupMultiNic;
-            chkVpnBypassBasic.Checked = snapshot.BasicMode;
-            _suppressVpnPresetUpdates = false;
+            try
+            {
+                chkCaptureAllAdapters.Checked = snapshot.CaptureAll;
+                chkIgnoreVirtualAdapters.Checked = snapshot.IgnoreVirtual;
+                chkDedupMultiNic.Checked = snapshot.DedupMultiNic;
+                chkVpnBypassBasic.Checked = snapshot.BasicMode;
+            }
+            finally
+            {
+                _suppressVpnPresetUpdates = false;
+            }
 
             _vpnPresetSnapshot = default;
         }
