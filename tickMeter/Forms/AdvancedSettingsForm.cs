@@ -795,6 +795,9 @@ namespace tickMeter.Forms
             
             // Network Quality (ваши настройки)
             App.settingsManager.SetOption("network_quality_enabled", "True", "ADVANCED");  // Анализ качества сети ✓
+            App.settingsManager.SetOption("network_quality_mode", "context", "ADVANCED");  // Режим: Context (контекстный) ✓
+            App.settingsManager.SetOption("network_quality_context_profile", "very_low", "ADVANCED"); // Контекстный профиль: Very Low ✓
+            App.settingsManager.SetOption("network_quality_context_sync", "True", "ADVANCED");        // Синхронизация с Color Zones ✓
             App.settingsManager.SetOption("quality_history_size", "100", "ADVANCED");      // Размер истории качества 100 ✓
             App.settingsManager.SetOption("stability_threshold", "0.15", "ADVANCED");      // Порог стабильности 0.15 ✓
             App.settingsManager.SetOption("quality_threshold", "0.8", "ADVANCED");         // Порог качества 0.8 ✓
@@ -821,10 +824,8 @@ namespace tickMeter.Forms
             
             // === ДОПОЛНИТЕЛЬНЫЕ СЕКЦИИ ===
             
-            // ZONES - Контекстный профиль Very Low
+            // ZONES - Профиль цветовых зон Very Low (синхронизирован с Context mode)
             App.settingsManager.SetOption("color_zone_profile", "Very Low", "ZONES");      // Профиль цветовых зон ✓
-            App.settingsManager.SetOption("context_mode_enabled", "True", "ZONES");        // Контекстный режим включен ✓
-            App.settingsManager.SetOption("context_profile", "very_low", "ZONES");         // Контекстный профиль Very Low ✓
             
             // EXTENDED оверлей (ИСПРАВЛЕННЫЕ значения со скриншота)
             App.settingsManager.SetOption("show_active_process", "True", "EXTENDED");      // Показывать отслеживаемый процесс ✓
