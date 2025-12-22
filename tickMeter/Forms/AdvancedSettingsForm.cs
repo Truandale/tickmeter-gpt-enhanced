@@ -851,30 +851,14 @@ namespace tickMeter.Forms
             // Сохраняем все изменения без показа MessageBox
             SaveSettingsInternal();
             
-            // Принудительно перезагружаем настройки
+            // Принудительно перезагружаем настройки из файла
             try
             {
                 App.settingsManager.ReloadConfig();
-                
-                // Обновляем основную форму настроек асинхронно, чтобы избежать зависания
-                if (App.settingsForm != null && !App.settingsForm.IsDisposed)
-                {
-                    App.settingsForm.BeginInvoke(new Action(() =>
-                    {
-                        try
-                        {
-                            App.settingsForm.ApplyFromConfig();
-                        }
-                        catch (Exception ex2)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"Ошибка применения настроек: {ex2.Message}");
-                        }
-                    }));
-                }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Ошибка перезагрузки: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Ошибка перезагрузки настроек: {ex.Message}");
             }
             
             // Уведомляем об успешном применении ВАШИХ оптимальных настроек
