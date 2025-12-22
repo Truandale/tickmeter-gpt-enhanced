@@ -97,7 +97,7 @@ namespace tickMeter
             // === ОСНОВНЫЕ [SETTINGS] НАСТРОЙКИ ===
             SetOption("rtss", "True", "SETTINGS");
             SetOption("autodetect", "True", "SETTINGS");
-            SetOption("capture_all_adapters", "False", "SETTINGS");
+            SetOption("capture_all_adapters", "True", "SETTINGS");
             SetOption("chart", "True", "SETTINGS");
             SetOption("ip", "True", "SETTINGS");
             SetOption("tickrate", "True", "SETTINGS");
@@ -119,7 +119,7 @@ namespace tickMeter
             SetOption("tickrate_smoothing", "True", "SETTINGS");
             SetOption("dedup_multi_nic", "True", "SETTINGS");
             SetOption("enable_ipv6", "True", "SETTINGS");
-            SetOption("ignore_virtual_adapters", "False", "SETTINGS");
+            SetOption("ignore_virtual_adapters", "True", "SETTINGS");
             SetOption("rtss_only_active", "True", "SETTINGS");
             SetOption("stun_enable", "True", "SETTINGS");
             SetOption("network_quality_overlay", "True", "SETTINGS");
@@ -148,10 +148,10 @@ namespace tickMeter
             SetOption("hybrid_pcap_windows", "True", "ADVANCED");
             SetOption("smoothing_ping_graph", "True", "ADVANCED");
             SetOption("smoothing_ping_graph_overlay", "True", "ADVANCED");
-            SetOption("smoothing_tickrate_graph_overlay", "False", "ADVANCED");
+            SetOption("smoothing_tickrate_graph_overlay", "True", "ADVANCED");
             SetOption("smoothing_ticktime_graph_overlay", "True", "ADVANCED");
             SetOption("smoothing_ping_value_overlay", "True", "ADVANCED");
-            SetOption("smoothing_tickrate_value_overlay", "False", "ADVANCED");
+            SetOption("smoothing_tickrate_value_overlay", "True", "ADVANCED");
             SetOption("smoothing_traffic_value_overlay", "True", "ADVANCED");
             SetOption("smoothing_ping_value_gui", "True", "ADVANCED");
             SetOption("show_ping_spikes", "True", "ADVANCED");
@@ -172,25 +172,26 @@ namespace tickMeter
             SetOption("spikes.min_hold_ms", "50", "ADVANCED");        // Быстрое снятие индикатора
             SetOption("spikes.history_size", "1000", "ADVANCED");
             // SetOption("spikes.auto.enable", "True", "ADVANCED");   // УДАЛЕНО - dead code
-            SetOption("spikes.ema_alpha", "0.1", "ADVANCED");
-            SetOption("spikes.ew_sigma_alpha", "0.05", "ADVANCED");
-            SetOption("spikes.sensitivity_multiplier", "2", "ADVANCED");
-            SetOption("spikes.hysteresis_ratio", "0.8", "ADVANCED");
+            SetOption("spikes.ema_alpha", "0.050", "ADVANCED");
+            SetOption("spikes.ew_sigma_alpha", "0.020", "ADVANCED");
+            SetOption("spikes.sensitivity_multiplier", "3.0", "ADVANCED");
+            SetOption("spikes.hysteresis_ratio", "0.70", "ADVANCED");
             SetOption("spikes.refractory_period_ms", "2000", "ADVANCED");
-            SetOption("spikes.min_energy_threshold", "1", "ADVANCED");
+            SetOption("spikes.min_energy_threshold", "2.0", "ADVANCED");
             SetOption("spikes.init_window_size", "30", "ADVANCED");
-            SetOption("alert_sound_enabled", "False", "ADVANCED");
+            SetOption("alert_sound_enabled", "True", "ADVANCED");
             SetOption("alert_discord_enabled", "True", "ADVANCED");
             SetOption("alert_discord_webhook", "", "ADVANCED");
             SetOption("alert_cooldown_seconds", "30", "ADVANCED");
             SetOption("network_quality_enabled", "True", "ADVANCED");
-            SetOption("network_quality_mode", "hybrid", "ADVANCED");
-            SetOption("network_quality_context_sync", "False", "ADVANCED");
+            SetOption("network_quality_mode", "context", "ADVANCED");
+            SetOption("network_quality_context_sync", "True", "ADVANCED");
             SetOption("network_quality_context_profile", "very_low", "ADVANCED");
             SetOption("network_quality_use_smoothed", "False", "ADVANCED");
             SetOption("quality_history_size", "100", "ADVANCED");
             SetOption("stability_threshold", "0.15", "ADVANCED");
             SetOption("quality_threshold", "0.8", "ADVANCED");
+            SetOption("quality_profile_stability_tolerance", "False", "ADVANCED");
             SetOption("network_optimization_enabled", "False", "ADVANCED");
             SetOption("optimization_threshold", "70", "ADVANCED");
             SetOption("optimization_interval", "5", "ADVANCED");
@@ -207,7 +208,6 @@ namespace tickMeter
             SetOption("vpn_bypass_restore_dedup", "True", "ADVANCED");
             SetOption("vpn_bypass_restore_basic", "True", "ADVANCED");
             SetOption("smoothing_tickrate_value_gui", "False", "ADVANCED");
-            SetOption("smoothing_ticktime_value_overlay", "False", "ADVANCED");
             SetOption("alert_sound_pingspike_path", "", "ADVANCED");
             SetOption("alert_sound_tickratespike_path", "", "ADVANCED");
             SetOption("alert_sound_ticktimespike_path", "", "ADVANCED");

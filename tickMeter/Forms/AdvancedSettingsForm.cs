@@ -860,6 +860,17 @@ namespace tickMeter.Forms
             // Обновляем UI-элементы формы в соответствии с настройками
             LoadSettings();
             
+            // КРИТИЧЕСКИ ВАЖНО: Переинициализируем NetworkQualityAnalyzer с новыми настройками
+            try
+            {
+                Classes.NetworkQualityAnalyzer.Initialize();
+                System.Diagnostics.Debug.WriteLine("[SetOptimalSettings] NetworkQualityAnalyzer re-initialized with optimal settings");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SetOptimalSettings] Error re-initializing NetworkQualityAnalyzer: {ex.Message}");
+            }
+            
             // Принудительно перезагружаем настройки из файла
             try
             {
