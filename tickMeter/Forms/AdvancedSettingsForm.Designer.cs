@@ -1040,8 +1040,8 @@ namespace tickMeter.Forms
             // chkProfileStabilityTolerance
             // 
             this.chkProfileStabilityTolerance.AutoSize = true;
-            this.chkProfileStabilityTolerance.Checked = true;
-            this.chkProfileStabilityTolerance.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.chkProfileStabilityTolerance.Checked = false;
+            this.chkProfileStabilityTolerance.CheckState = System.Windows.Forms.CheckState.Unchecked;
             this.chkProfileStabilityTolerance.Location = new System.Drawing.Point(360, 50);
             this.chkProfileStabilityTolerance.Margin = new System.Windows.Forms.Padding(4);
             this.chkProfileStabilityTolerance.Name = "chkProfileStabilityTolerance";

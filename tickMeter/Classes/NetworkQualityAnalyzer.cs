@@ -205,7 +205,7 @@ namespace tickMeter.Classes
                 }
                 
                 // Адаптивная толерантность к скачкам (по профилю)
-                var profileStabilityToleranceStr = App.settingsManager?.GetOption("quality_profile_stability_tolerance", "True", "ADVANCED");
+                var profileStabilityToleranceStr = App.settingsManager?.GetOption("quality_profile_stability_tolerance", "False", "ADVANCED");
                 _profileStabilityToleranceEnabled = string.Equals(profileStabilityToleranceStr?.Trim(), "True", StringComparison.OrdinalIgnoreCase);
                 
                 var ticktimeGoodStr = App.settingsManager?.GetOption("quality_ticktime_good_ms", "8", "ADVANCED");

@@ -779,7 +779,7 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("quality_history_size", "100", "ADVANCED");      // Размер истории качества 100 ✓
             App.settingsManager.SetOption("stability_threshold", "0.15", "ADVANCED");      // Порог стабильности 0.15 ✓
             App.settingsManager.SetOption("quality_threshold", "0.8", "ADVANCED");         // Порог качества 0.8 ✓
-            App.settingsManager.SetOption("quality_profile_stability_tolerance", "True", "ADVANCED"); // Адаптивная толерантность к скачкам ✓
+            App.settingsManager.SetOption("quality_profile_stability_tolerance", "False", "ADVANCED"); // Адаптивная толерантность к скачкам ✗
             App.settingsManager.SetOption("network_optimization_enabled", "False", "ADVANCED"); // Сетевая оптимизация ✗
             App.settingsManager.SetOption("optimization_threshold", "70", "ADVANCED");     // Порог оптимизации 70 ✓
             App.settingsManager.SetOption("optimization_interval", "5", "ADVANCED");       // Интервал оптимизации 5 ✓
