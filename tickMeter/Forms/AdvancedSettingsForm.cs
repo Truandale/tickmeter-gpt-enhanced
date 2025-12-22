@@ -816,8 +816,10 @@ namespace tickMeter.Forms
             
             // === ДОПОЛНИТЕЛЬНЫЕ СЕКЦИИ ===
             
-            // ZONES
+            // ZONES - Контекстный профиль Very Low
             App.settingsManager.SetOption("color_zone_profile", "Very Low", "ZONES");      // Профиль цветовых зон ✓
+            App.settingsManager.SetOption("context_mode_enabled", "True", "ZONES");        // Контекстный режим включен ✓
+            App.settingsManager.SetOption("context_profile", "very_low", "ZONES");         // Контекстный профиль Very Low ✓
             
             // EXTENDED оверлей (ИСПРАВЛЕННЫЕ значения со скриншота)
             App.settingsManager.SetOption("show_active_process", "True", "EXTENDED");      // Показывать отслеживаемый процесс ✓
