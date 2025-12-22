@@ -779,6 +779,7 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("quality_history_size", "100", "ADVANCED");      // Размер истории качества 100 ✓
             App.settingsManager.SetOption("stability_threshold", "0.15", "ADVANCED");      // Порог стабильности 0.15 ✓
             App.settingsManager.SetOption("quality_threshold", "0.8", "ADVANCED");         // Порог качества 0.8 ✓
+            App.settingsManager.SetOption("quality_profile_stability_tolerance", "True", "ADVANCED"); // Адаптивная толерантность к скачкам ✓
             App.settingsManager.SetOption("network_optimization_enabled", "False", "ADVANCED"); // Сетевая оптимизация ✗
             App.settingsManager.SetOption("optimization_threshold", "70", "ADVANCED");     // Порог оптимизации 70 ✓
             App.settingsManager.SetOption("optimization_interval", "5", "ADVANCED");       // Интервал оптимизации 5 ✓
@@ -1436,6 +1437,7 @@ namespace tickMeter.Forms
                 chkNetworkQualityEnabled.Checked = App.settingsManager.GetOption("network_quality_enabled", "True", "ADVANCED") == "True";
                 chkNetworkQualityOverlay.Checked = App.settingsManager.GetOption("network_quality_overlay", "False", "SETTINGS") == "True";
                 chkNetworkQualityUseSmoothed.Checked = App.settingsManager.GetOption("network_quality_use_smoothed", "False", "ADVANCED") == "True";
+                chkProfileStabilityTolerance.Checked = App.settingsManager.GetOption("quality_profile_stability_tolerance", "True", "ADVANCED") == "True";
                 numQualityHistorySize.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("quality_history_size", "100", "ADVANCED"));
                 numStabilityThreshold.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("stability_threshold", "0.15", "ADVANCED"));
                 numQualityThreshold.Value = SettingsManager.ParseDecimalInvariant(App.settingsManager.GetOption("quality_threshold", "0.8", "ADVANCED"));
@@ -1502,6 +1504,7 @@ namespace tickMeter.Forms
                 App.settingsManager.SetOption("network_quality_enabled", chkNetworkQualityEnabled.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("network_quality_overlay", chkNetworkQualityOverlay.Checked.ToString(), "SETTINGS");
                 App.settingsManager.SetOption("network_quality_use_smoothed", chkNetworkQualityUseSmoothed.Checked.ToString(), "ADVANCED");
+                App.settingsManager.SetOption("quality_profile_stability_tolerance", chkProfileStabilityTolerance.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("quality_history_size", SettingsManager.ToInvariantString((int)numQualityHistorySize.Value), "ADVANCED");
                 App.settingsManager.SetOption("stability_threshold", SettingsManager.ToInvariantString((float)numStabilityThreshold.Value), "ADVANCED");
                 App.settingsManager.SetOption("quality_threshold", SettingsManager.ToInvariantString((float)numQualityThreshold.Value), "ADVANCED");

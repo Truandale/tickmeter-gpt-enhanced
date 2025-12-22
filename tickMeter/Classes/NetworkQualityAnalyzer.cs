@@ -49,9 +49,11 @@ namespace tickMeter.Classes
     private static bool _targetTickrateAuto = true;
         private static float _pingGoodMs = 30f; // Хороший ping (мс)
         private static float _pingBadMs = 80f; // Плохой ping (мс)
+        private static bool _profileStabilityToleranceEnabled = true; // Адаптивная толерантность к скачкам (по профилю)
         private static float _ticktimeGoodMs = 8f; // Хороший ticktime (мс)
         private static float _ticktimeBadMs = 16f; // Плохой ticktime (мс)
         private static float _emaAlpha = 0.15f; // Альфа для EMA сглаживания
+        private static bool _useStabilityTolerance = true; // Использовать адаптивную толерантность к скачкам
         
         // Блокировка для thread-safety
         private static readonly object _lockObject = new object();
@@ -202,6 +204,10 @@ namespace tickMeter.Classes
                     _pingBadMs = pingBad;
                 }
                 
+                // Адаптивная толерантность к скачкам (по профилю)
+                var profileStabilityToleranceStr = App.settingsManager?.GetOption("quality_profile_stability_tolerance", "True", "ADVANCED");
+                _profileStabilityToleranceEnabled = string.Equals(profileStabilityToleranceStr?.Trim(), "True", StringComparison.OrdinalIgnoreCase);
+                
                 var ticktimeGoodStr = App.settingsManager?.GetOption("quality_ticktime_good_ms", "8", "ADVANCED");
                 if (SettingsManager.TryParseInvariantFloat(ticktimeGoodStr?.Trim(), out float ticktimeGood) && ticktimeGood > 0)
                 {
@@ -219,6 +225,10 @@ namespace tickMeter.Classes
                 {
                     _emaAlpha = emaAlpha;
                 }
+                
+                // Загружаем настройку адаптивной толерантности к скачкам
+                var stabilityToleranceStr = App.settingsManager?.GetOption("quality_profile_stability_tolerance", "True", "ADVANCED");
+                _useStabilityTolerance = stabilityToleranceStr?.Trim().Equals("True", StringComparison.OrdinalIgnoreCase) ?? true;
                 
                 _dynamicTargetTickrate = _manualTargetTickrate;
 
@@ -752,8 +762,21 @@ namespace tickMeter.Classes
             float quality = 0;
             
             // === СТАБИЛЬНОСТЬ (FIXED: убран двойной счёт) ===
-            quality += PingStability * pingStabilityWeight;
-            quality += TickrateStability * tickrateStabilityWeight;
+            // Применяем адаптивную толерантность к скачкам (если включена)
+            float adjustedPingStability = PingStability;
+            float adjustedTickrateStability = TickrateStability;
+            
+            if (_profileStabilityToleranceEnabled && stabilityToleranceFactor != 1.0f)
+            {
+                // Формула: adjustedStability = 1 - (1 - rawStability) / stabilityToleranceFactor
+                // При stabilityToleranceFactor > 1.0: снижается влияние нестабильности
+                // При stabilityToleranceFactor < 1.0: усиливается влияние нестабильности
+                adjustedPingStability = Math.Max(0f, Math.Min(1f, 1f - (1f - PingStability) / stabilityToleranceFactor));
+                adjustedTickrateStability = Math.Max(0f, Math.Min(1f, 1f - (1f - TickrateStability) / stabilityToleranceFactor));
+            }
+            
+            quality += adjustedPingStability * pingStabilityWeight;
+            quality += adjustedTickrateStability * tickrateStabilityWeight;
             // REMOVED: TicktimeStability (производная от tickrate)
             
             // === LEVEL PENALTIES ===

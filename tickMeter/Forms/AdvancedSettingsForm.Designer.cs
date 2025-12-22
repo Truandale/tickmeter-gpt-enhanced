@@ -85,6 +85,7 @@ namespace tickMeter.Forms
             this.chkNetworkQualityEnabled = new System.Windows.Forms.CheckBox();
             this.chkNetworkQualityOverlay = new System.Windows.Forms.CheckBox();
             this.chkNetworkQualityUseSmoothed = new System.Windows.Forms.CheckBox();
+            this.chkProfileStabilityTolerance = new System.Windows.Forms.CheckBox();
             this.lblQualityMode = new System.Windows.Forms.Label();
             this.radioQualityStandard = new System.Windows.Forms.RadioButton();
             this.radioQualityContext = new System.Windows.Forms.RadioButton();
@@ -976,6 +977,7 @@ namespace tickMeter.Forms
             this.groupBoxNetworkQuality.Controls.Add(this.chkNetworkQualityEnabled);
             this.groupBoxNetworkQuality.Controls.Add(this.chkNetworkQualityOverlay);
             this.groupBoxNetworkQuality.Controls.Add(this.chkNetworkQualityUseSmoothed);
+            this.groupBoxNetworkQuality.Controls.Add(this.chkProfileStabilityTolerance);
             this.groupBoxNetworkQuality.Controls.Add(this.lblQualityMode);
             this.groupBoxNetworkQuality.Controls.Add(this.radioQualityStandard);
             this.groupBoxNetworkQuality.Controls.Add(this.radioQualityContext);
@@ -1034,6 +1036,19 @@ namespace tickMeter.Forms
             this.chkNetworkQualityUseSmoothed.TabIndex = 11;
             this.chkNetworkQualityUseSmoothed.Text = "Использовать сглаженные данные для анализа";
             this.chkNetworkQualityUseSmoothed.UseVisualStyleBackColor = true;
+            // 
+            // chkProfileStabilityTolerance
+            // 
+            this.chkProfileStabilityTolerance.AutoSize = true;
+            this.chkProfileStabilityTolerance.Checked = true;
+            this.chkProfileStabilityTolerance.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.chkProfileStabilityTolerance.Location = new System.Drawing.Point(360, 50);
+            this.chkProfileStabilityTolerance.Margin = new System.Windows.Forms.Padding(4);
+            this.chkProfileStabilityTolerance.Name = "chkProfileStabilityTolerance";
+            this.chkProfileStabilityTolerance.Size = new System.Drawing.Size(380, 20);
+            this.chkProfileStabilityTolerance.TabIndex = 11;
+            this.chkProfileStabilityTolerance.Text = "Адаптивная толерантность к скачкам (по профилю)";
+            this.chkProfileStabilityTolerance.UseVisualStyleBackColor = true;
             // 
             // lblQualityMode
             // 
@@ -3093,6 +3108,7 @@ namespace tickMeter.Forms
         private System.Windows.Forms.CheckBox chkNetworkQualityEnabled;
         private System.Windows.Forms.CheckBox chkNetworkQualityOverlay;
         private System.Windows.Forms.CheckBox chkNetworkQualityUseSmoothed;
+        private System.Windows.Forms.CheckBox chkProfileStabilityTolerance;
         private System.Windows.Forms.Label lblQualityMode;
         private System.Windows.Forms.RadioButton radioQualityStandard;
         private System.Windows.Forms.RadioButton radioQualityContext;
