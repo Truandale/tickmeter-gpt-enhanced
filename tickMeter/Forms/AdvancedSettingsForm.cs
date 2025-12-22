@@ -1539,6 +1539,10 @@ namespace tickMeter.Forms
         {
             try
             {
+                // ВАЖНО: Используем BeginBatchUpdate/EndBatchUpdate для атомарной записи всех настроек
+                // Это предотвращает множественные записи в settings.ini при вызове из event handlers
+                App.settingsManager.BeginBatchUpdate();
+                
                 App.settingsManager.SetOption("network_quality_enabled", chkNetworkQualityEnabled.Checked.ToString(), "ADVANCED");
                 App.settingsManager.SetOption("network_quality_overlay", chkNetworkQualityOverlay.Checked.ToString(), "SETTINGS");
                 App.settingsManager.SetOption("network_quality_use_smoothed", chkNetworkQualityUseSmoothed.Checked.ToString(), "ADVANCED");
@@ -1558,9 +1562,13 @@ namespace tickMeter.Forms
                     string profileValue = cmbQualityContextProfile.SelectedItem.ToString().ToLower().Replace(" ", "_");
                     App.settingsManager.SetOption("network_quality_context_profile", profileValue, "ADVANCED");
                 }
+                
+                App.settingsManager.EndBatchUpdate();
             }
             catch (Exception ex)
             {
+                // В случае ошибки отменяем пакетный режим
+                try { App.settingsManager.EndBatchUpdate(); } catch { }
                 System.Diagnostics.Debug.Print($"[SaveNetworkQualitySettings] Error: {ex.Message}");
             }
         }
@@ -1637,6 +1645,9 @@ namespace tickMeter.Forms
         
         private void NumQualityHistorySize_ValueChanged(object sender, EventArgs e)
         {
+            // ИСПРАВЛЕНО: Сохраняем значение перед реинициализацией
+            App.settingsManager.SetOption("quality_history_size", SettingsManager.ToInvariantString((int)numQualityHistorySize.Value), "ADVANCED");
+            
             if (chkNetworkQualityEnabled.Checked)
             {
                 NetworkQualityAnalyzer.Initialize(); // Переинициализируем с новыми настройками
@@ -1645,6 +1656,9 @@ namespace tickMeter.Forms
         
         private void NumStabilityThreshold_ValueChanged(object sender, EventArgs e)
         {
+            // ИСПРАВЛЕНО: Сохраняем значение перед реинициализацией
+            App.settingsManager.SetOption("stability_threshold", SettingsManager.ToInvariantString((float)numStabilityThreshold.Value), "ADVANCED");
+            
             if (chkNetworkQualityEnabled.Checked)
             {
                 NetworkQualityAnalyzer.Initialize(); // Переинициализируем с новыми настройками  
@@ -1653,6 +1667,9 @@ namespace tickMeter.Forms
         
         private void NumQualityThreshold_ValueChanged(object sender, EventArgs e)
         {
+            // ИСПРАВЛЕНО: Сохраняем значение перед реинициализацией
+            App.settingsManager.SetOption("quality_threshold", SettingsManager.ToInvariantString((float)numQualityThreshold.Value), "ADVANCED");
+            
             if (chkNetworkQualityEnabled.Checked)
             {
                 NetworkQualityAnalyzer.Initialize(); // Переинициализируем с новыми настройками
