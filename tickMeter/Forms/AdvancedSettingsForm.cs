@@ -1660,18 +1660,21 @@ namespace tickMeter.Forms
         
         private void ChkNetworkQualityEnabled_CheckedChanged(object sender, EventArgs e)
         {
+            // ИСПРАВЛЕНО БАГ #18: Сначала отписываемся для предотвращения множественной подписки
+            NetworkQualityAnalyzer.QualityChanged -= OnQualityChanged;
+            NetworkQualityAnalyzer.QualityRatingChanged -= OnQualityRatingChanged;
+            NetworkQualityAnalyzer.PredictionChanged -= OnPredictionChanged;
+            
             if (chkNetworkQualityEnabled.Checked)
             {
                 NetworkQualityAnalyzer.Initialize();
+                // Теперь подписываемся (гарантированно только один раз)
                 NetworkQualityAnalyzer.QualityChanged += OnQualityChanged;
                 NetworkQualityAnalyzer.QualityRatingChanged += OnQualityRatingChanged;
                 NetworkQualityAnalyzer.PredictionChanged += OnPredictionChanged;
             }
             else
             {
-                NetworkQualityAnalyzer.QualityChanged -= OnQualityChanged;
-                NetworkQualityAnalyzer.QualityRatingChanged -= OnQualityRatingChanged;
-                NetworkQualityAnalyzer.PredictionChanged -= OnPredictionChanged;
                 NetworkQualityAnalyzer.Clear();
             }
             UpdateQualityDisplay();
