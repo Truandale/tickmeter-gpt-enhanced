@@ -522,13 +522,28 @@ namespace tickMeter.Forms
             _ = Task.Run(async () => {
                 try { 
                     await Task.Run(() => RivaTuner.PrintData(""));
+                    
+                    // ИСПРАВЛЕНО БАГ #17: Проверяем IsDisposed для предотвращения ObjectDisposedException
+                    if (IsDisposed || Disposing) return;
+                    
                     // ИСПРАВЛЕНО: BeginInvoke вместо Invoke для предотвращения deadlock
-                    this.BeginInvoke(new Action(() => App.gui.UpdateStyle(settings_rtss_output.Checked)));
+                    try
+                    {
+                        this.BeginInvoke(new Action(() => App.gui.UpdateStyle(settings_rtss_output.Checked)));
+                    }
+                    catch (ObjectDisposedException) { /* Форма уже закрыта */ }
                 } 
                 catch (Exception exc) { 
+                    // ИСПРАВЛЕНО БАГ #17: Проверяем IsDisposed
+                    if (IsDisposed || Disposing) return;
+                    
                     // ИСПРАВЛЕНО: BeginInvoke + логирование вместо Invoke + MessageBox
                     System.Diagnostics.Debug.Print($"[settings_rtss_output] Error: {exc.Message}");
-                    this.BeginInvoke(new Action(() => MessageBox.Show(exc.Message, "Ошибка RTSS", MessageBoxButtons.OK, MessageBoxIcon.Warning))); 
+                    try
+                    {
+                        this.BeginInvoke(new Action(() => MessageBox.Show(exc.Message, "Ошибка RTSS", MessageBoxButtons.OK, MessageBoxIcon.Warning))); 
+                    }
+                    catch (ObjectDisposedException) { /* Форма уже закрыта */ }
                 }
             });
         }

@@ -1771,10 +1771,17 @@ namespace tickMeter.Forms
         
         private void OnQualityChanged(float quality)
         {
+            // ИСПРАВЛЕНО БАГ #17: Проверяем IsDisposed для предотвращения ObjectDisposedException
+            if (IsDisposed || Disposing) return;
+            
             if (InvokeRequired)
             {
-                // ИСПРАВЛЕНО: BeginInvoke вместо Invoke для предотвращения deadlock
-                BeginInvoke(new Action<float>(OnQualityChanged), quality);
+                try
+                {
+                    // ИСПРАВЛЕНО: BeginInvoke вместо Invoke для предотвращения deadlock
+                    BeginInvoke(new Action<float>(OnQualityChanged), quality);
+                }
+                catch (ObjectDisposedException) { /* Форма уже закрыта */ }
                 return;
             }
             UpdateQualityDisplay();
@@ -1782,10 +1789,17 @@ namespace tickMeter.Forms
         
         private void OnQualityRatingChanged(string rating)
         {
+            // ИСПРАВЛЕНО БАГ #17: Проверяем IsDisposed для предотвращения ObjectDisposedException
+            if (IsDisposed || Disposing) return;
+            
             if (InvokeRequired)
             {
-                // ИСПРАВЛЕНО: BeginInvoke вместо Invoke для предотвращения deadlock
-                BeginInvoke(new Action<string>(OnQualityRatingChanged), rating);
+                try
+                {
+                    // ИСПРАВЛЕНО: BeginInvoke вместо Invoke для предотвращения deadlock
+                    BeginInvoke(new Action<string>(OnQualityRatingChanged), rating);
+                }
+                catch (ObjectDisposedException) { /* Форма уже закрыта */ }
                 return;
             }
             UpdateQualityDisplay();
@@ -1793,10 +1807,17 @@ namespace tickMeter.Forms
         
         private void OnPredictionChanged(bool isPredicting, string details)
         {
+            // ИСПРАВЛЕНО БАГ #17: Проверяем IsDisposed для предотвращения ObjectDisposedException
+            if (IsDisposed || Disposing) return;
+            
             if (InvokeRequired)
             {
-                // ИСПРАВЛЕНО: BeginInvoke вместо Invoke для предотвращения deadlock
-                BeginInvoke(new Action<bool, string>(OnPredictionChanged), isPredicting, details);
+                try
+                {
+                    // ИСПРАВЛЕНО: BeginInvoke вместо Invoke для предотвращения deadlock
+                    BeginInvoke(new Action<bool, string>(OnPredictionChanged), isPredicting, details);
+                }
+                catch (ObjectDisposedException) { /* Форма уже закрыта */ }
                 return;
             }
             
