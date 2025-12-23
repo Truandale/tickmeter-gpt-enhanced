@@ -8,10 +8,21 @@ namespace tickMeter.Forms
    
     public partial class ProfilesForm : Form
     {
+        // БАГ #25: Переиспользуемый таймер для двойного клика (было: утечка памяти)
+        private System.Timers.Timer _dblClickTimer;
 
         public ProfilesForm()
         {
-            InitializeComponent(); 
+            InitializeComponent();
+            
+            // Инициализируем переиспользуемый таймер
+            _dblClickTimer = new System.Timers.Timer()
+            {
+                Interval = 200,
+                AutoReset = false,
+                Enabled = false
+            };
+            _dblClickTimer.Elapsed += DblClickTick;
         }
 
         public void LoadProfiles()
@@ -71,20 +82,16 @@ namespace tickMeter.Forms
         {
             LastClickedItem = e.Index;
             GameProfileManager.SwitchState(e.Index, !custom_profiles.GetItemChecked(e.Index));
-            System.Timers.Timer DblClick = new System.Timers.Timer()
-            {
-                Interval = 200,
-                Enabled = true,
-            };
-            DblClick.AutoReset = false;
-            DblClick.Elapsed += DblClickTick;
+            
+            // БАГ #25: Переиспользуем таймер (было: создавали новый каждый раз → утечка памяти)
+            _dblClickTimer.Stop();
+            _dblClickTimer.Start();
         }
 
         private void profileForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             e.Cancel = true;
             Hide();
-            
         }
 
         private void profileForm_Shown(object sender, EventArgs e)

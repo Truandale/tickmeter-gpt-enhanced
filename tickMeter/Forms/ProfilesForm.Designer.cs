@@ -13,9 +13,15 @@
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing && (components != null))
+            if (disposing)
             {
-                components.Dispose();
+                // БАГ #25: Dispose переиспользуемого таймера
+                _dblClickTimer?.Dispose();
+                
+                if (components != null)
+                {
+                    components.Dispose();
+                }
             }
             base.Dispose(disposing);
         }
