@@ -666,17 +666,19 @@ namespace tickMeter.Forms
         // Сделайте ping_interval публичным свойством, чтобы к нему можно было обращаться из других классов
         public NumericUpDown PingIntervalControl => ping_interval;
 
-        private void run_on_startup_CheckedChanged(object sender, EventArgs e)
+        private async void run_on_startup_CheckedChanged(object sender, EventArgs e)
         {
+            // ИСПРАВЛЕНО БАГ #16: Асинхронная операция для предотвращения зависания UI
+            run_on_startup.Enabled = false; // Блокируем чекбокс на время операции
             try
             {
                 if (run_on_startup.Checked)
                 {
-                    CreateScheduledTask();
+                    await Task.Run(() => CreateScheduledTask());
                 }
                 else
                 {
-                    RemoveScheduledTask();
+                    await Task.Run(() => RemoveScheduledTask());
                 }
             }
             catch (Exception ex)
@@ -685,28 +687,35 @@ namespace tickMeter.Forms
                     "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 run_on_startup.Checked = !run_on_startup.Checked; // Откатываем изменение
             }
+            finally
+            {
+                run_on_startup.Enabled = true; // Разблокируем чекбокс
+            }
         }
 
-        private void CheckAndUpdateScheduledTaskPath()
+        private async void CheckAndUpdateScheduledTaskPath()
         {
-            try
+            // ИСПРАВЛЕНО БАГ #16: Асинхронная операция для предотвращения зависания UI при загрузке формы
+            await Task.Run(() =>
             {
-                string currentPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
-                string taskName = "tickMeter_AutoStart";
-                
-                // Получаем информацию о существующей задаче
-                ProcessStartInfo psi = new ProcessStartInfo
+                try
                 {
-                    FileName = "schtasks",
-                    Arguments = $"/Query /TN \"{taskName}\" /FO LIST /V",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true
-                };
+                    string currentPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                    string taskName = "tickMeter_AutoStart";
+                    
+                    // Получаем информацию о существующей задаче
+                    ProcessStartInfo psi = new ProcessStartInfo
+                    {
+                        FileName = "schtasks",
+                        Arguments = $"/Query /TN \"{taskName}\" /FO LIST /V",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        CreateNoWindow = true
+                    };
 
-                Process process = Process.Start(psi);
-                string output = process.StandardOutput.ReadToEnd();
-                process.WaitForExit();
+                    Process process = Process.Start(psi);
+                    string output = process.StandardOutput.ReadToEnd();
+                    process.WaitForExit();
 
                 if (process.ExitCode == 0 && !string.IsNullOrEmpty(output))
                 {
@@ -730,12 +739,13 @@ namespace tickMeter.Forms
                         CreateScheduledTask(silent: true); // Пересоздаем задачу с новым путем без показа окна
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Debug.Print($"[AutoStart] Ошибка проверки пути: {ex.Message}");
-                // Не показываем ошибку пользователю, это фоновая проверка
-            }
+                }
+                catch (Exception ex)
+                {
+                    Debug.Print($"[AutoStart] Ошибка проверки пути: {ex.Message}");
+                    // Не показываем ошибку пользователю, это фоновая проверка
+                }
+            });
         }
 
         private void CreateScheduledTask(bool silent = false)
