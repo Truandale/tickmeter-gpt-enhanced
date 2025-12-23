@@ -1661,6 +1661,10 @@ namespace tickMeter.Forms
         
         private void ChkNetworkQualityEnabled_CheckedChanged(object sender, EventArgs e)
         {
+            // БАГ #31: Не выполняем Initialize/подписки/UpdateQualityDisplay во время загрузки настроек
+            if (_isLoadingSettings)
+                return;
+            
             // ИСПРАВЛЕНО БАГ #18: Сначала отписываемся для предотвращения множественной подписки
             NetworkQualityAnalyzer.QualityChanged -= OnQualityChanged;
             NetworkQualityAnalyzer.QualityRatingChanged -= OnQualityRatingChanged;
@@ -1695,6 +1699,10 @@ namespace tickMeter.Forms
         
         private void RadioQualityMode_CheckedChanged(object sender, EventArgs e)
         {
+            // БАГ #33: Не выполняем UpdateQualityDisplay во время загрузки настроек
+            if (_isLoadingSettings)
+                return;
+            
             RadioButton radio = sender as RadioButton;
             if (radio != null && radio.Checked)
             {
@@ -2022,6 +2030,10 @@ namespace tickMeter.Forms
 
         private void ChkNetworkOptimizationEnabled_CheckedChanged(object sender, EventArgs e)
         {
+            // БАГ #32: Не выполняем SetEnabled во время загрузки настроек
+            if (_isLoadingSettings)
+                return;
+            
             try
             {
                 if (App.networkOptimizer != null)
@@ -2425,6 +2437,10 @@ namespace tickMeter.Forms
         /// </summary>
         private void OnTickrateChartSettingsChanged(object sender, EventArgs e)
         {
+            // БАГ #34: Не модифицируем UI во время загрузки настроек
+            if (_isLoadingSettings)
+                return;
+            
             UpdateTickrateChartControlsState();
         }
         
