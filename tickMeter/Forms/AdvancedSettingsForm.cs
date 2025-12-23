@@ -67,6 +67,39 @@ namespace tickMeter.Forms
             {
                 // БАГ #26: Сбрасываем флаг ПОСЛЕ всех операций инициализации
                 _isLoadingSettings = false;
+                
+                // БАГ #35, #36: Выполняем дорогие операции ПОСЛЕ сброса флага
+                PostLoadInitialization();
+            }
+        }
+        
+        /// <summary>
+        /// БАГ #35, #36: Выполняет инициализацию компонентов ПОСЛЕ загрузки настроек и сброса _isLoadingSettings
+        /// </summary>
+        private void PostLoadInitialization()
+        {
+            try
+            {
+                // Инициализация Network Quality Analyzer если включен
+                if (chkNetworkQualityEnabled.Checked)
+                {
+                    NetworkQualityAnalyzer.Initialize();
+                    
+                    // Подписываемся на события анализатора
+                    NetworkQualityAnalyzer.QualityChanged += OnQualityChanged;
+                    NetworkQualityAnalyzer.QualityRatingChanged += OnQualityRatingChanged;
+                    NetworkQualityAnalyzer.PredictionChanged += OnPredictionChanged;
+                }
+                
+                // Обновляем дисплей качества сети
+                UpdateQualityDisplay();
+                
+                // Обновляем состояние контролов графика тикрейта
+                UpdateTickrateChartControlsState();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print($"[PostLoadInitialization] Error: {ex.Message}");
             }
         }
 
@@ -1588,16 +1621,8 @@ namespace tickMeter.Forms
                 // Disable profile ComboBox if sync is enabled
                 cmbQualityContextProfile.Enabled = !chkQualityContextSync.Checked;
                 
-                // Инициализируем анализатор если он включен
-                if (chkNetworkQualityEnabled.Checked)
-                {
-                    NetworkQualityAnalyzer.Initialize();
-                    
-                    // Подписываемся на события анализатора
-                    NetworkQualityAnalyzer.QualityChanged += OnQualityChanged;
-                    NetworkQualityAnalyzer.QualityRatingChanged += OnQualityRatingChanged;
-                    NetworkQualityAnalyzer.PredictionChanged += OnPredictionChanged;
-                }
+                // БАГ #35: Initialize и подписки перенесены в PostLoadInitialization
+                // (должны выполняться ПОСЛЕ сброса _isLoadingSettings)
                 
                 // Устанавливаем обработчики событий
                 chkNetworkQualityEnabled.CheckedChanged += ChkNetworkQualityEnabled_CheckedChanged;
@@ -1613,7 +1638,7 @@ namespace tickMeter.Forms
                 numQualityThreshold.ValueChanged += NumQualityThreshold_ValueChanged;
                 btnResetQualityAnalyzer.Click += BtnResetQualityAnalyzer_Click;
                 
-                UpdateQualityDisplay();
+                // БАГ #35: UpdateQualityDisplay перенесён в PostLoadInitialization
             }
             catch (Exception ex)
             {
@@ -2364,8 +2389,7 @@ namespace tickMeter.Forms
                 numTickrateChartHistoryHours.ValueChanged += OnTickrateChartSettingsChanged;
                 btnTickrateChartReset.Click += OnTickrateChartReset;
                 
-                // Обновляем состояние контролов
-                UpdateTickrateChartControlsState();
+                // БАГ #36: UpdateTickrateChartControlsState перенесён в PostLoadInitialization
             }
             catch (Exception ex)
             {
