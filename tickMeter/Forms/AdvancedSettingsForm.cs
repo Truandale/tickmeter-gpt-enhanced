@@ -799,7 +799,7 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("tickrate_smoothing", "True", "SETTINGS");      // Сглаживание тикрейта ✓
             App.settingsManager.SetOption("dedup_multi_nic", "True", "SETTINGS");         // Дедупликация NIC ✓
             App.settingsManager.SetOption("enable_ipv6", "True", "SETTINGS");             // IPv6 ✓
-            App.settingsManager.SetOption("ignore_virtual_adapters", "True", "SETTINGS"); // Игнорировать виртуальные ✓
+            App.settingsManager.SetOption("ignore_virtual_adapters", "False", "SETTINGS"); // Игнорировать виртуальные ✗ (БАГ #50: было True)
             App.settingsManager.SetOption("rtss_only_active", "True", "SETTINGS");        // RTSS только для активных ✓
             App.settingsManager.SetOption("stun_enable", "True", "SETTINGS");             // STUN ✓
             App.settingsManager.SetOption("network_quality_overlay", "True", "SETTINGS"); // Качество сети ✓
@@ -874,14 +874,14 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("spikes.history_size", "1000", "ADVANCED");      // Размер истории 1000 ✓
             // App.settingsManager.SetOption("spikes.auto.enable", "True", "ADVANCED");    // Автокалибровка - УДАЛЕНО (dead code)
             
-            // ИСПРАВЛЕННЫЕ значения со скриншота Stage 4:
-            App.settingsManager.SetOption("spikes.ema_alpha", "0.050", "ADVANCED");        // EMA alpha 0.050 (не 0.1) ✓
-            App.settingsManager.SetOption("spikes.ew_sigma_alpha", "0.020", "ADVANCED");   // EW sigma alpha 0.020 (не 0.05) ✓
-            App.settingsManager.SetOption("spikes.sensitivity_multiplier", "3.0", "ADVANCED"); // Множитель 3.0 (не 2) ✓
-            App.settingsManager.SetOption("spikes.hysteresis_ratio", "0.70", "ADVANCED");  // Гистерезис 0.70 (не 0.8) ✓
-            App.settingsManager.SetOption("spikes.refractory_period_ms", "2000", "ADVANCED"); // Период тишины 2000ms (не 1000) ✓
-            App.settingsManager.SetOption("spikes.min_energy_threshold", "2.0", "ADVANCED"); // Мин энергия 2.0 (не 1) ✓
-            App.settingsManager.SetOption("spikes.init_window_size", "30", "ADVANCED");    // Размер выборки 30 (не 20) ✓
+            // РЕАЛЬНЫЕ рабочие значения из settings.ini (БАГ #51-55):
+            App.settingsManager.SetOption("spikes.ema_alpha", "0.1", "ADVANCED");        // EMA alpha 0.1 ✓
+            App.settingsManager.SetOption("spikes.ew_sigma_alpha", "0.05", "ADVANCED");   // EW sigma alpha 0.05 ✓
+            App.settingsManager.SetOption("spikes.sensitivity_multiplier", "2", "ADVANCED"); // Множитель 2 ✓
+            App.settingsManager.SetOption("spikes.hysteresis_ratio", "0.8", "ADVANCED");  // Гистерезис 0.8 ✓
+            App.settingsManager.SetOption("spikes.refractory_period_ms", "2000", "ADVANCED"); // Период тишины 2000ms ✓
+            App.settingsManager.SetOption("spikes.min_energy_threshold", "1", "ADVANCED"); // Мин энергия 1 ✓
+            App.settingsManager.SetOption("spikes.init_window_size", "30", "ADVANCED");    // Размер выборки 30 ✓
             
             // Алерты (ваши настройки)
             App.settingsManager.SetOption("alert_sound_enabled", "True", "ADVANCED");      // Звуковые алерты ✓
@@ -893,7 +893,8 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("network_quality_enabled", "True", "ADVANCED");  // Анализ качества сети ✓
             App.settingsManager.SetOption("network_quality_mode", "context", "ADVANCED");  // Режим: Context (контекстный) ✓
             App.settingsManager.SetOption("network_quality_context_profile", "very_low", "ADVANCED"); // Контекстный профиль: Very Low ✓
-            App.settingsManager.SetOption("network_quality_context_sync", "True", "ADVANCED");        // Синхронизация с Color Zones ✓
+            App.settingsManager.SetOption("network_quality_context_sync", "False", "ADVANCED");        // Синхронизация с Color Zones ✗ (БАГ #56: было True)
+            App.settingsManager.SetOption("network_quality_use_smoothed", "False", "ADVANCED");       // Использовать сглаженные данные ✗ (БАГ #57: отсутствовало)
             App.settingsManager.SetOption("quality_history_size", "100", "ADVANCED");      // Размер истории качества 100 ✓
             App.settingsManager.SetOption("stability_threshold", "0.15", "ADVANCED");      // Порог стабильности 0.15 ✓
             App.settingsManager.SetOption("quality_threshold", "0.8", "ADVANCED");         // Порог качества 0.8 ✓
