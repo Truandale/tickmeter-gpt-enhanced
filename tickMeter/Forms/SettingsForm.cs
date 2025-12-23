@@ -223,7 +223,7 @@ namespace tickMeter.Forms
                 if (settings_chart_checkbox == null)
                 {
                     System.Diagnostics.Debug.WriteLine("ОШИБКА: settings_chart_checkbox = null. InitializeComponent() не завершился!");
-                    MessageBox.Show("Критическая ошибка инициализации формы настроек. Контролы не созданы.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    System.Diagnostics.Debug.Print("Критическая ошибка инициализации формы настроек. Контролы не созданы.");
                     return;
                 }
             
@@ -563,6 +563,10 @@ namespace tickMeter.Forms
 
         private void adapters_list_SelectedIndexChanged(object sender, EventArgs e)
         {
+            // БАГ #47: Не вызываем StartTracking во время загрузки настроек
+            if (_isLoadingSettings)
+                return;
+                
             // Игнорируем событие если мы сами программно меняем адаптер
             if (IsUpdatingAdapter)
                 return;
@@ -638,6 +642,10 @@ namespace tickMeter.Forms
 
         private void local_ip_textbox_TextChanged(object sender, EventArgs e)
         {
+            // БАГ #48: Не вызываем StartTracking во время загрузки настроек
+            if (_isLoadingSettings)
+                return;
+                
             if (App.gui != null)
             {
                 App.gui.StartTracking();
@@ -715,8 +723,7 @@ namespace tickMeter.Forms
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при настройке автозагрузки: {ex.Message}", 
-                    "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                System.Diagnostics.Debug.Print($"[run_on_startup] Error: {ex.Message}");
                 run_on_startup.Checked = !run_on_startup.Checked; // Откатываем изменение
             }
             finally
