@@ -469,6 +469,11 @@ namespace tickMeter.Forms
 
             try
             {
+                if (adaptersList.IsDisposed || adaptersList.Disposing)
+                {
+                    return -1;
+                }
+                
                 if (adaptersList.InvokeRequired)
                 {
                     return (int)adaptersList.Invoke(new Func<int>(() => adaptersList.SelectedIndex));

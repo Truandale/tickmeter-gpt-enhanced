@@ -1217,6 +1217,9 @@ namespace tickMeter
             {
                 try
                 {
+                    if (listView2.IsDisposed || listView2.Disposing)
+                        return;
+                        
                     listView2.Invoke(new Action(() => {
 
                     listView2.BeginUpdate();
