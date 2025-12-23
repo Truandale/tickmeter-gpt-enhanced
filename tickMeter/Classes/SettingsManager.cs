@@ -14,6 +14,7 @@ namespace tickMeter
         IniData data;
         private readonly object _lock = new object(); // Thread-safety для всех операций
         private volatile bool _batchMode = false; // Режим пакетного сохранения (не сохраняем после каждого SetOption)
+        private int _batchDepth = 0; // Счетчик вложенности BeginBatchUpdate/EndBatchUpdate (защита от вложенных вызов)
 
         /// <summary>
         /// Проверяет наличие settings.ini и создает его с оптимальными настройками если файл отсутствует
@@ -308,26 +309,51 @@ namespace tickMeter
 
         /// <summary>
         /// Начинает пакетное обновление настроек (без автосохранения после каждого SetOption)
+        /// Поддерживает вложенные вызовы с помощью счетчика глубины
         /// </summary>
         public void BeginBatchUpdate()
         {
             lock (_lock)
             {
-                _batchMode = true;
-                DebugLogger.log("[SettingsManager] Начато пакетное обновление настроек");
+                _batchDepth++;
+                if (_batchDepth == 1)
+                {
+                    _batchMode = true;
+                    DebugLogger.log("[SettingsManager] Начато пакетное обновление настроек");
+                }
+                else
+                {
+                    DebugLogger.log($"[SettingsManager] Вложенный BeginBatchUpdate (глубина: {_batchDepth})");
+                }
             }
         }
 
         /// <summary>
         /// Завершает пакетное обновление и сохраняет все изменения одним вызовом
+        /// Поддерживает вложенные вызовы - сохраняет только при возврате к глубине 0
         /// </summary>
         public void EndBatchUpdate()
         {
             lock (_lock)
             {
-                _batchMode = false;
-                SaveConfigInternal(); // Вызов внутреннего метода без повторной блокировки
-                DebugLogger.log("[SettingsManager] Завершено пакетное обновление, настройки сохранены");
+                if (_batchDepth <= 0)
+                {
+                    DebugLogger.log("[SettingsManager] ПРЕДУПРЕЖДЕНИЕ: EndBatchUpdate вызван без соответствующего BeginBatchUpdate!");
+                    return;
+                }
+                
+                _batchDepth--;
+                
+                if (_batchDepth == 0)
+                {
+                    _batchMode = false;
+                    SaveConfigInternal(); // Вызов внутреннего метода без повторной блокировки
+                    DebugLogger.log("[SettingsManager] Завершено пакетное обновление, настройки сохранены");
+                }
+                else
+                {
+                    DebugLogger.log($"[SettingsManager] Вложенный EndBatchUpdate (осталось глубины: {_batchDepth})");
+                }
             }
         }
 
@@ -549,6 +575,14 @@ namespace tickMeter
         {
             lock (_lock)
             {
+                // КРИТИЧНО: Сбрасываем batch mode при перезагрузке, иначе может остаться несогласованное состояние
+                if (_batchMode || _batchDepth > 0)
+                {
+                    DebugLogger.log($"[SettingsManager] ПРЕДУПРЕЖДЕНИЕ: ReloadConfig вызван во время batch mode (depth={_batchDepth}), сбрасываем состояние");
+                    _batchMode = false;
+                    _batchDepth = 0;
+                }
+                
                 int maxRetries = 3;
             int retryDelayMs = 100;
             Exception lastException = null;

@@ -717,6 +717,18 @@ namespace tickMeter.Forms
         {
             try
             {
+                // КРИТИЧНО: Перезагружаем настройки из файла ПЕРЕД массовыми изменениями
+                // Это защищает от race conditions если пользователь нажал Apply, а потом Reset
+                try
+                {
+                    App.settingsManager.ReloadConfig();
+                    System.Diagnostics.Debug.WriteLine("[SetOptimalSettings] Настройки перезагружены из файла");
+                }
+                catch (Exception reloadEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[SetOptimalSettings] Предупреждение при перезагрузке: {reloadEx.Message}");
+                }
+                
                 // Начинаем пакетное обновление для всех изменений
                 App.settingsManager.BeginBatchUpdate();
                 
@@ -903,9 +915,11 @@ namespace tickMeter.Forms
             
             // Завершаем пакетное обновление и сохраняем все изменения одним разом
             App.settingsManager.EndBatchUpdate();
+            System.Diagnostics.Debug.WriteLine("[SetOptimalSettings] Настройки сохранены в файл");
             
-            // Обновляем UI-элементы формы в соответствии с настройками
+            // КРИТИЧНО: Обновляем UI из сохраненных настроек (LoadSettings читает из settingsManager)
             LoadSettings();
+            System.Diagnostics.Debug.WriteLine("[SetOptimalSettings] UI обновлен из настроек");
             
             // КРИТИЧЕСКИ ВАЖНО: Переинициализируем NetworkQualityAnalyzer с новыми настройками
             try
@@ -916,16 +930,6 @@ namespace tickMeter.Forms
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[SetOptimalSettings] Error re-initializing NetworkQualityAnalyzer: {ex.Message}");
-            }
-            
-            // Принудительно перезагружаем настройки из файла
-            try
-            {
-                App.settingsManager.ReloadConfig();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Ошибка перезагрузки настроек: {ex.Message}");
             }
             }
             catch (Exception ex)
