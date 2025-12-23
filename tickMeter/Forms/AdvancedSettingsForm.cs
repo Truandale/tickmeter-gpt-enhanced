@@ -44,6 +44,7 @@ namespace tickMeter.Forms
 
                 LoadSettings();
                 
+                // БАГ #26: Force update вызываем ДО сброса _isLoadingSettings (иначе handler не защищён)
                 // Force update color zone controls state after loading
                 CmbColorZoneProfile_SelectedIndexChanged(cmbColorZoneProfile, EventArgs.Empty);
 
@@ -64,7 +65,7 @@ namespace tickMeter.Forms
             }
             finally
             {
-                // Гарантируем сброс флага загрузки даже при исключении
+                // БАГ #26: Сбрасываем флаг ПОСЛЕ всех операций инициализации
                 _isLoadingSettings = false;
             }
         }
