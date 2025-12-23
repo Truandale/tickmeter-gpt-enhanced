@@ -377,10 +377,8 @@ namespace tickMeter.Forms
             {
                 EnsureStateDirectory();
                 var payload = timestampUtc.ToString("o");
-                lock (_snapshotLock)
-                {
-                    File.WriteAllText(HeartbeatFilePath, payload);
-                }
+                // БАГ #22: File.WriteAllText вынесен из lock (I/O операция может блокироваться)
+                File.WriteAllText(HeartbeatFilePath, payload);
                 _lastHeartbeatWrite = timestampUtc;
             }
             catch (Exception ex)
@@ -420,10 +418,8 @@ namespace tickMeter.Forms
             {
                 EnsureStateDirectory();
                 var json = JsonConvert.SerializeObject(snapshot, Formatting.Indented);
-                lock (_snapshotLock)
-                {
-                    File.WriteAllText(SnapshotFilePath, json);
-                }
+                // БАГ #23: File.WriteAllText вынесен из lock (I/O операция может блокироваться)
+                File.WriteAllText(SnapshotFilePath, json);
                 _lastSnapshotWrite = timestampUtc;
             }
             catch (Exception ex)
@@ -441,16 +437,14 @@ namespace tickMeter.Forms
                     return null;
                 }
 
-                lock (_snapshotLock)
+                // БАГ #24: File.ReadAllText вынесен из lock (I/O операция может блокироваться)
+                var json = File.ReadAllText(SnapshotFilePath);
+                if (string.IsNullOrWhiteSpace(json))
                 {
-                    var json = File.ReadAllText(SnapshotFilePath);
-                    if (string.IsNullOrWhiteSpace(json))
-                    {
-                        return null;
-                    }
-
-                    return JsonConvert.DeserializeObject<MonitoringSnapshot>(json);
+                    return null;
                 }
+
+                return JsonConvert.DeserializeObject<MonitoringSnapshot>(json);
             }
             catch (Exception ex)
             {
