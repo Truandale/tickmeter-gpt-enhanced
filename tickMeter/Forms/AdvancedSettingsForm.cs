@@ -864,7 +864,15 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("pcap_kernel_buffer_mb", "8", "ADVANCED");       // Буфер ядра 8MB ✓
             App.settingsManager.SetOption("pcap_min_to_copy", "4096", "ADVANCED");         // Минимум копирования 4KB ✓
             
-            // Phase 2/3 settings removed - obsolete after optimizations
+            // БАГ #65-72: Отсутствующие параметры производительности из рабочего конфига
+            App.settingsManager.SetOption("virtual_mode_listview", "True", "ADVANCED");    // Virtual mode для ListView ✓
+            App.settingsManager.SetOption("virtual_mode_threshold", "1000", "ADVANCED");   // Порог виртуального режима 1000 ✓
+            App.settingsManager.SetOption("ring_buffer_size", "10000", "ADVANCED");        // Размер кольцевого буфера 10000 ✓
+            App.settingsManager.SetOption("show_virtual_mode_stats", "True", "ADVANCED");  // Показывать статистику виртуального режима ✓
+            App.settingsManager.SetOption("high_priority_threads", "True", "ADVANCED");    // Высокоприоритетные потоки ✓
+            App.settingsManager.SetOption("single_consumer_pattern", "False", "ADVANCED"); // Паттерн одного потребителя ✗
+            App.settingsManager.SetOption("ui_processing_rate", "60", "ADVANCED");         // Частота обработки UI 60 ✓
+            App.settingsManager.SetOption("ui_batch_size", "10", "ADVANCED");              // Размер батча UI 10 ✓
             
             // Spike Detection (ваши РЕАЛЬНЫЕ настройки со скриншота)
             App.settingsManager.SetOption("spikes.enable", "True", "ADVANCED");            // Детекция спайков ✓
@@ -890,6 +898,11 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("alert_discord_enabled", "True", "ADVANCED");    // Discord алерты ✓
             App.settingsManager.SetOption("alert_discord_webhook", "", "ADVANCED");        // Webhook пустой ✓
             App.settingsManager.SetOption("alert_cooldown_seconds", "30", "ADVANCED");     // Задержка алертов 30s ✓
+            
+            // БАГ #73-75: Отсутствующие пути к звуковым файлам алертов
+            App.settingsManager.SetOption("alert_sound_pingspike_path", "", "ADVANCED");       // Путь к звуку ping spike (пустой) ✓
+            App.settingsManager.SetOption("alert_sound_tickratespike_path", "", "ADVANCED");   // Путь к звуку tickrate spike (пустой) ✓
+            App.settingsManager.SetOption("alert_sound_ticktimespike_path", "", "ADVANCED");   // Путь к звуку ticktime spike (пустой) ✓
             
             // Network Quality (ваши настройки)
             App.settingsManager.SetOption("network_quality_enabled", "True", "ADVANCED");  // Анализ качества сети ✓
