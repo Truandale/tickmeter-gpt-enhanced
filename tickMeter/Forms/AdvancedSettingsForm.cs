@@ -1679,12 +1679,13 @@ namespace tickMeter.Forms
         
         private void ChkNetworkQualityOverlay_CheckedChanged(object sender, EventArgs e)
         {
-            SaveNetworkQualitySettings();
+            // Сохранение произойдёт автоматически при нажатии OK/Apply/Save
+            // (SaveNetworkQualitySettings вызывается из SaveSettings)
         }
         
         private void ChkNetworkQualityUseSmoothed_CheckedChanged(object sender, EventArgs e)
         {
-            SaveNetworkQualitySettings();
+            // Сохранение произойдёт автоматически при нажатии OK/Apply/Save
             System.Diagnostics.Debug.Print($"[NetworkQuality] Use smoothed data: {chkNetworkQualityUseSmoothed.Checked}");
         }
         
@@ -1693,7 +1694,7 @@ namespace tickMeter.Forms
             RadioButton radio = sender as RadioButton;
             if (radio != null && radio.Checked)
             {
-                SaveNetworkQualitySettings();
+                // Сохранение произойдёт автоматически при нажатии OK/Apply/Save
                 string mode = radioQualityStandard.Checked ? "Standard" :
                              radioQualityContext.Checked ? "Context" : "Hybrid";
                 System.Diagnostics.Debug.Print($"[NetworkQuality] Display mode changed to: {mode}");
@@ -1704,7 +1705,7 @@ namespace tickMeter.Forms
         private void ChkQualityContextSync_CheckedChanged(object sender, EventArgs e)
         {
             cmbQualityContextProfile.Enabled = !chkQualityContextSync.Checked;
-            SaveNetworkQualitySettings();
+            // Сохранение произойдёт автоматически при нажатии OK/Apply/Save
             
             if (chkNetworkQualityEnabled.Checked)
             {
@@ -1717,7 +1718,7 @@ namespace tickMeter.Forms
         
         private void CmbQualityContextProfile_SelectedIndexChanged(object sender, EventArgs e)
         {
-            SaveNetworkQualitySettings();
+            // Сохранение произойдёт автоматически при нажатии OK/Apply/Save
             
             if (chkNetworkQualityEnabled.Checked && !chkQualityContextSync.Checked)
             {

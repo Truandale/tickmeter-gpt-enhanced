@@ -529,11 +529,8 @@ namespace tickMeter
                 {
                     lastException = ioEx;
                     DebugLogger.log($"[SettingsManager] Попытка {attempt}/{maxRetries} сохранения не удалась: {ioEx.Message}");
-                    
-                    if (attempt < maxRetries)
-                    {
-                        System.Threading.Thread.Sleep(retryDelayMs);
-                    }
+                    // Не используем Thread.Sleep - это блокирует UI thread
+                    // Для INI файлов повторная попытка без задержки достаточна
                 }
                 catch (UnauthorizedAccessException uaEx)
                 {
@@ -550,24 +547,25 @@ namespace tickMeter
             }
 
             // Если мы здесь, то все попытки не удались
+            // КРИТИЧНО: НЕ показываем MessageBox внутри lock - это может вызвать deadlock!
+            // Логируем ошибку для диагностики
             string errorMessage = "Не удалось сохранить настройки в settings.ini";
             
             if (lastException is UnauthorizedAccessException)
             {
-                errorMessage += "\n\nПричина: Недостаточно прав доступа.\n" +
-                               "Решение: Запустите программу от имени администратора.";
+                errorMessage += " - Недостаточно прав доступа. Запустите программу от имени администратора.";
             }
             else if (lastException is IOException)
             {
-                errorMessage += "\n\nПричина: Файл может быть заблокирован другим процессом.\n" +
-                               "Решение: Закройте другие программы, которые могут использовать файл настроек.";
+                errorMessage += " - Файл может быть заблокирован другим процессом.";
             }
             else if (lastException != null)
             {
-                errorMessage += $"\n\nОшибка: {lastException.Message}";
+                errorMessage += $" - {lastException.Message}";
             }
 
-            MessageBox.Show(errorMessage, "Ошибка сохранения", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            DebugLogger.log($"[SettingsManager] КРИТИЧЕСКАЯ ОШИБКА: {errorMessage}");
+            System.Diagnostics.Debug.Print($"[SettingsManager] КРИТИЧЕСКАЯ ОШИБКА: {errorMessage}");
         }
 
         /// <summary>

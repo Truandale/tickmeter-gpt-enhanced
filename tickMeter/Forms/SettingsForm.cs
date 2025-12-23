@@ -473,7 +473,7 @@ namespace tickMeter.Forms
                 App.gui.ip_lbl.ForeColor =
                 App.gui.traffic_lbl.ForeColor =
                 ColorLabel.ForeColor;
-            SaveToConfig();
+            // Сохранение произойдёт при нажатии кнопки "Сохранить"
             ApplyFromConfig();
         }
 
@@ -481,7 +481,7 @@ namespace tickMeter.Forms
         {
             colorDialog1.ShowDialog();
             ColorBad.ForeColor = colorDialog1.Color;
-            SaveToConfig();
+            // Сохранение произойдёт при нажатии кнопки "Сохранить"
             ApplyFromConfig();
         }
 
@@ -489,7 +489,7 @@ namespace tickMeter.Forms
         {
             colorDialog1.ShowDialog();
             ColorMid.ForeColor = colorDialog1.Color;
-            SaveToConfig();
+            // Сохранение произойдёт при нажатии кнопки "Сохранить"
             ApplyFromConfig();
         }
 
@@ -497,7 +497,7 @@ namespace tickMeter.Forms
         {
             colorDialog1.ShowDialog();
             ColorGood.ForeColor = colorDialog1.Color;
-            SaveToConfig();
+            // Сохранение произойдёт при нажатии кнопки "Сохранить"
             ApplyFromConfig();
         }
 
@@ -574,7 +574,7 @@ namespace tickMeter.Forms
         {
             colorDialog1.ShowDialog();
             ColorChart.ForeColor = colorDialog1.Color;
-            SaveToConfig();
+            // Сохранение произойдёт при нажатии кнопки "Сохранить"
             ApplyFromConfig();
         }
 
@@ -592,7 +592,7 @@ namespace tickMeter.Forms
         {
             colorDialog1.ShowDialog();
             ColorLabel.ForeColor = colorDialog1.Color;
-            SaveToConfig();
+            // Сохранение произойдёт при нажатии кнопки "Сохранить"
             ApplyFromConfig();
         }
 
