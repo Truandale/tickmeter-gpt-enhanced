@@ -1735,6 +1735,10 @@ namespace tickMeter.Forms
         
         private void NumQualityHistorySize_ValueChanged(object sender, EventArgs e)
         {
+            // БАГ #27: Не сохраняем настройки во время загрузки
+            if (_isLoadingSettings)
+                return;
+            
             // ИСПРАВЛЕНО: Сохраняем значение перед реинициализацией
             App.settingsManager.SetOption("quality_history_size", SettingsManager.ToInvariantString((int)numQualityHistorySize.Value), "ADVANCED");
             
@@ -1746,6 +1750,10 @@ namespace tickMeter.Forms
         
         private void NumStabilityThreshold_ValueChanged(object sender, EventArgs e)
         {
+            // БАГ #27: Не сохраняем настройки во время загрузки
+            if (_isLoadingSettings)
+                return;
+            
             // ИСПРАВЛЕНО: Сохраняем значение перед реинициализацией
             App.settingsManager.SetOption("stability_threshold", SettingsManager.ToInvariantString((float)numStabilityThreshold.Value), "ADVANCED");
             
@@ -1757,6 +1765,10 @@ namespace tickMeter.Forms
         
         private void NumQualityThreshold_ValueChanged(object sender, EventArgs e)
         {
+            // БАГ #27: Не сохраняем настройки во время загрузки
+            if (_isLoadingSettings)
+                return;
+            
             // ИСПРАВЛЕНО: Сохраняем значение перед реинициализацией
             App.settingsManager.SetOption("quality_threshold", SettingsManager.ToInvariantString((float)numQualityThreshold.Value), "ADVANCED");
             
