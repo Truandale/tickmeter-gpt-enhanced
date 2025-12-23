@@ -842,6 +842,7 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("smoothing_traffic_value_overlay", "True", "ADVANCED");  // Оверлей значения трафика ✓
             App.settingsManager.SetOption("smoothing_ping_value_gui", "True", "ADVANCED");          // GUI сглаживание пинга ✓
             App.settingsManager.SetOption("smoothing_tickrate_value_gui", "False", "ADVANCED");     // GUI сглаживание тикрейта ✗
+            App.settingsManager.SetOption("smoothing_ticktime_value_overlay", "False", "ADVANCED");     // Оверлей значения тиктайма ✗ (БАГ #60: было True)
             App.settingsManager.SetOption("sync_ping_overlay_with_gui", "True", "ADVANCED");        // Синхронизация пинга оверлей/GUI ✓
             App.settingsManager.SetOption("sync_tickrate_overlay_with_gui", "True", "ADVANCED");    // Синхронизация тикрейта оверлей/GUI ✓
             
@@ -872,7 +873,8 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("spikes.sensitivity", "very_low", "ADVANCED");   // ОЧЕНЬ низкая чувствительность (новый пресет) ✓
             App.settingsManager.SetOption("spikes.min_hold_ms", "50", "ADVANCED");         // Минимальная длительность 50ms (быстрое снятие) ✓
             App.settingsManager.SetOption("spikes.history_size", "1000", "ADVANCED");      // Размер истории 1000 ✓
-            // App.settingsManager.SetOption("spikes.auto.enable", "True", "ADVANCED");    // Автокалибровка - УДАЛЕНО (dead code)
+            App.settingsManager.SetOption("spikes.auto.enable", "False", "ADVANCED");       // Автокалибровка отключена ✗ (БАГ #58: отсутствовал)
+            App.settingsManager.SetOption("spikes.manual_mode", "False", "ADVANCED");      // Ручной режим отключен ✗ (БАГ #59: отсутствовал)
             
             // РЕАЛЬНЫЕ рабочие значения из settings.ini (БАГ #51-55):
             App.settingsManager.SetOption("spikes.ema_alpha", "0.1", "ADVANCED");        // EMA alpha 0.1 ✓
@@ -971,7 +973,8 @@ namespace tickMeter.Forms
             {
                 // В случае ошибки отменяем пакетный режим
                 try { App.settingsManager.EndBatchUpdate(); } catch { }
-                MessageBox.Show($"Ошибка установки оптимальных настроек: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // БАГ #64: MessageBox в catch заменён на Debug.Print (может блокировать UI или вызвать deadlock)
+                System.Diagnostics.Debug.WriteLine($"[SetOptimalSettings] Ошибка: {ex.Message}");
                 return;
             }
             
