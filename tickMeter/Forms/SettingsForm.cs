@@ -735,7 +735,7 @@ namespace tickMeter.Forms
         private async void CheckAndUpdateScheduledTaskPath()
         {
             // ИСПРАВЛЕНО БАГ #16: Асинхронная операция для предотвращения зависания UI при загрузке формы
-            await Task.Run(() =>
+            await Task.Run(async () => // БАГ #61: async добавлен для await внутри
             {
                 try
                 {
@@ -753,8 +753,8 @@ namespace tickMeter.Forms
                     };
 
                     Process process = Process.Start(psi);
-                    string output = process.StandardOutput.ReadToEnd();
-                    process.WaitForExit();
+                    string output = await process.StandardOutput.ReadToEndAsync();
+                    await Task.Run(() => process.WaitForExit()); // БАГ #61: Асинхронное ожидание, не блокирует UI
 
                 if (process.ExitCode == 0 && !string.IsNullOrEmpty(output))
                 {
@@ -775,7 +775,7 @@ namespace tickMeter.Forms
                     if (taskPath != null && !taskPath.Equals(currentPath, StringComparison.OrdinalIgnoreCase))
                     {
                         Debug.Print($"[AutoStart] Путь изменился: {taskPath} -> {currentPath}");
-                        CreateScheduledTask(silent: true); // Пересоздаем задачу с новым путем без показа окна
+                        await CreateScheduledTask(silent: true); // БАГ #62: await добавлен для асинхронного вызова
                     }
                 }
                 }
@@ -787,7 +787,7 @@ namespace tickMeter.Forms
             });
         }
 
-        private void CreateScheduledTask(bool silent = false)
+        private async Task CreateScheduledTask(bool silent = false) // БАГ #62: async Task для await внутри
         {
             try
             {
@@ -853,7 +853,7 @@ namespace tickMeter.Forms
                 };
 
                 Process process = Process.Start(psi);
-                process.WaitForExit();
+                await Task.Run(() => process.WaitForExit()); // БАГ #62: Асинхронное ожидание, не блокирует UI
 
                 // Удаляем временный XML
                 try { File.Delete(xmlPath); } catch { }
@@ -869,7 +869,7 @@ namespace tickMeter.Forms
             }
         }
 
-        private void RemoveScheduledTask(bool silent = false)
+        private async Task RemoveScheduledTask(bool silent = false) // БАГ #63: async Task для await внутри
         {
             try
             {
@@ -885,7 +885,7 @@ namespace tickMeter.Forms
                 };
 
                 Process process = Process.Start(psi);
-                process.WaitForExit();
+                await Task.Run(() => process.WaitForExit()); // БАГ #63: Асинхронное ожидание, не блокирует UI
             }
             catch (Exception ex)
             {
