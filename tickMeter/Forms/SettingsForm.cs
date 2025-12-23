@@ -26,6 +26,9 @@ namespace tickMeter.Forms
         
     // Флаг для предотвращения рекурсивного обновления при программном изменении адаптера
     public bool IsUpdatingAdapter = false;
+    
+    // БАГ #28: Флаг для предотвращения сохранения настроек во время загрузки
+    private bool _isLoadingSettings = false;
 
         public SettingsForm()
         {
@@ -212,17 +215,21 @@ namespace tickMeter.Forms
         {
             System.Diagnostics.Debug.WriteLine("ApplyFromConfig() НАЧАЛО");
             
-            // SAFETY: Проверяем инициализацию контролов
-            if (settings_chart_checkbox == null)
+            // БАГ #28: Устанавливаем флаг загрузки для предотвращения срабатывания обработчиков событий
+            _isLoadingSettings = true;
+            try
             {
-                System.Diagnostics.Debug.WriteLine("ОШИБКА: settings_chart_checkbox = null. InitializeComponent() не завершился!");
-                MessageBox.Show("Критическая ошибка инициализации формы настроек. Контролы не созданы.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
+                // SAFETY: Проверяем инициализацию контролов
+                if (settings_chart_checkbox == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("ОШИБКА: settings_chart_checkbox = null. InitializeComponent() не завершился!");
+                    MessageBox.Show("Критическая ошибка инициализации формы настроек. Контролы не созданы.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
             
-            // CRITICAL: Перечитываем настройки из файла перед загрузкой в UI
-            App.settingsManager.ReloadConfig();
-            System.Diagnostics.Debug.WriteLine("ApplyFromConfig() - ReloadConfig() завершен");
+                // CRITICAL: Перечитываем настройки из файла перед загрузкой в UI
+                App.settingsManager.ReloadConfig();
+                System.Diagnostics.Debug.WriteLine("ApplyFromConfig() - ReloadConfig() завершен");
             
             settings_chart_checkbox.Checked = App.settingsManager.GetOption("chart") == "True";
             settings_ip_checkbox.Checked = App.settingsManager.GetOption("ip") == "True";
@@ -316,7 +323,13 @@ namespace tickMeter.Forms
             InitCaptureAllAdaptersState();
             
             // Синхронизируем ComboBox с текущим LocalIP при открытии формы
-            SyncAdapterComboBoxToCurrentIP();
+                SyncAdapterComboBoxToCurrentIP();
+            }
+            finally
+            {
+                // БАГ #28: Сбрасываем флаг ПОСЛЕ всех операций загрузки
+                _isLoadingSettings = false;
+            }
         }
         
         /// <summary>
@@ -603,6 +616,10 @@ namespace tickMeter.Forms
 
         private void settings_autodetect_checkbox_CheckedChanged(object sender, EventArgs e)
         {
+            // БАГ #28: Не сохраняем настройки во время загрузки
+            if (_isLoadingSettings)
+                return;
+            
             App.settingsManager.SetOption("autodetect", settings_autodetect_checkbox.Checked.ToString());
         }
 
