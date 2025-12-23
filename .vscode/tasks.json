@@ -2,40 +2,16 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Rebuild tickMeter solution (Debug x64)",
-			"type": "shell",
-			"command": "& \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe\" tickMeter.sln -t:Rebuild -p:Configuration=Debug -p:Platform=x64",
-			"problemMatcher": [
-				"$msCompile"
-			],
-			"group": "build"
-		},
-		{
-			"label": "Rebuild tickMeter solution (Debug x64)",
-			"type": "shell",
-			"command": "& 'C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe' tickMeter.sln -t:Rebuild -p:Configuration=Debug -p:Platform=x64",
-			"problemMatcher": [
-				"$msCompile"
-			],
-			"group": "build"
-		},
-		{
 			"label": "Rebuild tickMeter (Debug x64)",
 			"type": "shell",
-			"command": "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe\" tickMeter.sln -t:Rebuild -p:Configuration=Debug -p:Platform=x64",
-			"problemMatcher": [
-				"$msCompile"
-			],
-			"group": "build"
-		},
-		{
-			"label": "Rebuild tickMeter (Debug x64) quoted",
-			"type": "shell",
 			"command": "& 'C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe' tickMeter.sln -t:Rebuild -p:Configuration=Debug -p:Platform=x64",
 			"problemMatcher": [
 				"$msCompile"
 			],
-			"group": "build"
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
 		}
 	]
 }

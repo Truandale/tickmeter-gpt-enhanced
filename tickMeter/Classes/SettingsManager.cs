@@ -514,7 +514,6 @@ namespace tickMeter
         private void SaveConfigInternal()
         {
             int maxRetries = 3;
-            int retryDelayMs = 100;
             Exception lastException = null;
 
             for (int attempt = 1; attempt <= maxRetries; attempt++)
@@ -592,7 +591,6 @@ namespace tickMeter
                 }
                 
                 int maxRetries = 3;
-            int retryDelayMs = 100;
             Exception lastException = null;
 
             for (int attempt = 1; attempt <= maxRetries; attempt++)
@@ -607,11 +605,8 @@ namespace tickMeter
                 {
                     lastException = ioEx;
                     DebugLogger.log($"[SettingsManager] Попытка {attempt}/{maxRetries} загрузки не удалась: {ioEx.Message}");
-                    
-                    if (attempt < maxRetries)
-                    {
-                        System.Threading.Thread.Sleep(retryDelayMs);
-                    }
+                    // Не используем Thread.Sleep - это блокирует UI thread
+                    // Для INI файлов повторная попытка без задержки достаточна
                 }
                 catch (Exception ex)
                 {
@@ -622,19 +617,20 @@ namespace tickMeter
             }
 
             // Если мы здесь, то все попытки не удались
+            // КРИТИЧНО: НЕ показываем MessageBox внутри lock - это может вызвать deadlock!
             string errorMessage = "Не удалось загрузить настройки из settings.ini";
             
             if (lastException is IOException)
             {
-                errorMessage += "\n\nПричина: Файл может быть заблокирован или поврежден.\n" +
-                               "Решение: Проверьте файл настроек или попробуйте перезапустить программу.";
+                errorMessage += " - Файл может быть заблокирован или поврежден.";
             }
             else if (lastException != null)
             {
-                errorMessage += $"\n\nОшибка: {lastException.Message}";
+                errorMessage += $" - {lastException.Message}";
             }
 
-            MessageBox.Show(errorMessage, "Ошибка загрузки", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            DebugLogger.log($"[SettingsManager] КРИТИЧЕСКАЯ ОШИБКА: {errorMessage}");
+            System.Diagnostics.Debug.Print($"[SettingsManager] КРИТИЧЕСКАЯ ОШИБКА: {errorMessage}");
             }
         }
 

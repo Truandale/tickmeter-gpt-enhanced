@@ -1773,7 +1773,8 @@ namespace tickMeter.Forms
         {
             if (InvokeRequired)
             {
-                Invoke(new Action<float>(OnQualityChanged), quality);
+                // ИСПРАВЛЕНО: BeginInvoke вместо Invoke для предотвращения deadlock
+                BeginInvoke(new Action<float>(OnQualityChanged), quality);
                 return;
             }
             UpdateQualityDisplay();
@@ -1783,7 +1784,8 @@ namespace tickMeter.Forms
         {
             if (InvokeRequired)
             {
-                Invoke(new Action<string>(OnQualityRatingChanged), rating);
+                // ИСПРАВЛЕНО: BeginInvoke вместо Invoke для предотвращения deadlock
+                BeginInvoke(new Action<string>(OnQualityRatingChanged), rating);
                 return;
             }
             UpdateQualityDisplay();
@@ -1793,7 +1795,8 @@ namespace tickMeter.Forms
         {
             if (InvokeRequired)
             {
-                Invoke(new Action<bool, string>(OnPredictionChanged), isPredicting, details);
+                // ИСПРАВЛЕНО: BeginInvoke вместо Invoke для предотвращения deadlock
+                BeginInvoke(new Action<bool, string>(OnPredictionChanged), isPredicting, details);
                 return;
             }
             
@@ -2104,7 +2107,8 @@ namespace tickMeter.Forms
                 // Защита от COM ошибок при работе с ComboBox
                 if (cmbColorZoneProfile.InvokeRequired)
                 {
-                    cmbColorZoneProfile.Invoke(new Action(() => CmbColorZoneProfile_SelectedIndexChanged(sender, e)));
+                    // ИСПРАВЛЕНО: BeginInvoke вместо Invoke для предотвращения deadlock
+                    cmbColorZoneProfile.BeginInvoke(new Action(() => CmbColorZoneProfile_SelectedIndexChanged(sender, e)));
                     return;
                 }
 
@@ -2113,9 +2117,7 @@ namespace tickMeter.Forms
                 
                 var profile = ColorZoneProfile.GetProfile(selectedProfile);
                 
-                // Update numeric controls с защитой от COM ошибок
-                Application.DoEvents(); // Обрабатываем pending UI events
-                
+                // Update numeric controls без Application.DoEvents (он может вызвать reentrancy)
                 numPingGreen.Value = (decimal)profile.PingGreenMs;
                 numPingYellow.Value = (decimal)profile.PingYellowMs;
                 numTickrateGreen.Value = (decimal)profile.TickrateGreenRatio;
