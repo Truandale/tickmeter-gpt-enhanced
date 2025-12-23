@@ -1708,6 +1708,13 @@ namespace tickMeter.Forms
         
         private void ChkQualityContextSync_CheckedChanged(object sender, EventArgs e)
         {
+            // БАГ #29: Не выполняем Initialize/UpdateQualityDisplay во время загрузки настроек
+            if (_isLoadingSettings)
+            {
+                cmbQualityContextProfile.Enabled = !chkQualityContextSync.Checked;
+                return;
+            }
+            
             cmbQualityContextProfile.Enabled = !chkQualityContextSync.Checked;
             // Сохранение произойдёт автоматически при нажатии OK/Apply/Save
             
@@ -1722,6 +1729,10 @@ namespace tickMeter.Forms
         
         private void CmbQualityContextProfile_SelectedIndexChanged(object sender, EventArgs e)
         {
+            // БАГ #30: Не выполняем Initialize/UpdateQualityDisplay во время загрузки настроек
+            if (_isLoadingSettings)
+                return;
+            
             // Сохранение произойдёт автоматически при нажатии OK/Apply/Save
             
             if (chkNetworkQualityEnabled.Checked && !chkQualityContextSync.Checked)
