@@ -95,8 +95,12 @@ namespace tickMeter
         /// </summary>
         private void CreateOptimalSettings()
         {
-            // === ОСНОВНЫЕ [SETTINGS] НАСТРОЙКИ ===
-            SetOption("rtss", "True", "SETTINGS");
+            // Начинаем пакетное обновление для атомарной записи всех ~130 настроек
+            BeginBatchUpdate();
+            try
+            {
+                // === ОСНОВНЫЕ [SETTINGS] НАСТРОЙКИ ===
+                SetOption("rtss", "True", "SETTINGS");
             SetOption("autodetect", "True", "SETTINGS");
             SetOption("capture_all_adapters", "True", "SETTINGS");
             SetOption("chart", "True", "SETTINGS");
@@ -243,6 +247,12 @@ namespace tickMeter
             SetOption("advanced_profile", "Streamer", "PROFILES");
             
             DebugLogger.log("[SettingsManager] Оптимальные настройки записаны в settings.ini");
+            }
+            finally
+            {
+                // Завершаем пакетное обновление и сохраняем все изменения одним разом
+                EndBatchUpdate();
+            }
         }
 
         public int GetIntOption(string optionName, int defaultValue)

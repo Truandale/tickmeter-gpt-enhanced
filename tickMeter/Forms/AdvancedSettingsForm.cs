@@ -1401,14 +1401,31 @@ namespace tickMeter.Forms
                 var oldWebhook = App.settingsManager.GetOption("alert_discord_webhook", "", "ADVANCED");
                 var oldEnabled = App.settingsManager.GetOption("alert_discord_enabled", "False", "ADVANCED");
                 
-                App.settingsManager.SetOption("alert_discord_webhook", txtAlertDiscordWebhook.Text, "ADVANCED");
-                App.settingsManager.SetOption("alert_discord_enabled", "True", "ADVANCED");
+                // Используем пакетное обновление для атомарной записи настроек
+                App.settingsManager.BeginBatchUpdate();
+                try
+                {
+                    App.settingsManager.SetOption("alert_discord_webhook", txtAlertDiscordWebhook.Text, "ADVANCED");
+                    App.settingsManager.SetOption("alert_discord_enabled", "True", "ADVANCED");
+                }
+                finally
+                {
+                    App.settingsManager.EndBatchUpdate();
+                }
                 
                 await Classes.AlertManager.TestAlert(Classes.AlertManager.AlertType.PingSpike);
                 
-                // Восстанавливаем настройки
-                App.settingsManager.SetOption("alert_discord_webhook", oldWebhook, "ADVANCED");
-                App.settingsManager.SetOption("alert_discord_enabled", oldEnabled, "ADVANCED");
+                // Восстанавливаем настройки с пакетным обновлением
+                App.settingsManager.BeginBatchUpdate();
+                try
+                {
+                    App.settingsManager.SetOption("alert_discord_webhook", oldWebhook, "ADVANCED");
+                    App.settingsManager.SetOption("alert_discord_enabled", oldEnabled, "ADVANCED");
+                }
+                finally
+                {
+                    App.settingsManager.EndBatchUpdate();
+                }
                 
                 MessageBox.Show("Тестовое Discord уведомление отправлено!", "Тест", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
@@ -1437,14 +1454,31 @@ namespace tickMeter.Forms
                 var oldEnabled = App.settingsManager.GetOption("alert_sound_enabled", "False", "ADVANCED");
                 var oldPath = App.settingsManager.GetOption("alert_sound_pingspike_path", "", "ADVANCED");
                 
-                App.settingsManager.SetOption("alert_sound_enabled", "True", "ADVANCED");
-                App.settingsManager.SetOption("alert_sound_pingspike_path", txtAlertPingSoundPath.Text, "ADVANCED");
+                // Используем пакетное обновление для атомарной записи настроек
+                App.settingsManager.BeginBatchUpdate();
+                try
+                {
+                    App.settingsManager.SetOption("alert_sound_enabled", "True", "ADVANCED");
+                    App.settingsManager.SetOption("alert_sound_pingspike_path", txtAlertPingSoundPath.Text, "ADVANCED");
+                }
+                finally
+                {
+                    App.settingsManager.EndBatchUpdate();
+                }
                 
                 await Classes.AlertManager.TestAlert(Classes.AlertManager.AlertType.PingSpike);
                 
-                // Восстанавливаем настройки
-                App.settingsManager.SetOption("alert_sound_enabled", oldEnabled, "ADVANCED");
-                App.settingsManager.SetOption("alert_sound_pingspike_path", oldPath, "ADVANCED");
+                // Восстанавливаем настройки с пакетным обновлением
+                App.settingsManager.BeginBatchUpdate();
+                try
+                {
+                    App.settingsManager.SetOption("alert_sound_enabled", oldEnabled, "ADVANCED");
+                    App.settingsManager.SetOption("alert_sound_pingspike_path", oldPath, "ADVANCED");
+                }
+                finally
+                {
+                    App.settingsManager.EndBatchUpdate();
+                }
                 
                 MessageBox.Show("Тестовый звуковой алерт воспроизведен!", "Тест", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
