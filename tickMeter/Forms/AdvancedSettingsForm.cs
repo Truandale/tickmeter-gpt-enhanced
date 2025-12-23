@@ -1059,7 +1059,7 @@ namespace tickMeter.Forms
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки настроек спайк-детекции: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                System.Diagnostics.Debug.Print($"[LoadSpikeDetectionSettings] Error: {ex.Message}");
             }
         }
 
@@ -1067,43 +1067,51 @@ namespace tickMeter.Forms
         {
             try
             {
-                // Основные настройки
-                App.settingsManager.SetOption("spikes.enable", chkSpikeDetectionEnable.Checked.ToString(), "ADVANCED");
+                App.settingsManager.BeginBatchUpdate();
+                try
+                {
+                    // Основные настройки
+                    App.settingsManager.SetOption("spikes.enable", chkSpikeDetectionEnable.Checked.ToString(), "ADVANCED");
 
-                // Метрики
-                var metrics = string.Join(",", new[] {
-                    chkSpikeMetricPing.Checked ? "ping" : null,
-                    chkSpikeMetricTickrate.Checked ? "tickrate" : null,
-                    chkSpikeMetricTicktime.Checked ? "ticktime" : null
-                }.Where(x => x != null));
-                if (string.IsNullOrEmpty(metrics)) metrics = "ping"; // На всякий случай
-                App.settingsManager.SetOption("spikes.metrics", metrics, "ADVANCED");
+                    // Метрики
+                    var metrics = string.Join(",", new[] {
+                        chkSpikeMetricPing.Checked ? "ping" : null,
+                        chkSpikeMetricTickrate.Checked ? "tickrate" : null,
+                        chkSpikeMetricTicktime.Checked ? "ticktime" : null
+                    }.Where(x => x != null));
+                    if (string.IsNullOrEmpty(metrics)) metrics = "ping"; // На всякий случай
+                    App.settingsManager.SetOption("spikes.metrics", metrics, "ADVANCED");
 
-                // Режим отображения
-                var display = (cmbSpikeDisplayMode.SelectedItem as string) ?? "both";
-                App.settingsManager.SetOption("spikes.display", display, "ADVANCED");
+                    // Режим отображения
+                    var display = (cmbSpikeDisplayMode.SelectedItem as string) ?? "both";
+                    App.settingsManager.SetOption("spikes.display", display, "ADVANCED");
 
-                // Чувствительность
-                var sensitivityUI = (cmbSpikeSensitivity.SelectedItem as string) ?? "medium";
-                // Убираем "(в разработке)" при сохранении
-                var sensitivity = sensitivityUI.Replace(" (в разработке)", "");
-                App.settingsManager.SetOption("spikes.sensitivity", sensitivity, "ADVANCED");
+                    // Чувствительность
+                    var sensitivityUI = (cmbSpikeSensitivity.SelectedItem as string) ?? "medium";
+                    // Убираем "(в разработке)" при сохранении
+                    var sensitivity = sensitivityUI.Replace(" (в разработке)", "");
+                    App.settingsManager.SetOption("spikes.sensitivity", sensitivity, "ADVANCED");
 
-                // Минимальная длительность
-                App.settingsManager.SetOption("spikes.min_hold_ms", ((int)numSpikeMinDuration.Value).ToString(), "ADVANCED");
+                    // Минимальная длительность
+                    App.settingsManager.SetOption("spikes.min_hold_ms", ((int)numSpikeMinDuration.Value).ToString(), "ADVANCED");
 
-                // Размер истории
-                App.settingsManager.SetOption("spikes.history_size", ((int)numSpikeHistorySize.Value).ToString(), "ADVANCED");
+                    // Размер истории
+                    App.settingsManager.SetOption("spikes.history_size", ((int)numSpikeHistorySize.Value).ToString(), "ADVANCED");
 
-                // Автокалибровка
-                App.settingsManager.SetOption("spikes.auto.enable", chkSpikeAutoCalibration.Checked.ToString(), "ADVANCED");
+                    // Автокалибровка
+                    App.settingsManager.SetOption("spikes.auto.enable", chkSpikeAutoCalibration.Checked.ToString(), "ADVANCED");
 
-                // Ручная настройка
-                App.settingsManager.SetOption("spikes.manual_mode", chkSpikeManualSettings.Checked.ToString(), "ADVANCED");
+                    // Ручная настройка
+                    App.settingsManager.SetOption("spikes.manual_mode", chkSpikeManualSettings.Checked.ToString(), "ADVANCED");
+                }
+                finally
+                {
+                    App.settingsManager.EndBatchUpdate();
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка сохранения настроек спайк-детекции: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                System.Diagnostics.Debug.Print($"[SaveSpikeDetectionSettings] Error: {ex.Message}");
             }
         }
 
@@ -1178,7 +1186,7 @@ namespace tickMeter.Forms
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки расширенных настроек спайк-детекции: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                System.Diagnostics.Debug.Print($"[LoadAdvancedSpikeSettings] Error: {ex.Message}");
             }
         }
 
@@ -1189,34 +1197,42 @@ namespace tickMeter.Forms
         {
             try
             {
-                // EMA параметры
-                App.settingsManager.SetOption("spikes.ema_alpha", SettingsManager.ToInvariantString((float)numEmaAlpha.Value), "ADVANCED");
-                
-                // EW-Sigma параметры
-                App.settingsManager.SetOption("spikes.ew_sigma_alpha", SettingsManager.ToInvariantString((float)numEwSigmaAlpha.Value), "ADVANCED");
-                
-                // Множитель чувствительности
-                App.settingsManager.SetOption("spikes.sensitivity_multiplier", SettingsManager.ToInvariantString((float)numSensitivityMultiplier.Value), "ADVANCED");
-                
-                // Гистерезис (зажимаем в разумные рамки 0.5-0.95)
-                float hysteresisValue = Math.Max(0.5f, Math.Min(0.95f, (float)numHysteresisRatio.Value));
-                App.settingsManager.SetOption("spikes.hysteresis_ratio", SettingsManager.ToInvariantString(hysteresisValue), "ADVANCED");
-                
-                // Рефракторный период
-                App.settingsManager.SetOption("spikes.refractory_period_ms", SettingsManager.ToInvariantString((int)numRefractoryPeriod.Value), "ADVANCED");
-                
-                // Минимальная энергия спайка
-                App.settingsManager.SetOption("spikes.min_energy_threshold", SettingsManager.ToInvariantString((float)numMinEnergyThreshold.Value), "ADVANCED");
-                
-                // Размер окна инициализации
-                App.settingsManager.SetOption("spikes.init_window_size", SettingsManager.ToInvariantString((int)numInitWindowSize.Value), "ADVANCED");
+                App.settingsManager.BeginBatchUpdate();
+                try
+                {
+                    // EMA параметры
+                    App.settingsManager.SetOption("spikes.ema_alpha", SettingsManager.ToInvariantString((float)numEmaAlpha.Value), "ADVANCED");
+                    
+                    // EW-Sigma параметры
+                    App.settingsManager.SetOption("spikes.ew_sigma_alpha", SettingsManager.ToInvariantString((float)numEwSigmaAlpha.Value), "ADVANCED");
+                    
+                    // Множитель чувствительности
+                    App.settingsManager.SetOption("spikes.sensitivity_multiplier", SettingsManager.ToInvariantString((float)numSensitivityMultiplier.Value), "ADVANCED");
+                    
+                    // Гистерезис (зажимаем в разумные рамки 0.5-0.95)
+                    float hysteresisValue = Math.Max(0.5f, Math.Min(0.95f, (float)numHysteresisRatio.Value));
+                    App.settingsManager.SetOption("spikes.hysteresis_ratio", SettingsManager.ToInvariantString(hysteresisValue), "ADVANCED");
+                    
+                    // Рефракторный период
+                    App.settingsManager.SetOption("spikes.refractory_period_ms", SettingsManager.ToInvariantString((int)numRefractoryPeriod.Value), "ADVANCED");
+                    
+                    // Минимальная энергия спайка
+                    App.settingsManager.SetOption("spikes.min_energy_threshold", SettingsManager.ToInvariantString((float)numMinEnergyThreshold.Value), "ADVANCED");
+                    
+                    // Размер окна инициализации
+                    App.settingsManager.SetOption("spikes.init_window_size", SettingsManager.ToInvariantString((int)numInitWindowSize.Value), "ADVANCED");
 
-                // Уведомляем SpikeDetectionManager об изменении настроек
-                Classes.SpikeDetection.SpikeDetectionManager.UpdateSettings();
+                    // Уведомляем SpikeDetectionManager об изменении настроек
+                    Classes.SpikeDetection.SpikeDetectionManager.UpdateSettings();
+                }
+                finally
+                {
+                    App.settingsManager.EndBatchUpdate();
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка сохранения расширенных настроек спайк-детекции: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                System.Diagnostics.Debug.Print($"[SaveAdvancedSpikeSettings] Error: {ex.Message}");
             }
         }
 
@@ -1404,16 +1420,24 @@ namespace tickMeter.Forms
         {
             try
             {
-                // Основные настройки алертов
-                App.settingsManager.SetOption("alert_sound_enabled", chkAlertSoundEnabled.Checked.ToString(), "ADVANCED");
-                App.settingsManager.SetOption("alert_discord_enabled", chkAlertDiscordEnabled.Checked.ToString(), "ADVANCED");
-                App.settingsManager.SetOption("alert_discord_webhook", txtAlertDiscordWebhook.Text, "ADVANCED");
-                App.settingsManager.SetOption("alert_cooldown_seconds", SettingsManager.ToInvariantString((int)numAlertCooldown.Value), "ADVANCED");
-                
-                // Пути к звуковым файлам
-                App.settingsManager.SetOption("alert_sound_pingspike_path", txtAlertPingSoundPath.Text, "ADVANCED");
-                App.settingsManager.SetOption("alert_sound_tickratespike_path", txtAlertTickrateSoundPath.Text, "ADVANCED");
-                App.settingsManager.SetOption("alert_sound_ticktimespike_path", txtAlertTicktimeSoundPath.Text, "ADVANCED");
+                App.settingsManager.BeginBatchUpdate();
+                try
+                {
+                    // Основные настройки алертов
+                    App.settingsManager.SetOption("alert_sound_enabled", chkAlertSoundEnabled.Checked.ToString(), "ADVANCED");
+                    App.settingsManager.SetOption("alert_discord_enabled", chkAlertDiscordEnabled.Checked.ToString(), "ADVANCED");
+                    App.settingsManager.SetOption("alert_discord_webhook", txtAlertDiscordWebhook.Text, "ADVANCED");
+                    App.settingsManager.SetOption("alert_cooldown_seconds", SettingsManager.ToInvariantString((int)numAlertCooldown.Value), "ADVANCED");
+                    
+                    // Пути к звуковым файлам
+                    App.settingsManager.SetOption("alert_sound_pingspike_path", txtAlertPingSoundPath.Text, "ADVANCED");
+                    App.settingsManager.SetOption("alert_sound_tickratespike_path", txtAlertTickrateSoundPath.Text, "ADVANCED");
+                    App.settingsManager.SetOption("alert_sound_ticktimespike_path", txtAlertTicktimeSoundPath.Text, "ADVANCED");
+                }
+                finally
+                {
+                    App.settingsManager.EndBatchUpdate();
+                }
             }
             catch (Exception ex)
             {
@@ -1978,20 +2002,28 @@ namespace tickMeter.Forms
         {
             try
             {
-                App.settingsManager.SetOption("network_optimization_enabled", chkNetworkOptimizationEnabled.Checked.ToString(), "ADVANCED");
-                App.settingsManager.SetOption("optimization_threshold", SettingsManager.ToInvariantString((float)numOptimizationThreshold.Value), "ADVANCED");
-                App.settingsManager.SetOption("optimization_interval", SettingsManager.ToInvariantString((int)numOptimizationInterval.Value), "ADVANCED");
-                App.settingsManager.SetOption("aggressive_optimization", chkAggressiveOptimization.Checked.ToString(), "ADVANCED");
-                
-                // Применяем настройки к оптимизатору
-                if (App.networkOptimizer != null)
+                App.settingsManager.BeginBatchUpdate();
+                try
                 {
-                    App.networkOptimizer.SetEnabled(chkNetworkOptimizationEnabled.Checked);
-                    App.networkOptimizer.SetQualityThreshold((float)(numOptimizationThreshold.Value / 100));
-                    App.networkOptimizer.SetOptimizationInterval((int)numOptimizationInterval.Value);
-                    App.networkOptimizer.SetAggressiveMode(chkAggressiveOptimization.Checked);
+                    App.settingsManager.SetOption("network_optimization_enabled", chkNetworkOptimizationEnabled.Checked.ToString(), "ADVANCED");
+                    App.settingsManager.SetOption("optimization_threshold", SettingsManager.ToInvariantString((float)numOptimizationThreshold.Value), "ADVANCED");
+                    App.settingsManager.SetOption("optimization_interval", SettingsManager.ToInvariantString((int)numOptimizationInterval.Value), "ADVANCED");
+                    App.settingsManager.SetOption("aggressive_optimization", chkAggressiveOptimization.Checked.ToString(), "ADVANCED");
                     
-                    System.Diagnostics.Debug.Print($"[SaveNetworkOptimizerSettings] Applied settings to optimizer");
+                    // Применяем настройки к оптимизатору
+                    if (App.networkOptimizer != null)
+                    {
+                        App.networkOptimizer.SetEnabled(chkNetworkOptimizationEnabled.Checked);
+                        App.networkOptimizer.SetQualityThreshold((float)(numOptimizationThreshold.Value / 100));
+                        App.networkOptimizer.SetOptimizationInterval((int)numOptimizationInterval.Value);
+                        App.networkOptimizer.SetAggressiveMode(chkAggressiveOptimization.Checked);
+                        
+                        System.Diagnostics.Debug.Print($"[SaveNetworkOptimizerSettings] Applied settings to optimizer");
+                    }
+                }
+                finally
+                {
+                    App.settingsManager.EndBatchUpdate();
                 }
             }
             catch (Exception ex)
@@ -2319,14 +2351,22 @@ namespace tickMeter.Forms
             
             try
             {
-                App.settingsManager.SetOption("show_active_process", chkShowActiveProcess.Checked ? "True" : "False", "EXTENDED");
-                App.settingsManager.SetOption("show_session_time", chkShowSessionTime.Checked ? "True" : "False", "EXTENDED");
-                App.settingsManager.SetOption("show_external_ip", chkShowExternalIP.Checked ? "True" : "False", "EXTENDED");
-                App.settingsManager.SetOption("show_session_stats", chkShowSessionStats.Checked ? "True" : "False", "EXTENDED");
-                App.settingsManager.SetOption("show_server_info", chkShowServerInfo.Checked ? "True" : "False", "EXTENDED");
-                App.settingsManager.SetOption("show_packet_counters", chkShowPacketCounters.Checked ? "True" : "False", "EXTENDED");
-                App.settingsManager.SetOption("show_connection_type", chkShowConnectionType.Checked ? "True" : "False", "EXTENDED");
-                App.settingsManager.SetOption("show_diagnostic_info", chkShowDiagnosticInfo.Checked ? "True" : "False", "EXTENDED");
+                App.settingsManager.BeginBatchUpdate();
+                try
+                {
+                    App.settingsManager.SetOption("show_active_process", chkShowActiveProcess.Checked ? "True" : "False", "EXTENDED");
+                    App.settingsManager.SetOption("show_session_time", chkShowSessionTime.Checked ? "True" : "False", "EXTENDED");
+                    App.settingsManager.SetOption("show_external_ip", chkShowExternalIP.Checked ? "True" : "False", "EXTENDED");
+                    App.settingsManager.SetOption("show_session_stats", chkShowSessionStats.Checked ? "True" : "False", "EXTENDED");
+                    App.settingsManager.SetOption("show_server_info", chkShowServerInfo.Checked ? "True" : "False", "EXTENDED");
+                    App.settingsManager.SetOption("show_packet_counters", chkShowPacketCounters.Checked ? "True" : "False", "EXTENDED");
+                    App.settingsManager.SetOption("show_connection_type", chkShowConnectionType.Checked ? "True" : "False", "EXTENDED");
+                    App.settingsManager.SetOption("show_diagnostic_info", chkShowDiagnosticInfo.Checked ? "True" : "False", "EXTENDED");
+                }
+                finally
+                {
+                    App.settingsManager.EndBatchUpdate();
+                }
                 
                 // TODO: Добавить сохранение TTL и FPS после добавления контролов в Designer
                 // Сохраняем TTL для публичного IP - будет добавлено позже
@@ -2406,17 +2446,25 @@ namespace tickMeter.Forms
             
             try
             {
-                App.settingsManager.SetOption("tickrate_chart_enabled", chkTickrateChartEnabled.Checked ? "True" : "False", "TICKRATE_CHART");
-                App.settingsManager.SetOption("tickrate_chart_per_server", chkTickrateChartPerServer.Checked ? "True" : "False", "TICKRATE_CHART");
-                App.settingsManager.SetOption("tickrate_chart_compression", chkTickrateChartCompression.Checked ? "True" : "False", "TICKRATE_CHART");
-                App.settingsManager.SetOption("tickrate_chart_time_scale", chkTickrateChartTimeScale.Checked ? "True" : "False", "TICKRATE_CHART");
-                App.settingsManager.SetOption("tickrate_chart_trimming", chkTickrateChartTrimming.Checked ? "True" : "False", "TICKRATE_CHART");
-                App.settingsManager.SetOption("tickrate_chart_mode", cmbTickrateChartMode.SelectedItem?.ToString() ?? "Простой график (точки)", "TICKRATE_CHART");
-                App.settingsManager.SetOption("tickrate_chart_max_points", numTickrateChartMaxPoints.Value.ToString(), "TICKRATE_CHART");
-                App.settingsManager.SetOption("tickrate_chart_history_hours", numTickrateChartHistoryHours.Value.ToString(), "TICKRATE_CHART");
-                
-                // Применяем настройки к системе
-                ApplyTickrateChartSettings();
+                App.settingsManager.BeginBatchUpdate();
+                try
+                {
+                    App.settingsManager.SetOption("tickrate_chart_enabled", chkTickrateChartEnabled.Checked ? "True" : "False", "TICKRATE_CHART");
+                    App.settingsManager.SetOption("tickrate_chart_per_server", chkTickrateChartPerServer.Checked ? "True" : "False", "TICKRATE_CHART");
+                    App.settingsManager.SetOption("tickrate_chart_compression", chkTickrateChartCompression.Checked ? "True" : "False", "TICKRATE_CHART");
+                    App.settingsManager.SetOption("tickrate_chart_time_scale", chkTickrateChartTimeScale.Checked ? "True" : "False", "TICKRATE_CHART");
+                    App.settingsManager.SetOption("tickrate_chart_trimming", chkTickrateChartTrimming.Checked ? "True" : "False", "TICKRATE_CHART");
+                    App.settingsManager.SetOption("tickrate_chart_mode", cmbTickrateChartMode.SelectedItem?.ToString() ?? "Простой график (точки)", "TICKRATE_CHART");
+                    App.settingsManager.SetOption("tickrate_chart_max_points", numTickrateChartMaxPoints.Value.ToString(), "TICKRATE_CHART");
+                    App.settingsManager.SetOption("tickrate_chart_history_hours", numTickrateChartHistoryHours.Value.ToString(), "TICKRATE_CHART");
+                    
+                    // Применяем настройки к системе
+                    ApplyTickrateChartSettings();
+                }
+                finally
+                {
+                    App.settingsManager.EndBatchUpdate();
+                }
             }
             catch (Exception ex)
             {
