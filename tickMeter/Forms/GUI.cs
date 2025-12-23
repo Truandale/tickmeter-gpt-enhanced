@@ -3936,12 +3936,8 @@ namespace tickMeter.Forms
                 }
             }
             
-            // Даём ConnectionsManager время собрать данные о соединениях (только при первом запуске)
-            if (App.connMngr != null && (App.connMngr.TcpActiveConnections.Count == 0 && App.connMngr.UdpActiveConnections.Count == 0))
-            {
-                Debug.Print("[StartTracking] Waiting 500ms for ConnectionsManager to gather initial connection data...");
-                System.Threading.Thread.Sleep(500);
-            }
+            // УБРАЛ БАГ #19: Thread.Sleep(500) блокировал UI thread
+            // ConnectionsManager соберёт данные асинхронно в своих worker threads
             
             // Проверяем настройки VPN обхода
             bool vpnBypassBasic = App.settingsManager.GetOption("vpn_bypass_basic", "False", "ADVANCED") == "True";
@@ -4857,8 +4853,8 @@ namespace tickMeter.Forms
             Debug.Print($"[StopTracking] Cleaning up {_pcapWorkers.Count} PCAP workers");
             try
             {
-                // Флаг IsTracking уже установлен выше
-                Thread.Sleep(100); // Даем время воркерам для корректного завершения
+                // УБРАЛ БАГ #20: Thread.Sleep(100) блокировал UI thread
+                // BackgroundWorkers завершаются асинхронно через CancelAsync + RunWorkerCompleted
                 
                 for (int i = _pcapWorkers.Count - 1; i >= 0; i--)
                 {
