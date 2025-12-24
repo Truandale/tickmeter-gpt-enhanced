@@ -878,20 +878,11 @@ namespace tickMeter.Forms
             App.settingsManager.SetOption("spikes.enable", "True", "ADVANCED");            // Детекция спайков ✓
             App.settingsManager.SetOption("spikes.metrics", "ping,tickrate,ticktime", "ADVANCED"); // Метрики ✓
             App.settingsManager.SetOption("spikes.display", "both", "ADVANCED");           // Отображение обоих ✓
-            App.settingsManager.SetOption("spikes.sensitivity", "very_low", "ADVANCED");   // ОЧЕНЬ низкая чувствительность (новый пресет) ✓
+            App.settingsManager.SetOption("spikes.sensitivity", "very_low", "ADVANCED");   // Профиль: ОЧЕНЬ низкая чувствительность ✓
             App.settingsManager.SetOption("spikes.min_hold_ms", "50", "ADVANCED");         // Минимальная длительность 50ms (быстрое снятие) ✓
             App.settingsManager.SetOption("spikes.history_size", "1000", "ADVANCED");      // Размер истории 1000 ✓
             App.settingsManager.SetOption("spikes.auto.enable", "False", "ADVANCED");       // Автокалибровка отключена ✗ (БАГ #58: отсутствовал)
-            App.settingsManager.SetOption("spikes.manual_mode", "False", "ADVANCED");      // Ручной режим отключен ✗ (БАГ #59: отсутствовал)
-            
-            // РЕАЛЬНЫЕ рабочие значения из settings.ini (БАГ #51-55):
-            App.settingsManager.SetOption("spikes.ema_alpha", "0.1", "ADVANCED");        // EMA alpha 0.1 ✓
-            App.settingsManager.SetOption("spikes.ew_sigma_alpha", "0.05", "ADVANCED");   // EW sigma alpha 0.05 ✓
-            App.settingsManager.SetOption("spikes.sensitivity_multiplier", "2", "ADVANCED"); // Множитель 2 ✓
-            App.settingsManager.SetOption("spikes.hysteresis_ratio", "0.8", "ADVANCED");  // Гистерезис 0.8 ✓
-            App.settingsManager.SetOption("spikes.refractory_period_ms", "2000", "ADVANCED"); // Период тишины 2000ms ✓
-            App.settingsManager.SetOption("spikes.min_energy_threshold", "1", "ADVANCED"); // Мин энергия 1 ✓
-            App.settingsManager.SetOption("spikes.init_window_size", "30", "ADVANCED");    // Размер выборки 30 ✓
+            App.settingsManager.SetOption("spikes.manual_mode", "False", "ADVANCED");      // Ручной режим отключен - используется профиль ✗ (БАГ #59: отсутствовал)
             
             // Алерты (ваши настройки)
             App.settingsManager.SetOption("alert_sound_enabled", "True", "ADVANCED");      // Звуковые алерты ✓

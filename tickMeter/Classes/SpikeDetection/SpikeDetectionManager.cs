@@ -169,12 +169,14 @@ namespace tickMeter.Classes.SpikeDetection
                 if (metrics.Contains("ticktime"))
                     settings.EnabledMetrics.Add(MetricKind.Ticktime);
 
-                // Используем расширенные настройки Stage 4 напрямую, если они есть
-                var useAdvancedSettings = settingsManager.GetOption("spikes.ema_alpha", "", "ADVANCED");
+                // Проверяем флаг ручного режима для выбора источника параметров
+                bool manualMode = settingsManager.GetOption("spikes.manual_mode", "False", "ADVANCED") == "True";
+                DebugLogger.log($"[SpikeDetection-Config] manual_mode = {manualMode}");
                 
-                if (!string.IsNullOrEmpty(useAdvancedSettings))
+                if (manualMode)
                 {
-                    // Stage 4: используем точные значения из расширенных настроек
+                    // Ручной режим: используем точные значения из расширенных настроек
+                    DebugLogger.log("[SpikeDetection-Config] Using MANUAL mode parameters");
                     settings.EmaAlpha = settingsManager.GetDouble("spikes.ema_alpha", 0.1, "ADVANCED");
                     settings.EwSigmaAlpha = settingsManager.GetDouble("spikes.ew_sigma_alpha", 0.05, "ADVANCED");
                     settings.SensitivityMultiplier = settingsManager.GetDouble("spikes.sensitivity_multiplier", 2.0, "ADVANCED");
@@ -185,10 +187,21 @@ namespace tickMeter.Classes.SpikeDetection
                 }
                 else
                 {
-                    // Fallback: используем старый метод через sensitivity preset
+                    // Профильный режим: используем предустановленные профили чувствительности
                     string sensitivityStr = settingsManager.GetOption("spikes.sensitivity", "medium", "ADVANCED");
+                    DebugLogger.log($"[SpikeDetection-Config] Using PROFILE mode: {sensitivityStr}");
                     switch (sensitivityStr?.ToLower())
                     {
+                        case "very_low":
+                            settings.SensitivityMultiplier = 4.0;
+                            settings.EmaAlpha = 0.03;
+                            settings.EwSigmaAlpha = 0.01;
+                            settings.HysteresisRatio = 0.65;
+                            settings.RefractoryPeriodMs = 3000;
+                            settings.MinEnergyThreshold = 3.0;
+                            settings.InitWindowSize = 40;
+                            DebugLogger.log($"[SpikeDetection-Config] Applied very_low profile: multiplier={settings.SensitivityMultiplier}, ema_alpha={settings.EmaAlpha}, ew_sigma_alpha={settings.EwSigmaAlpha}, hysteresis={settings.HysteresisRatio}, refractory={settings.RefractoryPeriodMs}ms, min_energy={settings.MinEnergyThreshold}, init_window={settings.InitWindowSize}");
+                            break;
                         case "low":
                             settings.SensitivityMultiplier = 3.0;
                             settings.EmaAlpha = 0.05;
@@ -196,6 +209,7 @@ namespace tickMeter.Classes.SpikeDetection
                             settings.HysteresisRatio = 0.7;
                             settings.RefractoryPeriodMs = 2000;
                             settings.MinEnergyThreshold = 2.0;
+                            settings.InitWindowSize = 30;
                             break;
                         case "high":
                             settings.SensitivityMultiplier = 1.5;
@@ -204,6 +218,7 @@ namespace tickMeter.Classes.SpikeDetection
                             settings.HysteresisRatio = 0.9;
                             settings.RefractoryPeriodMs = 500;
                             settings.MinEnergyThreshold = 0.5;
+                            settings.InitWindowSize = 15;
                             break;
                         case "medium":
                         default:
@@ -213,9 +228,9 @@ namespace tickMeter.Classes.SpikeDetection
                             settings.HysteresisRatio = 0.8;
                             settings.RefractoryPeriodMs = 1000;
                             settings.MinEnergyThreshold = 1.0;
+                            settings.InitWindowSize = 20;
                             break;
                     }
-                    settings.InitWindowSize = 20;
                 }
 
                 // Минимальная длительность спайка
